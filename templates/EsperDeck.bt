@@ -7,24 +7,52 @@
 //   Purpose: Reads binary deck files for Phantom Dust
 //  Category: 
 // File Mask: None
-//  ID Bytes: 00 00 00 00
+//  ID Bytes: 
 //   History: 
 //------------------------------------------------
 
 struct Deck
 {
-    // 00 00 00 00
-    int Header<bgcolor=cLtGray>;
-    char Name[16]<bgcolor=cGreen>;
-
+    LittleEndian();
+    int Header<bgcolor=cGray>;
+    char Name[16]<bgcolor=cWhite>;
+    
     struct CardData
     {
-        // 30 cards, at 2 bytes per card.
-        char CardData[60]<bgcolor=cYellow>;
+        short Card1<bgcolor=cRed>;
+        short Card2<bgcolor=cYellow>;
+        short Card3<bgcolor=cGreen>;
+        short Card4<bgcolor=cBlue>;
+        short Card5<bgcolor=cRed>;
+        short Card6<bgcolor=cYellow>;
+        short Card7<bgcolor=cGreen>;
+        short Card8<bgcolor=cBlue>;
+        short Card9<bgcolor=cRed>;
+        short Card10<bgcolor=cYellow>;
+        short Card11<bgcolor=cGreen>;
+        short Card12<bgcolor=cBlue>;
+        short Card13<bgcolor=cRed>;
+        short Card14<bgcolor=cYellow>;
+        short Card15<bgcolor=cGreen>;
+        short Card16<bgcolor=cBlue>;
+        short Card17<bgcolor=cRed>;
+        short Card18<bgcolor=cYellow>;
+        short Card19<bgcolor=cGreen>;
+        short Card20<bgcolor=cBlue>;
+        short Card21<bgcolor=cRed>;
+        short Card22<bgcolor=cYellow>;
+        short Card23<bgcolor=cGreen>;
+        short Card24<bgcolor=cBlue>;
+        short Card25<bgcolor=cRed>;
+        short Card26<bgcolor=cYellow>;
+        short Card27<bgcolor=cGreen>;
+        short Card28<bgcolor=cBlue>;
+        short Card29<bgcolor=cRed>;
+        short Card30<bgcolor=cYellow>;
     } cards;
 
-    byte SchoolCount<bgcolor=cGreen>;
-    //19 bytes filled with 00
-    char Padding[19]<bgcolor=cGray>;
+    short SchoolCount<bgcolor=cGreen>;
+    short Metadata<bgcolor=cBlue>;
+    char Padding[16]<bgcolor=cGray>;
 
 } file;
