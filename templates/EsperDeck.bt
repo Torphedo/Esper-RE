@@ -1,0 +1,30 @@
+//------------------------------------------------
+//--- 010 Editor v11.0 Binary Template
+//
+//      File: Phantom Dust Deck Binary
+//   Authors: Torphedo
+//   Version: 1.0.0
+//   Purpose: Reads binary deck files for Phantom Dust
+//  Category: 
+// File Mask: None
+//  ID Bytes: 00 00 00 00
+//   History: 
+//------------------------------------------------
+
+struct Deck
+{
+    // 00 00 00 00
+    int Header<bgcolor=cLtGray>;
+    char Name[16]<bgcolor=cGreen>;
+
+    struct CardData
+    {
+        // 30 cards, at 2 bytes per card.
+        char CardData[60]<bgcolor=cYellow>;
+    } cards;
+
+    byte SchoolCount<bgcolor=cGreen>;
+    //19 bytes filled with 00
+    char Padding[19]<bgcolor=cGray>;
+
+} file;
