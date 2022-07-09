@@ -1,0 +1,42 @@
+//------------------------------------------------
+//--- 010 Editor v11.0 Binary Template
+//
+//      File: Phantom Dust SSB Menu File
+//   Authors: Torphedo
+//   Version: 1.0.0
+//   Purpose: Parsing SSB Text/Menu files from Phantom Dust.
+//  Category: Text
+// File Mask: *.ssb
+//  ID Bytes: 20 00 00 00
+//   History: 
+//------------------------------------------------
+
+LittleEndian();
+struct SSB
+{
+    int Header<bgcolor=cLtGray>;
+     // The absolute address where UnknownMiscDataBlock ends.
+    int SubBlockSize<bgcolor=cLtBlue>;
+    // The absolute address where menu text starts, each string
+    // separated by a single blank byte. This address is always
+    // present twice, for some reason.
+    int MenuTextSecOffset<bgcolor=cBlue>;
+    int MenuTextSecOffset<bgcolor=cBlue>;
+    int pad;
+    // I think maybe each byte of this double somehow corresponds
+    // to the sizes of the text section after the header, but I
+    // can't quite get things to line up. It's always frustratingly
+    // close, but never quite right.
+    double Unknown<bgcolor=cRed>;
+
+    struct DataBlock
+    {
+        // This contains text, seemingly random data, and a LOT of
+        // whitespace. This is multiple data blocks, but I don't know
+        // how to split them apart yet.
+        char UnknownMiscDataBlock[SubBlockSize - 28]<bgcolor=cRed>;
+        // This always has seemingly garbage data, there's never any
+        // coherent data in this sector.
+        char UnknownGarbageData[MenuTextSecOffset - SubBlockSize]<bgcolor=cGreen>;
+    } block;
+} file;
