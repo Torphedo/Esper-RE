@@ -18,17 +18,16 @@ struct File_ALR
 		int Magic<bgcolor=cGray>; // 11 00 00 00
 		int Size<bgcolor=cGreen>;
 		int Flags<bgcolor=cYellow>; // (?) Example from pc00a.alr: 52 00 07 00
-		int DataSectionInit<bgcolor=cLtGray>;
+		int WhitespaceEndAddress<bgcolor=cLtGray>;
 		int InfoSectionsCount<bgcolor=cLtGray>;
 		int Unk1<bgcolor=cLtRed>; // Maybe a reference to an offet really far into the file?
 		double Pad;
 		int OffsetArray[InfoSectionsCount]<bgcolor=cLtBlue>;
 	} header;
-	local int CurrentHeader = ReadByte();
+
 	while (ReadDouble() != 0x00)
 	{
-        CurrentHeader = ReadByte();
-		if (ReadByte() == 21 || ReadByte() == 22)
+		if (ReadByte() == 0x15 || ReadByte() == 0x16)
 		{
 			struct Block0x15 
 			{
@@ -37,20 +36,14 @@ struct File_ALR
 				int InfoSectionsCount<bgcolor=cLtGray>;
 				struct InfoSection2
 				{
-					//Repeat [NUM_INFO_SECTIONS] times
-					local int InfoSecNum = 0;
-					while (InfoSecNum < InfoSectionsCount)
-					{
-						int Flags2<bgcolor=cYellow>; // (?) Example from pc00a.alr: 0x01 00 04 00
-						int DataSec_Start<bgcolor=cGreen>;
-						int UnkZero<bgcolor=cLtRed>;
-						int Unk<bgcolor=cLtRed>;
-						int UnkZero<bgcolor=cLtRed>;
-						int Unk<bgcolor=cLtRed>;
-						int Unk<bgcolor=cLtRed>;
-						InfoSecNum++;
-					}
-				} Subsection;
+				    int Flags2<bgcolor=cYellow>; // (?) Example from pc00a.alr: 0x01 00 04 00
+				    int DataSec_Start<bgcolor=cGreen>;
+				    int Unk<bgcolor=cLtRed>;
+				    int Unk<bgcolor=cLtRed>;
+				    int UnkZ<bgcolor=cLtRed>;
+				    int StaticID<bgcolor=cPurple>;
+				    int Unk<bgcolor=cLtRed>;
+				} Subsection[InfoSectionsCount];
 			} Subfile;
 		}
 
@@ -72,7 +65,7 @@ struct File_ALR
 		{
 			struct Block0x13
 			{
-				int Magic<bgcolor=cLtGray>; // 01 00 00 00
+				int Magic<bgcolor=cLtGray>; // 13 00 00 00
 				int SectorSize<bgcolor=cBlue>;
 				int Flags<bgcolor=cYellow>; // Example from eft0601.alr: 01 00 12 00
 				int Flags<bgcolor=cYellow>;
@@ -109,15 +102,40 @@ struct File_ALR
 				int Unk3<bgcolor=cRed>; // UNK2 and UNK3 sometimes match each other in value. When they don't, UNK3 is always 0
 				int UnkZero1<bgcolor=cRed>;
 				int Flags<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
-				int UnkZero2<bgcolor=cRed>;
 		
 				// 0x[SIZE-0x24] DATA
 				// 0x24 = 36
-				local int DataSize = Size - 36;
+				local int DataSize = Size - 32;
 				char DataSector[DataSize]<bgcolor=cGreen>;
 			} Subfile;
 		}
-		
+
+		if (ReadByte() == 0x10)
+		{
+			struct Block0x10
+			{
+				int Magic<bgcolor=cLtGray>; // 10 00 00 00
+				int SectorSize<bgcolor=cBlue>;
+				int DDS_Num<bgcolor=cPurple>;
+				int TGA_Num<bgcolor=cPurple>;
+                char Name[16]<bgcolor=cYellow>;
+
+                struct DDS_Names
+                {
+                    char DDSName[16]<bgcolor=cYellow>;
+                    char UnkPad0[16]<bgcolor=cRed>;
+                } DDS[DDS_Num];
+
+                char DDS_Unk [DDS_Num * 20]<bgcolor=cLtRed>;
+
+                struct TGA_Names
+                {
+                    char TGAName[32]<bgcolor=cYellow>;
+                    char UnkPad[28]<bgcolor=cRed>;
+                } TGA[TGA_Num];
+			} Subfile;
+		}
+
         if (ReadByte() == 2)
 		{
 			struct Block0x2
@@ -134,11 +152,9 @@ struct File_ALR
                 int Unk<bgcolor=cRed>;
                 int Unk<bgcolor=cRed>;
                 int Unk<bgcolor=cRed>;
-				char padding[10]; // (?)
-				// 0x[SIZE-0x3A] padding
-				// 0x3A = 58
-				local int DataSize1 = SectorSize - 58;
-				char DataSector[DataSize1]<bgcolor=cGreen>;
+				char padding[12];
+				local int DataSize1 = SectorSize - 60;
+                char datablock[DataSize1]<bgcolor=cGreen>;
 			} Subfile;
 		}        
 
@@ -164,7 +180,7 @@ struct File_ALR
 			} Subfile;
 		}
         
-        if (ReadByte() == 0x00 && ReadDouble() != 0x0000000000000000)
+        if (ReadByte() == 0x00)
 		{
 		    struct Block0x0
 		    {
@@ -177,9 +193,11 @@ struct File_ALR
                 }
 		    } Subfile;
         }
-        if (ReadByte() != 0x00 && ReadByte() != 0x01 && ReadByte() != 0x02 && ReadByte() != 0x03 && ReadByte() != 05 && ReadByte() != 0x0D && ReadByte() != 0x13 && ReadByte() != 0x14 && ReadByte() != 0x15 && ReadByte() != 0x16)
+
+        if (ReadByte() != 0x00 && ReadByte() != 0x01 && ReadByte() != 0x02 && ReadByte() != 0x03 && ReadByte() !=0x05 && ReadByte() != 0x0D && ReadByte() && ReadByte() != 0x0D && ReadByte() != 0x10 && ReadByte() != 0x13 && ReadByte() != 0x14 && ReadByte() != 0x15 && ReadByte() != 0x16)
         {
             break;
         }
 	}
+    char Whitespace[header.WhitespaceEndAddress - (FTell())]<bgcolor=cGray>;
 } file;
