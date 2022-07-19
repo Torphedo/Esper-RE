@@ -52,7 +52,11 @@ struct Deck
     } cards;
 
     short SchoolCount<bgcolor=cGreen>;
-    short Metadata<bgcolor=cBlue>;
-    char Padding[16]<bgcolor=cGray>;
+    byte UnkMetadata<bgcolor=cBlue>; // These always seem to be
+    byte UnkMetadata<bgcolor=cBlue>; // either 40 or 00
+    int MissionClears<bgcolor=cBlue>;
+    int MissionAttempts<bgcolor=cBlue>;
+    int MultiplayerWins<bgcolor=cBlue>;
+    int MultiplayerWinRate<bgcolor=cBlue>;
 
 } file;
