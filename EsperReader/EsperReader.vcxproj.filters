@@ -20,11 +20,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="deck.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="deckSkillNames.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="deck.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="alr.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

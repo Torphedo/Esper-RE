@@ -24,9 +24,14 @@ void ParseDeckFile(char* filename)
 
 	DeckBinary.open(filename, ios::in | ios::binary);
 	DeckBinary.read((char*)&deck, (sizeof(deck)));
-	cout << "Name: " << deck.Name << "\nSchool Count: " << deck.SchoolCount << "\nUnknown Metadata: " << deck.Metadata;
-	cout << "\nMission Clears: " << deck.MissionClears << "\nMission Attempts: " << deck.MissionAttempts;
-	cout << "\nMultiplayer Wins: " << deck.MultiplayerWins << "\nMultiplayer Win Rate: " << deck.MultiplayerWinRate << "%\n";
+
+	cout << "Name: " << deck.Name;
+	cout << "\nSchool Count: " << deck.SchoolCount;
+	cout << "\nUnknown Metadata: " << deck.Metadata;
+	cout << "\nMission Clears: " << deck.MissionClears;
+	cout << "\nMission Attempts: " << deck.MissionAttempts;
+	cout << "\nMultiplayer Wins: " << deck.MultiplayerWins;
+	cout << "\nMultiplayer Win Rate: " << deck.MultiplayerWinRate << "%\n";
 
 	for (int n = 0; n < 30; n++)
 	{
