@@ -1,0 +1,6 @@
+.vs/
+decks/
+alr/
+x64/
+*.exe
+EsperReader\EsperReader.vcxproj.user
