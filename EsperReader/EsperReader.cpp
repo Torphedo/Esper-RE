@@ -5,7 +5,6 @@
 #include "deck.h"
 #include "alr.h"
 using namespace std;
-using std::string;
 
 int main(int argc, char* argv[])
 {

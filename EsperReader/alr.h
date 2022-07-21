@@ -36,7 +36,7 @@ void ParseAlrHeader(fstream& BinaryALR, char* filename)
 	int *ptrarray = new int[Header.InfoSectionsNum];
 	BinaryALR.read((char*)ptrarray, (sizeof(int) * Header.InfoSectionsNum));
 	cout << "---------- Pointer Array ----------\n";
-	for (int n = 0; n < 141; n++)
+	for (int n = 0; n < Header.InfoSectionsNum; n++)
 	{
 		cout << "\nPointer " << (n + 1);
 
