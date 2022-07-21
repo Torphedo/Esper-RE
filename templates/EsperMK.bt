@@ -1,0 +1,42 @@
+//------------------------------------------------
+//--- 010 Editor v11.0 Binary Template
+//
+//      File: Phantom Dust MK Event Binary
+//   Authors: Torphedo
+//   Version: 1.0.0
+//   Purpose: Parsing *.mk Event (?) files from Phantom Dust.
+//  Category: Text
+// File Mask: *.mk
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+LittleEndian();
+struct SSB
+{
+    int HeaderSize<bgcolor=cBlue>;
+    int ALR_Num<bgcolor=cGreen>;
+    // Event files appear to load ALR files as listed in the header,
+    // then...maybe it runs script or animation data from its data
+    // sections? There's 1 whitespace sector per ALR file, so my guess
+    // is there's also 1 data section each. Maybe the whitespace is
+    // used to guarantee there will be enough free space in memory to
+    // load the ALR file? Or give it a place to be loaded?
+    int WhitespaceEndAddress[ALR_Num]<bgcolor=cLtBlue>;
+    local int RemainingHeader = HeaderSize - (ALR_Num*4) -8;
+    char ALR_Filenames[RemainingHeader]<bgcolor=cYellow>;
+    char Whitespace [WhitespaceEndAddress[0] - HeaderSize]<bgcolor=cLtGray>;
+    
+    struct DataBlock
+    {
+        int HeaderSize<bgcolor=cBlue>;
+        int Unk<bgcolor=cRed>;
+        int Unk<bgcolor=cRed>; // Address?
+        int WhitespaceEndOffset<bgcolor=cBlue>;
+        int Unk<bgcolor=cRed>; // Always 01 00 00 00
+        int Unk<bgcolor=cRed>;
+        double padding<bgcolor=cGray>;
+        
+        local int WhitespaceEnd = (FTell() - 16) + WhitespaceEndOffset;
+    } block;
+} file;
