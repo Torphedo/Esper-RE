@@ -154,7 +154,77 @@ struct File_ALR
 		    } Subfile;
         }
 
-        if (ReadByte() == 3 || ReadByte() == 5)
+        if (ReadByte() == 5)
+		{
+			struct Block0x5
+			{
+				int Magic<bgcolor=cLtGray>; // 03 00 00 00
+				int Size<bgcolor=cBlue>;
+				int Unk1<bgcolor=cRed>; // Seems to always be 00 00 20 42
+				int Flags<bgcolor=cYellow>; // (?) Example from pc00a.alr: 06 00 08 00
+				int FrameCount1<bgcolor=cRed>;
+				int FrameCount2<bgcolor=cBlue>; // UNK2 and UNK3 sometimes match each other in value. When they don't, UNK3 is always 0
+				int FrameCount3<bgcolor=cRed>;
+				int Flags0<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
+		
+				// 0x[SIZE-0x24] DATA
+				// 0x24 = 36
+                local int VertCount = 0;
+
+                if (FrameCount1 != 0)
+                {
+                    struct AnimType1
+                    {
+                        local int CurrentFrame = 0;
+                        while (CurrentFrame < FrameCount1)
+                        {
+		    		        float Frame<bgcolor=cLtBlue>;
+                            float Coord1<bgcolor=cGreen>;
+                            float Coord2<bgcolor=cGreen>;
+                            float Coord3<bgcolor=cGreen>;
+                            CurrentFrame++;
+                        };
+                        CurrentFrame = 0;
+                    }animation;
+                }
+
+                if (FrameCount2 != 0)
+                {
+                    struct AnimType2
+                    {
+                        local int CurrentFrame = 0;
+                        while (CurrentFrame < FrameCount2)
+                        {
+		    	    	    short Frame<bgcolor=cBlue>;
+                            byte UnknownFlag<bgcolor=cRed>;
+                            byte UnknownConstant<bgcolor=cRed>;
+                            float UnkFloat<bgcolor=cGreen>;
+                            CurrentFrame++;
+                        };
+                        CurrentFrame = 0;
+                    }animation;
+                }
+                
+                if (FrameCount3 != 0) // Same as AnimType1.
+                {
+                    struct AnimType3
+                    {
+                        local int CurrentFrame = 0;
+                        while (CurrentFrame < FrameCount3)
+                        {
+		    	    	    float Frame<bgcolor=cLtBlue>;
+                            float Coord1<bgcolor=cGreen>;
+                            float Coord2<bgcolor=cGreen>;
+                            float Coord3<bgcolor=cGreen>;
+                            CurrentFrame = CurrentFrame + 1;
+                        };
+                        CurrentFrame = 0;
+                    }animation;
+                }
+			} Subfile;
+		}
+
+        if (ReadByte() == 3)
 		{
 			struct Block0x3
 			{
@@ -215,11 +285,8 @@ struct File_ALR
 				int Unk3<bgcolor=cRed>;
 				int Flags<bgcolor=cYellow>; // (?) Example from eft0601.alr: 00 11 01 00
 				int Unk4<bgcolor=cRed>;
-                char padding[18]; // (?)
-				// 0x[SIZE-0x3A] padding
-				// 0x40 = 64
-				local int DataSize1 = SectorSize - 58;
-				char DataSector[DataSize1]<bgcolor=cGreen>;
+                char padding[16]; // (?)
+				int DataSector[(SectorSize - 56)/4]<bgcolor=cGreen>; // This is definitely the wrong data type
 			} Subfile;
 		}
         
