@@ -46,8 +46,19 @@ void ParseDeckFile(char* filename)
 		{
 			cout << ":  ";
 		}
-		// Print skill name from string array by ID
-		printSkillNames(deck.CardData[n]);
+
+		if (deck.CardData[n] == -1)
+		{
+			cout << "Aura Particle";
+		}
+		else if (deck.CardData[n] >= 394) // IDs 394 - 499 are all copies of Psycho Wave
+		{
+			cout << "Psycho Wave";
+		}
+		else
+		{
+			cout << SkillIDs[deck.CardData[n]]; // Print skill name from string array by ID
+		}
 	}
 
 	DeckBinary.close();

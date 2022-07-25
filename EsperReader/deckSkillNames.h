@@ -1,8 +1,4 @@
-#include <map>
-
-using namespace std;
-
-string SkillIDs[395] = {
+std::string SkillIDs[395] = {
         "Aura Particle",
         "Psycho Wave",
         "Psycho Burst",
@@ -399,18 +395,3 @@ string SkillIDs[395] = {
         "Unused / Corrupted Skill",
         "Psycho Wave"
 };
-
-void printSkillNames(int ID)
-{
-    if (ID == -1)
-    {
-        cout << "Aura Particle";
-        return;
-    }
-    if (ID >= 394) // IDs 394 - 499 are all copies of Psycho Wave. It'd be redundant to list them all in the array.
-    {
-        cout << "Psycho Wave";
-        return;
-    }
-    cout << SkillIDs[ID];
-}
