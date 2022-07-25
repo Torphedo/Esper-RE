@@ -55,27 +55,27 @@ int ParseAlrHeader(fstream& BinaryALR, char* filename)
 
 int ParseBlock15_ALR(fstream& BinaryALR, char* filename)
 {
-	alr_block015 blockdata;
-	BinaryALR.read((char*)&blockdata, (sizeof(blockdata))); // Read bytes into ALR_Block015 struct
+	alr_block015 Block15;
+	BinaryALR.read((char*)&Block15, (sizeof(Block15))); // Read bytes into ALR_Block015 struct
 
 	// Print file data
 	cout << "\n\n========== 0x15 Block ==========\n\n";
-	cout << "Block ID: " << hex << blockdata.ID << dec;
-	cout << "\nBlock Size: " << blockdata.BlockSize << " bytes";
-	cout << "\nData Block Array Size: " << blockdata.InfoSectionsNum;
+	cout << "Block ID: " << hex << Block15.ID << dec;
+	cout << "\nBlock Size: " << Block15.BlockSize << " bytes";
+	cout << "\nData Block Array Size: " << Block15.InfoSectionsNum;
 
-	alr_datablock015 datablockarray;
-	for (int n = 0; n < blockdata.InfoSectionsNum; n++)
+	alr_datablock015 DataBlock15;
+	for (int n = 0; n < Block15.InfoSectionsNum; n++)
 	{
 		cout << "\n\n----- Data Block " << n << " -----\n" << hex;
-		BinaryALR.read((char*)&datablockarray, 28);
-		cout << "Flags: " << datablockarray.Flags;
-		cout << "\nUnknown 1: 0x" << datablockarray.Unknown1 << dec;
-		cout << "\nConstant Zero: " << datablockarray.UnknownZero; // Always 0
-		cout << "\nUnknown 2: 0x" << hex << datablockarray.Unknown2 << dec;
-		cout << "\nUnknown 3: " << datablockarray.Unknown3; // Usually 0
-		cout << "\nID: " << hex << datablockarray.ID;
-		cout << "\nUnknown 4: " << datablockarray.Unknown4 << dec;
+		BinaryALR.read((char*)&DataBlock15, 28);
+		cout << "Flags: " << DataBlock15.Flags;
+		cout << "\nUnknown 1: 0x" << DataBlock15.Unknown1 << dec; // TODO: print in big endian for better readability
+		cout << "\nConstant Zero: " << DataBlock15.UnknownZero; // Always 0
+		cout << "\nUnknown 2: 0x" << hex << DataBlock15.Unknown2 << dec; // TODO: print in big endian for better readability
+		cout << "\nUnknown 3: " << DataBlock15.Unknown3; // Usually 0
+		cout << "\nID: " << hex << DataBlock15.ID;
+		cout << "\nUnknown 4: " << DataBlock15.Unknown4 << dec;
 	}
 	return 1;
 }
