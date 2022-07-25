@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 	if (argc != 2)
 	{
 		cout << "Please drag & drop a Phantom Dust deck file or ALR file onto the program.\nPress any key to exit.\n";
-		_getch();
+		char dummy = _getch();
 		return -1;
 	}
 
@@ -35,6 +35,6 @@ int main(int argc, char* argv[])
 	}
 
 	cout << "\n\nPress any key to exit.\n";
-	_getch();
+	char dummy = _getch();
 	return 1;
 }
