@@ -22,8 +22,8 @@ void ParseDeckFile(char* filename)
 	fstream DeckBinary;
 	deckbin deck;
 
-	DeckBinary.open(filename, ios::in | ios::binary);
-	DeckBinary.read((char*)&deck, (sizeof(deck)));
+	DeckBinary.open(filename, ios::in | ios::binary); // Open file
+	DeckBinary.read((char*)&deck, (sizeof(deck)));    // Read bytes into deck struct
 
 	cout << "Name: " << deck.Name;
 	cout << "\nSchool Count: " << deck.SchoolCount;
@@ -35,14 +35,18 @@ void ParseDeckFile(char* filename)
 
 	for (int n = 0; n < 30; n++)
 	{
+		cout << "\nCard #" << (n + 1); // (n + 1) is used because the counter starts at 0, not 1
+
+		// Slightly different spacing to keep things aligned
 		if (n < 9)
 		{
-			cout << "\nCard #" << (n + 1) << ":   ";
+			cout << ":   ";
 		}
 		else
 		{
-			cout << "\nCard #" << (n + 1) << ":  ";
+			cout << ":  ";
 		}
+		// Print skill name from string array by ID
 		printSkillNames(deck.CardData[n]);
 	}
 

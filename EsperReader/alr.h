@@ -20,8 +20,8 @@ void ParseAlrHeader(fstream& BinaryALR, char* filename)
 {
 	alr_header Header;
 
-	BinaryALR.open(filename, ios::in | ios::binary);
-	BinaryALR.read((char*)&Header, (sizeof(Header)));
+	BinaryALR.open(filename, ios::in | ios::binary);  // Open file
+	BinaryALR.read((char*)&Header, (sizeof(Header))); // Read bytes into ALR_Header struct
 
 	// Print file data
 	cout << "========== Header ==========\n\n";
