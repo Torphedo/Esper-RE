@@ -15,7 +15,7 @@ struct File_ALR
     LittleEndian();
 	struct Header 
 	{
-		int Magic<bgcolor=cGray>; // 11 00 00 00
+		int ID<bgcolor=cGray>; // 11 00 00 00
 		int Size<bgcolor=cGreen>;
 		int Flags<bgcolor=cYellow>; // (?) Example from pc00a.alr: 52 00 07 00
 		int WhitespaceEndAddress<bgcolor=cLtGray>;
@@ -31,7 +31,7 @@ struct File_ALR
 		{
 			struct Block0x15 
 			{
-				int Magic<bgcolor=cLtGray>;
+				int ID<bgcolor=cLtGray>;
 				int Size<bgcolor=cBlue>;
 				int InfoSectionsCount<bgcolor=cLtGray>;
 
@@ -56,7 +56,7 @@ struct File_ALR
 		{
 		    struct Block0x14
 		    {
-			    int Magic<bgcolor=cLtGray>; // 0D 00 00 00
+			    int ID<bgcolor=cLtGray>; // 0D 00 00 00
 			    int SectorSize<bgcolor=cBlue>;
                 double Unk<bgcolor=cRed>;
                 int Flags<bgcolor=cYellow>;
@@ -70,7 +70,7 @@ struct File_ALR
 		{
 			struct Block0x13
 			{
-				int Magic<bgcolor=cLtGray>; // 13 00 00 00
+				int ID<bgcolor=cLtGray>; // 13 00 00 00
 				int SectorSize<bgcolor=cBlue>;
 				int Flags<bgcolor=cYellow>; // Example from eft0601.alr: 01 00 12 00
 				int Flags<bgcolor=cYellow>;
@@ -89,7 +89,7 @@ struct File_ALR
 		{
 		    struct Block0xD
 		    {
-			    int Magic<bgcolor=cLtGray>; // 0D 00 00 00
+			    int ID<bgcolor=cLtGray>; // 0D 00 00 00
 			    int SectorSize<bgcolor=cBlue>;
                 int Pad;
 		    } Subfile;
@@ -99,7 +99,7 @@ struct File_ALR
 		{
 		    struct Block0xA
 		    {
-			    int Magic<bgcolor=cLtGray>; // 0A 00 00 00
+			    int ID<bgcolor=cLtGray>; // 0A 00 00 00
 			    int SectorSize<bgcolor=cBlue>;
                 char Unknown[28]<bgcolor=cRed>;
                 char pad[12];
@@ -110,7 +110,7 @@ struct File_ALR
 		{
 			struct Block0x10
 			{
-				int Magic<bgcolor=cLtGray>; // 10 00 00 00
+				int ID<bgcolor=cLtGray>; // 10 00 00 00
 				int SectorSize<bgcolor=cBlue>;
 				int DDS_Num<bgcolor=cPurple>;
 				int TGA_Num<bgcolor=cPurple>;
@@ -139,7 +139,7 @@ struct File_ALR
 		{
 		    struct Block0x7
 		    {
-			    int Magic<bgcolor=cLtGray>; // 07 00 00 00
+			    int ID<bgcolor=cLtGray>; // 07 00 00 00
 			    int SectorSize<bgcolor=cBlue>;
                 int Unknown[3]<bgcolor=cRed>;
                 int unk;
@@ -158,41 +158,54 @@ struct File_ALR
 		{
 			struct Block0x5
 			{
-				int Magic<bgcolor=cLtGray>; // 03 00 00 00
+				int ID<bgcolor=cLtGray>; // 05 00 00 00
 				int Size<bgcolor=cBlue>;
 				int Unk1<bgcolor=cRed>; // Seems to always be 00 00 20 42
 				int Flags<bgcolor=cYellow>; // (?) Example from pc00a.alr: 06 00 08 00
-				int FrameCount1<bgcolor=cRed>;
-				int FrameCount2<bgcolor=cBlue>; // UNK2 and UNK3 sometimes match each other in value. When they don't, UNK3 is always 0
-				int FrameCount3<bgcolor=cRed>;
-				int Flags0<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
+				int FrameCount1<bgcolor=cLtBlue>;
+				int FrameCount2<bgcolor=cLtBlue>; // UNK2 and UNK3 sometimes match each other in value. When they don't, UNK3 is always 0
+				int FrameCount3<bgcolor=cLtBlue>;
+				int Flags2<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
 		
 				// 0x[SIZE-0x24] DATA
 				// 0x24 = 36
-                local int VertCount = 0;
+                local int CurrentFrame = 0;
 
                 if (FrameCount1 != 0)
                 {
-                    struct AnimType1
+                    if (Flags2 == 1048576) // 00 10 00 00
                     {
-                        local int CurrentFrame = 0;
-                        while (CurrentFrame < FrameCount1)
+                        struct AnimType1
                         {
 		    		        float Frame<bgcolor=cLtBlue>;
                             float Coord1<bgcolor=cGreen>;
                             float Coord2<bgcolor=cGreen>;
                             float Coord3<bgcolor=cGreen>;
-                            CurrentFrame++;
-                        };
-                        CurrentFrame = 0;
-                    }animation;
+                        }animation[FrameCount1];
+                    }
+                    else if (Flags2 == 525568) // 00 05 08 00
+                    {
+                        struct AnimType1A
+                        {
+		    		        float Frame<bgcolor=cLtBlue>;
+                            float Coord<bgcolor=cGreen>;
+                        }animation[FrameCount1];
+                    }
+                    else if (Flags2 == 786944) // 00 02 0C 00
+                    {
+                        struct AnimType1B
+                        {
+		    		        float Frame<bgcolor=cLtBlue>;
+                            float Coord<bgcolor=cGreen>;
+                            float Coord2<bgcolor=cGreen>;
+                        }animation[FrameCount1];
+                    }
                 }
 
                 if (FrameCount2 != 0)
                 {
                     struct AnimType2
                     {
-                        local int CurrentFrame = 0;
                         while (CurrentFrame < FrameCount2)
                         {
 		    	    	    short Frame<bgcolor=cBlue>;
@@ -201,25 +214,24 @@ struct File_ALR
                             float UnkFloat<bgcolor=cGreen>;
                             CurrentFrame++;
                         };
-                        CurrentFrame = 0;
                     }animation;
+                    CurrentFrame = 0;
                 }
                 
                 if (FrameCount3 != 0) // Same as AnimType1.
                 {
                     struct AnimType3
                     {
-                        local int CurrentFrame = 0;
                         while (CurrentFrame < FrameCount3)
                         {
 		    	    	    float Frame<bgcolor=cLtBlue>;
                             float Coord1<bgcolor=cGreen>;
                             float Coord2<bgcolor=cGreen>;
                             float Coord3<bgcolor=cGreen>;
-                            CurrentFrame = CurrentFrame + 1;
+                            CurrentFrame++;
                         };
-                        CurrentFrame = 0;
                     }animation;
+                    CurrentFrame = 0;
                 }
 			} Subfile;
 		}
@@ -228,14 +240,14 @@ struct File_ALR
 		{
 			struct Block0x3
 			{
-				int Magic<bgcolor=cLtGray>; // 03 00 00 00
+				int ID<bgcolor=cLtGray>; // 03 00 00 00
 				int Size<bgcolor=cBlue>;
 				int Unk1<bgcolor=cRed>; // Seems to always be 00 00 20 42
 				int Flags<bgcolor=cYellow>; // (?) Example from pc00a.alr: 06 00 08 00
 				int Unk2<bgcolor=cRed>;
 				int Unk3<bgcolor=cRed>; // UNK2 and UNK3 sometimes match each other in value. When they don't, UNK3 is always 0
 				int UnkZero1<bgcolor=cRed>;
-				int Flags<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
+				int Flags2<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
 		
 				// 0x[SIZE-0x24] DATA
 				// 0x24 = 36
@@ -253,7 +265,7 @@ struct File_ALR
 		{
 			struct Block0x2
 			{
-				int Magic<bgcolor=cLtGray>; // 01 00 00 00
+				int ID<bgcolor=cLtGray>; // 01 00 00 00
 				int SectorSize<bgcolor=cBlue>;
 				int Flags<bgcolor=cYellow>; // Example from eft0601.alr: 01 00 12 00
 				int Unk<bgcolor=cRed>;
@@ -275,7 +287,7 @@ struct File_ALR
 		{
 			struct Block0x1
 			{
-				int Magic<bgcolor=cLtGray>; // 01 00 00 00
+				int ID<bgcolor=cLtGray>; // 01 00 00 00
 				int SectorSize<bgcolor=cBlue>;
 				int Flags<bgcolor=cYellow>; // Example from eft0601.alr: 01 00 12 00
 				int Unk1<bgcolor=cRed>;
@@ -294,7 +306,7 @@ struct File_ALR
 		{
 		    struct Block0x0
 		    {
-			    int Magic<bgcolor=cLtGray>; // 00 00 00 00
+			    int ID<bgcolor=cLtGray>; // 00 00 00 00
 			    int SectorSize<bgcolor=cBlue>;
                 if (SectorSize > 8)
                 {
