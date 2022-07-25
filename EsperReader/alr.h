@@ -35,11 +35,11 @@ int ParseAlrHeader(fstream& BinaryALR, char* filename)
 
 	// Print file data
 	cout << "========== Header ==========\n\n";
-	cout << "Block ID: " << Header.ID;
-	cout << "\nHeader Block Size: " << Header.HeaderSize;
+	cout << "Block ID: " << hex << Header.ID << dec;
+	cout << "\nHeader Block Size: " << Header.HeaderSize << " bytes";
 	cout << "\nBlock Flags: " << Header.Flags;
-	cout << "\nWhitespace End Address: " << Header.WhitespaceEndAddr;
-	cout << "\n# of listed block offsets: " << Header.InfoSectionsNum;
+	cout << "\nWhitespace End Address: 0x" << setfill('0') << setw(8) << hex << Header.WhitespaceEndAddr << dec;
+	cout << "\nPointer Array Size: " << Header.InfoSectionsNum;
 	cout << "\nUnknown Value: " << Header.Unknown << "\n\n";
 
 	// Dynamic int array with size = InfoSectionsNum. Each int is a pointer to a data block.
