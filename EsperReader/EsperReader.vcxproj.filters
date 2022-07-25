@@ -18,6 +18,9 @@
     <ClCompile Include="EsperReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="alr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="deck.h">

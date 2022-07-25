@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="alr.cpp" />
     <ClCompile Include="EsperReader.cpp" />
   </ItemGroup>
   <ItemGroup>
