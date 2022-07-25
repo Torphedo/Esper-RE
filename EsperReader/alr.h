@@ -16,12 +16,22 @@ typedef struct ALR_Header
 	char pad[8];
 }alr_header;
 
-void ParseAlrHeader(fstream& BinaryALR, char* filename)
+int ParseAlrHeader(fstream& BinaryALR, char* filename)
 {
 	alr_header Header;
 
 	BinaryALR.open(filename, ios::in | ios::binary);  // Open file
 	BinaryALR.read((char*)&Header, (sizeof(Header))); // Read bytes into ALR_Header struct
+
+	if (sizeof(Header) + Header.InfoSectionsNum * 4 != Header.HeaderSize) {
+	/*  This logic needs reworking later.What if there's an extra
+		pointer in the array, but InfoSectionsNum isn't updated?
+		This will only detect size errors if InfoSectionsNum is correct. */
+		cout << "Fatal error: ALR header size mismatch!\n";
+		cout << "\nExpected size: " << Header.HeaderSize << " bytes";
+		cout << "\nActual size:   " << sizeof(Header) + (Header.InfoSectionsNum * 4) << " bytes";
+		return -1;
+	}
 
 	// Print file data
 	cout << "========== Header ==========\n\n";
@@ -56,7 +66,7 @@ void ParseAlrHeader(fstream& BinaryALR, char* filename)
 		cout << setfill('0') << setw(sizeof(ptrarray[n]) + 2) << hex << ptrarray[n] << dec;
 	}
 	delete[] ptrarray;
-	return;
+	return 1;
 }
 
 void ParseAlrFile(char* filename)
