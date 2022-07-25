@@ -7,7 +7,7 @@ using namespace std;
 
 typedef struct ALR_Header
 {
-	int Magic;
+	int ID;
 	int HeaderSize;
 	int Flags;
 	int WhitespaceEndAddr;
@@ -25,7 +25,7 @@ void ParseAlrHeader(fstream& BinaryALR, char* filename)
 
 	// Print file data
 	cout << "========== Header ==========\n\n";
-	cout << "Block Magic: " << Header.Magic;
+	cout << "Block ID: " << Header.ID;
 	cout << "\nHeader Block Size: " << Header.HeaderSize;
 	cout << "\nBlock Flags: " << Header.Flags;
 	cout << "\nWhitespace End Address: " << Header.WhitespaceEndAddr;
