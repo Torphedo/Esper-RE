@@ -1,0 +1,98 @@
+//------------------------------------------------
+//--- 010 Editor v11.0 Binary Template
+//
+//      File: Phantom Dust GSDATA Parser
+//   Authors: Torphedo
+//   Version: 1.0.0
+//   Purpose: Stores skill data.
+//  Category: 
+// File Mask: *.dat
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+struct File_ALR
+{
+    LittleEndian();
+	struct Header 
+	{
+		char dummy[160]<bgcolor=cLtRed>;
+	} header;
+    
+    struct SkillData
+    {
+        int unk;
+        short unk;
+        short unk<bgcolor=cRed>;
+        short SkillTextID<bgcolor=cGreen>;
+        short unk<bgcolor=cRed>;
+        short RegisterID<bgcolor=cGreen>;
+        short SkillID<bgcolor=cGreen>;
+        short RarityStars<bgcolor=cGreen>; // n + 1
+        short unk<bgcolor=cRed>;
+        short SoundFileID<bgcolor=cRed>;
+        short CapsuleType<bgcolor=cBlue>; // Aura, Atk, Def, etc.
+        short Unk<bgcolor=cRed>; // Pursuit has 01 for this.
+        short SchoolID<bgcolor=cGreen>;
+        short AnimationIDGround<bgcolor=cGreen>;
+        short AnimationIDAir<bgcolor=cGreen>;
+        short MultiPress1<bgcolor=cGreen>;
+        short MultiPress2<bgcolor=cGreen>;
+        short DoubleSkill<bgcolor=cGreen>;
+        short DoubleSkill<bgcolor=cGreen>;
+        short unk<bgcolor=cRed>;
+        short PostHitSFX<bgcolor=cGreen>;
+        short StartUpSFX<bgcolor=cGreen>;
+        short CollisionSFX<bgcolor=cGreen>;
+        short Cost<bgcolor=cGreen>;
+        short CostEffect<bgcolor=cGreen>;
+        short ExtraCost<bgcolor=cGreen>;
+        short HealthCost<bgcolor=cGreen>;
+        short SkillUses<bgcolor=cGreen>;
+        short SkillUsageUnk<bgcolor=cRed>;
+        short SkillUsageUnk<bgcolor=cRed>;
+        short SkillUsageUnk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short SelfEffect<bgcolor=cGreen>;
+        short unk<bgcolor=cRed>;
+        short Requirements<bgcolor=cGreen>;
+        short ReqAmount<bgcolor=cGreen>;
+        short GroundAirBoth<bgcolor=cGreen>; // 00 00, 01 00, or 02 00
+        short SkillButtonEffect<bgcolor=cRed>; // ???
+        short unk<bgcolor=cRed>;
+        short AppliedStatusID<bgcolor=cGreen>;
+        short Restriction<bgcolor=cGreen>;
+        short StrengthEffect<bgcolor=cGreen>;
+        short Damage<bgcolor=cBlue>;
+        short EffectDuration<bgcolor=cGreen>; // Misc effects?
+        short TargetHand<bgcolor=cGreen>; // Hand-in-hand with HitEffectSkills
+        short unk<bgcolor=cRed>;
+        short HitEffectSkills<bgcolor=cGreen>; // 01 = Erase skill on hit. Only used on Lightning Sword in vanilla.
+        short Increase<bgcolor=cGreen>; // 09 = Health, 0B = Lvl (Increase = atk)
+        byte StatusEnabler<bgcolor=cBlue>; // Status ID won't apply unless this is 2C
+        byte StatusDuration<bgcolor=cBlue>; // Status ID Duration
+        short unk<bgcolor=cRed>;
+        short ProjectileProperties<bgcolor=cGreen>; // 02 = Penetrate Defense
+        short ProjectileID<bgcolor=cGreen>; // See spreadsheet.
+        short CollisionSkillID<bgcolor=cBlue>; // ???
+        short HomingRangeFirstHit<bgcolor=cGreen>;  // First hit
+        short HomingRangeSecondHit<bgcolor=cGreen>; // Knock down (if 0, no stagger at all)
+        short HomingRangeThirdHit<bgcolor=cGreen>;  // Combo end (removing this makes infinite range)
+        short unk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short unk<bgcolor=cRed>;
+        short unknown<bgcolor=cGreen>; // Downed Hit Animation
+        byte SkillDuration<bgcolor=cGreen>;
+        byte HitRange<bgcolor=cGreen>;
+        short ExpandSkillWidth<bgcolor=cGreen>;
+        short AnimationSize;
+        short ProjectileSpeed<bgcolor=cGreen>; // Can also be projectile rain count
+        short AccuracyID<bgcolor=cGreen>;
+        short AnimationHeight<bgcolor=cBlue>;
+        
+    }skilldata[751];
+} file;
