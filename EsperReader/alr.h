@@ -5,7 +5,7 @@
 
 using namespace std;
 
-typedef struct ALR_Header
+struct ALR_Header
 {
 	int ID;
 	int HeaderSize;
@@ -14,16 +14,16 @@ typedef struct ALR_Header
 	int InfoSectionsNum;
 	int Unknown;
 	char pad[8];
-}alr_header;
+};
 
-typedef struct ALR_Block015
+struct ALR_Block015
 {
 	int ID;
 	int BlockSize;
 	int InfoSectionsNum;
-}alr_block015;
+};
 
-typedef struct ALR_DataBlock015
+struct ALR_DataBlock015
 {
 	int Flags; // Usually 01 00 04 00
 	int Unknown1; // Maybe some sort of pointer???
@@ -35,7 +35,7 @@ typedef struct ALR_DataBlock015
 	// the game's memory for this single word and only get matches from the ALR data.
 	int ID;
 	int Unknown4;
-}alr_datablock015;
+};
 
 int ParseAlrHeader(fstream& BinaryALR, char* filename);
 int ParseBlock15_ALR(fstream& BinaryALR, char* filename);

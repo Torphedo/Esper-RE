@@ -2,7 +2,7 @@
 
 int ParseAlrHeader(fstream& BinaryALR, char* filename)
 {
-	alr_header Header;
+	ALR_Header Header;
 
 	BinaryALR.open(filename, ios::in | ios::binary);  // Open file
 	BinaryALR.read((char*)&Header, (sizeof(Header))); // Read bytes into ALR_Header struct
@@ -55,7 +55,7 @@ int ParseAlrHeader(fstream& BinaryALR, char* filename)
 
 int ParseBlock15_ALR(fstream& BinaryALR, char* filename)
 {
-	alr_block015 Block15;
+	ALR_Block015 Block15;
 	BinaryALR.read((char*)&Block15, (sizeof(Block15))); // Read bytes into ALR_Block015 struct
 
 	// Print file data
@@ -64,7 +64,7 @@ int ParseBlock15_ALR(fstream& BinaryALR, char* filename)
 	cout << "\nBlock Size: " << Block15.BlockSize << " bytes";
 	cout << "\nData Block Array Size: " << Block15.InfoSectionsNum;
 
-	alr_datablock015 DataBlock15;
+	ALR_DataBlock015 DataBlock15;
 	for (int n = 0; n < Block15.InfoSectionsNum; n++)
 	{
 		cout << "\n\n----- Data Block " << n << " -----\n" << hex;

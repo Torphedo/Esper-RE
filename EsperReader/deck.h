@@ -4,7 +4,7 @@
 
 using namespace std;
 
-typedef struct Deck
+struct Deck
 {
 	char Header[4];
 	char Name[16];
@@ -15,23 +15,23 @@ typedef struct Deck
 	int MissionAttempts;
 	int MultiplayerWins;
 	int MultiplayerWinRate;
-}deckbin;
+};
 
 void ParseDeckFile(char* filename)
 {
 	fstream DeckBinary;
-	deckbin deck;
+	Deck deckbin;
 
 	DeckBinary.open(filename, ios::in | ios::binary); // Open file
-	DeckBinary.read((char*)&deck, (sizeof(deck)));    // Read bytes into deck struct
+	DeckBinary.read((char*)&deckbin, (sizeof(deckbin)));    // Read bytes into deckbin struct
 
-	cout << "Name: " << deck.Name;
-	cout << "\nSchool Count: " << deck.SchoolCount;
-	cout << "\nUnknown Metadata: " << deck.Metadata;
-	cout << "\nMission Clears: " << deck.MissionClears;
-	cout << "\nMission Attempts: " << deck.MissionAttempts;
-	cout << "\nMultiplayer Wins: " << deck.MultiplayerWins;
-	cout << "\nMultiplayer Win Rate: " << deck.MultiplayerWinRate << "%\n";
+	cout << "Name: " << deckbin.Name;
+	cout << "\nSchool Count: " << deckbin.SchoolCount;
+	cout << "\nUnknown Metadata: " << deckbin.Metadata;
+	cout << "\nMission Clears: " << deckbin.MissionClears;
+	cout << "\nMission Attempts: " << deckbin.MissionAttempts;
+	cout << "\nMultiplayer Wins: " << deckbin.MultiplayerWins;
+	cout << "\nMultiplayer Win Rate: " << deckbin.MultiplayerWinRate << "%\n";
 
 	for (int n = 0; n < 30; n++)
 	{
@@ -47,17 +47,17 @@ void ParseDeckFile(char* filename)
 			cout << ":  ";
 		}
 
-		if (deck.CardData[n] == -1)
+		if (deckbin.CardData[n] == -1)
 		{
 			cout << "Aura Particle";
 		}
-		else if (deck.CardData[n] >= 394) // IDs 394 - 499 are all copies of Psycho Wave
+		else if (deckbin.CardData[n] >= 394) // IDs 394 - 499 are all copies of Psycho Wave
 		{
 			cout << "Psycho Wave";
 		}
 		else
 		{
-			cout << SkillIDs[deck.CardData[n]]; // Print skill name from string array by ID
+			cout << SkillIDs[deckbin.CardData[n]]; // Print skill name from string array by ID
 		}
 	}
 
