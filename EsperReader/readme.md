@@ -1,11 +1,10 @@
 # Esper Reader
-This is a tool written in C++ to parse files from Phantom Dust. Right now, it only supports the most basic file format, deck files. I plan to support
-parsing and maybe dumping of data from many other formats, such as ALR and SSB. Parsers will all be in separate source files, with the main function
-simply figuring out which parser to use. Since there's only 1 parser right now (and deck files have no file extension or magic), it just goes straight
-to deck parsing. Contributions are welcome.
+This is a tool written in C++ to parse files from Phantom Dust. Right now, it only supports deck files, and some basic elements of ALR. I plan to support
+parsing and maybe dumping of data from SSB in the future. Parsers will all be in separate source files, with the main function
+simply figuring out which parser to use. Contributions are welcome.
 
 ## Usage
-Drag and drop any binary deck file onto EsperReader.exe.
+Drag and drop any binary deck file or ALR file onto EsperReader.exe.
 
 ## Building
 If you want debugging to work, you'll need to create a `decks` folder in the project directory, then copy in `DECK_PLAYER_0` from `Assets/Data/com/deck`
