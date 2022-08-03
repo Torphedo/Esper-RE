@@ -19,13 +19,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src/alr.h">
+    <ClInclude Include="include\alr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src/deck.h">
+    <ClInclude Include="include\deck.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src/deckSkillNames.h">
+    <ClInclude Include="include\deckSkillNames.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

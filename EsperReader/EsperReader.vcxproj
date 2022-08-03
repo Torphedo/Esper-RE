@@ -160,9 +160,9 @@
     <ClCompile Include="src/main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src/alr.h" />
-    <ClInclude Include="src/deck.h" />
-    <ClInclude Include="src/deckSkillNames.h" />
+    <ClInclude Include="include\alr.h" />
+    <ClInclude Include="include\deck.h" />
+    <ClInclude Include="include\deckSkillNames.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
