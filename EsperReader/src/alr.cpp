@@ -1,4 +1,4 @@
-#include "alr.h"
+#include <alr.h>
 
 int ParseAlrHeader(fstream& BinaryALR, char* filename)
 {

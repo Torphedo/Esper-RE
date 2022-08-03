@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
-#include "deckSkillNames.h"
+
+#include <deckSkillNames.h>
 
 using namespace std;
 

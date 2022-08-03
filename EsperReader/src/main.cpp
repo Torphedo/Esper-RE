@@ -2,8 +2,9 @@
 #include <string>
 #include <iostream>
 #include <conio.h>
-#include "deck.h"
-#include "alr.h"
+
+#include <deck.h>
+#include <alr.h>
 using namespace std;
 
 int main(int argc, char* argv[])
