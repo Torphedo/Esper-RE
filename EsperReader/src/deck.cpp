@@ -1,4 +1,5 @@
 #include <deck.h>
+#include <deckSkillNames.h>
 
 void ParseDeckFile(char* filename)
 {
