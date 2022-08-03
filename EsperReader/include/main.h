@@ -7,6 +7,4 @@
 #include <vector>
 #include <iomanip>
 
-#include <deck.h>
-#include <alr.h>
 using namespace std;

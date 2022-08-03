@@ -1,4 +1,6 @@
 #include <main.h>
+#include <deck.h>
+#include <alr.h>
 
 int main(int argc, char* argv[])
 {
