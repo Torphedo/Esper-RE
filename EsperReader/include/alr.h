@@ -1,9 +1,4 @@
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <iomanip>
-
-using namespace std;
+#include <main.h>
 
 struct ALR_Header
 {

@@ -1,11 +1,4 @@
-#include <sys/stat.h>
-#include <string>
-#include <iostream>
-#include <conio.h>
-
-#include <deck.h>
-#include <alr.h>
-using namespace std;
+#include <main.h>
 
 int main(int argc, char* argv[])
 {
