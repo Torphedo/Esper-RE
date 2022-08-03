@@ -9,14 +9,14 @@ using namespace std;
 int main(int argc, char* argv[])
 {
 	struct stat meta;
-	string file_path = argv[1];
 
-	if (argc != 2)
+	if (argc < 2)
 	{
 		cout << "Please drag & drop a Phantom Dust deck file or ALR file onto the program.\nPress any key to exit.\n";
 		char dummy = _getch();
 		return -1;
 	}
+	string file_path = argv[1];
 
 	stat(argv[1], &meta);
 	cout << "The size of " << argv[1] << " is " << meta.st_size << " bytes.\n\n";
