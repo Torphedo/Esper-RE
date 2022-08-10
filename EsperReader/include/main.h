@@ -6,5 +6,9 @@
 #include <fstream>
 #include <vector>
 #include <iomanip>
+#include <shobjidl.h>
 
 using namespace std;
+
+extern char* filepathptr;
+extern string filepath;

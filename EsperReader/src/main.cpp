@@ -1,37 +1,38 @@
 #include <main.h>
 #include <deck.h>
 #include <alr.h>
+#include <winAPI.h>
 
-int main(int argc, char* argv[])
+char* filepathptr;
+string filepath;
+
+int main()
 {
-	if (argc < 2)
+	if (FileSelectDialog(fileTypes) != -1)
 	{
-		cout << "Please drag & drop a Phantom Dust deck file or ALR file onto the program.\nPress any key to exit.\n";
-		char dummy = _getch();
-		return -1;
-	}
-	else
-	{
-		string file_path = argv[1];
 
 		// Get file extension
-		size_t i = file_path.rfind('.', file_path.length());
-		string FileExtension = file_path.substr(i + 1, file_path.length() - i);
+		size_t i = filepath.rfind('.', filepath.length());
+		string FileExtension = filepath.substr(i + 1, filepath.length() - i);
 
 		if (FileExtension == "alr")
 		{
 			struct stat meta;
-			stat(argv[1], &meta);
-			cout << "The size of " << argv[1] << " is " << meta.st_size << " bytes.\n\n";
-			ParseAlrFile(argv[1]);
+			stat(filepathptr, &meta);
+			cout << "The size of " << filepath << " is " << meta.st_size << " bytes.\n\n";
+			ParseAlrFile(filepathptr);
 		}
 		else
 		{
-			ParseDeckFile(argv[1]);
+			ParseDeckFile(filepathptr);
 		}
 
 		cout << "\n\nPress any key to exit.\n";
-		char dummy = _getch();
+		char _dummy = _getch();
+		return 0;
 	}
-	return 1;
+	else
+	{
+		return 1;
+	}
 }
