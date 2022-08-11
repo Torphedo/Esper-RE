@@ -8,7 +8,5 @@
 #include <iomanip>
 #include <shobjidl.h>
 
-using namespace std;
-
 extern char* filepathptr;
-extern string filepath;
+extern std::string filepath;

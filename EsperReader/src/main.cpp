@@ -4,7 +4,7 @@
 #include <winAPI.h>
 
 char* filepathptr;
-string filepath;
+std::string filepath;
 
 int main()
 {
@@ -13,13 +13,13 @@ int main()
 
 		// Get file extension
 		size_t i = filepath.rfind('.', filepath.length());
-		string FileExtension = filepath.substr(i + 1, filepath.length() - i);
+		std::string FileExtension = filepath.substr(i + 1, filepath.length() - i);
 
 		if (FileExtension == "alr")
 		{
 			struct stat meta;
 			stat(filepathptr, &meta);
-			cout << "The size of " << filepath << " is " << meta.st_size << " bytes.\n\n";
+			std::cout << "The size of " << filepath << " is " << meta.st_size << " bytes.\n\n";
 			ParseAlrFile(filepathptr);
 		}
 		else
@@ -27,7 +27,7 @@ int main()
 			ParseDeckFile(filepathptr);
 		}
 
-		cout << "\n\nPress any key to exit.\n";
+		std::cout << "\n\nPress any key to exit.\n";
 		char _dummy = _getch();
 		return 0;
 	}

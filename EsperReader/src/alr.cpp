@@ -1,6 +1,7 @@
 #include <alr.h>
+using std::ios, std::cout, std::dec, std::hex, std::setfill, std::setw;
 
-int ParseAlrHeader(fstream& BinaryALR, char* filename)
+int ParseAlrHeader(std::fstream& BinaryALR, char* filename)
 {
 	ALR_Header Header;
 
@@ -53,7 +54,7 @@ int ParseAlrHeader(fstream& BinaryALR, char* filename)
 	return 1;
 }
 
-int ParseBlock15_ALR(fstream& BinaryALR, char* filename)
+int ParseBlock15_ALR(std::fstream& BinaryALR, char* filename)
 {
 	ALR_Block015 Block15;
 	BinaryALR.read((char*)&Block15, (sizeof(Block15))); // Read bytes into ALR_Block015 struct
@@ -80,14 +81,14 @@ int ParseBlock15_ALR(fstream& BinaryALR, char* filename)
 	return 1;
 }
 
-int ParseBlock05_ALR(fstream& BinaryALR, char* filename)
+int ParseBlock05_ALR(std::fstream& BinaryALR, char* filename)
 {
 	return 1;
 }
 
 void ParseAlrFile(char* filename)
 {
-	fstream AlrFile;
+	std::fstream AlrFile;
 	ParseAlrHeader(AlrFile, filename);
 	ParseBlock15_ALR(AlrFile, filename);
 	AlrFile.close();

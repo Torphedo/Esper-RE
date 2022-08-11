@@ -6,8 +6,8 @@
 
 // ===== Windows File Dialogs =====
 
-string PWSTR_to_string(PWSTR ws) {
-    string result;
+std::string PWSTR_to_string(PWSTR ws) {
+    std::string result;
     result.reserve(wcslen(ws));
     for (; *ws; ws++)
         result += (char)*ws;

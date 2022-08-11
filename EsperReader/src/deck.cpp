@@ -1,9 +1,11 @@
 #include <deck.h>
 #include <deckSkillNames.h>
 
+using std::cout, std::ios, std::setw, std::setfill;
+
 void ParseDeckFile(char* filename)
 {
-	fstream DeckBinary;
+	std::fstream DeckBinary;
 	Deck deckbin;
 
 	DeckBinary.open(filename, ios::in | ios::binary); // Open file
@@ -17,7 +19,7 @@ void ParseDeckFile(char* filename)
 	cout << "\nMultiplayer Wins: " << deckbin.MultiplayerWins;
 	cout << "\nMultiplayer Win Rate: " << deckbin.MultiplayerWinRate << "%\n";
 
-	cout << "\n\n/////////////////////////////////////////////////////////////////////////////////" << endl;
+	cout << "\n\n/////////////////////////////////////////////////////////////////////////////////" << "\n";
 
 	for (int n = 0; n < 30; n++)
 	{
@@ -46,7 +48,7 @@ void ParseDeckFile(char* filename)
 		if (n % 2) { cout << "||" << "\n"; }
 	}
 
-	cout << "/////////////////////////////////////////////////////////////////////////////////" << endl;
+	cout << "/////////////////////////////////////////////////////////////////////////////////" << "\n";
 
 	DeckBinary.close();
 	return;

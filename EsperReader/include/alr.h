@@ -32,7 +32,7 @@ struct ALR_DataBlock015
 	int Unknown4;
 };
 
-int ParseAlrHeader(fstream& BinaryALR, char* filename);
-int ParseBlock15_ALR(fstream& BinaryALR, char* filename);
-int ParseBlock05_ALR(fstream& BinaryALR, char* filename);
+int ParseAlrHeader(std::fstream& BinaryALR, char* filename);
+int ParseBlock15_ALR(std::fstream& BinaryALR, char* filename);
+int ParseBlock05_ALR(std::fstream& BinaryALR, char* filename);
 void ParseAlrFile(char* filename);
