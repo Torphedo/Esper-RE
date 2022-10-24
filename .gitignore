@@ -1,6 +1,5 @@
 .vs/
 decks/
-alr/
-x64/
+CMakeSettings.json
+out/
 *.exe
-EsperReader\EsperReader.vcxproj.user

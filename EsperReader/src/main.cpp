@@ -1,6 +1,6 @@
-#include <main.h>
-#include <deck.h>
-#include <winAPI.h>
+#include "main.h"
+#include "deck.h"
+#include "winAPI.h"
 
 char* filepathptr;
 std::string filepath;
