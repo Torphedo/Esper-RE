@@ -150,13 +150,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src/alr.cpp" />
     <ClCompile Include="src/main.cpp" />
     <ClCompile Include="src\deck.cpp" />
     <ClCompile Include="src\winAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\alr.h" />
     <ClInclude Include="include\deck.h" />
     <ClInclude Include="include\deckSkillNames.h" />
     <ClInclude Include="include\main.h" />
