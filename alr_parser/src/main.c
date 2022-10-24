@@ -3,13 +3,15 @@
 
 #include "data_structures.h"
 
+static const char input_name[] = "bin/pc00a.alr";
+
 int main()
 {
-	header_t *header = malloc(sizeof(header_t));
-	if (header != NULL)
+	FILE* file = fopen(input_name, "rb");
+	if (file != NULL)
 	{
-		FILE* file = fopen("bin/pc00a.alr", "rb");
-		if (file != NULL)
+		header_t* header = malloc(sizeof(header_t));
+		if (header != NULL)
 		{
 			// Read header
 			fread(header, sizeof(header_t), 1, file);
@@ -21,7 +23,15 @@ int main()
 				printf("%u\n", header->pointer_array[i]);
 			}
 
-			fclose(file);
 		}
+		else {
+			printf("Failed to allocate memory for header!\n");
+		}
+		fclose(file);
 	}
+	else {
+		printf("Unable to open input file %s!\n", input_name);
+		return 1;
+	}
+	return 0;
 }
