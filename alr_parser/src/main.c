@@ -5,14 +5,23 @@
 
 int main()
 {
-	header header;
-	FILE* file = fopen("bin/pc00a.alr", "rb");
-	if (file != NULL)
+	header_t *header = malloc(sizeof(header_t));
+	if (header != NULL)
 	{
-		// Read header into easily addressable format
-		fread(&header, sizeof(header), 1, file);
-		fread(header.pointer_array, sizeof(unsigned int), header.pointer_array_size, file);
+		FILE* file = fopen("bin/pc00a.alr", "rb");
+		if (file != NULL)
+		{
+			// Read header
+			fread(header, sizeof(header_t), 1, file);
+			int result = realloc(header, sizeof(header_t) + (sizeof(unsigned int) * header->pointer_array_size));
+			fread(header->pointer_array, sizeof(unsigned int), header->pointer_array_size, file);
 
-		fclose(file);
+			for (int i = 0; i < header->pointer_array_size; i++)
+			{
+				printf("%u\n", header->pointer_array[i]);
+			}
+
+			fclose(file);
+		}
 	}
 }
