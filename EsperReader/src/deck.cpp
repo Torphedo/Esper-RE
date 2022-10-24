@@ -1,55 +1,56 @@
 #include <deck.h>
 #include <deckSkillNames.h>
 
-using std::cout, std::ios, std::setw, std::setfill;
-
 void ParseDeckFile(char* filename)
 {
-	std::fstream DeckBinary;
+	FILE* DeckBinary;
 	Deck deckbin;
 
-	DeckBinary.open(filename, ios::in | ios::binary); // Open file
-	DeckBinary.read((char*)&deckbin, (sizeof(deckbin)));    // Read bytes into deckbin struct
+	fopen_s(&DeckBinary, filename, "rb");
+	if (DeckBinary)
+	{
+		fread_s(&deckbin, 100, 100, 1, DeckBinary);
+		fclose(DeckBinary);
+	}
 
-	cout << "Name: " << deckbin.Name;
-	cout << "\nSchool Count: " << deckbin.SchoolCount;
-	cout << "\nUnknown Metadata: " << deckbin.Metadata;
-	cout << "\nMission Clears: " << deckbin.MissionClears;
-	cout << "\nMission Attempts: " << deckbin.MissionAttempts;
-	cout << "\nMultiplayer Wins: " << deckbin.MultiplayerWins;
-	cout << "\nMultiplayer Win Rate: " << deckbin.MultiplayerWinRate << "%\n";
+	printf("Name: %s\n", deckbin.Name);
+	printf("School Count: %hi\n", deckbin.SchoolCount);
+	printf("Unknown Metadata: %hi\n", deckbin.Metadata);
+	printf("Mission Clears: %i\n", deckbin.MissionClears);
+	printf("Mission Attempts: %i\n", deckbin.MissionAttempts);
+	printf("Multiplayer Wins: %i\n", deckbin.MultiplayerWins);
+	printf("Multiplayer Win Rate: %i%%", deckbin.MultiplayerWinRate);
 
-	cout << "\n\n/////////////////////////////////////////////////////////////////////////////////" << "\n";
+	printf("\n\n/////////////////////////////////////////////////////////////////////////////////\n");
 
 	for (int n = 0; n < 30; n++)
 	{
-		cout << "|| Card #" << (n + 1); // (n + 1) is used because the counter starts at 0, not 1
+		std::cout << "|| Card #" << (n + 1); // (n + 1) is used because the counter starts at 0, not 1
 
 		// Slightly different spacing to keep things aligned
-		if (n < 9) { cout << ":  "; }
-		else { cout << ": "; }
+		if (n < 9) { std::cout << ":  "; }
+		else { std::cout << ": "; }
 
 		int spacing = 32;
 
 		if (deckbin.CardData[n] == -1) {
-			cout << "Aura Particle";
+			std::cout << "Aura Particle";
 			spacing -= (int)SkillIDs[0].size();
 		}
 		else if (deckbin.CardData[n] >= 394) // IDs 394 - 499 are all copies of Psycho Wave
 		{
-			cout << "Psycho Wave";
+			std::cout << "Psycho Wave";
 			spacing -= (int)SkillIDs[394].size();
 		}
 		else {
-			cout << SkillIDs[deckbin.CardData[n]]; // Print skill name from string array by ID
+			std::cout << SkillIDs[deckbin.CardData[n]]; // Print skill name from string array by ID
 			spacing -= (int)SkillIDs[deckbin.CardData[n]].size();
 		}
-		cout << setw(spacing) << setfill(' ');
-		if (n % 2) { cout << "||" << "\n"; }
+		std::cout << std::setw(spacing) << std::setfill(' ');
+		if (n % 2) { std::cout << "||" << "\n"; }
 	}
 
-	cout << "/////////////////////////////////////////////////////////////////////////////////" << "\n";
+	printf("/////////////////////////////////////////////////////////////////////////////////\n");
 
-	DeckBinary.close();
 	return;
 }
