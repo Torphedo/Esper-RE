@@ -22,17 +22,6 @@ typedef struct {
 	unsigned int pointer_array[];
 }header_t;
 
-// This block of data is only found once, right after the header. Unlike the rest
-// of the data in the main ALR data section, this block is not listed in the header's
-// pointer array. This implies that it could be some sort of metadata about the
-// rest of the file.
-typedef struct {
-	unsigned int id; // 15 00 00 00
-	unsigned int block_size; // Total size in bytes of this block
-	unsigned int array_size;
-	block_sub_0x15 data[];
-}block_type_0x15;
-
 // Unknown array
 typedef struct {
 	unsigned int flags;
@@ -45,3 +34,14 @@ typedef struct {
 					 // has no duplicates in game memory. Search for this to find ALRs in memory.
 	unsigned int unknown3;
 }block_sub_0x15;
+
+// This block of data is only found once, right after the header. Unlike the rest
+// of the data in the main ALR data section, this block is not listed in the header's
+// pointer array. This implies that it could be some sort of metadata about the
+// rest of the file.
+typedef struct {
+	unsigned int id; // 15 00 00 00
+	unsigned int block_size; // Total size in bytes of this block
+	unsigned int array_size;
+	block_sub_0x15 data[];
+}block_type_0x15;
