@@ -19,8 +19,11 @@ typedef struct {
 	unsigned int pointer_array_size; // Number of elements in the pointer array
 	unsigned int unknown;
 	char pad[8];
-	unsigned int pointer_array[];
-}header_t;
+}header;
+
+typedef struct {
+	unsigned int* pointer_array; // Array of pointers to other data structures in the file
+}header_array;
 
 // Unknown array
 typedef struct {
