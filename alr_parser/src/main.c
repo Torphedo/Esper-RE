@@ -19,18 +19,32 @@ int main()
 		{
 			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, file);
 
-			for (int i = 0; i < header.pointer_array_size; i++)
+			// Write each large block of data to a separate file. 
+			// size - 1 is because we can't determine the size of the last block easily.
+			for (int i = 0; i < header.pointer_array_size - 1; i++)
 			{
-				// TODO: Jump to each pointer in the array and read data until the next pointer
-				// Dumping these larger sections of data as separate files may help RE efforts.
-				printf("%u\n", pointers.pointer_array[i]);
+				// This is fine because there's no user input and the filename is never > 15 characters
+				char filename[15];
+				sprintf(filename, "%u.bin", i);
+				FILE* dump = fopen(filename, "wb");
+
+				// Length between the current and next pointer
+				size_t size = pointers.pointer_array[i + 1] - pointers.pointer_array[i];
+				char* buffer = malloc(size);
+				if (buffer != NULL) {
+					fseek(file, pointers.pointer_array[i], SEEK_SET);
+					fread(buffer, size, 1, file);
+					fwrite(buffer, size, 1, dump);
+					free(buffer);
+				}
+
+				fclose(dump);
 			}
 		}
 		else {
 			printf("Failed to allocate for pointer array!\n");
 		}
+		fclose(file);
 	}
-
-	fclose(file);
 	return 0;
 }
