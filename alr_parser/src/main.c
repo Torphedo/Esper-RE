@@ -43,15 +43,22 @@ int main(int argc, char* argv[])
 			// size - 1 is because we can't determine the size of the last block easily.
 			if (header.pointer_array_size > 0)
 			{
-				for (int i = 0; i < header.pointer_array_size - 1; i++)
+				for (unsigned int i = 0; i < header.pointer_array_size; i++)
 				{
-					// This is fine because there's no user input and the filename is never > 15 characters
+					// There's no user input here and the filename is never > 15 characters
 					char filename[15];
 					sprintf(filename, "%u.bin", i);
 					FILE* dump = fopen(filename, "wb");
 
-					// Length between the current and next pointer
-					size_t size = pointers.pointer_array[i + 1] - pointers.pointer_array[i];
+					// Length between the current and next pointer. I'd prefer not to have
+					// an if statement in the loop like this, but this should work fine for now.
+					size_t size = 0;
+					if (i < header.pointer_array_size - 1) {
+						size = pointers.pointer_array[i + 1] - pointers.pointer_array[i];
+					}
+					else {
+						size = header.unknown_section_ptr - pointers.pointer_array[i];
+					}
 					char* buffer = malloc(size);
 					if (buffer != NULL) {
 						fseek(file, pointers.pointer_array[i], SEEK_SET);
