@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 			{
 				if (!(strcmp(argv[2], operations[i])))
 				{
-					(*operation_funcs[i]) (input_name);
+					(*operation_funcs[i]) (input_name, 0);
 				}
 			}
 		}
