@@ -23,21 +23,13 @@ int main(int argc, char* argv[])
 			exit(0);
 		}
 		if (argc > 2) {
-			char* operation_argument = malloc(strlen(argv[2]));
-			if (operation_argument != NULL) {
-				strcpy(operation_argument, argv[2]);
-				if (!(strcmp(argv[2], operations[0])))
-				{ 
-					dump_chunks(input_name);
-				}
-				else if (!(strcmp(argv[2], operations[1])))
-				{
-					parse_by_block(input_name);
-				}
+			if (!(strcmp(argv[2], operations[0])))
+			{ 
+				dump_chunks(input_name);
 			}
-			else {
-				printf("Failed to allocate memory for input filename!\n");
-				exit(0);
+			else if (!(strcmp(argv[2], operations[1])))
+			{
+				parse_by_block(input_name);
 			}
 		}
 		dump_chunks(input_name);
