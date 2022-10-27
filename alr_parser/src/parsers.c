@@ -4,7 +4,10 @@
 #include "data_structures.h"
 #include "parsers.h"
 
-void (*function_ptrs[23]) (char*, size_t, FILE*) = {
+// Array of function pointers. When an ALR block is read, it executes a function
+// using its ID as an index into this array. This is basically just a super
+// efficient switch statement for all blocks.
+void (*function_ptrs[23]) (FILE*, unsigned int) = {
 	dummy_function, // 0
 	dummy_function,
 	dummy_function,
@@ -86,6 +89,7 @@ void parse_by_block(char* alr_filename)
 {
 	header_t header = {0};
 	header_array pointers;
+
 	// Read header
 	FILE* alr = fopen(alr_filename, "rb");
 	fread(&header, sizeof(header_t), 1, alr);

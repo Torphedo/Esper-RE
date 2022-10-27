@@ -12,8 +12,3 @@ int dump_chunks(char* alr_filename);
 void parse_by_block(char* alr_filename);
 void texture_description(FILE* alr_stream, unsigned int texture_buffer_ptr);
 void dummy_function(FILE* alr, unsigned int texture_buffer_ptr);
-
-// Array of function pointers. When an ALR block is read, it executes a function
-// using its ID as an index into this array. This is basically just a super
-// efficient switch statement for all blocks.
-void (*function_ptrs[23]) (FILE*, unsigned int);
