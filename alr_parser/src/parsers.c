@@ -4,35 +4,7 @@
 #include "data_structures.h"
 #include "parsers.h"
 
-// Array of function pointers. When an ALR block is read, it executes a function
-// using its ID as an index into this array. This is basically just a super
-// efficient switch statement for all blocks.
-void (*function_ptrs[23]) (FILE*, unsigned int) = {
-	skip_block, // 0
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block, // 5
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block, // 0xA
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	texture_description, // 0x10
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block, // 0x15
-	skip_block
-};
-
+// Writes each distinct section of an ALR to separate files on disk
 int split_alr(char* alr_filename)
 {
 	FILE* alr = fopen(alr_filename, "rb");
@@ -85,7 +57,36 @@ int split_alr(char* alr_filename)
 	}
 }
 
-void parse_by_block(char* alr_filename)
+// Array of function pointers. When an ALR block is read, it executes a function
+// using its ID as an index into this array. This is basically just a super
+// efficient switch statement for all blocks.
+void (*function_ptrs[23]) (FILE*, unsigned int) = {
+	skip_block, // 0
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block, // 5
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block, // 0xA
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	texture_description, // 0x10
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block, // 0x15
+	skip_block
+};
+
+void parse_by_block(char* alr_filename, unsigned int info_mode)
 {
 	header_t header = {0};
 	header_array pointers;
@@ -99,7 +100,6 @@ void parse_by_block(char* alr_filename)
 		{
 			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, alr);
 
-			// Write each large block of data to a separate file. 
 			if (header.pointer_array_size > 0)
 			{
 				for (unsigned int i = 0; i < header.pointer_array_size; i++)
