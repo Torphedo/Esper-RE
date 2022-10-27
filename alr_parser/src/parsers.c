@@ -60,7 +60,7 @@ int split_alr(char* alr_filename)
 // Array of function pointers. When an ALR block is read, it executes a function
 // using its ID as an index into this array. This is basically just a super
 // efficient switch statement for all blocks.
-void (*function_ptrs[23]) (FILE*, unsigned int) = {
+void (*function_ptrs[23]) (FILE*, unsigned int, unsigned int) = {
 	skip_block, // 0
 	skip_block,
 	skip_block,
@@ -100,6 +100,21 @@ void parse_by_block(char* alr_filename, unsigned int info_mode)
 		{
 			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, alr);
 
+			if (info_mode == 1) {
+				printf("=== ALR Info ===\nTexture Buffer Address: %x\nFile Count: %u\n",
+					header.unknown_section_ptr, header.pointer_array_size);
+				if (header.pointer_array_size > 0)
+				{
+					printf("\n=== File Addresses ===\n");
+					for (unsigned int i = 0; i < header.pointer_array_size; i++)
+					{
+						printf("%u: %x\n", i, pointers.pointer_array[i]);
+					}
+					
+				}
+				printf("\n");
+			}
+
 			if (header.pointer_array_size > 0)
 			{
 				for (unsigned int i = 0; i < header.pointer_array_size; i++)
@@ -109,7 +124,7 @@ void parse_by_block(char* alr_filename, unsigned int info_mode)
 					fread(&current_block_id, sizeof(unsigned int), 1, alr);
 					while (current_block_id != 0)
 					{
-						(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr);
+						(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr, info_mode);
 						fread(&current_block_id, sizeof(unsigned int), 1, alr);
 					}
 				}
@@ -120,7 +135,7 @@ void parse_by_block(char* alr_filename, unsigned int info_mode)
 }
 
 // Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
-void texture_description(FILE* alr, unsigned int texture_buffer_ptr)
+void texture_description(FILE* alr, unsigned int texture_buffer_ptr, unsigned int info_mode)
 {
 	// TGA header with all relevant settings until the shorts for width & height.
 	static const char tga_header[12] = {
@@ -149,40 +164,44 @@ void texture_description(FILE* alr, unsigned int texture_buffer_ptr)
 	// next section in a more useful format representable as a struct.
 	fseek(alr, header.image_array_size1 * 0x14, SEEK_CUR);
 
+	if (info_mode == 1) { printf("=== Texture Info ===\n"); }
 	for (unsigned int i = 0; i < header.image_array_size2; i++)
 	{
 		texture_header texture = { 0 };
 		fread(&texture, sizeof(texture_header), 1, alr);
 		printf("%s: Width %hi, Height %hi\n", texture.filename, texture.width, texture.height);
-		long cached_pos = ftell(alr); // Store current pos so we can jump to the pixel data
-		size_t texture_size = (size_t)texture.width * (size_t)texture.height * 4;
-		char* texture_data = malloc(texture_size);
-		if (texture_data != NULL) {
-			fseek(alr, texture_buffer_ptr, SEEK_SET); // Jump to texture buffer
-			fread(texture_data, texture_size, 1, alr);
+		if (info_mode == 0)
+		{
+			long cached_pos = ftell(alr); // Store current pos so we can jump to the pixel data
+			size_t texture_size = (size_t)texture.width * (size_t)texture.height * 4;
+			char* texture_data = malloc(texture_size);
+			if (texture_data != NULL) {
+				fseek(alr, texture_buffer_ptr, SEEK_SET); // Jump to texture buffer
+				fread(texture_data, texture_size, 1, alr);
 
-			// Writing out an uncompressed TGA file
-			FILE* tex_out = fopen(&texture.filename, "wb");
-			fwrite(&tga_header, sizeof(tga_header), 1, tex_out);
-			fwrite(&texture.width, sizeof(short), 1, tex_out);
-			fwrite(&texture.height, sizeof(short), 1, tex_out);
-			fwrite(&layout_settings, sizeof(layout_settings), 1, tex_out);
-			fwrite(texture_data, (size_t)texture.width * (size_t)texture.height * 4, 1, tex_out);
-			fclose(tex_out);
-			free(texture_data);
+				// Writing out an uncompressed TGA file
+				FILE* tex_out = fopen(&texture.filename, "wb");
+				fwrite(&tga_header, sizeof(tga_header), 1, tex_out);
+				fwrite(&texture.width, sizeof(short), 1, tex_out);
+				fwrite(&texture.height, sizeof(short), 1, tex_out);
+				fwrite(&layout_settings, sizeof(layout_settings), 1, tex_out);
+				fwrite(texture_data, (size_t)texture.width * (size_t)texture.height * 4, 1, tex_out);
+				fclose(tex_out);
+				free(texture_data);
+			}
+
+			fseek(alr, cached_pos, SEEK_SET);
+			// Increment texture buffer location so that the next read begins where we left off
+			texture_buffer_ptr += texture_size;
 		}
-		fseek(alr, cached_pos, SEEK_SET);
-		// Increment texture buffer location so that the next read begins where we left off
-		texture_buffer_ptr += texture_size;
 	}
 
 	fseek(alr, block_start_pos + header.size, SEEK_SET); // Set position to end of block
 }
 
 // Allows us to skip over any block that doesn't have a parser yet
-void skip_block(FILE* alr, unsigned int texture_buffer_ptr)
+void skip_block(FILE* alr, unsigned int texture_buffer_ptr, unsigned int info_mode)
 {
-	printf("Unimplemented block parser, skipping...\n");
 	unsigned int size = 0;
 	fread(&size, sizeof(unsigned int), 1, alr);
 	size -= sizeof(unsigned int) * 2;

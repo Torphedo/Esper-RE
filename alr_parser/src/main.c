@@ -5,14 +5,22 @@
 #include "data_structures.h"
 #include "parsers.h"
 
+// Thin wrapper around --dump to print out more info
+void info_dump(char* filename)
+{
+	parse_by_block(filename, 1);
+	return;
+}
+
 // Using a macro so it can be easily iterated over
-#define M_OPERATION_COUNT 2
+#define M_OPERATION_COUNT 3
 
 void (*operation_funcs[M_OPERATION_COUNT]) (char*) = {
 	split_alr,
-	parse_by_block
+	parse_by_block,
+	info_dump
 };
-static const char* operations[M_OPERATION_COUNT] = { "--split", "--dump" };
+static const char* operations[M_OPERATION_COUNT] = { "--split", "--dump", "--info"};
 
 static char* input_name;
 
@@ -38,7 +46,9 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-		(*operation_funcs[0]) (input_name);
+		else {
+			(*operation_funcs[0]) (input_name);
+		}
 	}
 	else {
 		printf("Please provide an input filename.\n");
