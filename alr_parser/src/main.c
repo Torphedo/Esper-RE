@@ -5,9 +5,16 @@
 #include "data_structures.h"
 #include "parsers.h"
 
-static char* input_name;
+// Using a macro so it can be easily iterated over
+#define M_OPERATION_COUNT 2
 
-static const char* operations[2] = { "--split", "--dump" };
+void (*operation_funcs[M_OPERATION_COUNT]) (char*) = {
+	dump_chunks,
+	parse_by_block
+};
+static const char* operations[M_OPERATION_COUNT] = { "--split", "--dump" };
+
+static char* input_name;
 
 int main(int argc, char* argv[])
 {
@@ -23,16 +30,15 @@ int main(int argc, char* argv[])
 			exit(0);
 		}
 		if (argc > 2) {
-			if (!(strcmp(argv[2], operations[0])))
-			{ 
-				dump_chunks(input_name);
-			}
-			else if (!(strcmp(argv[2], operations[1])))
+			for (unsigned int i = 0; i < M_OPERATION_COUNT; i++)
 			{
-				parse_by_block(input_name);
+				if (!(strcmp(argv[2], operations[i])))
+				{
+					(*operation_funcs[i]) (input_name);
+				}
 			}
 		}
-		dump_chunks(input_name);
+		(*operation_funcs[0]) (input_name);
 	}
 	else {
 		printf("Please provide an input filename.\n");
