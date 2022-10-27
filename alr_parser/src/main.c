@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "data_structures.h"
+#include "parsers.h"
 
 static char* input_name;
 
@@ -26,55 +27,6 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-
-	FILE* file = fopen(input_name, "rb");
-	if (file != NULL)
-	{
-		header header;
-		header_array pointers;
-		// Read header
-		fread(&header, sizeof(header), 1, file);
-		pointers.pointer_array = malloc(header.pointer_array_size * sizeof(unsigned int));
-		if (pointers.pointer_array != NULL)
-		{
-			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, file);
-
-			// Write each large block of data to a separate file. 
-			// size - 1 is because we can't determine the size of the last block easily.
-			if (header.pointer_array_size > 0)
-			{
-				for (unsigned int i = 0; i < header.pointer_array_size; i++)
-				{
-					// There's no user input here and the filename is never > 15 characters
-					char filename[15];
-					sprintf(filename, "%u.bin", i);
-					FILE* dump = fopen(filename, "wb");
-
-					// Length between the current and next pointer. I'd prefer not to have
-					// an if statement in the loop like this, but this should work fine for now.
-					size_t size = 0;
-					if (i < header.pointer_array_size - 1) {
-						size = pointers.pointer_array[i + 1] - pointers.pointer_array[i];
-					}
-					else {
-						size = header.unknown_section_ptr - pointers.pointer_array[i];
-					}
-					char* buffer = malloc(size);
-					if (buffer != NULL) {
-						fseek(file, pointers.pointer_array[i], SEEK_SET);
-						fread(buffer, size, 1, file);
-						fwrite(buffer, size, 1, dump);
-						free(buffer);
-					}
-
-					fclose(dump);
-				}
-			}
-		}
-		else {
-			printf("Failed to allocate for pointer array!\n");
-		}
-		fclose(file);
-	}
+	parse_by_block(input_name);
 	return 0;
 }
