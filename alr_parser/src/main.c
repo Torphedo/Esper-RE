@@ -7,6 +7,8 @@
 
 static char* input_name;
 
+static const char* operations[2] = { "--split", "--dump" };
+
 int main(int argc, char* argv[])
 {
 	// Parse command-line arguments.
@@ -20,6 +22,19 @@ int main(int argc, char* argv[])
 			printf("Failed to allocate memory for input filename!\n");
 			exit(0);
 		}
+		char* operation_argument = malloc(strlen(argv[2]));
+		if (operation_argument != NULL) {
+			strcpy(operation_argument, argv[2]);
+			if (!(strcmp(operation_argument, operations[0]))) { dump_chunks(input_name); }
+			else if (!(strcmp(operation_argument, operations[1]))) { parse_by_block(input_name); }
+			else {
+				dump_chunks(input_name);
+			}
+		}
+		else {
+			printf("Failed to allocate memory for input filename!\n");
+			exit(0);
+		}
 	}
 	else {
 		printf("Please provide an input fileame.\n");
@@ -27,6 +42,5 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	parse_by_block(input_name);
 	return 0;
 }
