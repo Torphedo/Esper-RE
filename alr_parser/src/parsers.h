@@ -11,4 +11,4 @@ int split_alr(char* alr_filename);
 // can find, such as textures.
 void parse_by_block(char* alr_filename);
 void texture_description(FILE* alr_stream, unsigned int texture_buffer_ptr);
-void generic_skip_block(FILE* alr, unsigned int texture_buffer_ptr);
+void skip_block(FILE* alr, unsigned int texture_buffer_ptr);

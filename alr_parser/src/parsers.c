@@ -35,17 +35,17 @@ void (*function_ptrs[23]) (FILE*, unsigned int) = {
 
 int split_alr(char* alr_filename)
 {
-	FILE* file = fopen(alr_filename, "rb");
-	if (file != NULL)
+	FILE* alr = fopen(alr_filename, "rb");
+	if (alr != NULL)
 	{
 		header_t header;
 		header_array pointers;
 		// Read header
-		fread(&header, sizeof(header_t), 1, file);
+		fread(&header, sizeof(header_t), 1, alr);
 		pointers.pointer_array = malloc(header.pointer_array_size * sizeof(unsigned int));
 		if (pointers.pointer_array != NULL)
 		{
-			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, file);
+			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, alr);
 
 			// Write each large block of data to a separate file. 
 			if (header.pointer_array_size > 0)
@@ -68,8 +68,8 @@ int split_alr(char* alr_filename)
 					}
 					char* buffer = malloc(size);
 					if (buffer != NULL) {
-						fseek(file, pointers.pointer_array[i], SEEK_SET);
-						fread(buffer, size, 1, file);
+						fseek(alr, pointers.pointer_array[i], SEEK_SET);
+						fread(buffer, size, 1, alr);
 						fwrite(buffer, size, 1, dump);
 						free(buffer);
 					}
@@ -81,7 +81,7 @@ int split_alr(char* alr_filename)
 		else {
 			printf("Failed to allocate for pointer array!\n");
 		}
-		fclose(file);
+		fclose(alr);
 	}
 }
 
@@ -92,27 +92,30 @@ void parse_by_block(char* alr_filename)
 
 	// Read header
 	FILE* alr = fopen(alr_filename, "rb");
-	fread(&header, sizeof(header_t), 1, alr);
-	pointers.pointer_array = malloc(header.pointer_array_size * sizeof(unsigned int));
-	if (pointers.pointer_array != NULL)
-	{
-		fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, alr);
-
-		// Write each large block of data to a separate file. 
-		if (header.pointer_array_size > 0)
+	if (alr != NULL) {
+		fread(&header, sizeof(header_t), 1, alr);
+		pointers.pointer_array = malloc(header.pointer_array_size * sizeof(unsigned int));
+		if (pointers.pointer_array != NULL)
 		{
-			for (unsigned int i = 0; i < header.pointer_array_size; i++)
+			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, alr);
+
+			// Write each large block of data to a separate file. 
+			if (header.pointer_array_size > 0)
 			{
-				fseek(alr, pointers.pointer_array[i], SEEK_SET);
-				unsigned int current_block_id = 0;
-				fread(&current_block_id, sizeof(unsigned int), 1, alr);
-				while (current_block_id != 0)
+				for (unsigned int i = 0; i < header.pointer_array_size; i++)
 				{
-					(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr);
+					fseek(alr, pointers.pointer_array[i], SEEK_SET);
+					unsigned int current_block_id = 0;
 					fread(&current_block_id, sizeof(unsigned int), 1, alr);
+					while (current_block_id != 0)
+					{
+						(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr);
+						fread(&current_block_id, sizeof(unsigned int), 1, alr);
+					}
 				}
 			}
 		}
+		fclose(alr);
 	}
 }
 
