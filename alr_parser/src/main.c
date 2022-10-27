@@ -22,19 +22,19 @@ int main(int argc, char* argv[])
 			printf("Failed to allocate memory for input filename!\n");
 			exit(0);
 		}
-		char* operation_argument = malloc(strlen(argv[2]));
-		if (operation_argument != NULL) {
-			strcpy(operation_argument, argv[2]);
-			if (!(strcmp(operation_argument, operations[0]))) { dump_chunks(input_name); }
-			else if (!(strcmp(operation_argument, operations[1]))) { parse_by_block(input_name); }
+		if (argc < 1) {
+			char* operation_argument = malloc(strlen(argv[2]));
+			if (operation_argument != NULL) {
+				strcpy(operation_argument, argv[2]);
+				if (!(strcmp(operation_argument, operations[0]))) { dump_chunks(input_name); }
+				else if (!(strcmp(operation_argument, operations[1]))) { parse_by_block(input_name); }
+			}
 			else {
-				dump_chunks(input_name);
+				printf("Failed to allocate memory for input filename!\n");
+				exit(0);
 			}
 		}
-		else {
-			printf("Failed to allocate memory for input filename!\n");
-			exit(0);
-		}
+		dump_chunks(input_name);
 	}
 	else {
 		printf("Please provide an input fileame.\n");
