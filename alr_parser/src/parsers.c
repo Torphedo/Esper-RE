@@ -8,32 +8,32 @@
 // using its ID as an index into this array. This is basically just a super
 // efficient switch statement for all blocks.
 void (*function_ptrs[23]) (FILE*, unsigned int) = {
-	dummy_function, // 0
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function, // 5
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function, // 0xA
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function,
+	skip_block, // 0
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block, // 5
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block, // 0xA
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
 	texture_description, // 0x10
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function,
-	dummy_function, // 0x15
-	dummy_function
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block,
+	skip_block, // 0x15
+	skip_block
 };
 
-int dump_chunks(char* alr_filename)
+int split_alr(char* alr_filename)
 {
 	FILE* file = fopen(alr_filename, "rb");
 	if (file != NULL)
@@ -177,7 +177,7 @@ void texture_description(FILE* alr, unsigned int texture_buffer_ptr)
 }
 
 // Allows us to skip over any block that doesn't have a parser yet
-void dummy_function(FILE* alr, unsigned int texture_buffer_ptr)
+void skip_block(FILE* alr, unsigned int texture_buffer_ptr)
 {
 	printf("Unimplemented block parser, skipping...\n");
 	unsigned int size = 0;

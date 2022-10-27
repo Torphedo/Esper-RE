@@ -9,7 +9,7 @@
 #define M_OPERATION_COUNT 2
 
 void (*operation_funcs[M_OPERATION_COUNT]) (char*) = {
-	dump_chunks,
+	split_alr,
 	parse_by_block
 };
 static const char* operations[M_OPERATION_COUNT] = { "--split", "--dump" };
