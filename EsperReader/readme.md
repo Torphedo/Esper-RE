@@ -1,7 +1,6 @@
 # Esper Reader
-This is a tool written in C++ to parse files from Phantom Dust. Right now, it only supports deck files, and some basic elements of ALR. I plan to support
-parsing and maybe dumping of data from SSB in the future. Parsers will all be in separate source files, with the main function
-simply figuring out which parser to use. Contributions are welcome.
+This is a tool written in C++ to parse basic files from Phantom Dust. It was originally planned to support
+multiple formats, but code for those other formats has been moved to other projects (see the `alr_parser` folder in this repository).
 
 ## Usage
-Drag and drop any binary deck file or ALR file onto EsperReader.exe.
+Run `EsperReader.exe`, then select a deck file from the file explorer popup.
