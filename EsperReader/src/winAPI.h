@@ -1,5 +1,6 @@
 #pragma once
+#include <Windows.h>
 
-int WINAPI FileSelectDialog(const COMDLG_FILTERSPEC* fileTypes);
+extern std::string filepath;
 
-const COMDLG_FILTERSPEC fileTypes[] = { L"Deck File", L"*.*;", L"ALR File", L"*.alr;" };
+int WINAPI FileSelectDialog();

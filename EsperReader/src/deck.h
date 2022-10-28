@@ -1,8 +1,6 @@
 #pragma once
 
-#include "main.h"
-
-struct Deck
+typedef struct deck_t
 {
 	char Header[4];
 	char Name[16];
@@ -14,5 +12,3 @@ struct Deck
 	int MultiplayerWins;
 	int MultiplayerWinRate;
 };
-
-void ParseDeckFile(char* filename);

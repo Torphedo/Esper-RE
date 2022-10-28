@@ -1,8 +1,7 @@
-#include <Windows.h>
 #include <shobjidl.h>
+#include <string>
 
 #include "winAPI.h"
-#include "main.h"
 
 // ===== Windows File Dialogs =====
 
@@ -14,10 +13,11 @@ std::string PWSTR_to_string(PWSTR ws) {
     return result;
 }
 
-int WINAPI FileSelectDialog(const COMDLG_FILTERSPEC* fileTypes)
+int WINAPI FileSelectDialog()
 {
     HRESULT hr;
     IFileOpenDialog* pFileOpen;
+    const COMDLG_FILTERSPEC fileTypes[] = { L"Deck File", L"*.*;" };
 
     hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
@@ -27,7 +27,7 @@ int WINAPI FileSelectDialog(const COMDLG_FILTERSPEC* fileTypes)
     if (SUCCEEDED(hr))
     {
         // Show the Open dialog box.
-        hr = pFileOpen->SetFileTypes(2, fileTypes);
+        hr = pFileOpen->SetFileTypes(1, fileTypes);
         hr = pFileOpen->Show(NULL);
 
         // Get the file name from the dialog box.
@@ -48,7 +48,6 @@ int WINAPI FileSelectDialog(const COMDLG_FILTERSPEC* fileTypes)
                 if (SUCCEEDED(hr))
                 {
                     filepath = PWSTR_to_string(pszFilePath);
-                    filepathptr = const_cast<char*>(filepath.c_str());
                     CoTaskMemFree(pszFilePath);
                 }
                 pItem->Release();
