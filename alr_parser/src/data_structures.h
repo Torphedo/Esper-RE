@@ -37,17 +37,22 @@ typedef struct {
 }anim_header;
 
 typedef struct {
-	float index; // I don't know why they would use floats for this, but it appears to match up...
-	float value1;
-	float value2;
-	float value3;
+	float index; // I don't know why they would use floats for indices, but it seems like that's what they did...
+	float X;
 }anim_array_type1;
 
 typedef struct {
-	float index; // I don't know why they would use floats for this, but it appears to match up...
-	float value1;
-	float value2;
+	float index;
+	float X;
+	float Y;
 }anim_array_type2;
+
+typedef struct {
+	float index;
+	float X;
+	float Y;
+	float Z;
+}anim_array_type3;
 
 // The header of an 0x10 ALR block.
 typedef struct {

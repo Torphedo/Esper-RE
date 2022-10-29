@@ -157,31 +157,42 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
 	// We subtract 4 because 4 bytes were already read for the block ID
-	printf("Start of new animation block.\n\n");
+	printf("=== Animation Block ===\n\n");
 	long block_start_pos = ftell(alr) - 4;
 	anim_header header = { 0 };
 	fread(&header, sizeof(anim_header), 1, alr);
-	if (header.settings2 == 0x000C0200) {
+
+	if (header.settings2 == 0x00080500) {
+		anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
+		if (float_array != NULL) {
+			fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
+			for (unsigned int i = 0; i < header.ArraySize1; i++) {
+				printf("%u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
+			}
+			free(float_array);
+		}
+	}
+	else if (header.settings2 == 0x000C0200) {
 		anim_array_type2* float_array = calloc(header.ArraySize1, sizeof(anim_array_type2));
 		if (float_array != NULL) {
 			fread(float_array, sizeof(anim_array_type2), header.ArraySize1, alr);
 			for (unsigned int i = 0; i < header.ArraySize1; i++) {
-				printf("%u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].value1, float_array[i].value2);
+				printf("%u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
 			}
 			free(float_array);
 		}
 	}
 	else if (header.settings2 == 0x00100007) {
-		anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
+		anim_array_type3* float_array = calloc(header.ArraySize1, sizeof(anim_array_type3));
 		if (float_array != NULL) {
-			fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
+			fread(float_array, sizeof(anim_array_type3), header.ArraySize1, alr);
 			for (unsigned int i = 0; i < header.ArraySize1; i++) {
-				printf("%u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].value1, float_array[i].value2, float_array[i].value3);
+				printf("%u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
 			}
 			free(float_array);
 		}
 	}
-	printf("\n\n0x%x\n\n", ftell(alr));
+	printf("New offset: 0x%x\n\n", ftell(alr));
 }
 
 // Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
