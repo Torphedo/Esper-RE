@@ -6,16 +6,16 @@
 #include "parsers.h"
 
 // Thin wrapper around --dump to print out more info
-void info_dump(char* filename)
+bool info_dump(char* filename)
 {
 	parse_by_block(filename, 1);
-	return;
+	return true;
 }
 
 // Using a macro so it can be easily iterated over
 #define M_OPERATION_COUNT 3
 
-void (*operation_funcs[M_OPERATION_COUNT]) (char*) = {
+bool (*operation_funcs[M_OPERATION_COUNT]) (char*) = {
 	split_alr,
 	parse_by_block,
 	info_dump

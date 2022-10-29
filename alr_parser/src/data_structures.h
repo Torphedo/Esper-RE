@@ -25,6 +25,30 @@ typedef struct {
 	unsigned int* pointer_array; // Array of pointers to other data structures in the file
 }header_array;
 
+// The header for an 0x5 ALR block (meshes / animation)
+typedef struct {
+	unsigned int size;
+	float unknown_float; // This often matches the number of frames / vertices
+	unsigned int settings; // Appears to indicate what type of data is upcoming
+	unsigned int ArraySize1; // The block can have up to 3 arrays of numbered floats
+	unsigned int ArraySize2;
+	unsigned int ArraySize3;
+	unsigned int settings2;
+}anim_header;
+
+typedef struct {
+	float index; // I don't know why they would use floats for this, but it appears to match up...
+	float value1;
+	float value2;
+	float value3;
+}anim_array_type1;
+
+typedef struct {
+	float index; // I don't know why they would use floats for this, but it appears to match up...
+	float value1;
+	float value2;
+}anim_array_type2;
+
 // The header of an 0x10 ALR block.
 typedef struct {
 	unsigned int size;

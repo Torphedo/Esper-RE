@@ -5,7 +5,7 @@
 #include "parsers.h"
 
 // Writes each distinct section of an ALR to separate files on disk
-int split_alr(char* alr_filename)
+bool split_alr(char* alr_filename)
 {
 	FILE* alr = fopen(alr_filename, "rb");
 	if (alr != NULL)
@@ -49,24 +49,30 @@ int split_alr(char* alr_filename)
 					fclose(dump);
 				}
 			}
+			else {
+				printf("No file pointers found.\n");
+				return false;
+			}
 		}
 		else {
 			printf("Failed to allocate for pointer array!\n");
+			return false;
 		}
 		fclose(alr);
 	}
+	return true;
 }
 
 // Array of function pointers. When an ALR block is read, it executes a function
 // using its ID as an index into this array. This is basically just a super
 // efficient switch statement for all blocks.
 void (*function_ptrs[23]) (FILE*, unsigned int, unsigned int) = {
-	skip_block, // 0
+	skip_block, // 0x0
 	skip_block,
 	skip_block,
 	skip_block,
 	skip_block,
-	skip_block, // 5
+	parse_anim_or_model, // 0x5
 	skip_block,
 	skip_block,
 	skip_block,
@@ -86,7 +92,7 @@ void (*function_ptrs[23]) (FILE*, unsigned int, unsigned int) = {
 	skip_block
 };
 
-void parse_by_block(char* alr_filename, unsigned int info_mode)
+bool parse_by_block(char* alr_filename, bool info_mode)
 {
 	header_t header = {0};
 	header_array pointers;
@@ -100,7 +106,7 @@ void parse_by_block(char* alr_filename, unsigned int info_mode)
 		{
 			fread(pointers.pointer_array, sizeof(unsigned int), header.pointer_array_size, alr);
 
-			if (info_mode == 1) {
+			if (info_mode) {
 				printf("=== ALR Info ===\nTexture Buffer Address: %x\nFile Count: %u\n",
 					header.unknown_section_ptr, header.pointer_array_size);
 				if (header.pointer_array_size > 0)
@@ -125,17 +131,61 @@ void parse_by_block(char* alr_filename, unsigned int info_mode)
 					while (current_block_id != 0)
 					{
 						(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr, info_mode);
-						fread(&current_block_id, sizeof(unsigned int), 1, alr);
+						fread(&current_block_id, sizeof(unsigned int), 1, alr); // Read next block's ID
 					}
 				}
 			}
+			else {
+				printf("No file pointers found.\n");
+				return false;
+			}
+		}
+		else {
+			printf("Couldn't allocate pointer array.\n");
+			return false;
 		}
 		fclose(alr);
 	}
+	else {
+		printf("Couldn't open %s.\n", alr_filename);
+		return false;
+	}
+	return true;
+}
+
+// Reads 0x5 animation / mesh blocks
+void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
+{
+	// We subtract 4 because 4 bytes were already read for the block ID
+	printf("Start of new animation block.\n\n");
+	long block_start_pos = ftell(alr) - 4;
+	anim_header header = { 0 };
+	fread(&header, sizeof(anim_header), 1, alr);
+	if (header.settings2 == 0x000C0200) {
+		anim_array_type2* float_array = calloc(header.ArraySize1, sizeof(anim_array_type2));
+		if (float_array != NULL) {
+			fread(float_array, sizeof(anim_array_type2), header.ArraySize1, alr);
+			for (unsigned int i = 0; i < header.ArraySize1; i++) {
+				printf("%u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].value1, float_array[i].value2);
+			}
+			free(float_array);
+		}
+	}
+	else if (header.settings2 == 0x00100007) {
+		anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
+		if (float_array != NULL) {
+			fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
+			for (unsigned int i = 0; i < header.ArraySize1; i++) {
+				printf("%u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].value1, float_array[i].value2, float_array[i].value3);
+			}
+			free(float_array);
+		}
+	}
+	printf("\n\n0x%x\n\n", ftell(alr));
 }
 
 // Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
-void texture_description(FILE* alr, unsigned int texture_buffer_ptr, unsigned int info_mode)
+void texture_description(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
 	// TGA header with all relevant settings until the shorts for width & height.
 	static const char tga_header[12] = {
@@ -164,13 +214,13 @@ void texture_description(FILE* alr, unsigned int texture_buffer_ptr, unsigned in
 	// next section in a more useful format representable as a struct.
 	fseek(alr, header.image_array_size1 * 0x14, SEEK_CUR);
 
-	if (info_mode == 1) { printf("=== Texture Info ===\n"); }
+	if (info_mode) { printf("=== Texture Info ===\n"); }
 	for (unsigned int i = 0; i < header.image_array_size2; i++)
 	{
 		texture_header texture = { 0 };
 		fread(&texture, sizeof(texture_header), 1, alr);
 		printf("%s: Width %hi, Height %hi\n", texture.filename, texture.width, texture.height);
-		if (info_mode == 0)
+		if (!info_mode)
 		{
 			long cached_pos = ftell(alr); // Store current pos so we can jump to the pixel data
 			size_t texture_size = (size_t)texture.width * (size_t)texture.height * 4;
@@ -200,7 +250,7 @@ void texture_description(FILE* alr, unsigned int texture_buffer_ptr, unsigned in
 }
 
 // Allows us to skip over any block that doesn't have a parser yet
-void skip_block(FILE* alr, unsigned int texture_buffer_ptr, unsigned int info_mode)
+void skip_block(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
 	unsigned int size = 0;
 	fread(&size, sizeof(unsigned int), 1, alr);
