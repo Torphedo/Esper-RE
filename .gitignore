@@ -1,5 +1,13 @@
+# IDE config files
 .vs/
-decks/
+.vscode/
+.fleet/
+.idea/
 CMakeSettings.json
+
+# Built binaries
 out/
 *.exe
+
+# Binary files outputted from the program
+*.bin
