@@ -162,36 +162,43 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 	anim_header header = { 0 };
 	fread(&header, sizeof(anim_header), 1, alr);
 
-	if (header.array_width_2 == 8) {
-		anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
-		if (float_array != NULL) {
-			fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
-			for (unsigned int i = 0; i < header.ArraySize1; i++) {
-				printf("%u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
+	switch (header.array_width_2) {
+		case 8: {
+			anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
+			if (float_array != NULL) {
+				fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
+				for (unsigned int i = 0; i < header.ArraySize1; i++) {
+					printf("%u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
+				}
+				free(float_array);
 			}
-			free(float_array);
+		}
+		case 12: {
+			anim_array_type2* float_array = calloc(header.ArraySize1, sizeof(anim_array_type2));
+			if (float_array != NULL) {
+				fread(float_array, sizeof(anim_array_type2), header.ArraySize1, alr);
+				for (unsigned int i = 0; i < header.ArraySize1; i++) {
+					printf("%u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
+				}
+				free(float_array);
+			}
+		}
+		case 16: {
+			anim_array_type3* float_array = calloc(header.ArraySize1, sizeof(anim_array_type3));
+			if (float_array != NULL) {
+				fread(float_array, sizeof(anim_array_type3), header.ArraySize1, alr);
+				for (unsigned int i = 0; i < header.ArraySize1; i++) {
+					printf("%u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
+				}
+				free(float_array);
+			}
+		}
+		default: {
+			printf("Unknown animation data structure: element size %hi\n", header.array_width_2);
+			exit(1);
 		}
 	}
-	else if (header.array_width_2 == 12) {
-		anim_array_type2* float_array = calloc(header.ArraySize1, sizeof(anim_array_type2));
-		if (float_array != NULL) {
-			fread(float_array, sizeof(anim_array_type2), header.ArraySize1, alr);
-			for (unsigned int i = 0; i < header.ArraySize1; i++) {
-				printf("%u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
-			}
-			free(float_array);
-		}
-	}
-	else if (header.array_width_2 == 16) {
-		anim_array_type3* float_array = calloc(header.ArraySize1, sizeof(anim_array_type3));
-		if (float_array != NULL) {
-			fread(float_array, sizeof(anim_array_type3), header.ArraySize1, alr);
-			for (unsigned int i = 0; i < header.ArraySize1; i++) {
-				printf("%u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
-			}
-			free(float_array);
-		}
-	}
+
 	if (header.ArraySize2 != 0) {
 		anim_array_type4* secondary_array = calloc(header.ArraySize2, sizeof(anim_array_type4));
 		if (secondary_array != NULL) {
