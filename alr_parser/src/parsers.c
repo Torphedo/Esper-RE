@@ -172,6 +172,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 				}
 				free(float_array);
 			}
+			break;
 		}
 		case 12: {
 			anim_array_type2* float_array = calloc(header.ArraySize1, sizeof(anim_array_type2));
@@ -182,6 +183,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 				}
 				free(float_array);
 			}
+			break;
 		}
 		case 16: {
 			anim_array_type3* float_array = calloc(header.ArraySize1, sizeof(anim_array_type3));
@@ -192,6 +194,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 				}
 				free(float_array);
 			}
+			break;
 		}
 		default: {
 			printf("Unknown animation data structure: element size %hi\n", header.array_width_2);
