@@ -31,11 +31,13 @@ typedef struct {
 typedef struct {
 	unsigned int size;
 	float unknown_float; // This often matches the number of frames / vertices
-	unsigned int settings; // Appears to indicate what type of data is upcoming
+	unsigned short unknown_settings1;
+	unsigned short array_width_1; // The number of bytes in each element of the first array
 	unsigned int ArraySize1; // The block can have up to 3 arrays of numbered floats
 	unsigned int ArraySize2;
-	unsigned int ArraySize3;
-	unsigned int settings2;
+	unsigned int ArraySize3; // This might actually be padding, since there's no third settings field.
+	unsigned short unknown_settings2;
+	unsigned short array_width_2;
 }anim_header;
 
 typedef struct {

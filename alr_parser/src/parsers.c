@@ -162,13 +162,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 	anim_header header = { 0 };
 	fread(&header, sizeof(anim_header), 1, alr);
 
-	// These numbers are probably more nuanced when parsed properly, but we're working on very limited information.
-	// Basically, this appears to indicate how many floats will be in the upcoming section.
-	static const long single_float_flag = 0x00080500;
-	static const long double_float_flag = 0x000C0200;
-	static const long triple_float_flag = 0x00100007;
-
-	if (header.settings2 == single_float_flag) {
+	if (header.array_width_2 == 8) {
 		anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
 		if (float_array != NULL) {
 			fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
@@ -178,7 +172,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			free(float_array);
 		}
 	}
-	else if (header.settings2 == double_float_flag) {
+	else if (header.array_width_2 == 12) {
 		anim_array_type2* float_array = calloc(header.ArraySize1, sizeof(anim_array_type2));
 		if (float_array != NULL) {
 			fread(float_array, sizeof(anim_array_type2), header.ArraySize1, alr);
@@ -188,7 +182,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			free(float_array);
 		}
 	}
-	else if (header.settings2 == triple_float_flag) {
+	else if (header.array_width_2 == 16) {
 		anim_array_type3* float_array = calloc(header.ArraySize1, sizeof(anim_array_type3));
 		if (float_array != NULL) {
 			fread(float_array, sizeof(anim_array_type3), header.ArraySize1, alr);
