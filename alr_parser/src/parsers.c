@@ -131,6 +131,7 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 					while (current_block_id != 0)
 					{
 						(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr, info_mode);
+						printf("Position after reading block: 0x%x\n\n", ftell(alr));
 						fread(&current_block_id, sizeof(unsigned int), 1, alr); // Read next block's ID
 					}
 				}
@@ -217,7 +218,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 				printf("\n");
 			}
 			free(secondary_array);
-			// There's an extra 0x00 byte here, maybe a null terminator?
+			// There's an extra 0x00 byte here, probably some sort of padding
 			fseek(alr, 1, SEEK_CUR);
 		}
 	}

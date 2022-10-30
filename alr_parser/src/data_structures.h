@@ -32,7 +32,7 @@ typedef struct {
 	unsigned int size;
 	float unknown_float; // This often matches the number of frames / vertices
 	unsigned short unknown_settings1;
-	unsigned short array_width_1; // The number of bytes in each element of the first array
+	unsigned short array_width_1; // The number of bytes in each element of the second array
 	unsigned int ArraySize1; // The block can have up to 3 arrays of numbered floats
 	unsigned int ArraySize2;
 	unsigned int ArraySize3; // This might actually be padding, since there's no third settings field.
