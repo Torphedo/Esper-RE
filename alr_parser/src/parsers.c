@@ -198,7 +198,22 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			free(float_array);
 		}
 	}
-	printf("New offset: 0x%x\n\n", ftell(alr));
+	if (header.ArraySize2 != 0) {
+		anim_array_type4* secondary_array = calloc(header.ArraySize2, sizeof(anim_array_type4));
+		if (secondary_array != NULL) {
+			fread(secondary_array, sizeof(anim_array_type4), header.ArraySize2, alr);
+			for (unsigned int i = 0; i < header.ArraySize2; i++)
+			{
+				printf("%u: ", secondary_array[i].index);
+				printf("%02hhx%02hhx ", secondary_array[i].unknown[0], secondary_array[i].unknown[1]);
+				printf("%02hhx%02hhx ", secondary_array[i].unknown[2], secondary_array[i].unknown[3]);
+				printf("%02hhx%02hhx\n", secondary_array[i].unknown[4], secondary_array[i].unknown[5]);
+			}
+			free(secondary_array);
+			// There's an extra 0x00 byte here, maybe a null terminator?
+			fseek(alr, 1, SEEK_CUR);
+		}
+	}
 }
 
 // Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
