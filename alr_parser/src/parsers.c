@@ -97,6 +97,10 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 	header_t header = {0};
 	header_array pointers;
 
+	if (info_mode == false) {
+		animation_out = fopen("animation_out.txt", "wb");
+	}
+
 	// Read header
 	FILE* alr = fopen(alr_filename, "rb");
 	if (alr != NULL) {
@@ -131,7 +135,6 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 					while (current_block_id != 0)
 					{
 						(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr, info_mode);
-						printf("Position after reading block: 0x%x\n\n", ftell(alr));
 						fread(&current_block_id, sizeof(unsigned int), 1, alr); // Read next block's ID
 					}
 				}
@@ -151,6 +154,9 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 		printf("Couldn't open %s.\n", alr_filename);
 		return false;
 	}
+	if (info_mode == false) {
+		fclose(animation_out);
+	}
 	return true;
 }
 
@@ -158,20 +164,27 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
 	// We subtract 4 because 4 bytes were already read for the block ID
-	printf("=== Animation Block ===\n\n");
+	if (info_mode == false) {
+		fprintf(animation_out, "\n=== Animation Block ===\n");
+	}
 	long block_start_pos = ftell(alr) - 4;
 	anim_header header = { 0 };
 	fread(&header, sizeof(anim_header), 1, alr);
 
 
-
-	switch (header.array_width_2) {
+	if (header.ArraySize1 > 0) {
+		if (info_mode == false) {
+			fprintf(animation_out, "Array Type 1 (animation frames):\n\n");
+		}
+		switch (header.array_width_2) {
 		case 8: {
 			anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
 			if (float_array != NULL) {
 				fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
-				for (unsigned int i = 0; i < header.ArraySize1; i++) {
-					printf("%02u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
+				if (info_mode == false) {
+					for (unsigned int i = 0; i < header.ArraySize1; i++) {
+						fprintf(animation_out, "%02u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
+					}
 				}
 				free(float_array);
 			}
@@ -181,8 +194,10 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			anim_array_type2* float_array = calloc(header.ArraySize1, sizeof(anim_array_type2));
 			if (float_array != NULL) {
 				fread(float_array, sizeof(anim_array_type2), header.ArraySize1, alr);
-				for (unsigned int i = 0; i < header.ArraySize1; i++) {
-					printf("%02u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
+				if (info_mode == false) {
+					for (unsigned int i = 0; i < header.ArraySize1; i++) {
+						fprintf(animation_out, "%02u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
+					}
 				}
 				free(float_array);
 			}
@@ -192,8 +207,10 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			anim_array_type3* float_array = calloc(header.ArraySize1, sizeof(anim_array_type3));
 			if (float_array != NULL) {
 				fread(float_array, sizeof(anim_array_type3), header.ArraySize1, alr);
-				for (unsigned int i = 0; i < header.ArraySize1; i++) {
-					printf("%02u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
+				if (info_mode == false) {
+					for (unsigned int i = 0; i < header.ArraySize1; i++) {
+						fprintf(animation_out, "%02u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
+					}
 				}
 				free(float_array);
 			}
@@ -203,19 +220,25 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			printf("Unknown animation data structure: element size %hi\n", header.array_width_2);
 			exit(1);
 		}
+		}
 	}
 
 	if (header.ArraySize2 != 0) {
+		if (info_mode == false) {
+			fprintf(animation_out, "\nArray Type 2 (unknown):\n");
+		}
 		char* secondary_array = calloc(header.ArraySize2, header.array_width_1);
 		if (secondary_array != NULL) {
 			fread(secondary_array, header.array_width_1, header.ArraySize2, alr);
-			for (unsigned int i = 0; i < header.ArraySize2; i++)
-			{
-				printf("%02u: ", (uint8_t) secondary_array[i * header.array_width_1]);
-				for (unsigned short j = 0; j < header.array_width_1 - 1; j++) {
-					printf("%02hhx ", secondary_array[i * header.array_width_1 + j + 1]);
+			if (info_mode == false) {
+				for (unsigned int i = 0; i < header.ArraySize2; i++)
+				{
+					fprintf(animation_out, "\n%02u: ", (uint8_t)secondary_array[i * header.array_width_1]);
+					for (unsigned short j = 0; j < header.array_width_1 - 1; j++) {
+						fprintf(animation_out, "%02hhx ", secondary_array[i * header.array_width_1 + j + 1]);
+					}
 				}
-				printf("\n");
+				fprintf(animation_out, "\n");
 			}
 			free(secondary_array);
 			// Skip over some bytes that pad to a multiple of 4 by skipping to the end of the block.
