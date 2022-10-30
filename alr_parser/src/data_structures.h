@@ -58,11 +58,6 @@ typedef struct {
 	float Z;
 }anim_array_type3;
 
-typedef struct {
-	uint8_t index;
-	char unknown[6]; // The 5th byte is often 0x0C or 0x0D, and the 6th byte is always 0xFF.
-}anim_array_type4;
-
 // The header of an 0x10 ALR block.
 typedef struct {
 	unsigned int size;

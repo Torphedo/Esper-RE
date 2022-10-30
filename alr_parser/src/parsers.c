@@ -162,13 +162,15 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 	anim_header header = { 0 };
 	fread(&header, sizeof(anim_header), 1, alr);
 
+
+
 	switch (header.array_width_2) {
 		case 8: {
 			anim_array_type1* float_array = calloc(header.ArraySize1, sizeof(anim_array_type1));
 			if (float_array != NULL) {
 				fread(float_array, sizeof(anim_array_type1), header.ArraySize1, alr);
 				for (unsigned int i = 0; i < header.ArraySize1; i++) {
-					printf("%u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
+					printf("%02u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
 				}
 				free(float_array);
 			}
@@ -179,7 +181,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			if (float_array != NULL) {
 				fread(float_array, sizeof(anim_array_type2), header.ArraySize1, alr);
 				for (unsigned int i = 0; i < header.ArraySize1; i++) {
-					printf("%u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
+					printf("%02u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
 				}
 				free(float_array);
 			}
@@ -190,7 +192,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 			if (float_array != NULL) {
 				fread(float_array, sizeof(anim_array_type3), header.ArraySize1, alr);
 				for (unsigned int i = 0; i < header.ArraySize1; i++) {
-					printf("%u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
+					printf("%02u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
 				}
 				free(float_array);
 			}
@@ -203,15 +205,16 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 	}
 
 	if (header.ArraySize2 != 0) {
-		anim_array_type4* secondary_array = calloc(header.ArraySize2, sizeof(anim_array_type4));
+		char* secondary_array = calloc(header.ArraySize2, header.array_width_1);
 		if (secondary_array != NULL) {
-			fread(secondary_array, sizeof(anim_array_type4), header.ArraySize2, alr);
+			fread(secondary_array, header.array_width_1, header.ArraySize2, alr);
 			for (unsigned int i = 0; i < header.ArraySize2; i++)
 			{
-				printf("%u: ", secondary_array[i].index);
-				printf("%02hhx%02hhx ", secondary_array[i].unknown[0], secondary_array[i].unknown[1]);
-				printf("%02hhx%02hhx ", secondary_array[i].unknown[2], secondary_array[i].unknown[3]);
-				printf("%02hhx%02hhx\n", secondary_array[i].unknown[4], secondary_array[i].unknown[5]);
+				printf("%02u: ", (uint8_t) secondary_array[i * header.array_width_1]);
+				for (unsigned short j = 0; j < header.array_width_1 - 1; j++) {
+					printf("%02hhx ", secondary_array[i * header.array_width_1 + j + 1]);
+				}
+				printf("\n");
 			}
 			free(secondary_array);
 			// There's an extra 0x00 byte here, maybe a null terminator?
