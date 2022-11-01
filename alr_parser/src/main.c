@@ -8,7 +8,7 @@
 // Thin wrapper around --dump to print out more info
 bool info_dump(char* filename)
 {
-	parse_by_block(filename, 1);
+	block_parse_all(filename, 1);
 	return true;
 }
 
@@ -17,7 +17,7 @@ bool info_dump(char* filename)
 
 bool (*operation_funcs[M_OPERATION_COUNT]) (char*) = {
 	split_alr,
-	parse_by_block,
+	block_parse_all,
 	info_dump
 };
 static const char* operations[M_OPERATION_COUNT] = { "--split", "--dump", "--info"};

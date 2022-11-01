@@ -67,32 +67,32 @@ bool split_alr(char* alr_filename)
 // using its ID as an index into this array. This is basically just a super
 // efficient switch statement for all blocks.
 void (*function_ptrs[23]) (FILE*, unsigned int, unsigned int) = {
-	skip_block, // 0x0
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	parse_anim_or_model, // 0x5
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block, // 0xA
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	texture_description, // 0x10
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block,
-	skip_block, // 0x15
-	skip_block
+	block_skip, // 0x0
+	block_skip,
+	block_skip,
+	block_skip,
+	block_skip,
+	block_animation, // 0x5
+	block_skip,
+	block_skip,
+	block_skip,
+	block_skip,
+	block_skip, // 0xA
+	block_skip,
+	block_skip,
+	block_skip,
+	block_skip,
+	block_skip,
+	block_texture, // 0x10
+	block_skip,
+	block_skip,
+	block_skip,
+	block_skip,
+	block_skip, // 0x15
+	block_skip
 };
 
-bool parse_by_block(char* alr_filename, bool info_mode)
+bool block_parse_all(char* alr_filename, bool info_mode)
 {
 	header_t header = {0};
 	header_array pointers;
@@ -134,6 +134,7 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 					fread(&current_block_id, sizeof(unsigned int), 1, alr);
 					while (current_block_id != 0)
 					{
+						printf("0x%x at 0x%x\n", current_block_id, ftell(alr) - 0x4);
 						(*function_ptrs[current_block_id]) (alr, header.unknown_section_ptr, info_mode);
 						fread(&current_block_id, sizeof(unsigned int), 1, alr); // Read next block's ID
 					}
@@ -161,7 +162,7 @@ bool parse_by_block(char* alr_filename, bool info_mode)
 }
 
 // Reads 0x5 animation / mesh blocks
-void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
+void block_animation(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
 	// We subtract 4 because 4 bytes were already read for the block ID
 	if (!info_mode) {
@@ -248,7 +249,7 @@ void parse_anim_or_model(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 }
 
 // Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
-void texture_description(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
+void block_texture(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
 	// TGA header with all relevant settings until the shorts for width & height.
 	static const char tga_header[12] = {
@@ -313,7 +314,7 @@ void texture_description(FILE* alr, unsigned int texture_buffer_ptr, bool info_m
 }
 
 // Allows us to skip over any block that doesn't have a parser yet
-void skip_block(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
+void block_skip(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
 	unsigned int size = 0;
 	fread(&size, sizeof(unsigned int), 1, alr);
