@@ -71,9 +71,9 @@ typedef struct {
 	char filename[32];
 	char padding[8];
 	float unknown[2]; // This always seems to be 1.0f
-	short width; // This was probably written as an int, but the TGA spec uses shorts here, so it should be fine.
+	unsigned short width; // This was probably written as an int, but the TGA spec uses shorts here, so it should be fine.
 	char pad[2];
-	short height;
+	unsigned short height;
 	char pad2[2];
 }texture_header;
 

@@ -164,10 +164,10 @@ bool block_parse_all(char* alr_filename, bool info_mode)
 // Reads 0x5 animation / mesh blocks
 void block_animation(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 {
-	// We subtract 4 because 4 bytes were already read for the block ID
 	if (!info_mode) {
 		fprintf(animation_out, "\n=== Animation Block ===\n");
 	}
+	// We subtract 4 because 4 bytes were already read for the block ID
 	long block_start_pos = ftell(alr) - 4;
 	anim_header header = { 0 };
 	fread(&header, sizeof(anim_header), 1, alr);
