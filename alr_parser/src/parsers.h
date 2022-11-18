@@ -7,7 +7,7 @@
 FILE* animation_out;
 
 // Writes each distinct section of an ALR to separate files on disk.
-bool split_alr(char* alr_filename);
+bool split_alr(char* alr_filename, bool info_mode);
 
 // Parses an ALR 1 block at a time. This will output any readable files it
 // can find, such as textures.

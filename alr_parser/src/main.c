@@ -6,7 +6,7 @@
 #include "parsers.h"
 
 // Thin wrapper around --dump to print out more info
-bool info_dump(char* filename)
+bool info_dump(char* filename, bool info_mode)
 {
 	block_parse_all(filename, 1);
 	return true;
@@ -15,7 +15,7 @@ bool info_dump(char* filename)
 // Using a macro so it can be easily iterated over
 #define M_OPERATION_COUNT 3
 
-bool (*operation_funcs[M_OPERATION_COUNT]) (char*) = {
+bool (*operation_funcs[M_OPERATION_COUNT]) (char*, bool) = {
 	split_alr,
 	block_parse_all,
 	info_dump
@@ -42,12 +42,12 @@ int main(int argc, char* argv[])
 			{
 				if (!(strcmp(argv[2], operations[i])))
 				{
-					(*operation_funcs[i]) (input_name, 0);
+					(*operation_funcs[i]) (input_name, false);
 				}
 			}
 		}
 		else {
-			(*operation_funcs[0]) (input_name);
+			(*operation_funcs[0]) (input_name, false);
 		}
 	}
 	else {

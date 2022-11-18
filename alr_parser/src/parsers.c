@@ -5,7 +5,7 @@
 #include "parsers.h"
 
 // Writes each distinct section of an ALR to separate files on disk
-bool split_alr(char* alr_filename)
+bool split_alr(char* alr_filename, bool info_mode)
 {
 	FILE* alr = fopen(alr_filename, "rb");
 	if (alr != NULL)
@@ -66,7 +66,7 @@ bool split_alr(char* alr_filename)
 // Array of function pointers. When an ALR block is read, it executes a function
 // using its ID as an index into this array. This is basically just a super
 // efficient switch statement for all blocks.
-void (*function_ptrs[23]) (FILE*, unsigned int, unsigned int) = {
+void (*function_ptrs[23]) (FILE*, unsigned int, bool) = {
 	block_skip, // 0x0
 	block_skip,
 	block_skip,
@@ -294,7 +294,7 @@ void block_texture(FILE* alr, unsigned int texture_buffer_ptr, bool info_mode)
 				fread(texture_data, texture_size, 1, alr);
 
 				// Writing out an uncompressed TGA file
-				FILE* tex_out = fopen(&texture.filename, "wb");
+				FILE* tex_out = fopen((const char*) &texture.filename, "wb");
 				fwrite(&tga_header, sizeof(tga_header), 1, tex_out);
 				fwrite(&texture.width, sizeof(short), 1, tex_out);
 				fwrite(&texture.height, sizeof(short), 1, tex_out);
