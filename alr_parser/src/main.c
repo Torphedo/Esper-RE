@@ -15,6 +15,7 @@ bool info_dump(char* filename, bool info_mode)
 // Using a macro so it can be easily iterated over
 #define M_OPERATION_COUNT 3
 
+// Function pointer array for different command-line options
 bool (*operation_funcs[M_OPERATION_COUNT]) (char*, bool) = {
 	split_alr,
 	block_parse_all,

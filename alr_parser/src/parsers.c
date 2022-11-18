@@ -63,32 +63,32 @@ bool split_alr(char* alr_filename, bool info_mode)
 	return true;
 }
 
-// Array of function pointers. When an ALR block is read, it executes a function
-// using its ID as an index into this array. This is basically just a super
-// efficient switch statement for all blocks.
+// Array of function pointers. When an ALR block is read, the appropriate function
+// is called using its ID as an index into this array. This is used as a replacement
+// for a very long switch statement.
 void (*function_ptrs[23]) (FILE*, unsigned int, bool) = {
-	block_skip, // 0x0
+	block_skip,         // 0x0
 	block_skip,
 	block_skip,
 	block_skip,
 	block_skip,
-	block_animation, // 0x5
+	block_animation,    // 0x5
 	block_skip,
 	block_skip,
 	block_skip,
 	block_skip,
-	block_skip, // 0xA
+	block_skip,         // 0xA
 	block_skip,
 	block_skip,
 	block_skip,
 	block_skip,
 	block_skip,
-	block_texture, // 0x10
+	block_texture,      // 0x10
 	block_skip,
 	block_skip,
 	block_skip,
 	block_skip,
-	block_skip, // 0x15
+	block_skip,         // 0x15
 	block_skip
 };
 
