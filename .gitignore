@@ -11,3 +11,4 @@ out/
 
 # Binary files outputted from the program
 *.bin
+*.png
