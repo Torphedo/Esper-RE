@@ -76,6 +76,9 @@ bool split_alr(char* alr_filename)
 static void block_animation(arena_t* arena, unsigned int texture_buffer_ptr)
 {
 	if (!info_mode) {
+        if (animation_out == NULL) {
+            animation_out = fopen("animation_out.txt", "wb");
+        }
 		fprintf(animation_out, "\n=== Animation Block ===\n");
 	}
     uint64_t block_start_pos = arena->pos;
@@ -249,11 +252,6 @@ static void (*function_ptrs[23]) (arena_t*, unsigned int) = {
 
 bool block_parse_all(char* alr_filename)
 {
-
-    if (!info_mode) {
-        animation_out = fopen("animation_out.txt", "wb");
-    }
-
     // Read header
     FILE* alr = fopen(alr_filename, "rb");
     if (alr != NULL) {
