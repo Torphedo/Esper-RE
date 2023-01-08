@@ -4,6 +4,7 @@ This tool allows you to get information about the layout/contents of a `.alr` fi
 Current supported formats to dump are:
   - 3D Animation data
   - Texture data
+  
 Note: texture data is currently dumped using the filenames from the ALR, but are always formatted in TGAs. All `.dds` files
 outputted need to be renamed to `.tga` to be opened.
 
