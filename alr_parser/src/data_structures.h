@@ -61,8 +61,8 @@ typedef struct {
 // The header of an 0x10 ALR block.
 typedef struct {
 	unsigned int size;
-	unsigned int image_array_size1;
-	unsigned int image_array_size2;
+	unsigned int DDS_count;
+	unsigned int texture_count;
 }texture_block_header;
 
 // A block with just enough information to reconstruct a TGA header and attach pixel data to it.
@@ -71,10 +71,8 @@ typedef struct {
 	char filename[32];
 	char padding[8];
 	float unknown[2]; // This always seems to be 1.0f
-	unsigned short width; // This was probably written as an int, but the TGA spec uses shorts here, so it should be fine.
-	char pad[2];
-	unsigned short height;
-	char pad2[2];
+	unsigned int width;
+	unsigned int height;
 }texture_header;
 
 // Unknown array
