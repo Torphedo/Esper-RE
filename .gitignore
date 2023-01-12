@@ -7,6 +7,10 @@ CMakeSettings.json
 
 # Built binaries
 out/
+cmake-build-debug/
+cmake-build-release/
+cmake-build-minsizerel/
+cmake-build-relwithdebinfo/
 *.exe
 
 # Binary files outputted from the program
