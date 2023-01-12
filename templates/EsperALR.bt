@@ -119,15 +119,22 @@ struct File_ALR
                 struct DDS_Names
                 {
                     char DDSName[16]<bgcolor=cYellow>;
-                    char UnkPad0[16]<bgcolor=cRed>;
+                    unsigned char UnkPad0[16]<bgcolor=cRed>;
                 } DDS[DDS_Num];
-
-                char DDS_Unk [DDS_Num * 20]<bgcolor=cLtRed>;
+                
+                struct DDS_meta
+                {
+                    unsigned short width<bgcolor=cLtGreen>;
+                    unsigned short height<bgcolor=cLtGreen>;
+                    unsigned int   unk<bgcolor=cLtRed>;
+                    unsigned int   mipmap_count<bgcolor=cLtGreen>;
+                    unsigned int   unk2[2]<bgcolor=cLtRed>;
+                }meta[DDS_Num];
 
                 struct TGA_Names
                 {
                     char TGAName[32]<bgcolor=cYellow>;
-                    char UnkPad[28]<bgcolor=cRed>;
+                    unsigned char UnkPad[28]<bgcolor=cRed>;
                 } TGA[TGA_Num];
 			} Subfile;
 		}
