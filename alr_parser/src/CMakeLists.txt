@@ -3,4 +3,4 @@ add_executable(alr_parser
 	"parsers.c"
 	"lib/arena.c"
 	"lib/logging.c"
-)
+        images.c)

@@ -1,5 +1,9 @@
 #include <stdint.h>
 
+#define RGBA8 0x20
+#define RGB8  0x18
+#define A8    0x08
+
 /* 
    Structs for data structures found in ALR files.
    Because most of the data in these structures has an unknown purpose, blocks
@@ -75,17 +79,31 @@ typedef struct {
 	unsigned int height;
 }texture_header;
 
+typedef struct {
+    uint16_t width;
+    uint16_t height;
+    uint32_t flags; // Unknown
+    uint32_t mipmap_count;
+    uint32_t unknown; // Often 4 or 8, sometimes counts up from 13?
+    uint32_t pad;
+}dds_meta;
+
+typedef struct {
+    uint32_t index;
+    uint32_t mipmap_count;
+    uint32_t offset;
+    uint32_t bits_per_pixel;
+}texture_meta;
+
 // Unknown array
 typedef struct {
-	unsigned int flags;
-	unsigned int unknown; // In my old documentation, this is labelled "DataSec_start".
-						  // I don't know what this means.
-	char pad[4];
-	unsigned int unknown2;
-	char pad2[4];
-	unsigned int ID; // This is the same in all variations of the same model, and has
-					 // has no duplicates in game memory. Search for this to find ALRs in memory.
-	unsigned int unknown3;
+	uint32_t flags;    // Unknown, always 01 00 04 00 so far
+	uint32_t data_ptr; // A pointer to some data in the buffer at the end of the file
+	uint32_t pad;      // Always 0 so far.
+    uint32_t unknown;
+	uint32_t unknown2;
+    uint32_t ID; // This is the same in all variations of the same model, and never duplicates. Search for this to find ALRs in memory.
+    uint32_t unknown3;
 }block_sub_0x15;
 
 // This block of data is only found once, right after the header. Unlike the rest
@@ -93,8 +111,7 @@ typedef struct {
 // pointer array. This implies that it could be some sort of metadata about the
 // rest of the file.
 typedef struct {
-	unsigned int id; // 15 00 00 00
-	unsigned int block_size; // Total size in bytes of this block
-	unsigned int array_size;
-	block_sub_0x15 data[];
-}block_type_0x15;
+    uint32_t id; // 15 00 00 00
+    uint32_t block_size;
+    uint32_t struct_array_size;
+}block_0x15_header;

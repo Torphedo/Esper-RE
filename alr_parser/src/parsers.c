@@ -4,6 +4,7 @@
 
 #include "data_structures.h"
 #include "parsers.h"
+#include "images.h"
 #include "lib/arena.h"
 #include "lib/logging.h"
 
@@ -145,74 +146,99 @@ static void block_animation(arena_t* arena, unsigned int texture_buffer_ptr)
 // Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
 static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 {
-    texture_buffer_ptr += 0x4000;
-	// TGA header with all relevant settings until the shorts for width & height.
-	static const char tga_header[12] = {
-			0x00, 0x00, 0x02, 0x00,
-			0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00
-	};
-	static const char layout_settings[2] = {
-			0x20, // 32 bits per pixel (RGBA, 1 byte per color)
-			0x20  // Start pixels from top left instead of bottom left
-	};
-
-	// We subtract 4 because 4 bytes were already read for the block ID
 	uint64_t block_start_pos = arena->pos;
+    // We add 4 because 4 bytes were already read for the block ID
     arena->pos += 4;
-
-	texture_block_header* header = arena_alloc(arena, sizeof(texture_block_header));
-
     if (info_mode) { printf("\n=== Texture Info ===\n"); }
 
+	texture_block_header* header = arena_alloc(arena, sizeof(texture_block_header));
     log_error(INFO, "DDS Count: %d Image Count: %d\n\n", header->DDS_count, header->texture_count);
 
     // Skip over some filenames that don't appear to correspond to any image data.
     // (0x20 each, plus an extra string matching the name of the ALR).
-    static const unsigned int alr_name_size = 0x10;
-    static const unsigned int dds_filename_size = 0x20;
+    static const uint8_t alr_name_size = 0x10;
+    static const uint8_t dds_filename_size = 0x20;
 
     arena_push(arena, alr_name_size);
-    for (unsigned int i = 0; i < header->DDS_count; i++)
+
+    uint32_t pointer_count = arena->base_addr[0x10];
+    // Get contents of 0x15 sub-blocks
+    block_sub_0x15* data_array = (block_sub_0x15*) (arena->base_addr + sizeof(header_t) + (pointer_count * sizeof(uint32_t) + sizeof(block_0x15_header)));
+    char* dds_names = arena_alloc(arena, dds_filename_size * header->DDS_count);
+    dds_meta* ddsMeta = arena_alloc(arena, header->DDS_count * sizeof(dds_meta));
+    texture_header* textures = arena_alloc(arena, sizeof(texture_header) * header->texture_count);
+
+    texture_info* info = malloc(sizeof(texture_info) * header->DDS_count);
+
+    for (uint32_t i = 0; i < header->DDS_count; i++)
     {
-        char* dds_name = arena_alloc(arena, dds_filename_size);
-        log_error(INFO, "Texture %2d: %s\n", i, dds_name);
+        uint32_t pixel_count = textures[i].width * textures[i].height;
+        uint32_t texture_id = textures[i].index;
+        uint32_t res_size = 0;
+        if (texture_id == header->DDS_count - 1)
+        {
+            res_size = arena->size - data_array[texture_id].data_ptr;
+        }
+        else {
+            res_size = data_array[texture_id + 1].data_ptr - data_array[texture_id].data_ptr;
+        }
+
+        info[i].filename = &dds_names[i * dds_filename_size];
+        info[i].bits_per_pixel = (res_size / pixel_count) * 8;
+        info[i].mipmap_count = ddsMeta[i].mipmap_count;
+        info[i].image_data = (char*) arena->base_addr + texture_buffer_ptr + data_array[texture_id].data_ptr;
+        info[i].width = textures[i].width;
+        info[i].height = textures[i].height;
+
+        log_error(INFO, "Texture %2d (%d mipmaps): %s bpp: %d\n", i, info[i].mipmap_count, &dds_names[i * dds_filename_size], info[i].bits_per_pixel);
+
+        if (data_array[i].pad != 0)
+        {
+            log_error(WARNING, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
+        }
+        if (data_array[i].flags != 0x00040001)
+        {
+            log_error(WARNING, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
+        }
+
+        write_tga(info[i]);
     }
     printf("\n");
-
-	// Skip over what appears to be dimension metadata which is duplicated in the
-	// next section in a more useful format representable as a struct.
-	arena->pos += header->DDS_count * 0x14;
+    free(info);
 
 	for (unsigned int i = 0; i < header->texture_count; i++)
 	{
-		texture_header* texture = arena_alloc(arena, sizeof(texture_header));
-		log_error(INFO, "Image %2d, %-32s: Width %4hi, Height %4hi, Texture %2d\n", i, texture->filename, texture->width, texture->height, texture->index);
-        if (!info_mode)
-		{
-			uint64_t cached_pos = arena->pos; // Store current position so that we can jump to the pixel data
-			size_t texture_size = (size_t)texture->width * (size_t)texture->height * 4;
-            arena->pos = texture_buffer_ptr;
-            char* texture_data = arena_alloc(arena, texture_size);
-
-            // Writing out an uncompressed TGA file
-            FILE* tex_out = fopen((const char*) &texture->filename, "wb");
-            fwrite(&tga_header, sizeof(tga_header), 1, tex_out);
-            fwrite(&texture->width, sizeof(short), 1, tex_out);
-            fwrite(&texture->height, sizeof(short), 1, tex_out);
-            fwrite(&layout_settings, sizeof(layout_settings), 1, tex_out);
-            fwrite(texture_data, (size_t)texture->width * (size_t)texture->height * 4, 1, tex_out);
-            fclose(tex_out);
-
-            arena->pos = cached_pos;
-			// Increment texture buffer location so that the next read begins where we left off
-			texture_buffer_ptr += texture_size;
-		}
+		log_error(INFO, "Image %2d, %-32s: Width %4hi, Height %4hi, Texture %2d\n", i, textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
 	}
 
     arena->pos = block_start_pos + header->size; // Set position to end of block
 }
 
+static void block_15(arena_t* arena, unsigned int big_buffer_pointer)
+{
+    uint64_t block_start_pos = arena->pos;
+    block_0x15_header* header = arena_alloc(arena, sizeof(block_0x15_header));
+
+    block_sub_0x15* data_array = arena_alloc(arena, sizeof(block_sub_0x15) * header->struct_array_size);
+
+    printf("\n");
+    log_error(INFO, "File Metadata\n");
+    log_error(INFO, "Array Size: %d\n", header->struct_array_size);
+
+    for (uint32_t i = 0; i < header->struct_array_size; i++)
+    {
+        log_error(INFO, "pointer: 0x%08x unknown: 0x%08x unknown2: 0x%08x ID: 0x%08x unknown3: 0x%08x\n", data_array[i].data_ptr, data_array[i].unknown, data_array[i].unknown2, data_array[i].ID, data_array[i].unknown3);
+        if (data_array[i].pad != 0)
+        {
+            log_error(WARNING, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
+        }
+        if (data_array[i].flags != 0x00040001)
+        {
+            log_error(WARNING, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
+        }
+    }
+    arena->pos = block_start_pos + header->block_size;
+}
 // Allows us to skip over any block that doesn't have a parser yet
 static void block_skip(arena_t* arena, unsigned int texture_buffer_ptr)
 {
@@ -246,7 +272,7 @@ static void (*function_ptrs[23]) (arena_t*, unsigned int) = {
         block_skip,
         block_skip,
         block_skip,
-        block_skip,         // 0x15
+        block_15,         // 0x15
         block_skip
 };
 
