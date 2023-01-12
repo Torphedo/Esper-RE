@@ -5,8 +5,8 @@
 #include "data_structures.h"
 #include "parsers.h"
 #include "images.h"
-#include "lib/arena.h"
-#include "lib/logging.h"
+#include "arena.h"
+#include "logging.h"
 
 bool info_mode = false;
 

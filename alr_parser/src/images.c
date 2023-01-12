@@ -3,7 +3,7 @@
 
 #include "data_structures.h"
 #include "images.h"
-#include "lib/logging.h"
+#include "logging.h"
 
 #define UNCOMPRESSED_TRUE_COLOR (0x2)
 #define UNCOMPRESSED_GREYSCALE  (0x3)

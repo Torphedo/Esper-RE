@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "data_structures.h"
-#include "lib/logging.h"
+#include "logging.h"
 #include "parsers.h"
 
 // Thin wrapper around --dump to print out more info
