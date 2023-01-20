@@ -10,8 +10,6 @@
 
 bool info_mode = false;
 
-arena_t* global_arena = 0;
-
 // File pointer to print animation data as text to a file.
 FILE* animation_out;
 
@@ -302,12 +300,12 @@ bool block_parse_all(char* alr_filename)
         unsigned int filesize = st.st_size;
 
         // Allocate and read the entire file at once to minimize disk latency
-        global_arena = create_arena(filesize, RESERVE, 0);
-        fread(global_arena->base_addr, filesize, 1, alr);
+        arena_t* arena = create_arena(filesize, RESERVE, 0);
+        fread(arena->base_addr, filesize, 1, alr);
         fclose(alr);
 
-        header_t* header = arena_alloc(global_arena, sizeof(header_t));
-        unsigned int* pointer_array = arena_alloc(global_arena, header->pointer_array_size * sizeof(unsigned int));
+        header_t* header = arena_alloc(arena, sizeof(header_t));
+        unsigned int* pointer_array = arena_alloc(arena, header->pointer_array_size * sizeof(unsigned int));
         if (info_mode)
         {
             log_error(INFO, "Unknown Buffer Address: 0x%x\n", header->unknown_section_ptr);
@@ -319,24 +317,24 @@ bool block_parse_all(char* alr_filename)
         }
         for (unsigned int i = 0; i < header->pointer_array_size; i++)
         {
-            unsigned int current_block_id = *(global_arena->base_addr + pointer_array[i]);
-            global_arena->pos = pointer_array[i];
+            unsigned int current_block_id = *(arena->base_addr + pointer_array[i]);
+            arena->pos = pointer_array[i];
             while (current_block_id != 0)
             {
                 if (current_block_id > 0x16)
                 {
-                    log_error(CRITICAL, "Invalid block ID 0x%x in file %d (offset 0x%x)!\n", current_block_id, i, global_arena->pos);
+                    log_error(CRITICAL, "Invalid block ID 0x%x in file %d (offset 0x%x)!\n", current_block_id, i, arena->pos);
                     exit((int)current_block_id);
                 }
                 if (info_mode)
                 {
-                    log_error(DEBUG, "0x%x block at 0x%x\n", current_block_id, global_arena->pos);
+                    log_error(DEBUG, "0x%x block at 0x%x\n", current_block_id, arena->pos);
                 }
-                (*function_ptrs[current_block_id]) (global_arena, header->unknown_section_ptr);
-                current_block_id = *((unsigned int*) arena_pos(global_arena)); // Read next block's ID
+                (*function_ptrs[current_block_id]) (arena, header->unknown_section_ptr);
+                current_block_id = *((unsigned int*) arena_pos(arena)); // Read next block's ID
             }
         }
-        destroy_arena(global_arena);
+        destroy_arena(arena);
     }
     else {
         log_error(CRITICAL, "Couldn't open %s.\n", alr_filename);
