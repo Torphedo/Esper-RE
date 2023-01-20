@@ -40,7 +40,7 @@ bool split_alr(char* alr_filename)
             for (unsigned int i = 0; i < header.pointer_array_size; i++)
             {
                 // Length between the current and next pointer.
-                size_t size;
+                int32_t size;
                 if (i < header.pointer_array_size - 1) {
                     size = pointer_array[i + 1] - pointer_array[i];
                 }
@@ -48,6 +48,17 @@ bool split_alr(char* alr_filename)
                     size = header.unknown_section_ptr - pointer_array[i];
                 }
 
+                if ( size < 0)
+                {
+                    log_error(WARNING, "split_alr(): Adjusting for negative block size at block %d.\n", i);
+                    size *= -1;
+                }
+
+                if (size > 0x00FFFFF)
+                {
+                    log_error(CRITICAL, "split_alr(): Block size at block %d was unreasonably high (%d bytes)!\n", i, size);
+                    return false;
+                }
                 char* buffer = malloc(size);
                 fseek(alr, (long) pointer_array[i], SEEK_SET);
                 fread(buffer, size, 1, alr);
@@ -58,6 +69,7 @@ bool split_alr(char* alr_filename)
                 FILE* dump = fopen(filename, "wb");
                 fwrite(buffer, size, 1, dump);
                 fclose(dump);
+                free(buffer);
             }
 			free(pointer_array);
 		}
