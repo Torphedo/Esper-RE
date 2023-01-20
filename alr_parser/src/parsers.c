@@ -152,7 +152,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
     if (info_mode) { printf("\n=== Texture Info ===\n"); }
 
 	texture_block_header* header = arena_alloc(arena, sizeof(texture_block_header));
-    log_error(INFO, "DDS Count: %d Image Count: %d\n\n", header->DDS_count, header->texture_count);
+    log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->DDS_count, header->texture_count);
 
     // Skip over some filenames that don't appear to correspond to any image data.
     // (0x20 each, plus an extra string matching the name of the ALR).
@@ -191,7 +191,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
         info[i].height = textures[i].height;
         info[i].format = DDS;
 
-        log_error(INFO, "Surface %2d (%d mipmaps): %s bpp: %d\n", i, info[i].mipmap_count, &dds_names[i * dds_filename_size], info[i].bits_per_pixel);
+        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * dds_filename_size], info[i].mipmap_count, info[i].bits_per_pixel);
 
         if (data_array[i].pad != 0)
         {
