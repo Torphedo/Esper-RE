@@ -1,6 +1,12 @@
 #pragma once
 #include <stdint.h>
 
+typedef enum image_type
+{
+    TGA,
+    DDS
+}image_type;
+
 typedef struct texture_info
 {
     char* filename;
@@ -9,6 +15,7 @@ typedef struct texture_info
     uint16_t width;
     uint16_t height;
     uint16_t mipmap_count;
+    image_type format;
 }texture_info;
 
-bool write_tga(texture_info texture);
+bool write_texture(texture_info texture);

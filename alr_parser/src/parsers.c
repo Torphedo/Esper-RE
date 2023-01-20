@@ -189,6 +189,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
         info[i].image_data = (char*) arena->base_addr + texture_buffer_ptr + data_array[texture_id].data_ptr;
         info[i].width = textures[i].width;
         info[i].height = textures[i].height;
+        info[i].format = DDS;
 
         log_error(INFO, "Texture %2d (%d mipmaps): %s bpp: %d\n", i, info[i].mipmap_count, &dds_names[i * dds_filename_size], info[i].bits_per_pixel);
 
@@ -201,7 +202,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
             log_error(WARNING, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
         }
 
-        write_tga(info[i]);
+        write_texture(info[i]);
     }
     printf("\n");
     free(info);
