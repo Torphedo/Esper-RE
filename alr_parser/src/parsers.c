@@ -168,8 +168,6 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
     dds_meta* ddsMeta = arena_alloc(arena, header->DDS_count * sizeof(dds_meta));
     texture_header* textures = arena_alloc(arena, sizeof(texture_header) * header->texture_count);
 
-    texture_info* info = malloc(sizeof(texture_info) * header->DDS_count);
-
     for (uint32_t i = 0; i < header->DDS_count; i++)
     {
         uint32_t pixel_count = textures[i].width * textures[i].height;
@@ -183,15 +181,17 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
             res_size = data_array[texture_id + 1].data_ptr - data_array[texture_id].data_ptr;
         }
 
-        info[i].filename = &dds_names[i * dds_filename_size];
-        info[i].bits_per_pixel = (res_size / pixel_count) * 8;
-        info[i].mipmap_count = ddsMeta[i].mipmap_count;
-        info[i].image_data = (char*) arena->base_addr + texture_buffer_ptr + data_array[texture_id].data_ptr;
-        info[i].width = textures[i].width;
-        info[i].height = textures[i].height;
-        info[i].format = DDS;
+        texture_info info = {
+                .filename = &dds_names[i * dds_filename_size],
+                .bits_per_pixel = (res_size / pixel_count) * 8,
+                .mipmap_count = ddsMeta[i].mipmap_count,
+                .image_data = (char*) arena->base_addr + texture_buffer_ptr + data_array[texture_id].data_ptr,
+                .width = textures[i].width,
+                .height = textures[i].height,
+                .format = DDS
+        };
 
-        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * dds_filename_size], info[i].mipmap_count, info[i].bits_per_pixel);
+        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * dds_filename_size], info.mipmap_count, info.bits_per_pixel);
 
         if (data_array[i].pad != 0)
         {
@@ -202,10 +202,9 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
             log_error(WARNING, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
         }
 
-        write_texture(info[i]);
+        write_texture(info);
     }
     printf("\n");
-    free(info);
 
 	for (unsigned int i = 0; i < header->texture_count; i++)
 	{
