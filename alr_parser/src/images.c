@@ -153,6 +153,9 @@ bool write_dds(texture_info texture)
             .caps = DDSCAPS_TEXTURE
     };
 
+    // Disable mipmaps until we can figure out where they're actually stored
+    texture.mipmap_count = 1;
+
     if (texture.mipmap_count < 1)
     {
         header.flags |= DDSD_MIPMAPCOUNT;
