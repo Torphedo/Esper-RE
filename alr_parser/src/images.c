@@ -140,7 +140,7 @@ bool write_dds(texture_info texture)
     dds_header header = {
             .identifier = DDS_BEGIN,
             .size = 0x7C,
-            .flags = REQUIRED_BASE_FLAGS | DDSD_MIPMAPCOUNT | DDSD_PITCH,
+            .flags = REQUIRED_BASE_FLAGS | DDSD_PITCH,
             .height = texture.height,
             .width = texture.width,
             .pitch_or_linear_size = ( texture.width * texture.bits_per_pixel + 7 ) / 8,
@@ -150,20 +150,27 @@ bool write_dds(texture_info texture)
                     .size = sizeof(dds_pixel_format),
                     .bits_per_pixel = texture.bits_per_pixel
             },
-            .caps = DDSCAPS_TEXTURE | DDSCAPS_MIPMAP
+            .caps = DDSCAPS_TEXTURE
     };
-    if (texture.bits_per_pixel == 8)
+
+    if (texture.mipmap_count < 1)
     {
-        header.pixel_format.flags = DDPF_ALPHAPIXELS;
-        header.pixel_format.alpha_bitmask = 0xFF000000;
+        header.flags |= DDSD_MIPMAPCOUNT;
+        header.caps  |= DDSCAPS_MIPMAP | DDSCAPS_COMPLEX;
     }
-    else if (texture.bits_per_pixel == 32)
+    switch (texture.bits_per_pixel)
     {
-        header.pixel_format.flags = DDPF_ALPHAPIXELS | DDPF_RGB;
-        header.pixel_format.alpha_bitmask = 0xFF000000;
-        header.pixel_format.red_bitmask   = 0x00FF0000;
-        header.pixel_format.green_bitmask = 0x0000FF00;
-        header.pixel_format.blue_bitmask  = 0x000000FF;
+        case 8:
+            header.pixel_format.flags = DDPF_ALPHA;
+            header.pixel_format.alpha_bitmask = 0x000000FF;
+            break;
+        case 32:
+            header.pixel_format.flags = DDPF_ALPHAPIXELS | DDPF_RGB;
+            header.pixel_format.alpha_bitmask = 0xFF000000;
+            header.pixel_format.red_bitmask   = 0x00FF0000;
+            header.pixel_format.green_bitmask = 0x0000FF00;
+            header.pixel_format.blue_bitmask  = 0x000000FF;
+            break;
     }
 
     uint8_t bytes_per_pixel = texture.bits_per_pixel / 8;
