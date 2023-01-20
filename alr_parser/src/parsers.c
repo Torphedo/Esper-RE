@@ -191,7 +191,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
         info[i].height = textures[i].height;
         info[i].format = DDS;
 
-        log_error(INFO, "Texture %2d (%d mipmaps): %s bpp: %d\n", i, info[i].mipmap_count, &dds_names[i * dds_filename_size], info[i].bits_per_pixel);
+        log_error(INFO, "Surface %2d (%d mipmaps): %s bpp: %d\n", i, info[i].mipmap_count, &dds_names[i * dds_filename_size], info[i].bits_per_pixel);
 
         if (data_array[i].pad != 0)
         {
@@ -209,7 +209,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 
 	for (unsigned int i = 0; i < header->texture_count; i++)
 	{
-		log_error(INFO, "Image %2d, %-32s: Width %4hi, Height %4hi, Texture %2d\n", i, textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
+		log_error(INFO, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
 	}
 
     arena->pos = block_start_pos + header->size; // Set position to end of block

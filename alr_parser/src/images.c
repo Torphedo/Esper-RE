@@ -156,7 +156,6 @@ bool write_dds(texture_info texture)
     {
         header.pixel_format.flags = DDPF_ALPHAPIXELS;
         header.pixel_format.alpha_bitmask = 0xFF000000;
-        header.pitch_or_linear_size = ((header.width+1) >> 1) * 4;
     }
     else if (texture.bits_per_pixel == 32)
     {
