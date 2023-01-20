@@ -207,11 +207,11 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 
         if (data_array[i].pad != 0)
         {
-            log_error(WARNING, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
+            log_error(DEBUG, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
         }
         if (data_array[i].flags != 0x00040001)
         {
-            log_error(WARNING, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
+            log_error(DEBUG, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
         }
 
         write_texture(info);
@@ -239,14 +239,14 @@ static void block_15(arena_t* arena, unsigned int big_buffer_pointer)
 
     for (uint32_t i = 0; i < header->struct_array_size; i++)
     {
-        log_error(INFO, "pointer: 0x%08x unknown: 0x%08x unknown2: 0x%08x ID: 0x%08x unknown3: 0x%08x\n", data_array[i].data_ptr, data_array[i].unknown, data_array[i].unknown2, data_array[i].ID, data_array[i].unknown3);
+        log_error(DEBUG, "pointer: 0x%08x unknown: 0x%08x unknown2: 0x%08x ID: 0x%08x unknown3: 0x%08x\n", data_array[i].data_ptr, data_array[i].unknown, data_array[i].unknown2, data_array[i].ID, data_array[i].unknown3);
         if (data_array[i].pad != 0)
         {
-            log_error(WARNING, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
+            log_error(DEBUG, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
         }
         if (data_array[i].flags != 0x00040001)
         {
-            log_error(WARNING, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
+            log_error(DEBUG, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
         }
     }
     arena->pos = block_start_pos + header->block_size;
@@ -330,7 +330,7 @@ bool block_parse_all(char* alr_filename)
                 }
                 if (info_mode)
                 {
-                    log_error(INFO, "0x%x block at 0x%x\n", current_block_id, global_arena->pos);
+                    log_error(DEBUG, "0x%x block at 0x%x\n", current_block_id, global_arena->pos);
                 }
                 (*function_ptrs[current_block_id]) (global_arena, header->unknown_section_ptr);
                 current_block_id = *((unsigned int*) arena_pos(global_arena)); // Read next block's ID
