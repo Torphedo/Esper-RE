@@ -281,6 +281,7 @@ bool block_parse_all(char* alr_filename)
 {
     // Read header
     FILE* alr = fopen(alr_filename, "rb");
+    log_error(DEBUG, "Opened file %s\n", alr_filename);
     if (alr != NULL) {
 
         struct stat st;
@@ -291,7 +292,11 @@ bool block_parse_all(char* alr_filename)
         unsigned int filesize = st.st_size;
 
         // Allocate and read the entire file at once to minimize disk latency
-        arena_t* arena = create_arena(filesize, RESERVE, 0);
+        arena_t* arena = create_arena(filesize, ALLOCATE_ALL, 0);
+        if (arena == NULL)
+        {
+            log_error(CRITICAL, "Failed to create arena with a size of %d bytes for the file %s\n", filesize, alr_filename);
+        }
         fread(arena->base_addr, filesize, 1, alr);
         fclose(alr);
 
