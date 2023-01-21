@@ -161,18 +161,12 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 	texture_metadata_header* header = arena_alloc(arena, sizeof(texture_metadata_header));
     log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->DDS_count, header->texture_count);
 
-    // Skip over some filenames that don't appear to correspond to any image data.
-    // (0x20 each, plus an extra string matching the name of the ALR).
-    static const uint8_t alr_name_size = 0x10;
-    static const uint8_t dds_filename_size = 0x20;
+    // DDS filenames + the mystery data attached to them are 0x20 long each
+    char* dds_names = arena_alloc(arena, 0x20 * header->DDS_count);
 
-    arena_push(arena, alr_name_size);
-
-    uint32_t pointer_count = arena->base_addr[0x10];
     // Get contents of 0x15 sub-blocks
-    resource_entry* data_array = (resource_entry*) (arena->base_addr + sizeof(block_layout) + (pointer_count * sizeof(uint32_t) + sizeof(resource_layout_header)));
-    char* dds_names = arena_alloc(arena, dds_filename_size * header->DDS_count);
-    surface_info* ddsMeta = arena_alloc(arena, header->DDS_count * sizeof(surface_info));
+    resource_entry* resources = (resource_entry*) (arena->base_addr + arena->base_addr[0x4] + sizeof(resource_layout_header));
+    surface_info* surface = arena_alloc(arena, header->DDS_count * sizeof(surface_info));
     texture_header* textures = arena_alloc(arena, sizeof(texture_header) * header->texture_count);
 
     for (uint32_t i = 0; i < header->DDS_count; i++)
@@ -182,31 +176,31 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
         uint32_t res_size = 0;
         if (texture_id == header->DDS_count - 1)
         {
-            res_size = arena->size - data_array[texture_id].data_ptr;
+            res_size = arena->size - resources[texture_id].data_ptr;
         }
         else {
-            res_size = data_array[texture_id + 1].data_ptr - data_array[texture_id].data_ptr;
+            res_size = resources[texture_id + 1].data_ptr - resources[texture_id].data_ptr;
         }
 
         texture_info info = {
-                .filename = &dds_names[i * dds_filename_size],
+                .filename = &dds_names[i * 0x20],
                 .bits_per_pixel = (res_size / pixel_count) * 8,
-                .mipmap_count = ddsMeta[i].mipmap_count,
-                .image_data = (char*) arena->base_addr + texture_buffer_ptr + data_array[texture_id].data_ptr,
+                .mipmap_count = surface[i].mipmap_count,
+                .image_data = (char*) arena->base_addr + texture_buffer_ptr + resources[texture_id].data_ptr,
                 .width = textures[i].width,
                 .height = textures[i].height,
                 .format = DDS
         };
 
-        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * dds_filename_size], info.mipmap_count, info.bits_per_pixel);
+        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * 0x20], info.mipmap_count, info.bits_per_pixel);
 
-        if (data_array[i].pad != 0)
+        if (resources[i].pad != 0)
         {
-            log_error(DEBUG, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
+            log_error(DEBUG, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", resources[i].pad, i);
         }
-        if (data_array[i].flags != 0x00040001)
+        if (resources[i].flags != 0x00040001)
         {
-            log_error(DEBUG, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
+            log_error(DEBUG, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", resources[i].flags, i);
         }
 
         write_texture(info);
