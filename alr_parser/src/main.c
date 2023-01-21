@@ -8,9 +8,8 @@
 // Cross-platform pause that doesn't wait for a newline.
 static inline void pause()
 {
-    log_error(INFO, "Press any key to exit...");
+    log_error(INFO, "Press Enter to exit...");
     unsigned char dummy = getchar();
-    printf("\033[1D \n"); // Move cursor back by 1, then overwrite the last character with a space and newline
 }
 
 // Thin wrapper around --dump to print out more info
