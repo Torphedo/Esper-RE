@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "data_structures.h"
-#include "parsers.h"
+#include "alr.h"
 #include "images.h"
 #include "arena.h"
 #include "logging.h"
@@ -24,26 +23,26 @@ bool split_alr(char* alr_filename)
 	FILE* alr = fopen(alr_filename, "rb");
 	if (alr != NULL)
 	{
-		header_t header;
+		block_layout header;
 
 		// Read header
-		fread(&header, sizeof(header_t), 1, alr);
-        uint32_t* pointer_array = malloc(header.pointer_array_size * sizeof(uint32_t));
+		fread(&header, sizeof(block_layout), 1, alr);
+        uint32_t* pointer_array = malloc(header.offset_array_size * sizeof(uint32_t));
 		if (pointer_array != NULL)
 		{
 			// Read in pointer array
-			fread(pointer_array, sizeof(uint32_t), header.pointer_array_size, alr);
+			fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
 
             // Write each large block of data to a separate file.
-            for (unsigned int i = 0; i < header.pointer_array_size; i++)
+            for (unsigned int i = 0; i < header.offset_array_size; i++)
             {
                 // Length between the current and next pointer.
                 int32_t size;
-                if (i < header.pointer_array_size - 1) {
+                if (i < header.offset_array_size - 1) {
                     size = pointer_array[i + 1] - pointer_array[i];
                 }
                 else {
-                    size = header.unknown_section_ptr - pointer_array[i];
+                    size = header.resource_offset - pointer_array[i];
                 }
 
                 if ( size < 0)
@@ -157,11 +156,9 @@ static void block_animation(arena_t* arena, unsigned int texture_buffer_ptr)
 static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 {
 	uint64_t block_start_pos = arena->pos;
-    // We add 4 because 4 bytes were already read for the block ID
-    arena->pos += 4;
     if (info_mode) { printf("\n=== Texture Info ===\n"); }
 
-	texture_block_header* header = arena_alloc(arena, sizeof(texture_block_header));
+	texture_metadata_header* header = arena_alloc(arena, sizeof(texture_metadata_header));
     log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->DDS_count, header->texture_count);
 
     // Skip over some filenames that don't appear to correspond to any image data.
@@ -173,9 +170,9 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 
     uint32_t pointer_count = arena->base_addr[0x10];
     // Get contents of 0x15 sub-blocks
-    block_sub_0x15* data_array = (block_sub_0x15*) (arena->base_addr + sizeof(header_t) + (pointer_count * sizeof(uint32_t) + sizeof(block_0x15_header)));
+    resource_entry* data_array = (resource_entry*) (arena->base_addr + sizeof(block_layout) + (pointer_count * sizeof(uint32_t) + sizeof(resource_layout_header)));
     char* dds_names = arena_alloc(arena, dds_filename_size * header->DDS_count);
-    dds_meta* ddsMeta = arena_alloc(arena, header->DDS_count * sizeof(dds_meta));
+    surface_info* ddsMeta = arena_alloc(arena, header->DDS_count * sizeof(surface_info));
     texture_header* textures = arena_alloc(arena, sizeof(texture_header) * header->texture_count);
 
     for (uint32_t i = 0; i < header->DDS_count; i++)
@@ -227,15 +224,15 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 static void block_15(arena_t* arena, unsigned int big_buffer_pointer)
 {
     uint64_t block_start_pos = arena->pos;
-    block_0x15_header* header = arena_alloc(arena, sizeof(block_0x15_header));
+    resource_layout_header* header = arena_alloc(arena, sizeof(resource_layout_header));
 
-    block_sub_0x15* data_array = arena_alloc(arena, sizeof(block_sub_0x15) * header->struct_array_size);
+    resource_entry* data_array = arena_alloc(arena, sizeof(resource_entry) * header->array_size);
 
     printf("\n");
     log_error(INFO, "File Metadata\n");
-    log_error(INFO, "Array Size: %d\n", header->struct_array_size);
+    log_error(INFO, "Array Size: %d\n", header->array_size);
 
-    for (uint32_t i = 0; i < header->struct_array_size; i++)
+    for (uint32_t i = 0; i < header->array_size; i++)
     {
         log_error(DEBUG, "pointer: 0x%08x unknown: 0x%08x unknown2: 0x%08x ID: 0x%08x unknown3: 0x%08x\n", data_array[i].data_ptr, data_array[i].unknown, data_array[i].unknown2, data_array[i].ID, data_array[i].unknown3);
         if (data_array[i].pad != 0)
@@ -304,18 +301,18 @@ bool block_parse_all(char* alr_filename)
         fread(arena->base_addr, filesize, 1, alr);
         fclose(alr);
 
-        header_t* header = arena_alloc(arena, sizeof(header_t));
-        unsigned int* pointer_array = arena_alloc(arena, header->pointer_array_size * sizeof(unsigned int));
+        block_layout* header = arena_alloc(arena, sizeof(block_layout));
+        unsigned int* pointer_array = arena_alloc(arena, header->offset_array_size * sizeof(unsigned int));
         if (info_mode)
         {
-            log_error(INFO, "Unknown Buffer Address: 0x%x\n", header->unknown_section_ptr);
-            log_error(INFO, "File Count: %d\n\n", header->pointer_array_size);
-            for (unsigned int i = 0; i < header->pointer_array_size; i++)
+            log_error(INFO, "Unknown Buffer Address: 0x%x\n", header->resource_offset);
+            log_error(INFO, "File Count: %d\n\n", header->offset_array_size);
+            for (unsigned int i = 0; i < header->offset_array_size; i++)
             {
                 log_error(INFO, "File %u: 0x%x\n", i, pointer_array[i]);
             }
         }
-        for (unsigned int i = 0; i < header->pointer_array_size; i++)
+        for (unsigned int i = 0; i < header->offset_array_size; i++)
         {
             unsigned int current_block_id = *(arena->base_addr + pointer_array[i]);
             arena->pos = pointer_array[i];
@@ -330,7 +327,7 @@ bool block_parse_all(char* alr_filename)
                 {
                     log_error(DEBUG, "0x%x block at 0x%x\n", current_block_id, arena->pos);
                 }
-                (*function_ptrs[current_block_id]) (arena, header->unknown_section_ptr);
+                (*function_ptrs[current_block_id]) (arena, header->resource_offset);
                 current_block_id = *((unsigned int*) arena_pos(arena)); // Read next block's ID
             }
         }

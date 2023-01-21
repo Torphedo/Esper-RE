@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "data_structures.h"
 #include "images.h"
 #include "logging.h"
 

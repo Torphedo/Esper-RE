@@ -1,14 +1,13 @@
 #pragma once
+#include <stdbool.h>
 #include <stdint.h>
 
-typedef enum image_type
-{
+typedef enum {
     TGA,
     DDS
 }image_type;
 
-typedef struct texture_info
-{
+typedef struct {
     char* filename;
     char* image_data;
     uint8_t bits_per_pixel;
@@ -18,4 +17,4 @@ typedef struct texture_info
     image_type format;
 }texture_info;
 
-bool write_texture(texture_info texture);
+_Bool write_texture(texture_info texture);
