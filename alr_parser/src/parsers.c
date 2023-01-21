@@ -182,17 +182,9 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
             res_size = resources[texture_id + 1].data_ptr - resources[texture_id].data_ptr;
         }
 
-        texture_info info = {
-                .filename = &dds_names[i * 0x20],
-                .bits_per_pixel = (res_size / pixel_count) * 8,
-                .mipmap_count = surface[i].mipmap_count,
-                .image_data = (char*) arena->base_addr + texture_buffer_ptr + resources[texture_id].data_ptr,
-                .width = textures[i].width,
-                .height = textures[i].height,
-                .format = DDS
-        };
+        uint8_t bits_per_pixel = (res_size / pixel_count) * 8;
 
-        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * 0x20], info.mipmap_count, info.bits_per_pixel);
+        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * 0x20], surface[i].mipmap_count, bits_per_pixel);
 
         if (resources[i].pad != 0)
         {
@@ -203,7 +195,18 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
             log_error(DEBUG, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", resources[i].flags, i);
         }
 
-        write_texture(info);
+        if (!info_mode) {
+            texture_info info = {
+                    .filename = &dds_names[i * 0x20],
+                    .bits_per_pixel = bits_per_pixel,
+                    .mipmap_count = surface[i].mipmap_count,
+                    .image_data = (char *) arena->base_addr + texture_buffer_ptr + resources[texture_id].data_ptr,
+                    .width = textures[i].width,
+                    .height = textures[i].height,
+                    .format = DDS
+            };
+            write_texture(info);
+        }
     }
     printf("\n");
 
