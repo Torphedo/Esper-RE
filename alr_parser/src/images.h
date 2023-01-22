@@ -1,5 +1,4 @@
 #pragma once
-#include <stdbool.h>
 #include <stdint.h>
 
 typedef enum {
@@ -17,4 +16,4 @@ typedef struct {
     image_type format;
 }texture_info;
 
-_Bool write_texture(texture_info texture);
+void write_texture(texture_info texture);

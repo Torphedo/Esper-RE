@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 	else {
 		log_error(INFO, "Please provide an input filename.\n");
         pause();
-		exit(1);
+		return 1;
 	}
 
 	return 0;

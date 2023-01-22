@@ -7,7 +7,7 @@ project(alr_parser
 set(CMAKE_C_STANDARD 99)
 
 # Using this setup to run other CMakeLists.txt build scripts makes it
-# easier to add unit tests or other seprate scripts in the future.
+# easier to add unit tests or other separate scripts in the future.
 add_subdirectory(src)
 
 # Copy binary ALR files to [build]/src/bin/ so they can be accessed during debugging. 

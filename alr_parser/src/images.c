@@ -100,11 +100,11 @@ typedef struct dds_header
     uint32_t reserved2;    // Unused
 }dds_header;
 
-bool write_tga(texture_info texture)
+void write_tga(texture_info texture)
 {
     if (texture.bits_per_pixel == 0 || texture.bits_per_pixel % 8 != 0) {
         log_error(CRITICAL, "write_tga(): Bits per pixel for the file %s had an invalid value of %d\n", texture.filename, texture.bits_per_pixel);
-        return false;
+        return;
     }
 
     tga_header header = {
@@ -131,10 +131,9 @@ bool write_tga(texture_info texture)
     fwrite(&header, sizeof(tga_header), 1, tex_out);
     fwrite(texture.image_data, bytes_per_pixel, header.width * header.height, tex_out);
     fclose(tex_out);
-    return true;
 }
 
-bool write_dds(texture_info texture)
+void write_dds(texture_info texture)
 {
     dds_header header = {
             .identifier = DDS_BEGIN,
@@ -183,13 +182,13 @@ bool write_dds(texture_info texture)
     fclose(tex_out);
 }
 
-bool write_texture(texture_info texture)
+void write_texture(texture_info texture)
 {
     switch (texture.format)
     {
         case TGA:
-            return write_tga(texture);
+            write_tga(texture);
         case DDS:
-            return write_dds(texture);
+            write_dds(texture);
     }
 }
