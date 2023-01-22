@@ -72,13 +72,13 @@ bool split_alr(char* alr_filename)
 			free(pointer_array);
 		}
 		else {
-			log_error(CRITICAL, "Failed to allocate for pointer array!\n");
+			log_error(CRITICAL, "split_alr(): Failed to allocate for pointer array of size %d\n", header.offset_array_size);
 			return false;
 		}
 		fclose(alr);
 	}
 	else {
-		log_error(CRITICAL, "Failed to open %s!\n", alr_filename);
+		log_error(CRITICAL, "split_alr(): Failed to open %s\n", alr_filename);
 	}
 	return true;
 }
@@ -130,7 +130,7 @@ static void block_animation(arena_t* arena)
 		}
 		default: {
 			log_error(CRITICAL, "Unknown animation data structure: element size %hi\n", header->array_width_2);
-			exit(1);
+			break;
 		}
 		}
 	}
@@ -189,11 +189,11 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 
         if (resources[i].pad != 0)
         {
-            log_error(DEBUG, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", resources[i].pad, i);
+            log_error(DEBUG, "block_texture(): Resource meta anomaly, apparent padding at index %d was 0x%x\n", i, resources[i].pad);
         }
         if (resources[i].flags != 0x00040001)
         {
-            log_error(DEBUG, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", resources[i].flags, i);
+            log_error(DEBUG, "block_texture(): Resource meta anomaly, flag at index %d was 0x%x\n", i, resources[i].flags);
         }
 
         if (!info_mode) {
@@ -229,15 +229,13 @@ static void block_skip(arena_t* arena)
 
 bool block_parse_all(char* alr_filename)
 {
-    // Read header
     FILE* alr = fopen(alr_filename, "rb");
-    log_error(DEBUG, "Opened file %s\n", alr_filename);
-    if (alr != NULL) {
-
+    if (alr != NULL)
+    {
         struct stat st;
         if (stat(alr_filename, &st) != 0) {
-            log_error(CRITICAL, "block_parse_all(): Failed to get file metadata for ALR %s", alr_filename);
-            exit(-1);
+            log_error(CRITICAL, "block_parse_all(): Failed to get file metadata for %s", alr_filename);
+            return false;
         }
         unsigned int filesize = st.st_size;
 
@@ -245,16 +243,17 @@ bool block_parse_all(char* alr_filename)
         arena_t* arena = create_arena(filesize, ALLOCATE_ALL, 0);
         if (arena == NULL)
         {
-            log_error(CRITICAL, "Failed to create arena with a size of %d bytes for the file %s\n", filesize, alr_filename);
+            log_error(CRITICAL, "block_parse_all(): Failed to create arena with a size of %d bytes for the file %s\n", filesize, alr_filename);
         }
         fread(arena->base_addr, filesize, 1, alr);
         fclose(alr);
+        log_error(DEBUG, "block_parse_all(): Loaded %s\n", alr_filename);
 
         block_layout* header = arena_alloc(arena, sizeof(block_layout));
         unsigned int* pointer_array = arena_alloc(arena, header->offset_array_size * sizeof(unsigned int));
         if (info_mode)
         {
-            log_error(INFO, "Unknown Buffer Address: 0x%x\n", header->resource_offset);
+            log_error(INFO, "Resource Section Offset: 0x%x\n", header->resource_offset);
             log_error(INFO, "File Count: %d\n\n", header->offset_array_size);
             for (unsigned int i = 0; i < header->offset_array_size; i++)
             {
@@ -269,12 +268,12 @@ bool block_parse_all(char* alr_filename)
             {
                 if (current_block_id > 0x16)
                 {
-                    log_error(CRITICAL, "Invalid block ID 0x%x in file %d (offset 0x%x)!\n", current_block_id, i, arena->pos);
-                    exit((int)current_block_id);
+                    log_error(WARNING, "block_parse_all(): Invalid block ID 0x%x at 0x%x (internal file %d, %s)!\n", current_block_id, arena->pos, i, alr_filename);
+                    return false;
                 }
                 if (info_mode)
                 {
-                    log_error(DEBUG, "0x%x block at 0x%x\n", current_block_id, arena->pos);
+                    log_error(DEBUG, "block_parse_all(): 0x%x block at 0x%x\n", current_block_id, arena->pos);
                 }
 
                 switch (current_block_id)
@@ -294,7 +293,7 @@ bool block_parse_all(char* alr_filename)
         destroy_arena(arena);
     }
     else {
-        log_error(CRITICAL, "Couldn't open %s.\n", alr_filename);
+        log_error(CRITICAL, "block_parse_all(): Couldn't open %s.\n", alr_filename);
         return false;
     }
     if (!info_mode && animation_out != NULL) {
