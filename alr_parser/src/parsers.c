@@ -84,7 +84,7 @@ bool split_alr(char* alr_filename)
 }
 
 // Reads 0x5 animation / mesh blocks
-static void block_animation(arena_t* arena, unsigned int texture_buffer_ptr)
+static void block_animation(arena_t* arena)
 {
 	if (!info_mode) {
         if (animation_out == NULL) {
@@ -219,67 +219,13 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
     arena->pos = block_start_pos + header->size; // Set position to end of block
 }
 
-static void block_15(arena_t* arena, unsigned int big_buffer_pointer)
-{
-    uint64_t block_start_pos = arena->pos;
-    resource_layout_header* header = arena_alloc(arena, sizeof(resource_layout_header));
-
-    resource_entry* data_array = arena_alloc(arena, sizeof(resource_entry) * header->array_size);
-
-    printf("\n");
-    log_error(INFO, "File Metadata\n");
-    log_error(INFO, "Array Size: %d\n", header->array_size);
-
-    for (uint32_t i = 0; i < header->array_size; i++)
-    {
-        log_error(DEBUG, "pointer: 0x%08x unknown: 0x%08x unknown2: 0x%08x ID: 0x%08x unknown3: 0x%08x\n", data_array[i].data_ptr, data_array[i].unknown, data_array[i].unknown2, data_array[i].ID, data_array[i].unknown3);
-        if (data_array[i].pad != 0)
-        {
-            log_error(DEBUG, "Discovered anomaly in format! Apparent padding in 0x15 member was 0x%x at index %d!\n", data_array[i].pad, i);
-        }
-        if (data_array[i].flags != 0x00040001)
-        {
-            log_error(DEBUG, "Discovered anomaly in format! Flag value in 0x15 member was 0x%x at index %d!\n", data_array[i].flags, i);
-        }
-    }
-    arena->pos = block_start_pos + header->block_size;
-}
 // Allows us to skip over any block that doesn't have a parser yet
-static void block_skip(arena_t* arena, unsigned int texture_buffer_ptr)
+static void block_skip(arena_t* arena)
 {
 	uint32_t size = *(uint32_t*)(arena_pos(arena) + sizeof(uint32_t)); // Read size from block
 	// Skip to the end of the block
     arena->pos += size;
 }
-
-// Array of function pointers. When an ALR block is read, the appropriate function
-// is called using its ID as an index into this array. This is used as a replacement
-// for a very long switch statement.
-static void (*function_ptrs[23]) (arena_t*, unsigned int) = {
-        block_skip,         // 0x0
-        block_skip,
-        block_skip,
-        block_skip,
-        block_skip,
-        block_animation,    // 0x5
-        block_skip,
-        block_skip,
-        block_skip,
-        block_skip,
-        block_skip,         // 0xA
-        block_skip,
-        block_skip,
-        block_skip,
-        block_skip,
-        block_skip,
-        block_texture,      // 0x10
-        block_skip,
-        block_skip,
-        block_skip,
-        block_skip,
-        block_15,         // 0x15
-        block_skip
-};
 
 bool block_parse_all(char* alr_filename)
 {
@@ -330,7 +276,18 @@ bool block_parse_all(char* alr_filename)
                 {
                     log_error(DEBUG, "0x%x block at 0x%x\n", current_block_id, arena->pos);
                 }
-                (*function_ptrs[current_block_id]) (arena, header->resource_offset);
+
+                switch (current_block_id)
+                {
+                    case 0x5:
+                        block_animation(arena);
+                        break;
+                    case 0x10:
+                        block_texture(arena, header->resource_offset);
+                    default:
+                        block_skip(arena);
+                }
+
                 current_block_id = *((unsigned int*) arena_pos(arena)); // Read next block's ID
             }
         }
@@ -340,7 +297,7 @@ bool block_parse_all(char* alr_filename)
         log_error(CRITICAL, "Couldn't open %s.\n", alr_filename);
         return false;
     }
-    if (!info_mode) {
+    if (!info_mode && animation_out != NULL) {
         fclose(animation_out);
     }
     return true;
