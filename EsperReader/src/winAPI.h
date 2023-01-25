@@ -1,6 +1,10 @@
 #pragma once
-#include <Windows.h>
 
-extern std::string filepath;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int WINAPI FileSelectDialog();
+char* FileSelectDialog();
+#ifdef __cplusplus
+}
+#endif

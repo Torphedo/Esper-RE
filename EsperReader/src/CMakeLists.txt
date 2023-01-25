@@ -1,4 +1,4 @@
 add_executable(EsperReader
-	"main.cpp"
+	"main.c"
 	"winAPI.cpp"
 )
