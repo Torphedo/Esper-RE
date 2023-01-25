@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(EsperReader
+project(deck_reader
 	VERSION 0.2.0
 	LANGUAGES CXX C
 )
