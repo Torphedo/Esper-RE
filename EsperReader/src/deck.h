@@ -1,6 +1,6 @@
 #pragma once
 
-typedef struct deck_t
+typedef struct
 {
 	char Header[4];
 	char Name[16];
@@ -11,4 +11,4 @@ typedef struct deck_t
 	int MissionAttempts;
 	int MultiplayerWins;
 	int MultiplayerWinRate;
-};
+}deck_t;

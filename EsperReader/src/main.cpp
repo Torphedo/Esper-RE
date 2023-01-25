@@ -5,7 +5,7 @@
 
 #include "winAPI.h"
 #include "deck.h"
-#include "deckSkillNames.h"
+#include "skill_names.h"
 
 std::string filepath;
 
