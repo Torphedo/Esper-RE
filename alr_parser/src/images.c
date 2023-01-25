@@ -17,7 +17,7 @@ typedef enum tga_pixel_formats
     RUN_LENGTH_GREYSCALE = 0xB
 }tga_pixel_formats;
 
-// TGA header with all relevant settings until the shorts for width & height.
+// TGA header
 typedef struct tga_header {
         uint8_t id_size; // 0
         uint8_t color_map; // 0
@@ -28,7 +28,7 @@ typedef struct tga_header {
         uint16_t width;
         uint16_t height;
         uint8_t bits_per_pixel;
-        uint8_t image_settings; // This setting makes pixels order from top to bottom when 0b00100000
+        uint8_t image_settings; // This setting makes pixels order from top to bottom when set to 0b00100000
 }tga_header;
 
 // DDS structures
