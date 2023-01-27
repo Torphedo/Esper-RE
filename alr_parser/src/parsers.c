@@ -3,10 +3,11 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
+#include <arena.h>
+#include <logging.h>
+
 #include "alr.h"
 #include "images.h"
-#include "arena.h"
-#include "logging.h"
 
 bool info_mode = false;
 

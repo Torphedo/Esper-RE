@@ -1,8 +1,7 @@
 #include <stdio.h>
 
+#include <logging.h>
 #include "images.h"
-#include "logging.h"
-
 
 // TGA structures & naming
 
