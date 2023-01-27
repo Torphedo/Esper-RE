@@ -158,7 +158,6 @@ static void block_animation(arena_t* arena)
 static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
 {
 	uint64_t block_start_pos = arena->pos;
-    if (info_mode) { printf("\n=== Texture Info ===\n"); }
 
 	texture_metadata_header* header = arena_alloc(arena, sizeof(texture_metadata_header));
     log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->DDS_count, header->texture_count);
