@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16) # Latest version on apt, and nothing newer is needed.
 project(alr_parser
-		VERSION 0.2.0
+	VERSION 0.5.1
 	LANGUAGES C
 )
 
