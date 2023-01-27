@@ -4,6 +4,7 @@
 #include <logging.h>
 
 #include "parsers.h"
+#include "arguments.h"
 
 // Cross-platform pause
 static inline void pause()
@@ -15,30 +16,23 @@ static inline void pause()
 int main(int argc, char* argv[])
 {
     // Parse command-line arguments.
-    switch (argc)
+    flags options = parse_arguments(argc, argv);
+
+    if (options.filename == NULL)
     {
-        case 1:
-            log_error(INFO, "Please provide an input filename.\n");
-            pause();
-            return 1;
-        case 2:
-            log_error(WARNING, "No action specified, defaulting to --split\n");
-            split_alr(argv[1]);
-            break;
-        default:
-            if (strcmp(argv[2], "--split") == 0)
-            {
-                split_alr(argv[1]);
-            }
-            else if (strcmp(argv[2], "--dump") == 0)
-            {
-                block_parse_all(argv[1]);
-            }
-            else if (strcmp(argv[2], "--info") == 0)
-            {
-                set_info_mode();
-                block_parse_all(argv[1]);
-            }
+        log_error(CRITICAL, "No filenames detected.\n");
+        return 1;
+    }
+
+    if (options.silent) { disable_logging(); }
+    if (options.info_mode) { set_info_mode(); }
+    if (options.split)
+    {
+        return split_alr(options.filename);
+    }
+    else
+    {
+        return block_parse_all(options.filename, options);
     }
 
 	return 0;

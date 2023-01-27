@@ -186,7 +186,9 @@ void write_texture(texture_info texture)
     {
         case TGA:
             write_tga(texture);
+            break;
         case DDS:
             write_dds(texture);
+            break;
     }
 }

@@ -6,6 +6,7 @@
 #include <arena.h>
 #include <logging.h>
 
+#include "parsers.h"
 #include "alr.h"
 #include "images.h"
 
@@ -155,7 +156,7 @@ static void block_animation(arena_t* arena)
 }
 
 // Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
-static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
+static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image_type format)
 {
 	uint64_t block_start_pos = arena->pos;
 
@@ -204,7 +205,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr)
                     .image_data = (char *) arena->base_addr + texture_buffer_ptr + resources[texture_id].data_ptr,
                     .width = textures[i].width,
                     .height = textures[i].height,
-                    .format = DDS
+                    .format = format
             };
             write_texture(info);
         }
@@ -227,7 +228,7 @@ static void block_skip(arena_t* arena)
     arena->pos += size;
 }
 
-bool block_parse_all(char* alr_filename)
+bool block_parse_all(char* alr_filename, flags options)
 {
     FILE* alr = fopen(alr_filename, "rb");
     if (alr != NULL)
@@ -248,6 +249,9 @@ bool block_parse_all(char* alr_filename)
         fread(arena->base_addr, filesize, 1, alr);
         fclose(alr);
         log_error(DEBUG, "block_parse_all(): Loaded %s\n", alr_filename);
+
+        uint8_t image_format = DDS;
+        if (options.tga) { image_format = TGA; }
 
         block_layout* header = arena_alloc(arena, sizeof(block_layout));
         unsigned int* pointer_array = arena_alloc(arena, header->offset_array_size * sizeof(unsigned int));
@@ -282,7 +286,7 @@ bool block_parse_all(char* alr_filename)
                         block_animation(arena);
                         break;
                     case 0x10:
-                        block_texture(arena, header->resource_offset);
+                        block_texture(arena, header->resource_offset, image_format);
                     default:
                         block_skip(arena);
                 }
