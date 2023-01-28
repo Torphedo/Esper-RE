@@ -1,0 +1,26 @@
+//------------------------------------------------
+//--- 010 Editor v11.0 Binary Template
+//
+//      File: Phantom Dust Skill Pack
+//   Authors: Torphedo
+//   Version: 1.0.0
+//   Purpose: Parses binary v1 skill pack files from Skill Editor
+//  Category: 
+// File Mask: None
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+struct skill_pack
+{
+    LittleEndian();
+    char Name[32]<bgcolor=cWhite>;
+    short FormatVersion<bgcolor=cGreen>;
+    short SkillCount<bgcolor=cGreen>;
+    char pad[12]; // Leaves space for future expansion
+    struct Skill
+    {
+        char SkillData[144]<bgcolor=cBlue>;
+    }skill[SkillCount];
+
+}pack;
