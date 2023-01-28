@@ -9,7 +9,7 @@ typedef struct {
     uint32_t flags;             // Unknown, may potentially indicate types of data that will be in the file
     uint32_t resource_offset;   // Offset of resource section at the end of the file
     uint32_t offset_array_size; // Number of offsets in the array
-    uint32_t unknown;
+    uint32_t last_resource_end; // Relative offset from resource_offset where the last resource ends. This should point to the end of the file when added to resource_offset.
     uint64_t pad;
 }block_layout;
 
@@ -30,10 +30,10 @@ typedef struct {
 
 typedef struct {
     uint32_t flags;    // Unknown, always 01 00 04 00 so far
-    uint32_t data_ptr; // An absolute offset to some data in resource section
+    uint32_t data_ptr; // An offset to some data in the resource section, relative to block_layout.resource_offset (located at 0xC in the file)
     uint32_t pad;      // Always 0, so far
     uint32_t unknown;
-    uint32_t unknown2;
+    uint32_t unknown2; // Often 0
     uint32_t ID; // This is the same in all variations of the same model. Easy way to identify specific ALRs / models in memory
     uint32_t unknown3;
 }resource_entry;
@@ -70,6 +70,7 @@ typedef struct {
 
 // This whole structure appears to hold animation data, or MAYBE mesh data.
 typedef struct {
+    uint32_t id; // 0x5
     uint32_t size;
     float unknown_float; // This often matches the number of frames
     uint16_t unknown_settings1;

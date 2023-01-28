@@ -95,7 +95,6 @@ static void block_animation(arena_t* arena)
 		fprintf(animation_out, "\n=== Animation Block ===\n");
 	}
     uint64_t block_start_pos = arena->pos;
-    arena->pos += 4;
 	anim_header* header = arena_alloc(arena, sizeof(anim_header));
 
 	if (header->ArraySize1 > 0) {
@@ -167,8 +166,9 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
     char* dds_names = arena_alloc(arena, 0x20 * header->DDS_count);
 
     // Get contents of 0x15 sub-blocks
+    block_layout* file_header = (block_layout*) (arena->base_addr);
     resource_entry* resources = (resource_entry*) (arena->base_addr + arena->base_addr[0x4] + sizeof(resource_layout_header));
-    surface_info* surface = arena_alloc(arena, header->DDS_count * sizeof(surface_info));
+    surface_info* surfaces = arena_alloc(arena, header->DDS_count * sizeof(surface_info));
     texture_header* textures = arena_alloc(arena, sizeof(texture_header) * header->texture_count);
 
     for (uint32_t i = 0; i < header->DDS_count; i++)
@@ -178,15 +178,15 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
         uint32_t res_size = 0;
         if (texture_id == header->DDS_count - 1)
         {
-            res_size = arena->size - resources[texture_id].data_ptr;
+            res_size = file_header->last_resource_end - resources[texture_id].data_ptr;
         }
         else {
-            res_size = resources[texture_id + 1].data_ptr - resources[texture_id].data_ptr;
+            res_size = resources[texture_id + 1].data_ptr - resources[texture_id].data_ptr; // next_offset - current_offset
         }
 
         uint8_t bits_per_pixel = (res_size / pixel_count) * 8;
 
-        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * 0x20], surface[i].mipmap_count, bits_per_pixel);
+        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel);
 
         if (resources[i].pad != 0)
         {
@@ -201,7 +201,7 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
             texture_info info = {
                     .filename = &dds_names[i * 0x20],
                     .bits_per_pixel = bits_per_pixel,
-                    .mipmap_count = surface[i].mipmap_count,
+                    .mipmap_count = surfaces[i].mipmap_count,
                     .image_data = (char *) arena->base_addr + texture_buffer_ptr + resources[texture_id].data_ptr,
                     .width = textures[i].width,
                     .height = textures[i].height,
