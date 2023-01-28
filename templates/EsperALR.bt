@@ -18,11 +18,11 @@ struct File_ALR
 		int ID<bgcolor=cGray>; // 11 00 00 00
 		int Size<bgcolor=cGreen>;
 		int Flags<bgcolor=cYellow>; // (?) Example from pc00a.alr: 52 00 07 00
-		int WhitespaceEndAddress<bgcolor=cLtGray>;
-		int InfoSectionsCount<bgcolor=cLtGray>;
-		int Unk1<bgcolor=cLtRed>; // Maybe a reference to an offet really far into the file?
+		int resource_addr<bgcolor=cLtGray>; // Offset where resources(?) start
+		int offset_count<bgcolor=cLtGray>;
+		int last_resource_end<bgcolor=cLtRed>;
 		double Pad;
-		int OffsetArray[InfoSectionsCount]<bgcolor=cLtBlue>;
+		int OffsetArray[offset_count]<bgcolor=cLtBlue>;
 	} header;
 
 	while (ReadDouble() != 0x00)
@@ -35,14 +35,13 @@ struct File_ALR
 				int Size<bgcolor=cBlue>;
 				int InfoSectionsCount<bgcolor=cLtGray>;
 
-                // Prevents warnings if the array size will be 0.
-                if (InfoSectionsCount != 0)
+                if (InfoSectionsCount > 0)
                 {
 				    struct InfoSection2
 				    {
-				        int Flags2<bgcolor=cYellow>; // (?) Example from pc00a.alr: 0x01 00 04 00
-				        int DataSec_Start<bgcolor=cGreen>;
-				        int Unk<bgcolor=cLtRed>;
+				        int flags<bgcolor=cYellow>; // Always 01 00 04 00, so far
+				        int data_offset<bgcolor=cGreen>;
+				        int pad<bgcolor=cLtGray>;
 				        int Unk<bgcolor=cLtRed>;
 				        int UnkZ<bgcolor=cLtRed>;
 				        int StaticID<bgcolor=cPurple>;
@@ -254,7 +253,7 @@ struct File_ALR
 				int Unk2<bgcolor=cRed>;
 				int Unk3<bgcolor=cRed>; // UNK2 and UNK3 sometimes match each other in value. When they don't, UNK3 is always 0
 				int UnkZero1<bgcolor=cRed>;
-				int Flags2<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
+				int Flags<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
 		
 				// 0x[SIZE-0x24] DATA
 				// 0x24 = 36
@@ -338,6 +337,6 @@ struct File_ALR
     if (FEof() != 1)
     {
         // Checks if we're at the end of the file
-        char Whitespace[header.WhitespaceEndAddress - (FTell())]<bgcolor=cGray>;
+        char Whitespace[header.resource_addr - (FTell())]<bgcolor=cGray>;
     }
 } file;
