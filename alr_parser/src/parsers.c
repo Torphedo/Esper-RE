@@ -130,7 +130,7 @@ static void block_animation(arena_t* arena)
 			break;
 		}
 		default: {
-			log_error(CRITICAL, "Unknown animation data structure: element size %hi\n", header->array_width_2);
+			log_error(WARNING, "block_animation(): Unknown animation data structure: element size %hi\n", header->array_width_2);
 			break;
 		}
 		}
@@ -186,7 +186,22 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
 
         uint8_t bits_per_pixel = (res_size / pixel_count) * 8;
 
-        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp\n", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel);
+        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp, %4dx%-4d (", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel, surfaces[i].width, surfaces[i].height, res_size);
+
+        // Print out size, formatted in appropriate unit
+        if (res_size < 0x1000)
+        {
+            printf("%d bytes", res_size);
+        }
+        else if (res_size < 0x10000)
+        {
+            printf("%gKB", (double) res_size / 0x1000);
+        }
+        else
+        {
+            printf("%gMB", (double) res_size / 0x10000);
+        }
+        printf(" buffer)\n");
 
         if (resources[i].pad != 0)
         {
