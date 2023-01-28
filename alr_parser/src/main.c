@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 
     if (options.filename == NULL)
     {
-        log_error(CRITICAL, "No filenames detected.\n");
+        log_error(CRITICAL, "main(): No filenames detected.\n");
         return 1;
     }
 
@@ -34,6 +34,4 @@ int main(int argc, char* argv[])
     {
         return block_parse_all(options.filename, options);
     }
-
-	return 0;
 }

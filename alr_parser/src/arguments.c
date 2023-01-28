@@ -61,7 +61,7 @@ flags parse_arguments(int argc, char* argv[])
             output.filename = argv[i];
             if (argc == 2)
             {
-                log_error(WARNING, "No action specified, defaulting to --split\n");
+                log_error(WARNING, "parse_arguments(): No action specified, defaulting to --split\n");
                 output.split = true;
             }
             continue;
