@@ -43,7 +43,7 @@ typedef struct {
 typedef struct {
     uint32_t id; // 0x10000000
     uint32_t size;
-    uint32_t DDS_count;
+    uint32_t surface_count;
     uint32_t texture_count;
     unsigned char alr_name[0x10];
 }texture_metadata_header;
@@ -66,7 +66,6 @@ typedef struct {
     uint32_t unknown; // Often 4 or 8, sometimes counts up from 13?
     uint32_t pad;
 }surface_info;
-
 
 // This whole structure appears to hold animation data, or MAYBE mesh data.
 typedef struct {

@@ -208,23 +208,23 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
 	uint64_t block_start_pos = arena->pos;
 
 	texture_metadata_header* header = arena_alloc(arena, sizeof(texture_metadata_header));
-    log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->DDS_count, header->texture_count);
+    log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->surface_count, header->texture_count);
 
     // DDS filenames + the mystery data attached to them are 0x20 long each
-    char* dds_names = arena_alloc(arena, 0x20 * header->DDS_count);
+    char* dds_names = arena_alloc(arena, 0x20 * header->surface_count);
 
     // Get contents of 0x15 sub-blocks
     block_layout* file_header = (block_layout*) (arena->base_addr);
     resource_entry* resources = (resource_entry*) (arena->base_addr + arena->base_addr[0x4] + sizeof(resource_layout_header));
-    surface_info* surfaces = arena_alloc(arena, header->DDS_count * sizeof(surface_info));
+    surface_info* surfaces = arena_alloc(arena, header->surface_count * sizeof(surface_info));
     texture_header* textures = arena_alloc(arena, sizeof(texture_header) * header->texture_count);
 
-    for (uint32_t i = 0; i < header->DDS_count; i++)
+    for (uint32_t i = 0; i < header->surface_count; i++)
     {
         uint32_t pixel_count = textures[i].width * textures[i].height;
         uint32_t texture_id = textures[i].index;
         uint32_t res_size = 0;
-        if (texture_id == header->DDS_count - 1)
+        if (texture_id == header->surface_count - 1)
         {
             res_size = file_header->last_resource_end - resources[texture_id].data_ptr;
         }
@@ -237,19 +237,21 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
         log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp, %4dx%-4d (", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel, surfaces[i].width, surfaces[i].height, res_size);
 
         // Print out size, formatted in appropriate unit
-        if (res_size < 0x1000)
+        if (res_size < 0x400)
         {
             printf("%d bytes", res_size);
         }
-        else if (res_size < 0x10000)
+        else if (res_size < 0x100000)
         {
-            printf("%gKiB", (double) res_size / 0x1000);
+            printf("%gKiB", (double) res_size / 0x400);
         }
         else
         {
-            printf("%gMiB", (double) res_size / 0x10000);
+            printf("%gMiB", (double) res_size / 0x100000);
         }
-        printf(" buffer)\n");
+        printf(" buffer @ 0x%x)\n", resources[i].data_ptr);
+
+        log_error(DEBUG, "Pixel count 0x%x\n", full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count));
 
         if (resources[i].pad != 0)
         {
