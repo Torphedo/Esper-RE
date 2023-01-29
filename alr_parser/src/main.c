@@ -28,10 +28,11 @@ int main(int argc, char* argv[])
     if (options.info_mode) { set_info_mode(); }
     if (options.split)
     {
-        return split_alr(options.filename);
+        // Return values must be inverted because stdbool false == 0, and an exit code of 0 means success.
+        return !(split_alr(options.filename));
     }
     else
     {
-        return block_parse_all(options.filename, options);
+        return !(block_parse_all(options.filename, options));
     }
 }
