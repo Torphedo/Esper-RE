@@ -25,14 +25,14 @@ You can specify filenames and flags in any order, but flags have to be passed st
       Parses the entire file. Prints texture metadata to the console, write animation data to a text file,      
       and dump DDS/TGA textures using the names in the ALR file. Textures will usually be viewable.
       
-   `silent`:
+   `silent`:      
       Silences all console output.
    
-   `tga`:
+   `tga`:       
       In `dump` mode, output textures as TGA files. This will still use the name in the file to write to disk, so you'll have to rename them
       from `.dds` to `.tga` to open them.
    
-   `dds`:
+   `dds`:     
       In `dump` mode, output textures as DDS files. This is the default mode.
       
 If you simply drag-and-drop an ALR file onto the tool, it will default to the `split` option.
