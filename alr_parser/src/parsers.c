@@ -24,15 +24,22 @@ void set_info_mode()
 bool split_alr(char* alr_filename)
 {
 	FILE* alr = fopen(alr_filename, "rb");
-	if (alr != NULL)
-	{
-		block_layout header;
-
+    if (alr == NULL) {
+        log_error(CRITICAL, "split_alr(): Failed to open %s\n", alr_filename);
+    }
+    else
+    {
+		block_layout header = {0};
 		// Read header
 		fread(&header, sizeof(block_layout), 1, alr);
         uint32_t* pointer_array = malloc(header.offset_array_size * sizeof(uint32_t));
-		if (pointer_array != NULL)
-		{
+        if (pointer_array == NULL)
+        {
+            log_error(CRITICAL, "split_alr(): Failed to allocate for pointer array of size %d\n", header.offset_array_size);
+            return false;
+        }
+        else
+        {
 			// Read in pointer array
 			fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
 
@@ -54,7 +61,7 @@ bool split_alr(char* alr_filename)
                     size *= -1;
                 }
 
-                if (size > 0x00FFFFF)
+                if (size > 0x10000000) // 256MiB
                 {
                     log_error(CRITICAL, "split_alr(): Block size at block %d was unreasonably high (%d bytes)!\n", i, size);
                     return false;
@@ -75,14 +82,53 @@ bool split_alr(char* alr_filename)
             }
 			free(pointer_array);
 		}
-		else {
-			log_error(CRITICAL, "split_alr(): Failed to allocate for pointer array of size %d\n", header.offset_array_size);
-			return false;
-		}
+        fseek(alr, sizeof(block_layout) + (header.offset_array_size * sizeof(uint32_t)), SEEK_SET);
+        resource_layout_header resource_header = {0};
+        fread(&resource_header, sizeof(resource_layout_header), 1, alr);
+        resource_entry* resources = calloc(resource_header.array_size, sizeof(resource_entry));
+        if (resources == NULL)
+        {
+            log_error(CRITICAL, "split_alr(): Failed to allocate memory for resource entry table (%d bytes)\n", resource_header.array_size * sizeof(resource_entry));
+        }
+        else
+        {
+            fread(resources, sizeof(resource_entry), resource_header.array_size, alr);
+            for (uint32_t i = 0; i < resource_header.array_size; i++)
+            {
+                uint32_t res_size = 0;
+                if (i == resource_header.array_size - 1) {
+                    res_size = header.last_resource_end - resources[i].data_ptr;
+                }
+                else {
+                    res_size = resources[i + 1].data_ptr - resources[i].data_ptr; // next_offset - current_offset
+                }
+                if (res_size > 0x10000000) // 256MiB
+                {
+                    log_error(CRITICAL, "split_alr(): Size of resource %d was unreasonably high (%d bytes)!\n", i, res_size);
+                    return false;
+                }
+                char* buffer = calloc(1, res_size);
+                if (buffer == NULL)
+                {
+                    log_error(CRITICAL, "split_alr(): Failed to allocate %d bytes for resource #%d\n", res_size, i);
+                }
+                else
+                {
+                    fseek(alr, header.resource_offset + resources[i].data_ptr, SEEK_SET);
+                    fread(buffer, res_size, 1, alr);
+                    // Because i is a uint32_t, the longest possible filename is resource_4294967295.bin, which is 23 characters
+                    char filename[32];
+                    if (snprintf(filename, 24, "resource_%u.bin", i) > 0)
+                    {
+                        log_error(INFO, "Resource %d: %d (0x%x) bytes\n", i, res_size, res_size);
+                        FILE* dump = fopen(filename, "wb");
+                        fwrite(buffer, res_size, 1, dump);
+                        fclose(dump);
+                    }
+                }
+            }
+        }
 		fclose(alr);
-	}
-	else {
-		log_error(CRITICAL, "split_alr(): Failed to open %s\n", alr_filename);
 	}
 	return true;
 }
@@ -197,11 +243,11 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
         }
         else if (res_size < 0x10000)
         {
-            printf("%gKB", (double) res_size / 0x1000);
+            printf("%gKiB", (double) res_size / 0x1000);
         }
         else
         {
-            printf("%gMB", (double) res_size / 0x10000);
+            printf("%gMiB", (double) res_size / 0x10000);
         }
         printf(" buffer)\n");
 
