@@ -132,8 +132,9 @@ struct File_ALR
 
                 struct TGA_Names
                 {
+                    unsigned int surface_index<bgcolor=cLtGreen>;
                     char TGAName[32]<bgcolor=cYellow>;
-                    unsigned char UnkPad[28]<bgcolor=cRed>;
+                    unsigned char UnkPad[24]<bgcolor=cRed>;
                 } TGA[TGA_Num];
 			} Subfile;
 		}
@@ -254,7 +255,7 @@ struct File_ALR
 				int Unk3<bgcolor=cRed>; // UNK2 and UNK3 sometimes match each other in value. When they don't, UNK3 is always 0
 				int UnkZero1<bgcolor=cRed>;
 				int Flags<bgcolor=cYellow>; // Example from pc00a.alr: 00 02 0C 00
-		
+		    
 				// 0x[SIZE-0x24] DATA
 				// 0x24 = 36
                 local int VertCount = 0;
@@ -304,7 +305,7 @@ struct File_ALR
 				int Flags<bgcolor=cYellow>; // (?) Example from eft0601.alr: 00 11 01 00
 				int Unk4<bgcolor=cRed>;
                 char padding[16]; // (?)
-				int DataSector[(SectorSize - 56)/4]<bgcolor=cGreen>; // This is definitely the wrong data type
+				int DataSector[(SectorSize - 0x38)/4]<bgcolor=cGreen>; // This is definitely the wrong data type
 			} Subfile;
 		}
         
