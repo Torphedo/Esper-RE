@@ -192,3 +192,15 @@ void write_texture(texture_info texture)
             break;
     }
 }
+
+uint64_t full_pixel_count(uint32_t width, uint32_t height, uint32_t mipmap_count)
+{
+    uint64_t pixel_count = width * height;
+    for (uint32_t i = 0; i < mipmap_count - 1; i++)
+    {
+        width /= 2;
+        height /= 2;
+        pixel_count += (width * height);
+    }
+    return pixel_count;
+}
