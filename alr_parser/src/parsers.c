@@ -37,7 +37,7 @@ bool split_alr(char* alr_filename)
 			fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
 
             // Write each large block of data to a separate file.
-            for (unsigned int i = 0; i < header.offset_array_size; i++)
+            for (uint32_t i = 0; i < header.offset_array_size; i++)
             {
                 // Length between the current and next pointer.
                 int32_t size;
@@ -63,12 +63,14 @@ bool split_alr(char* alr_filename)
                 fseek(alr, (long) pointer_array[i], SEEK_SET);
                 fread(buffer, size, 1, alr);
 
-                // There's no user input here and the filename can never be >15 characters
-                char filename[15];
-                sprintf(filename, "%u.bin", i);
-                FILE* dump = fopen(filename, "wb");
-                fwrite(buffer, size, 1, dump);
-                fclose(dump);
+                // Because i is a uint32_t, the longest possible filename is 4294967295.bin, which is 14 characters
+                char filename[16];
+                if (snprintf(filename, 15, "%u.bin", i) > 0)
+                {
+                    FILE *dump = fopen(filename, "wb");
+                    fwrite(buffer, size, 1, dump);
+                    fclose(dump);
+                }
                 free(buffer);
             }
 			free(pointer_array);
@@ -154,7 +156,7 @@ static void block_animation(arena_t* arena)
     arena->pos = block_start_pos + header->size; // Jump to next block
 }
 
-// Reads 0x10 blocks and uses them to read out RGBA data in the ALR to TGA files on disk.
+// Reads 0x10 blocks and uses them to read out RGBA data in the ALR to image files on disk.
 static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image_type format)
 {
 	uint64_t block_start_pos = arena->pos;
