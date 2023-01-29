@@ -38,6 +38,16 @@ typedef struct {
     uint32_t unknown3;
 }resource_entry;
 
+typedef struct {
+    uint32_t flags;    // Unknown, always 01 00 04 00 so far
+    uint32_t data_ptr; // An offset to some data in the resource section, relative to chunk_layout.resource_offset (located at 0xC in the file)
+    uint32_t unknown;
+    uint32_t pad;
+    uint32_t unknown2; // Often 0
+    uint32_t ID; // This is the same in all variations of the same model. Easy way to identify specific ALRs / models in memory
+    uint32_t unknown3;
+}resource_entry_0x16;
+
 
 // The header of an 0x10 ALR chunk, which stores information about textures in the file
 typedef struct {

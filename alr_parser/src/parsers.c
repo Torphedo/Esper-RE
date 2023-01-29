@@ -133,6 +133,54 @@ bool split_alr(char* alr_filename)
 	return true;
 }
 
+// Function to generically skip over any chunk
+static void chunk_skip(arena_t* arena)
+{
+    uint32_t size = *(uint32_t*)(arena_pos(arena) + sizeof(uint32_t)); // Read size from chunk
+    // Skip to the end of the chunk
+    arena->pos += size;
+}
+
+// Extra checks for 0x0 chunks
+static void chunk_0x0(arena_t* arena)
+{
+    uint32_t size = *(uint32_t*)(arena_pos(arena) + sizeof(uint32_t)); // Read size from chunk
+    if (size != 8)
+    {
+        log_error(DEBUG, "chunk_0x0(): Chunk anomaly, size was %d bytes rather than the usual 8 bytes\n", size);
+    }
+    chunk_skip(arena);
+}
+
+// Extra checks for 0xD chunks
+static void chunk_0xD(arena_t* arena)
+{
+    uint32_t size = *(uint32_t*)(arena_pos(arena) + sizeof(uint32_t)); // Read size from chunk
+    if (size != 0xC)
+    {
+        // This isn't really a *problem*, but the warning status helps it stand out
+        log_error(WARNING, "chunk_0xD(): Chunk was not empty, with a size of %d bytes rather than the usual 12 bytes\n", size);
+    }
+    chunk_skip(arena);
+}
+
+// Extra checks for 0x16 chunks
+static void chunk_0x16(arena_t* arena)
+{
+    uint64_t chunk_start = arena->pos;
+    resource_layout_header* header = arena_alloc(arena, sizeof(resource_layout_header));
+    if (header->array_size > 0)
+    {
+        log_error(INFO, "chunk_0x16(): Chunk was not empty, with %d resource entry(s).\n", header->array_size);
+        resource_entry_0x16* entries = arena_alloc(arena, sizeof(resource_entry) * header->array_size);
+        for (uint32_t i = 0; i < header->array_size; i++)
+        {
+            log_error(INFO, "0x16 resource %2d: data offset(?) 0x%x, unknown 1 0x%x, potential offset(?) 0x%x\n", i, entries[i].data_ptr, entries[i].unknown, entries[i].ID);
+        }
+    }
+    arena->pos = chunk_start + header->chunk_size; // Jump to next chunk
+}
+
 // Reads 0x5 animation / mesh chunks
 static void chunk_animation(arena_t* arena)
 {
@@ -234,7 +282,9 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
 
         uint8_t bits_per_pixel = (res_size / pixel_count) * 8;
 
-        log_error(INFO, "Surface %2d (%s): %2d mipmap(s), estimated %2d bpp, %4dx%-4d (", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel, surfaces[i].width, surfaces[i].height, res_size);
+        uint32_t total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
+
+        log_error(INFO, "Surface %2d %-32s: %2d mipmap(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height, res_size);
 
         // Print out size, formatted in appropriate unit
         if (res_size < 0x400)
@@ -251,15 +301,13 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
         }
         printf(" buffer @ 0x%x)\n", resources[i].data_ptr);
 
-        log_error(DEBUG, "Pixel count 0x%x\n", full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count));
-
         if (resources[i].pad != 0)
         {
-            log_error(DEBUG, "chunk_texture(): Resource meta anomaly, apparent padding at index %d was 0x%x\n", i, resources[i].pad);
+            log_error(DEBUG, "chunk_texture(): Resource meta (0x15) anomaly, apparent padding at sub-chunk %d was 0x%x\n", i, resources[i].pad);
         }
         if (resources[i].flags != 0x00040001)
         {
-            log_error(DEBUG, "chunk_texture(): Resource meta anomaly, flag at index %d was 0x%x\n", i, resources[i].flags);
+            log_error(DEBUG, "chunk_texture(): Resource meta (0x15) anomaly, ID at sub-chunk %d was 0x%x\n", i, resources[i].flags);
         }
 
         if (!info_mode) {
@@ -285,14 +333,6 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
     arena->pos = chunk_start_pos + header->size; // Set position to end of chunk
 }
 
-// Allows us to skip over any chunk that doesn't have a parser yet
-static void chunk_skip(arena_t* arena)
-{
-	uint32_t size = *(uint32_t*)(arena_pos(arena) + sizeof(uint32_t)); // Read size from chunk
-	// Skip to the end of the chunk
-    arena->pos += size;
-}
-
 bool chunk_parse_all(char* alr_filename, flags options)
 {
     FILE* alr = fopen(alr_filename, "rb");
@@ -313,7 +353,7 @@ bool chunk_parse_all(char* alr_filename, flags options)
         }
         fread(arena->base_addr, filesize, 1, alr);
         fclose(alr);
-        log_error(DEBUG, "chunk_parse_all(): Loaded %s\n", alr_filename);
+        log_error(DEBUG, "chunk_parse_all(): Loaded %s (%d bytes)\n", alr_filename, filesize);
 
         uint8_t image_format = DDS;
         if (options.tga) { image_format = TGA; }
@@ -323,6 +363,7 @@ bool chunk_parse_all(char* alr_filename, flags options)
         if (info_mode)
         {
             log_error(INFO, "Resource Section Offset: 0x%x\n", header->resource_offset);
+            log_error(INFO, "Last Resource End Offset: 0x%x\n", header->last_resource_end);
             log_error(INFO, "File Count: %d\n\n", header->offset_array_size);
             for (unsigned int i = 0; i < header->offset_array_size; i++)
             {
@@ -332,6 +373,11 @@ bool chunk_parse_all(char* alr_filename, flags options)
         for (unsigned int i = 0; i < header->offset_array_size; i++)
         {
             unsigned int current_chunk_id = *(arena->base_addr + pointer_array[i]);
+            if (pointer_array[i] == 0)
+            {
+                log_error(WARNING, "chunk_parse_all(): Offset %d was 0, skipping...\n", i);
+                continue;
+            }
             arena->pos = pointer_array[i];
             while (current_chunk_id != 0)
             {
@@ -347,13 +393,24 @@ bool chunk_parse_all(char* alr_filename, flags options)
 
                 switch (current_chunk_id)
                 {
+                    case 0x0:
+                        chunk_0x0(arena); // Unreachable because of the while() loop
+                        break;
                     case 0x5:
                         chunk_animation(arena);
                         break;
+                    case 0xD:
+                        chunk_0xD(arena);
+                        break;
                     case 0x10:
                         chunk_texture(arena, header->resource_offset, image_format);
+                        break;
+                    case 0x16:
+                        chunk_0x16(arena);
+                        break;
                     default:
                         chunk_skip(arena);
+                        break;
                 }
 
                 current_chunk_id = *((unsigned int*) arena_pos(arena)); // Read next chunk's ID
