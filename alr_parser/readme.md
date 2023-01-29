@@ -21,7 +21,7 @@ This tool is command-line / drag-and-drop only.
       Writes out each large chunk of data pointed to in the header to separate files with a `.bin` extension.
     
    `info`:     
-      Parses the entire file, giving information on the location and type of each data block, texture metadata & filenames,    
+      Parses the entire file, giving information on the location and type of each data chunk, texture metadata & filenames,    
       and the location stored in the header where resources like textures are stored. This will not write anything to disk.
    
    `dump`:          

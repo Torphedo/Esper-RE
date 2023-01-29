@@ -33,6 +33,6 @@ int main(int argc, char* argv[])
     }
     else
     {
-        return !(block_parse_all(options.filename, options));
+        return !(chunk_parse_all(options.filename, options));
     }
 }

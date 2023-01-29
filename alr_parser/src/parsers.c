@@ -29,9 +29,9 @@ bool split_alr(char* alr_filename)
     }
     else
     {
-		block_layout header = {0};
+		chunk_layout header = {0};
 		// Read header
-		fread(&header, sizeof(block_layout), 1, alr);
+		fread(&header, sizeof(chunk_layout), 1, alr);
         uint32_t* pointer_array = malloc(header.offset_array_size * sizeof(uint32_t));
         if (pointer_array == NULL)
         {
@@ -43,7 +43,7 @@ bool split_alr(char* alr_filename)
 			// Read in pointer array
 			fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
 
-            // Write each large block of data to a separate file.
+            // Write each large chunk of data to a separate file.
             for (uint32_t i = 0; i < header.offset_array_size; i++)
             {
                 // Length between the current and next pointer.
@@ -57,13 +57,13 @@ bool split_alr(char* alr_filename)
 
                 if ( size < 0)
                 {
-                    log_error(WARNING, "split_alr(): Adjusting for negative block size at block %d.\n", i);
+                    log_error(WARNING, "split_alr(): Adjusting for negative chunk size at chunk %d.\n", i);
                     size *= -1;
                 }
 
                 if (size > 0x10000000) // 256MiB
                 {
-                    log_error(CRITICAL, "split_alr(): Block size at block %d was unreasonably high (%d bytes)!\n", i, size);
+                    log_error(CRITICAL, "split_alr(): Chunk size at chunk %d was unreasonably high (%d bytes)!\n", i, size);
                     return false;
                 }
                 char* buffer = malloc(size);
@@ -82,7 +82,7 @@ bool split_alr(char* alr_filename)
             }
 			free(pointer_array);
 		}
-        fseek(alr, sizeof(block_layout) + (header.offset_array_size * sizeof(uint32_t)), SEEK_SET);
+        fseek(alr, sizeof(chunk_layout) + (header.offset_array_size * sizeof(uint32_t)), SEEK_SET);
         resource_layout_header resource_header = {0};
         fread(&resource_header, sizeof(resource_layout_header), 1, alr);
         resource_entry* resources = calloc(resource_header.array_size, sizeof(resource_entry));
@@ -133,16 +133,16 @@ bool split_alr(char* alr_filename)
 	return true;
 }
 
-// Reads 0x5 animation / mesh blocks
-static void block_animation(arena_t* arena)
+// Reads 0x5 animation / mesh chunks
+static void chunk_animation(arena_t* arena)
 {
 	if (!info_mode) {
         if (animation_out == NULL) {
             animation_out = fopen("animation_out.txt", "wb");
         }
-		fprintf(animation_out, "\n=== Animation Block ===\n");
+		fprintf(animation_out, "\n=== Animation Chunk ===\n");
 	}
-    uint64_t block_start_pos = arena->pos;
+    uint64_t chunk_start_pos = arena->pos;
 	anim_header* header = arena_alloc(arena, sizeof(anim_header));
 
 	if (header->ArraySize1 > 0) {
@@ -178,7 +178,7 @@ static void block_animation(arena_t* arena)
 			break;
 		}
 		default: {
-			log_error(WARNING, "block_animation(): Unknown animation data structure: element size %hi\n", header->array_width_2);
+			log_error(WARNING, "chunk_animation(): Unknown animation data structure: element size %hi\n", header->array_width_2);
 			break;
 		}
 		}
@@ -199,13 +199,13 @@ static void block_animation(arena_t* arena)
             fprintf(animation_out, "\n");
         }
 	}
-    arena->pos = block_start_pos + header->size; // Jump to next block
+    arena->pos = chunk_start_pos + header->size; // Jump to next chunk
 }
 
-// Reads 0x10 blocks and uses them to read out RGBA data in the ALR to image files on disk.
-static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image_type format)
+// Reads 0x10 chunks and uses them to read out RGBA data in the ALR to image files on disk.
+static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image_type format)
 {
-	uint64_t block_start_pos = arena->pos;
+	uint64_t chunk_start_pos = arena->pos;
 
 	texture_metadata_header* header = arena_alloc(arena, sizeof(texture_metadata_header));
     log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->surface_count, header->texture_count);
@@ -213,8 +213,8 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
     // DDS filenames + the mystery data attached to them are 0x20 long each
     char* dds_names = arena_alloc(arena, 0x20 * header->surface_count);
 
-    // Get contents of 0x15 sub-blocks
-    block_layout* file_header = (block_layout*) (arena->base_addr);
+    // Get contents of 0x15 sub-chunks
+    chunk_layout* file_header = (chunk_layout*) (arena->base_addr);
     resource_entry* resources = (resource_entry*) (arena->base_addr + arena->base_addr[0x4] + sizeof(resource_layout_header));
     surface_info* surfaces = arena_alloc(arena, header->surface_count * sizeof(surface_info));
     texture_header* textures = arena_alloc(arena, sizeof(texture_header) * header->texture_count);
@@ -255,11 +255,11 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
 
         if (resources[i].pad != 0)
         {
-            log_error(DEBUG, "block_texture(): Resource meta anomaly, apparent padding at index %d was 0x%x\n", i, resources[i].pad);
+            log_error(DEBUG, "chunk_texture(): Resource meta anomaly, apparent padding at index %d was 0x%x\n", i, resources[i].pad);
         }
         if (resources[i].flags != 0x00040001)
         {
-            log_error(DEBUG, "block_texture(): Resource meta anomaly, flag at index %d was 0x%x\n", i, resources[i].flags);
+            log_error(DEBUG, "chunk_texture(): Resource meta anomaly, flag at index %d was 0x%x\n", i, resources[i].flags);
         }
 
         if (!info_mode) {
@@ -282,25 +282,25 @@ static void block_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
 		log_error(INFO, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
 	}
 
-    arena->pos = block_start_pos + header->size; // Set position to end of block
+    arena->pos = chunk_start_pos + header->size; // Set position to end of chunk
 }
 
-// Allows us to skip over any block that doesn't have a parser yet
-static void block_skip(arena_t* arena)
+// Allows us to skip over any chunk that doesn't have a parser yet
+static void chunk_skip(arena_t* arena)
 {
-	uint32_t size = *(uint32_t*)(arena_pos(arena) + sizeof(uint32_t)); // Read size from block
-	// Skip to the end of the block
+	uint32_t size = *(uint32_t*)(arena_pos(arena) + sizeof(uint32_t)); // Read size from chunk
+	// Skip to the end of the chunk
     arena->pos += size;
 }
 
-bool block_parse_all(char* alr_filename, flags options)
+bool chunk_parse_all(char* alr_filename, flags options)
 {
     FILE* alr = fopen(alr_filename, "rb");
     if (alr != NULL)
     {
         struct stat st;
         if (stat(alr_filename, &st) != 0) {
-            log_error(CRITICAL, "block_parse_all(): Failed to get file metadata for %s", alr_filename);
+            log_error(CRITICAL, "chunk_parse_all(): Failed to get file metadata for %s", alr_filename);
             return false;
         }
         unsigned int filesize = st.st_size;
@@ -309,16 +309,16 @@ bool block_parse_all(char* alr_filename, flags options)
         arena_t* arena = create_arena(filesize, ALLOCATE_ALL, 0);
         if (arena == NULL)
         {
-            log_error(CRITICAL, "block_parse_all(): Failed to create arena with a size of %d bytes for the file %s\n", filesize, alr_filename);
+            log_error(CRITICAL, "chunk_parse_all(): Failed to create arena with a size of %d bytes for the file %s\n", filesize, alr_filename);
         }
         fread(arena->base_addr, filesize, 1, alr);
         fclose(alr);
-        log_error(DEBUG, "block_parse_all(): Loaded %s\n", alr_filename);
+        log_error(DEBUG, "chunk_parse_all(): Loaded %s\n", alr_filename);
 
         uint8_t image_format = DDS;
         if (options.tga) { image_format = TGA; }
 
-        block_layout* header = arena_alloc(arena, sizeof(block_layout));
+        chunk_layout* header = arena_alloc(arena, sizeof(chunk_layout));
         unsigned int* pointer_array = arena_alloc(arena, header->offset_array_size * sizeof(unsigned int));
         if (info_mode)
         {
@@ -331,38 +331,38 @@ bool block_parse_all(char* alr_filename, flags options)
         }
         for (unsigned int i = 0; i < header->offset_array_size; i++)
         {
-            unsigned int current_block_id = *(arena->base_addr + pointer_array[i]);
+            unsigned int current_chunk_id = *(arena->base_addr + pointer_array[i]);
             arena->pos = pointer_array[i];
-            while (current_block_id != 0)
+            while (current_chunk_id != 0)
             {
-                if (current_block_id > 0x16)
+                if (current_chunk_id > 0x16)
                 {
-                    log_error(WARNING, "block_parse_all(): Invalid block ID 0x%x at 0x%x (internal file %d, %s)!\n", current_block_id, arena->pos, i, alr_filename);
+                    log_error(WARNING, "chunk_parse_all(): Invalid chunk ID 0x%x at 0x%x (internal file %d, %s)!\n", current_chunk_id, arena->pos, i, alr_filename);
                     return false;
                 }
                 if (info_mode)
                 {
-                    log_error(DEBUG, "block_parse_all(): 0x%x block at 0x%x\n", current_block_id, arena->pos);
+                    log_error(DEBUG, "chunk_parse_all(): 0x%x chunk at 0x%x\n", current_chunk_id, arena->pos);
                 }
 
-                switch (current_block_id)
+                switch (current_chunk_id)
                 {
                     case 0x5:
-                        block_animation(arena);
+                        chunk_animation(arena);
                         break;
                     case 0x10:
-                        block_texture(arena, header->resource_offset, image_format);
+                        chunk_texture(arena, header->resource_offset, image_format);
                     default:
-                        block_skip(arena);
+                        chunk_skip(arena);
                 }
 
-                current_block_id = *((unsigned int*) arena_pos(arena)); // Read next block's ID
+                current_chunk_id = *((unsigned int*) arena_pos(arena)); // Read next chunk's ID
             }
         }
         destroy_arena(arena);
     }
     else {
-        log_error(CRITICAL, "block_parse_all(): Couldn't open %s.\n", alr_filename);
+        log_error(CRITICAL, "chunk_parse_all(): Couldn't open %s.\n", alr_filename);
         return false;
     }
     if (!info_mode && animation_out != NULL) {
