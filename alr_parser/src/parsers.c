@@ -171,11 +171,19 @@ static void chunk_0x16(arena_t* arena)
     resource_layout_header* header = arena_alloc(arena, sizeof(resource_layout_header));
     if (header->array_size > 0)
     {
-        log_error(INFO, "chunk_0x16(): Chunk was not empty, with %d resource entry(s).\n", header->array_size);
+        log_error(INFO, "chunk_0x16(): Found %d resource entry(s).\n", header->array_size);
         resource_entry_0x16* entries = arena_alloc(arena, sizeof(resource_entry) * header->array_size);
         for (uint32_t i = 0; i < header->array_size; i++)
         {
-            log_error(INFO, "0x16 resource %2d: data offset(?) 0x%x, unknown 1 0x%x, potential offset(?) 0x%x\n", i, entries[i].data_ptr, entries[i].unknown, entries[i].ID);
+            if (entries[i].pad != 0)
+            {
+                log_error(WARNING, "chunk_0x16(): Apparent padding at 0x8 in entry %d was 0x%08x, not 0.\n");
+            }
+            if (entries[i].pad2 != 0)
+            {
+                log_error(WARNING, "chunk_0x16(): Apparent padding at 0x18 in entry %d was 0x%08x, not 0.\n");
+            }
+            log_error(INFO, "0x16 resource %2d: flags 0x%08x, unknown3 0x%08x, unknown 0x%08x, unknown2 0x%08x, data_ptr 0x%08x\n", i, entries[i].flags, entries[i].unknown3, entries[i].unknown, entries[i].unknown2, entries[i].data_ptr);
         }
     }
     arena->pos = chunk_start + header->chunk_size; // Jump to next chunk
@@ -269,15 +277,15 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
 
     for (uint32_t i = 0; i < header->surface_count; i++)
     {
-        uint32_t pixel_count = textures[i].width * textures[i].height;
+        uint32_t pixel_count = surfaces[i].width * surfaces[i].height;
         uint32_t texture_id = textures[i].index;
         uint32_t res_size = 0;
-        if (texture_id == header->surface_count - 1)
+        if (i == header->surface_count - 1)
         {
-            res_size = file_header->last_resource_end - resources[texture_id].data_ptr;
+            res_size = file_header->last_resource_end - resources[i].data_ptr;
         }
         else {
-            res_size = resources[texture_id + 1].data_ptr - resources[texture_id].data_ptr; // next_offset - current_offset
+            res_size = resources[i + 1].data_ptr - resources[i].data_ptr; // next_offset - current_offset
         }
 
         uint8_t bits_per_pixel = (res_size / pixel_count) * 8;
@@ -299,7 +307,7 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
         {
             printf("%gMiB", (double) res_size / 0x100000);
         }
-        printf(" buffer @ 0x%x)\n", resources[i].data_ptr);
+        printf(" buffer @ 0x%x)\n", texture_buffer_ptr + resources[i].data_ptr);
 
         if (resources[i].pad != 0)
         {
@@ -315,9 +323,9 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
                     .filename = &dds_names[i * 0x20],
                     .bits_per_pixel = bits_per_pixel,
                     .mipmap_count = surfaces[i].mipmap_count,
-                    .image_data = (char *) arena->base_addr + texture_buffer_ptr + resources[texture_id].data_ptr,
-                    .width = textures[i].width,
-                    .height = textures[i].height,
+                    .image_data = (char *) arena->base_addr + texture_buffer_ptr + resources[i].data_ptr,
+                    .width = surfaces[i].width,
+                    .height = surfaces[i].height,
                     .format = format
             };
             write_texture(info);
@@ -325,10 +333,13 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
     }
     printf("\n");
 
+    uint32_t total_image_pixels = 0;
 	for (unsigned int i = 0; i < header->texture_count; i++)
 	{
 		log_error(INFO, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
+        total_image_pixels += textures[i].width * textures[i].height;
 	}
+    log_error(DEBUG, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
 
     arena->pos = chunk_start_pos + header->size; // Set position to end of chunk
 }
