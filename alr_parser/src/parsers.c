@@ -10,16 +10,6 @@
 #include "alr.h"
 #include "images.h"
 
-bool info_mode = false;
-
-// File pointer to print animation data as text to a file.
-FILE* animation_out;
-
-void set_info_mode()
-{
-	info_mode = true;
-}
-
 // Writes each distinct section of an ALR to separate files on disk
 bool split_alr(char* alr_filename)
 {
@@ -190,76 +180,51 @@ static void chunk_0x16(arena_t* arena)
 }
 
 // Reads 0x5 animation / mesh chunks
-static void chunk_animation(arena_t* arena)
+static void chunk_animation(arena_t* arena, flags options)
 {
-	if (!info_mode) {
-        if (animation_out == NULL) {
-            animation_out = fopen("animation_out.txt", "wb");
-        }
-		fprintf(animation_out, "\n=== Animation Chunk ===\n");
-	}
     uint64_t chunk_start_pos = arena->pos;
 	anim_header* header = arena_alloc(arena, sizeof(anim_header));
+    keyframe_3* translation_keys = arena_alloc(arena, header->translation_key_size * header->translation_key_count);
+    anim_rotation_keys* rotation_keys = arena_alloc(arena, sizeof(anim_rotation_keys) * header->translation_key_count);
+    keyframe_3* scale_keys = arena_alloc(arena, sizeof(keyframe_3) * header->scale_key_count);
 
-	if (header->ArraySize1 > 0) {
-		if (!info_mode) {
-			fprintf(animation_out, "Array Type 1 (animation frames):\n\n");
-		}
-		switch (header->array_width_2) {
-		case 8: {
-			anim_array_type1* float_array = arena_alloc(arena, header->ArraySize1 * sizeof(anim_array_type1));
-			if (!info_mode) {
-				for (unsigned int i = 0; i < header->ArraySize1; i++) {
-					fprintf(animation_out, "%02u: %f\n", (unsigned int)float_array[i].index, float_array[i].X);
-				}
-			}
-			break;
-		}
-		case 12: {
-			anim_array_type2* float_array = arena_alloc(arena, header->ArraySize1 * sizeof(anim_array_type2));
-			if (!info_mode) {
-				for (unsigned int i = 0; i < header->ArraySize1; i++) {
-					fprintf(animation_out, "%02u: %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y);
-				}
-			}
-			break;
-		}
-		case 16: {
-			anim_array_type3* float_array = arena_alloc(arena, header->ArraySize1 * sizeof(anim_array_type3));
-			if (!info_mode) {
-				for (unsigned int i = 0; i < header->ArraySize1; i++) {
-					fprintf(animation_out, "%02u: %f %f %f\n", (unsigned int)float_array[i].index, float_array[i].X, float_array[i].Y, float_array[i].Z);
-				}
-			}
-			break;
-		}
-		default: {
-			log_error(WARNING, "chunk_animation(): Unknown animation data structure: element size %hi\n", header->array_width_2);
-			break;
-		}
-		}
-	}
+    if (options.animation)
+    {
+        printf("\n");
+        log_error(DEBUG, "chunk_animation(): Total Time: %f\n", header->total_time);
+        log_error(DEBUG, "chunk_animation(): Geometry  %hi\n", header->unknown_settings1);
+        log_error(DEBUG, "chunk_animation(): Flag      0x%04x\n", header->array_width_1);
+        log_error(DEBUG, "chunk_animation(): Flag 2    0x%04x\n", header->translation_key_size);
+        for (uint32_t i = 0; i < header->translation_key_count; i++) {
+            log_error(INFO, "chunk_animation(): Translation Key frame %f: \t", translation_keys[i].frame, translation_keys[i].x, translation_keys[i].y, translation_keys[i].z);
 
-	if (header->ArraySize2 != 0) {
-		if (!info_mode) {
-			fprintf(animation_out, "\nArray Type 2 (unknown):\n");
-		    char* secondary_array = arena_alloc(arena, header->ArraySize2 * header->array_width_1);
-
-            for (unsigned int i = 0; i < header->ArraySize2; i++)
+            switch (header->translation_key_size)
             {
-                fprintf(animation_out, "\n%02u: ", (uint8_t)secondary_array[i * header->array_width_1]);
-                for (unsigned short j = 0; j < header->array_width_1 - 1; j++) {
-                    fprintf(animation_out, "%02hhx ", secondary_array[i * header->array_width_1 + j + 1]);
-                }
+                case 0x8:
+                    printf("%f ", ((keyframe_1*)translation_keys)[i].x);
+                    break;
+                case 0xC:
+                    printf("%f %f ", ((keyframe_2*)translation_keys)[i].x, ((keyframe_2*)translation_keys)[i].y);
+                    break;
+                case 0x10:
+                    printf("%f %f %f ", ((keyframe_3*)translation_keys)[i].x, ((keyframe_3*)translation_keys)[i].y, ((keyframe_3*)translation_keys)[i].z);
+                    break;
             }
-            fprintf(animation_out, "\n");
+            printf("\n");
         }
-	}
+        for (uint32_t i = 0; i < header->rotation_key_count; i++) {
+            log_error(INFO, "chunk_animation(): Rotation Key frame:%f \t%04x %04x %04x\n", rotation_keys[i].frame, rotation_keys[i].unk1, rotation_keys[i].unk2, rotation_keys[i].unk3);
+        }
+        for (uint32_t i = 0; i < header->scale_key_count; i++) {
+            log_error(INFO, "chunk_animation(): Scale Key frame:%f \t%f %f %f\n", scale_keys[i].frame, scale_keys[i].x, scale_keys[i].y, scale_keys[i].z);
+        }
+    }
+
     arena->pos = chunk_start_pos + header->size; // Jump to next chunk
 }
 
 // Reads 0x10 chunks and uses them to read out RGBA data in the ALR to image files on disk.
-static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image_type format)
+static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image_type format, flags options)
 {
 	uint64_t chunk_start_pos = arena->pos;
 
@@ -318,7 +283,7 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
             log_error(DEBUG, "chunk_texture(): Resource meta (0x15) anomaly, ID at sub-chunk %d was 0x%x\n", i, resources[i].flags);
         }
 
-        if (!info_mode) {
+        if (!options.info_mode) {
             texture_info info = {
                     .filename = &dds_names[i * 0x20],
                     .bits_per_pixel = bits_per_pixel,
@@ -371,14 +336,15 @@ bool chunk_parse_all(char* alr_filename, flags options)
 
         chunk_layout* header = arena_alloc(arena, sizeof(chunk_layout));
         unsigned int* pointer_array = arena_alloc(arena, header->offset_array_size * sizeof(unsigned int));
-        if (info_mode)
+        if (options.info_mode)
         {
             log_error(INFO, "Resource Section Offset: 0x%x\n", header->resource_offset);
             log_error(INFO, "Last Resource End Offset: 0x%x\n", header->last_resource_end);
             log_error(INFO, "File Count: %d\n\n", header->offset_array_size);
-            for (unsigned int i = 0; i < header->offset_array_size; i++)
-            {
-                log_error(INFO, "File %u: 0x%x\n", i, pointer_array[i]);
+            if (options.layout) {
+                for (unsigned int i = 0; i < header->offset_array_size; i++) {
+                    log_error(INFO, "File %u: 0x%x\n", i, pointer_array[i]);
+                }
             }
         }
         for (unsigned int i = 0; i < header->offset_array_size; i++)
@@ -397,7 +363,7 @@ bool chunk_parse_all(char* alr_filename, flags options)
                     log_error(WARNING, "chunk_parse_all(): Invalid chunk ID 0x%x at 0x%x (internal file %d, %s)!\n", current_chunk_id, arena->pos, i, alr_filename);
                     return false;
                 }
-                if (info_mode)
+                if (options.info_mode && options.layout)
                 {
                     log_error(DEBUG, "chunk_parse_all(): 0x%x chunk at 0x%x\n", current_chunk_id, arena->pos);
                 }
@@ -408,13 +374,13 @@ bool chunk_parse_all(char* alr_filename, flags options)
                         chunk_0x0(arena); // Unreachable because of the while() loop
                         break;
                     case 0x5:
-                        chunk_animation(arena);
+                        chunk_animation(arena, options);
                         break;
                     case 0xD:
                         chunk_0xD(arena);
                         break;
                     case 0x10:
-                        chunk_texture(arena, header->resource_offset, image_format);
+                        chunk_texture(arena, header->resource_offset, image_format, options);
                         break;
                     case 0x16:
                         chunk_0x16(arena);
@@ -432,9 +398,6 @@ bool chunk_parse_all(char* alr_filename, flags options)
     else {
         log_error(CRITICAL, "chunk_parse_all(): Couldn't open %s.\n", alr_filename);
         return false;
-    }
-    if (!info_mode && animation_out != NULL) {
-        fclose(animation_out);
     }
     return true;
 }

@@ -39,13 +39,13 @@ typedef struct {
 }resource_entry;
 
 typedef struct {
-    uint32_t flags;    // Unknown, always 01 00 04 00 so far
-    uint32_t data_ptr; // An offset to some data in the resource section, relative to chunk_layout.resource_offset (located at 0xC in the file)
+    uint32_t flags;
+    uint32_t unknown3;
     uint32_t unknown;
     uint32_t pad;
-    uint32_t unknown2; // Often 0
-    uint32_t ID; // This is the same in all variations of the same model. Easy way to identify specific ALRs / models in memory
-    uint32_t unknown3;
+    uint32_t unknown2;
+    uint32_t data_ptr; // This is speculation
+    uint32_t pad2;
 }resource_entry_0x16;
 
 
@@ -81,30 +81,48 @@ typedef struct {
 typedef struct {
     uint32_t id; // 0x5
     uint32_t size;
-    float unknown_float; // This often matches the number of frames
+    float total_time; // This often matches the number of frames
     uint16_t unknown_settings1;
     uint16_t array_width_1; // The number of bytes in each element of the second array
-    uint32_t ArraySize1; // The chunk can have up to 3 arrays of numbered floats
-    uint32_t ArraySize2;
-    uint32_t ArraySize3; // This might actually be padding, since there's no third settings field.
+    uint32_t translation_key_count; // Derived from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
+    uint32_t rotation_key_count;  // Derived from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)
+    uint32_t scale_key_count;     // Hasn't been tested yet
     uint16_t unknown_settings2;
-    uint16_t array_width_2;
+    uint16_t translation_key_size;
 }anim_header;
 
+// I don't know why they would use floats for indices, but it seems like that's what they did.
 typedef struct {
-    float index; // I don't know why they would use floats for indices, but it seems like that's what they did...
-    float X;
-}anim_array_type1;
+    float frame;
+    float x;
+}keyframe_1;
 
 typedef struct {
-    float index;
-    float X;
-    float Y;
-}anim_array_type2;
+    float frame;
+    float x;
+    float y;
+}keyframe_2;
 
+// The ordering of X, Y, and Z here may be wrong
 typedef struct {
-    float index;
-    float X;
-    float Y;
-    float Z;
-}anim_array_type3;
+    float frame;
+    float x;
+    float y;
+    float z;
+}keyframe_3;
+
+typedef struct
+{
+    uint16_t frame;
+    uint16_t unk1;
+    uint16_t unk2;
+    uint16_t unk3;
+}anim_rotation_keys;
+
+typedef struct
+{
+    uint32_t id;
+    uint32_t chunk_size;
+    uint16_t sub_chunk_count; // Each sub-chunk is 0x4C large
+    uint16_t unknown;
+}chunk_0x1_header;

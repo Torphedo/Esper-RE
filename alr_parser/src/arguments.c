@@ -10,7 +10,9 @@ static const char* arguments[] = {
         "--dump",
         "--silent",
         "--tga",
-        "--dds"
+        "--dds",
+        "--layout",
+        "--animation"
 };
 
 flags parse_arguments(int argc, char* argv[])
@@ -48,6 +50,12 @@ flags parse_arguments(int argc, char* argv[])
                                 break;
                             case 5:
                                 output.dds = true;
+                                break;
+                            case 6:
+                                output.layout = true;
+                                break;
+                            case 7:
+                                output.animation = true;
                                 break;
                             default:
                                 break;

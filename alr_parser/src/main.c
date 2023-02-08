@@ -24,7 +24,6 @@ int main(int argc, char* argv[])
     }
 
     if (options.silent) { disable_logging(); }
-    if (options.info_mode) { set_info_mode(); }
     if (options.split)
     {
         // Return values must be inverted because stdbool false == 0, and an exit code of 0 means success.
