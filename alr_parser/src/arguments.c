@@ -15,7 +15,7 @@ static const char* arguments[] = {
         "--animation"
 };
 
-flags parse_arguments(int argc, char* argv[])
+flags parse_arguments(int argc, char** argv)
 {
     flags output = {0};
     uint16_t options_count = sizeof(arguments) / sizeof(char*);
