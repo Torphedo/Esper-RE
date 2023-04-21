@@ -67,7 +67,7 @@ typedef struct dds_pixel_format
 {
     uint32_t size; // Must be 32 (0x20)
     uint32_t flags;
-    uint32_t format_char_code; // See dwFourCC at https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat.
+    uint32_t format_char_code; // See dwFourCC here: https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat
     uint32_t bits_per_pixel;
     uint32_t red_bitmask;
     uint32_t green_bitmask;
@@ -77,7 +77,9 @@ typedef struct dds_pixel_format
 
 // Because they used "DDS " instead of "DDS" with a null terminator, we can't just check equality
 // with the string literal "DDS". Thanks, Microsoft.
-#define DDS_BEGIN 0x20534444
+typedef enum {
+    DDS_BEGIN = 0x20534444
+}dds_const;
 
 typedef struct dds_header
 {
