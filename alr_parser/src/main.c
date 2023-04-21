@@ -24,7 +24,8 @@ int main(int argc, char* argv[]) {
         disable_logging();
     }
     if (options.split) {
-        // Return value must be inverted because stdbool false == 0, and an exit code of 0 means success.
+        // Return value must be inverted because stdbool false == 0, and an
+        // exit code of 0 means success.
         return !(split_alr(options.filename));
     }
     else {

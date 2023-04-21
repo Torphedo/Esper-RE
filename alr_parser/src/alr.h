@@ -5,24 +5,27 @@
 // All ALR files begin with this structure.
 typedef struct {
     uint32_t id;                // 0x11
-    uint32_t chunk_size;        // Size of this entire structure, including the offset array you'll have to read separately
-    uint32_t flags;             // Unknown, may potentially indicate types of data that will be in the file
-    uint32_t resource_offset;   // Offset of resource section at the end of the file
+    uint32_t chunk_size;        // Size of this entire chunk
+    uint32_t flags;             // Unknown
+    uint32_t resource_offset;   // Offset of resource section (at end of file)
     uint32_t offset_array_size; // Number of offsets in the array
-    uint32_t last_resource_end; // Relative offset from resource_offset where the last resource ends. This should point to the end of the file when added to resource_offset.
+    uint32_t last_resource_end; // Offset from resource_offset where the last resource ends. This should point to the end of the file
     uint64_t pad;
 }chunk_layout;
 
-// Next, there is an array of uint32_t absolute offsets to various chunks of data throughout the file. It's unknown why
-// these are split into these large chunks or if there's any pattern to the grouping. The size listed in the chunk
-// layout struct includes this array, which has a size of (chunk_layout.offset_array_size * 0x4).
+// Next, there is an array of uint32_t absolute offsets to various chunks of
+// data throughout the file. It's unclear why these are split into these large
+// chunks or if there's any pattern to the grouping. The size listed in the
+// chunk layout struct includes this array, which has a size of
+// (chunk_layout.offset_array_size * 0x4).
 
-// After the chunk layout structure, there is a (poorly understood) structure containing several absolute offsets into
-// the resource section, which is confirmed to store textures. It most likely stores other types of 3D resources as well.
+// After the chunk layout structure, there is a (poorly understood) structure
+// containing several absolute offsets into the resource section, which is
+// known to store raw textures.
 
 typedef struct {
-    uint32_t id;                // 0x15
-    uint32_t chunk_size;        // Size of this entire structure, including the instances of the next struct
+    uint32_t id;         // 0x15
+    uint32_t chunk_size; // Size of this entire chunk
     uint32_t array_size;
 }resource_layout_header;
 
@@ -30,11 +33,11 @@ typedef struct {
 
 typedef struct {
     uint32_t flags;    // Unknown, always 01 00 04 00 so far
-    uint32_t data_ptr; // An offset to some data in the resource section, relative to chunk_layout.resource_offset (located at 0xC in the file)
-    uint32_t pad;      // Always 0, so far
+    uint32_t data_ptr; // Offset to some data in the resource section (relative to chunk_layout.resource_offset)
+    uint32_t pad;      // Always 0 (so far)
     uint32_t unknown;
     uint32_t unknown2; // Often 0
-    uint32_t ID; // This is the same in all variations of the same model. Easy way to identify specific ALRs / models in memory
+    uint32_t ID; // Same in all variations of the same model. Use to identify specific ALRs in memory.
     uint32_t unknown3;
 }resource_entry;
 
@@ -49,20 +52,21 @@ typedef struct {
 }resource_entry_0x16;
 
 
-// The header of an 0x10 ALR chunk, which stores information about textures in the file
+// The header of an 0x10 ALR chunk, which stores information about textures in
+// the file
 typedef struct {
-    uint32_t id; // 0x10000000
+    uint32_t id; // 0x10
     uint32_t size;
     uint32_t surface_count;
     uint32_t texture_count;
     unsigned char alr_name[0x10];
 }texture_metadata_header;
 
-// A chunk with just enough information to reconstruct a TGA header and attach pixel data to it.
+// A chunk with metadata about textures stored in the resource section.
 typedef struct {
     uint32_t index;
     char filename[32];
-    uint32_t padding[2]; // Making this a uint64_t makes the size incorrect because of struct padding, which could break ALR writing in the future
+    uint32_t padding[2]; // Can't be a u64 because of struct padding
     float unknown[2]; // This is often 1.0f
     uint32_t width;
     uint32_t height;
@@ -81,17 +85,18 @@ typedef struct {
 typedef struct {
     uint32_t id; // 0x5
     uint32_t size;
-    float total_time; // This often matches the number of frames
+    float total_time; // This often matches the number of frames(?)
     uint16_t unknown_settings1;
-    uint16_t array_width_1; // The number of bytes in each element of the second array
+    uint16_t array_width_1; // # of bytes in each element of the second array
     uint32_t translation_key_count; // Derived from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
-    uint32_t rotation_key_count;  // Derived from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)
-    uint32_t scale_key_count;     // Hasn't been tested yet
+    uint32_t rotation_key_count;    // Derived from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)
+    uint32_t scale_key_count; // Hasn't been tested yet
     uint16_t unknown_settings2;
     uint16_t translation_key_size;
 }anim_header;
 
-// I don't know why they would use floats for indices, but it seems like that's what they did.
+// I don't know why they would use floats for indices... but it seems like
+// that's what they did.
 typedef struct {
     float frame;
     float x;

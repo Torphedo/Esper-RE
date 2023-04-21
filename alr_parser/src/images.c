@@ -17,16 +17,16 @@ typedef enum tga_pixel_formats {
 
 // TGA header
 typedef struct tga_header {
-        uint8_t id_size; // 0
-        uint8_t color_map; // 0
-        uint8_t format;
-        uint8_t color_map_spec[5]; // Unused, describes color map if present
-        uint16_t x_origin; // 0
-        uint16_t y_origin; // 0
-        uint16_t width;
-        uint16_t height;
-        uint8_t bits_per_pixel;
-        uint8_t image_settings; // This setting makes pixels order from top to bottom when set to 0b00100000
+    uint8_t id_size; // 0
+    uint8_t color_map; // 0
+    uint8_t format;
+    uint8_t color_map_spec[5]; // Unused, describes color map if present
+    uint16_t x_origin; // 0
+    uint16_t y_origin; // 0
+    uint16_t width;
+    uint16_t height;
+    uint8_t bits_per_pixel;
+    uint8_t image_settings; // 0b00100000: Orders pixels from top to bottom
 }tga_header;
 
 // DDS structures
@@ -70,14 +70,14 @@ typedef struct dds_pixel_format {
     uint32_t alpha_bitmask;
 }dds_pixel_format;
 
-// Because they used "DDS " instead of "DDS" with a null terminator, we can't just check equality
-// with the string literal "DDS". Thanks, Microsoft.
+// We can't just check equality with "DDS" because it's 'DDS ' with no null
+// terminator.
 typedef enum {
-    DDS_BEGIN = 0x20534444
+    DDS_BEGIN = 0x20534444 // 'DDS ' (little endian)
 }dds_const;
 
 typedef struct dds_header {
-    uint32_t identifier;   // "DDS ", or DDS_BEGIN defined above. Also known as the "file magic" or "magic number".
+    uint32_t identifier;   // DDS_BEGIN as defined above. aka "file magic" / "magic number".
     uint32_t size;         // Must be 124 (0x7C)
     uint32_t flags;
     uint32_t height;
@@ -88,7 +88,7 @@ typedef struct dds_header {
     uint32_t reserved[11]; // Unused
     dds_pixel_format pixel_format;
     uint32_t caps;         // Flags for complexity of the surface
-    uint32_t caps2;        // Will always be 0 because we're not dealing with cubemaps or volumes
+    uint32_t caps2;        // Always 0 because we don't use cubemaps or volumes
     uint32_t caps3;        // Unused
     uint32_t caps4;        // Unused
     uint32_t reserved2;    // Unused
@@ -101,17 +101,17 @@ void write_tga(texture_info texture) {
     }
 
     tga_header header = {
-            .width = texture.width,
-            .height = texture.height,
-            .bits_per_pixel = texture.bits_per_pixel,
-            .image_settings = 0b00100000
+        .width = texture.width,
+        .height = texture.height,
+        .bits_per_pixel = texture.bits_per_pixel,
+        .image_settings = 0b00100000
     };
 
     if (texture.bits_per_pixel == 8) {
         header.format = UNCOMPRESSED_GREYSCALE;
     }
     else if (texture.bits_per_pixel > 32) {
-        log_error(WARNING, "write_tga(): The file %s has %d bits per pixel, higher than the TGA limit of 32.\n", texture.filename, texture.bits_per_pixel);
+        log_error(WARNING, "write_tga(): The file %s has %d bits per pixel (TGA limit is 32).\n", texture.filename, texture.bits_per_pixel);
     }
     else {
         header.format = UNCOMPRESSED_TRUE_COLOR;
@@ -127,19 +127,19 @@ void write_tga(texture_info texture) {
 
 void write_dds(texture_info texture) {
     dds_header header = {
-            .identifier = DDS_BEGIN,
-            .size = 0x7C,
-            .flags = REQUIRED_BASE_FLAGS | DDSD_PITCH,
-            .height = texture.height,
-            .width = texture.width,
-            .pitch_or_linear_size = ( texture.width * texture.bits_per_pixel + 7 ) / 8,
-            .depth = 0,
-            .mipmap_count = texture.mipmap_count,
-            .pixel_format = {
-                    .size = sizeof(dds_pixel_format),
-                    .bits_per_pixel = texture.bits_per_pixel
-            },
-            .caps = DDSCAPS_TEXTURE
+        .identifier = DDS_BEGIN,
+        .size = 0x7C,
+        .flags = REQUIRED_BASE_FLAGS | DDSD_PITCH,
+        .height = texture.height,
+        .width = texture.width,
+        .pitch_or_linear_size = (texture.width * texture.bits_per_pixel + 7) / 8,
+        .depth = 0,
+        .mipmap_count = texture.mipmap_count,
+        .pixel_format = {
+                .size = sizeof(dds_pixel_format),
+                .bits_per_pixel = texture.bits_per_pixel
+        },
+        .caps = DDSCAPS_TEXTURE
     };
 
     // Disable mipmaps until we can figure out where they're actually stored
