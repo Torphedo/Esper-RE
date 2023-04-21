@@ -111,16 +111,14 @@ typedef struct {
     float z;
 }keyframe_3;
 
-typedef struct
-{
+typedef struct {
     uint16_t frame;
     uint16_t unk1;
     uint16_t unk2;
     uint16_t unk3;
 }anim_rotation_keys;
 
-typedef struct
-{
+typedef struct {
     uint32_t id;
     uint32_t chunk_size;
     uint16_t sub_chunk_count; // Each sub-chunk is 0x4C large

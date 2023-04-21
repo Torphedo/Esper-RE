@@ -2,8 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct
-{
+typedef struct {
     bool info_mode: 1;
     bool dump_images: 1;
     bool silent: 1;
