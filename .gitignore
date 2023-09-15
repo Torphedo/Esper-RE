@@ -12,6 +12,8 @@ cmake-build-release/
 cmake-build-minsizerel/
 cmake-build-relwithdebinfo/
 *.exe
+cmake_*/
+compile_commands.json
 
 # Binary files outputted from the program
 *.bin
