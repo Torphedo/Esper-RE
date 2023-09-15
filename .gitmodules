@@ -1,3 +1,0 @@
-[submodule "alr_parser/external"]
-	path = alr_parser/external
-	url = https://github.com/Torphedo/arena_allocator
