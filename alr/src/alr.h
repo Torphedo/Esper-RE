@@ -129,3 +129,9 @@ typedef struct {
     uint16_t sub_chunk_count; // Each sub-chunk is 0x4C large
     uint16_t unknown;
 }chunk_0x1_header;
+
+typedef struct {
+    uint32_t id;
+    uint32_t size;
+}chunk_generic;
+
