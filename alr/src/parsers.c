@@ -12,23 +12,23 @@
 
 // Writes each distinct section of an ALR to separate files on disk
 bool split_alr(char* alr_filename) {
-	FILE* alr = fopen(alr_filename, "rb");
+    FILE* alr = fopen(alr_filename, "rb");
     if (alr == NULL) {
         log_error(CRITICAL, "split_alr(): Failed to open %s\n", alr_filename);
         return false;
     }
 
-	chunk_layout header = {0};
-	// Read header
-	fread(&header, sizeof(chunk_layout), 1, alr);
+    chunk_layout header = {0};
+    // Read header
+    fread(&header, sizeof(chunk_layout), 1, alr);
     uint32_t* pointer_array = malloc(header.offset_array_size * sizeof(uint32_t));
     if (pointer_array == NULL) {
         log_error(CRITICAL, "split_alr(): Failed to allocate pointer array with %d elements\n", header.offset_array_size);
         return false;
     }
     else {
-		// Read in pointer array
-		fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
+    // Read in pointer array
+    fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
 
         // Write each large chunk of data to a separate file.
         for (uint32_t i = 0; i < header.offset_array_size; i++) {
@@ -65,8 +65,8 @@ bool split_alr(char* alr_filename) {
             }
             free(buffer);
         }
-		free(pointer_array);
-	}
+	free(pointer_array);
+    }
 
     // Dump all resources to separate files
     fseek(alr, sizeof(chunk_layout) + (header.offset_array_size * sizeof(uint32_t)), SEEK_SET);
@@ -110,7 +110,6 @@ bool split_alr(char* alr_filename) {
         }
     }
 	fclose(alr);
-	
 	return true;
 }
 
@@ -163,7 +162,7 @@ static void chunk_0x16(arena_t* arena) {
 // Reads 0x5 animation / mesh chunks
 static void chunk_animation(arena_t* arena, flags options) {
     uint64_t chunk_start_pos = arena->pos;
-	anim_header* header = arena_alloc(arena, sizeof(anim_header));
+    anim_header* header = arena_alloc(arena, sizeof(anim_header));
     keyframe_3* translation_keys = arena_alloc(arena, header->translation_key_size * header->translation_key_count);
     anim_rotation_keys* rotation_keys = arena_alloc(arena, sizeof(anim_rotation_keys) * header->translation_key_count);
     keyframe_3* scale_keys = arena_alloc(arena, sizeof(keyframe_3) * header->scale_key_count);
@@ -203,9 +202,9 @@ static void chunk_animation(arena_t* arena, flags options) {
 
 // Reads 0x10 chunks and uses their metadata to write texture data to disk
 static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image_type format, flags options) {
-	uint64_t chunk_start_pos = arena->pos;
+    uint64_t chunk_start_pos = arena->pos;
 
-	texture_metadata_header* header = arena_alloc(arena, sizeof(texture_metadata_header));
+    texture_metadata_header* header = arena_alloc(arena, sizeof(texture_metadata_header));
     log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header->surface_count, header->texture_count);
 
     // DDS filenames + the mystery data attached to them are 0x20 long each
@@ -270,8 +269,8 @@ static void chunk_texture(arena_t* arena, unsigned int texture_buffer_ptr, image
 
     uint32_t total_image_pixels = 0;
 	for (unsigned int i = 0; i < header->texture_count; i++) {
-		log_error(INFO, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
-        total_image_pixels += textures[i].width * textures[i].height;
+            log_error(INFO, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
+            total_image_pixels += textures[i].width * textures[i].height;
 	}
     log_error(DEBUG, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
 
@@ -348,7 +347,6 @@ bool chunk_parse_all(char* alr_filename, flags options) {
                         chunk_skip(arena);
                         break;
                 }
-
                 current_chunk_id = *((unsigned int*) arena_pos(arena)); // Read next chunk's ID
             }
         }
@@ -360,3 +358,4 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     }
     return true;
 }
+
