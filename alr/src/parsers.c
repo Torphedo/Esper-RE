@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
-#include <logging.h>
+#include "logging.h"
 
 #include "parsers.h"
 #include "alr.h"
@@ -13,7 +13,7 @@
 bool split_alr(char* alr_filename) {
     FILE* alr = fopen(alr_filename, "rb");
     if (alr == NULL) {
-        log_error(CRITICAL, "split_alr(): Failed to open %s\n", alr_filename);
+        LOG_MSG(error, "Failed to open %s\n", alr_filename);
         return false;
     }
 
@@ -22,7 +22,7 @@ bool split_alr(char* alr_filename) {
     fread(&header, sizeof(chunk_layout), 1, alr);
     uint32_t* pointer_array = malloc(header.offset_array_size * sizeof(uint32_t));
     if (pointer_array == NULL) {
-        log_error(CRITICAL, "split_alr(): Failed to allocate pointer array with %d elements\n", header.offset_array_size);
+        LOG_MSG(error, "Failed to allocate pointer array with %d elements\n", header.offset_array_size);
         return false;
     }
     else {
@@ -41,13 +41,13 @@ bool split_alr(char* alr_filename) {
             }
 
             if (size < 0) {
-                log_error(WARNING, "split_alr(): Adjusting for negative chunk size at chunk %d.\n", i);
+                LOG_MSG(warning, "Adjusting for negative chunk size at chunk %d.\n", i);
                 size *= -1;
             }
 
             // 256MiB
             if (size > 0x10000000) {
-                log_error(CRITICAL, "split_alr(): Chunk size at chunk %d was unreasonably high (%d bytes)!\n", i, size);
+                LOG_MSG(error, "Chunk size at chunk %d was unreasonably high (%d bytes)!\n", i, size);
                 return false;
             }
             char* buffer = malloc(size);
@@ -73,7 +73,7 @@ bool split_alr(char* alr_filename) {
     fread(&resource_header, sizeof(resource_layout_header), 1, alr);
     resource_entry* resources = calloc(resource_header.array_size, sizeof(resource_entry));
     if (resources == NULL) {
-        log_error(CRITICAL, "split_alr(): Failed to allocate memory for resource entry table (%d bytes)\n", resource_header.array_size * sizeof(resource_entry));
+        LOG_MSG(error, "Failed to allocate memory for resource entry table (%d bytes)\n", resource_header.array_size * sizeof(resource_entry));
     }
     else {
         fread(resources, sizeof(resource_entry), resource_header.array_size, alr);
@@ -87,12 +87,12 @@ bool split_alr(char* alr_filename) {
             }
             // 256 MiB
             if (res_size > 0x10000000) {
-                log_error(CRITICAL, "split_alr(): Size of resource %d was unreasonably high (%d bytes)!\n", i, res_size);
+                LOG_MSG(error, "Size of resource %d was unreasonably high (%d bytes)!\n", i, res_size);
                 return false;
             }
             char* buffer = calloc(1, res_size);
             if (buffer == NULL) {
-                log_error(CRITICAL, "split_alr(): Failed to allocate %d bytes for resource #%d\n", res_size, i);
+                LOG_MSG(error, "Failed to allocate %d bytes for resource #%d\n", res_size, i);
             }
             else {
                 fseek(alr, header.resource_offset + resources[i].data_ptr, SEEK_SET);
@@ -100,7 +100,7 @@ bool split_alr(char* alr_filename) {
                 // Because i is a uint32_t, the longest possible filename is resource_4294967295.bin, which is 23 characters
                 char filename[32];
                 if (snprintf(filename, 24, "resource_%u.bin", i) > 0) {
-                    log_error(INFO, "Resource %d: %d (0x%x) bytes\n", i, res_size, res_size);
+                    LOG_MSG(info, "Resource %d: %d (0x%x) bytes\n", i, res_size, res_size);
                     FILE* dump = fopen(filename, "wb");
                     fwrite(buffer, res_size, 1, dump);
                     fclose(dump);
@@ -127,7 +127,7 @@ static void chunk_0x0(FILE* file) {
     fread(&chunk, sizeof(chunk), 1, file);
 
     if (chunk.size != 8) {
-        log_error(DEBUG, "chunk_0x0(): Non-empty chunk! Size is %d bytes rather than the usual 8 bytes\n", chunk.size);
+        LOG_MSG(debug, "Non-empty chunk! Size is %d bytes rather than the usual 8 bytes\n", chunk.size);
     }
 
     // Skip to the end of the chunk
@@ -141,7 +141,7 @@ static void chunk_0xD(FILE* file) {
 
     // This isn't really a *problem*, but the warning status helps it stand out
     if (chunk.size != 0xC) {
-        log_error(WARNING, "chunk_0xD(): Non-empty chunk! Size is %d bytes rather than the usual 12 bytes\n", chunk.size);
+        LOG_MSG(warning, "Non-empty chunk! Size is %d bytes rather than the usual 12 bytes\n", chunk.size);
     }
 
     // Skip to the end of the chunk
@@ -156,18 +156,18 @@ static void chunk_0x16(FILE* file) {
     fread(&header, sizeof(header), 1, file);
 
     if (header.array_size > 0) {
-        log_error(INFO, "chunk_0x16(): Found %d resource entry(s).\n", header.array_size);
+        LOG_MSG(info, "Found %d resource entry(s).\n", header.array_size);
         resource_entry_0x16* entries = calloc(header.array_size, sizeof(*entries));
         fread(entries, sizeof(*entries), header.array_size, file);
 
         for (uint32_t i = 0; i < header.array_size; i++) {
             if (entries[i].pad != 0) {
-                log_error(WARNING, "chunk_0x16(): Apparent padding at 0x8 in entry %d was 0x%08x, not 0.\n");
+                LOG_MSG(warning, "Apparent padding at 0x8 in entry %d was 0x%08x, not 0.\n");
             }
             if (entries[i].pad2 != 0) {
-                log_error(WARNING, "chunk_0x16(): Apparent padding at 0x18 in entry %d was 0x%08x, not 0.\n");
+                LOG_MSG(warning, "Apparent padding at 0x18 in entry %d was 0x%08x, not 0.\n");
             }
-            log_error(INFO, "0x16 resource %2d: flags 0x%08x, unknown3 0x%08x, unknown 0x%08x, unknown2 0x%08x, data_ptr 0x%08x\n", i, entries[i].flags, entries[i].unknown3, entries[i].unknown, entries[i].unknown2, entries[i].data_ptr);
+            LOG_MSG(info, "resource %2d: flags 0x%08x, unknown3 0x%08x, unknown 0x%08x, unknown2 0x%08x, data_ptr 0x%08x\n", i, entries[i].flags, entries[i].unknown3, entries[i].unknown, entries[i].unknown2, entries[i].data_ptr);
         }
 
         free(entries);
@@ -187,7 +187,7 @@ static void chunk_animation(FILE* file, flags options) {
     keyframe_3* scale_keys = calloc(header.scale_key_count, sizeof(keyframe_3));
 
     if (translation_keys == NULL || rotation_keys == NULL || scale_keys == NULL) {
-        log_error(CRITICAL, "chunk_animation(): Failed to allocate memory for animation keys.\n");
+        LOG_MSG(error, "Failed to allocate memory for animation keys.\n");
         free(translation_keys);
         free(rotation_keys);
         free(scale_keys);
@@ -197,12 +197,12 @@ static void chunk_animation(FILE* file, flags options) {
 
     if (options.animation) {
         printf("\n");
-        log_error(DEBUG, "chunk_animation(): Total Time: %f\n", header.total_time);
-        log_error(DEBUG, "chunk_animation(): Geometry  %hi\n", header.unknown_settings1);
-        log_error(DEBUG, "chunk_animation(): Flag      0x%04x\n", header.array_width_1);
-        log_error(DEBUG, "chunk_animation(): Flag 2    0x%04x\n", header.translation_key_size);
+        LOG_MSG(debug, "Total Time: %f\n", header.total_time);
+        LOG_MSG(debug, "Geometry  %hi\n", header.unknown_settings1);
+        LOG_MSG(debug, "Flag      0x%04x\n", header.array_width_1);
+        LOG_MSG(debug, "Flag 2    0x%04x\n", header.translation_key_size);
         for (uint32_t i = 0; i < header.translation_key_count; i++) {
-            log_error(INFO, "chunk_animation(): Translation Key frame %f: \t", translation_keys[i].frame, translation_keys[i].x, translation_keys[i].y, translation_keys[i].z);
+            LOG_MSG(info, "Translation Key frame %f: \t", translation_keys[i].frame, translation_keys[i].x, translation_keys[i].y, translation_keys[i].z);
 
             switch (header.translation_key_size) {
                 case 0x8:
@@ -218,10 +218,10 @@ static void chunk_animation(FILE* file, flags options) {
             printf("\n");
         }
         for (uint32_t i = 0; i < header.rotation_key_count; i++) {
-            log_error(INFO, "chunk_animation(): Rotation Key frame:%f \t%04x %04x %04x\n", rotation_keys[i].frame, rotation_keys[i].unk1, rotation_keys[i].unk2, rotation_keys[i].unk3);
+            LOG_MSG(info, "Rotation Key frame:%f \t%04x %04x %04x\n", rotation_keys[i].frame, rotation_keys[i].unk1, rotation_keys[i].unk2, rotation_keys[i].unk3);
         }
         for (uint32_t i = 0; i < header.scale_key_count; i++) {
-            log_error(INFO, "chunk_animation(): Scale Key frame:%f \t%f %f %f\n", scale_keys[i].frame, scale_keys[i].x, scale_keys[i].y, scale_keys[i].z);
+            LOG_MSG(info, "Scale Key frame:%f \t%f %f %f\n", scale_keys[i].frame, scale_keys[i].x, scale_keys[i].y, scale_keys[i].z);
         }
     }
 
@@ -262,7 +262,7 @@ static void chunk_texture(FILE* file, unsigned int texture_buffer_ptr, image_typ
 
     texture_metadata_header header = {0};
     fread(&header, sizeof(header), 1, file);
-    log_error(INFO, "Surface Count: %d Image Count: %d\n\n", header.surface_count, header.texture_count);
+    LOG_MSG(info, "Surface Count: %d Image Count: %d\n\n", header.surface_count, header.texture_count);
 
     // DDS filenames + the mystery data attached to them are 0x20 long each
     char* dds_names = calloc(header.surface_count, 0x20);
@@ -291,7 +291,7 @@ static void chunk_texture(FILE* file, unsigned int texture_buffer_ptr, image_typ
 
         uint32_t total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
 
-        log_error(INFO, "Surface %2d %-32s: %2d mipmap(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height, res_size);
+        LOG_MSG(info, "Surface %2d %-32s: %2d mipmap(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &dds_names[i * 0x20], surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height, res_size);
 
         // Print out size, formatted in appropriate unit
         if (res_size < 0x400) {
@@ -306,10 +306,10 @@ static void chunk_texture(FILE* file, unsigned int texture_buffer_ptr, image_typ
         printf(" buffer @ 0x%x)\n", texture_buffer_ptr + resources[i].data_ptr);
 
         if (resources[i].pad != 0) {
-            log_error(DEBUG, "chunk_texture(): Resource meta (0x15) anomaly, apparent padding at sub-chunk %d was 0x%x\n", i, resources[i].pad);
+            LOG_MSG(debug, "Resource meta (0x15) anomaly, apparent padding at sub-chunk %d was 0x%x\n", i, resources[i].pad);
         }
         if (resources[i].flags != 0x00040001) {
-            log_error(DEBUG, "chunk_texture(): Resource meta (0x15) anomaly, ID at sub-chunk %d was 0x%x\n", i, resources[i].flags);
+            LOG_MSG(debug, "Resource meta (0x15) anomaly, ID at sub-chunk %d was 0x%x\n", i, resources[i].flags);
         }
 
         if (!options.info_mode) {
@@ -329,10 +329,10 @@ static void chunk_texture(FILE* file, unsigned int texture_buffer_ptr, image_typ
 
     uint32_t total_image_pixels = 0;
 	for (unsigned int i = 0; i < header.texture_count; i++) {
-            log_error(INFO, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
+            LOG_MSG(info, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
             total_image_pixels += textures[i].width * textures[i].height;
 	}
-    log_error(DEBUG, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
+    LOG_MSG(debug, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
 
     // Cleanup
     free(surfaces);
@@ -346,12 +346,12 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     if (alr != NULL) {
         struct stat st;
         if (stat(alr_filename, &st) != 0) {
-            log_error(CRITICAL, "chunk_parse_all(): Failed to get file metadata for %s", alr_filename);
+            LOG_MSG(error, "Failed to get file metadata for %s", alr_filename);
             return false;
         }
         unsigned int filesize = st.st_size;
 
-        log_error(DEBUG, "chunk_parse_all(): Loaded %s (%d bytes)\n", alr_filename, filesize);
+        LOG_MSG(debug, "Loaded %s (%d bytes)\n", alr_filename, filesize);
 
         uint8_t image_format = DDS;
         if (options.tga) { image_format = TGA; }
@@ -366,12 +366,12 @@ bool chunk_parse_all(char* alr_filename, flags options) {
         fread(offset_array, sizeof(*offset_array), header.offset_array_size, alr);
 
         if (options.info_mode) {
-            log_error(INFO, "Resource Section Offset: 0x%x\n", header.resource_offset);
-            log_error(INFO, "Last Resource End Offset: 0x%x\n", header.last_resource_end);
-            log_error(INFO, "File Count: %d\n\n", header.offset_array_size);
+            LOG_MSG(info, "Resource Section Offset: 0x%x\n", header.resource_offset);
+            LOG_MSG(info, "Last Resource End Offset: 0x%x\n", header.last_resource_end);
+            LOG_MSG(info, "File Count: %d\n\n", header.offset_array_size);
             if (options.layout) {
                 for (unsigned int i = 0; i < header.offset_array_size; i++) {
-                    log_error(INFO, "File %u: 0x%x\n", i, offset_array[i]);
+                    LOG_MSG(info, "File %u: 0x%x\n", i, offset_array[i]);
                 }
             }
         }
@@ -379,17 +379,17 @@ bool chunk_parse_all(char* alr_filename, flags options) {
             chunk_generic chunk = {0};
             fread(&chunk, sizeof(chunk), 1, alr);
             if (offset_array[i] == 0) {
-                log_error(WARNING, "chunk_parse_all(): Offset %d was 0, skipping...\n", i);
+                LOG_MSG(warning, "Offset %d was 0, skipping...\n", i);
                 continue;
             }
             fseek(alr, offset_array[i], SEEK_SET);
             while (chunk.id != 0) {
                 if (chunk.id > 0x16) {
-                    log_error(WARNING, "chunk_parse_all(): Invalid chunk ID 0x%x at 0x%x (internal file %d, %s)!\n", chunk.id, ftell(alr), i, alr_filename);
+                    LOG_MSG(warning, "Invalid chunk ID 0x%x at 0x%x (internal file %d, %s)!\n", chunk.id, ftell(alr), i, alr_filename);
                     return false;
                 }
                 if (options.info_mode && options.layout) {
-                    log_error(DEBUG, "chunk_parse_all(): 0x%x chunk at 0x%x\n", chunk.id, ftell(alr));
+                    LOG_MSG(debug, "0x%x chunk at 0x%x\n", chunk.id, ftell(alr));
                 }
 
                 switch (chunk.id) {
@@ -422,7 +422,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
         free(offset_array);
     }
     else {
-        log_error(CRITICAL, "chunk_parse_all(): Couldn't open %s.\n", alr_filename);
+        LOG_MSG(error, "Couldn't open %s.\n", alr_filename);
         return false;
     }
     return true;

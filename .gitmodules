@@ -1,3 +1,0 @@
-[submodule "alr/ext/arena_allocator"]
-	path = alr/ext/arena_allocator
-	url = https://github.com/Torphedo/arena_allocator

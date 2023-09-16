@@ -1,13 +1,13 @@
 #include <stdio.h>
 
-#include <logging.h>
+#include "logging.h"
 
 #include "parsers.h"
 #include "arguments.h"
 
 // Cross-platform pause
 static inline void pause() {
-    log_error(INFO, "Press Enter to exit...");
+    LOG_MSG(info, "Press Enter to exit...");
     unsigned char dummy = getchar();
 }
 
@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     flags options = parse_arguments(argc, argv);
 
     if (options.filename == NULL) {
-        log_error(CRITICAL, "main(): No filenames detected.\n");
+        LOG_MSG(error, "No filenames detected.\n");
         return 1;
     }
 

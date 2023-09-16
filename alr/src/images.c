@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include <logging.h>
+#include "logging.h"
 #include "images.h"
 
 // TGA structures & naming
@@ -96,7 +96,7 @@ typedef struct dds_header {
 
 void write_tga(texture_info texture) {
     if (texture.bits_per_pixel == 0 || texture.bits_per_pixel % 8 != 0) {
-        log_error(CRITICAL, "write_tga(): Bits per pixel for the file %s had an invalid value of %d\n", texture.filename, texture.bits_per_pixel);
+        LOG_MSG(error, "Bits per pixel for the file %s had an invalid value of %d\n", texture.filename, texture.bits_per_pixel);
         return;
     }
 
@@ -111,7 +111,7 @@ void write_tga(texture_info texture) {
         header.format = UNCOMPRESSED_GREYSCALE;
     }
     else if (texture.bits_per_pixel > 32) {
-        log_error(WARNING, "write_tga(): The file %s has %d bits per pixel (TGA limit is 32).\n", texture.filename, texture.bits_per_pixel);
+        LOG_MSG(warning, "The file %s has %d bits per pixel (TGA limit is 32).\n", texture.filename, texture.bits_per_pixel);
     }
     else {
         header.format = UNCOMPRESSED_TRUE_COLOR;

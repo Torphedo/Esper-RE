@@ -3,8 +3,6 @@ add_executable(alr
     "parsers.c"
     "images.c"
     "arguments.c"
+	"logging.c"
 )
-target_include_directories(alr PRIVATE
-    "../ext/arena_allocator/src"
-    "../ext/arena_allocator/vendor/logging"
-)
+

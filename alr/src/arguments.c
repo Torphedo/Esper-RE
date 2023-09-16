@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include <logging.h>
+#include "logging.h"
 
 #include "arguments.h"
 
@@ -60,7 +60,7 @@ flags parse_arguments(int argc, char** argv) {
         else {
             output.filename = argv[i];
             if (argc == 2) {
-                log_error(WARNING, "parse_arguments(): No action specified, defaulting to --split\n");
+                LOG_MSG(warning, "No action specified, defaulting to --split\n");
                 output.split = true;
             }
             continue;
