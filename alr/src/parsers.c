@@ -11,14 +11,7 @@
 #include "alr.h"
 #include "images.h"
 
-// chunk_skip() but with some error checking
-static void chunk_0x0(chunk_generic chunk) {
-    if (chunk.size != 8) {
-        LOG_MSG(debug, "Non-empty chunk! Size is %d bytes rather than the usual 8 bytes\n", chunk.size);
-    }
-}
-
-// chunk_skip() but with some error checking
+// Sanity checks for 0xD chunks that have been observed to always be empty
 static void chunk_0xD(chunk_generic chunk) {
     // This isn't really a *problem*, but the warning status helps it stand out
     if (chunk.size != 0xC) {
@@ -82,7 +75,6 @@ static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex
                 .image_data = (char *)&tex_buf[entries[i].data_ptr],
                 .width = surfaces[i].width,
                 .height = surfaces[i].height,
-                .format = DDS
             };
             write_texture(info);
         }
@@ -114,9 +106,6 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     }
 
     LOG_MSG(debug, "Loaded %s (%d bytes)\n", alr_filename, filesize(alr_filename));
-
-    // TGA support is kind of pointless now that we can make DDS files.
-    uint8_t image_format = DDS;
 
     // Read the file header & offset array
     chunk_layout header = {0};
@@ -165,7 +154,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     }
 
     // First offset generally points right after the resource layout chunk.
-    // This is just to alert us of anomalies
+    // This is just to alert us of anomalies.
     if (offset_array[0] != ftell(alr)) {
         LOG_MSG(warning, "Gap between first data chunk & offset!\n");
         LOG_MSG(debug, "data chunk = 0x%x, offset = 0x%x\n", offset_array[0], ftell(alr));
@@ -210,11 +199,6 @@ bool chunk_parse_all(char* alr_filename, flags options) {
             }
 
             switch (chunk.id) {
-                case 0x0:
-                    // Unreachable because we break on ID 0. These are used to
-                    // terminate an array of chunks
-                    chunk_0x0(chunk);
-                    break;
                 case 0xD:
                     // Just some debug printing in here
                     chunk_0xD(chunk);
@@ -225,6 +209,11 @@ bool chunk_parse_all(char* alr_filename, flags options) {
                 default:
                     break;
             }
+        }
+
+        // I would be very concerned to see a non-empty 0x0 chunk.
+        if (chunk.id == 0 && chunk.size != 8) {
+            LOG_MSG(debug, "Non-empty chunk! Size is %d bytes rather than the usual 8 bytes\n", chunk.size);
         }
     }
     free(offset_array);

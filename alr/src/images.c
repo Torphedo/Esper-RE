@@ -3,32 +3,6 @@
 #include "logging.h"
 #include "images.h"
 
-// TGA structures & naming
-
-typedef enum tga_pixel_formats {
-    NONE = 0x0,
-    UNCOMPRESSED_COLOR_MAP = 0x1,
-    UNCOMPRESSED_TRUE_COLOR = 0x2,
-    UNCOMPRESSED_GREYSCALE = 0x3,
-    RUN_LENGTH_COLOR_MAP = 0x9,
-    RUN_LENGTH_TRUE_COLOR = 0xA,
-    RUN_LENGTH_GREYSCALE = 0xB
-}tga_pixel_formats;
-
-// TGA header
-typedef struct tga_header {
-    uint8_t id_size; // 0
-    uint8_t color_map; // 0
-    uint8_t format;
-    uint8_t color_map_spec[5]; // Unused, describes color map if present
-    uint16_t x_origin; // 0
-    uint16_t y_origin; // 0
-    uint16_t width;
-    uint16_t height;
-    uint8_t bits_per_pixel;
-    uint8_t image_settings; // 0b00100000: Orders pixels from top to bottom
-}tga_header;
-
 // DDS structures
 
 typedef enum dds_flags {
@@ -94,38 +68,7 @@ typedef struct dds_header {
     uint32_t reserved2;    // Unused
 }dds_header;
 
-void write_tga(texture_info texture) {
-    if (texture.bits_per_pixel == 0 || texture.bits_per_pixel % 8 != 0) {
-        LOG_MSG(error, "Bits per pixel for the file %s had an invalid value of %d\n", texture.filename, texture.bits_per_pixel);
-        return;
-    }
-
-    tga_header header = {
-        .width = texture.width,
-        .height = texture.height,
-        .bits_per_pixel = texture.bits_per_pixel,
-        .image_settings = 0b00100000
-    };
-
-    if (texture.bits_per_pixel == 8) {
-        header.format = UNCOMPRESSED_GREYSCALE;
-    }
-    else if (texture.bits_per_pixel > 32) {
-        LOG_MSG(warning, "The file %s has %d bits per pixel (TGA limit is 32).\n", texture.filename, texture.bits_per_pixel);
-    }
-    else {
-        header.format = UNCOMPRESSED_TRUE_COLOR;
-    }
-
-    uint8_t bytes_per_pixel = header.bits_per_pixel / 8;
-    // Writing out an uncompressed TGA file
-    FILE* tex_out = fopen(texture.filename, "wb");
-    fwrite(&header, sizeof(tga_header), 1, tex_out);
-    fwrite(texture.image_data, bytes_per_pixel, header.width * header.height, tex_out);
-    fclose(tex_out);
-}
-
-void write_dds(texture_info texture) {
+void write_texture(texture_info texture) {
     dds_header header = {
         .identifier = DDS_BEGIN,
         .size = 0x7C,
@@ -169,17 +112,6 @@ void write_dds(texture_info texture) {
     fwrite(&header, sizeof(dds_header), 1, tex_out);
     fwrite(texture.image_data, bytes_per_pixel, header.width * header.height, tex_out);
     fclose(tex_out);
-}
-
-void write_texture(texture_info texture) {
-    switch (texture.format) {
-        case TGA:
-            write_tga(texture);
-            break;
-        case DDS:
-            write_dds(texture);
-            break;
-    }
 }
 
 uint64_t full_pixel_count(uint32_t width, uint32_t height, uint32_t mipmap_count) {
