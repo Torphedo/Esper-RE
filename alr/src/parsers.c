@@ -90,10 +90,44 @@ static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex
 uint64_t filesize(const char* path) {
     struct stat st = {0};
     if (stat(path, &st) != 0) {
-        LOG_MSG(error, "Failed to get file metadata for %s", path);
+        LOG_MSG(error, "Failed to get file metadata for %s\n", path);
         return 0;
     }
     return st.st_size;
+}
+
+bool stream_dump(chunk_generic chunk, uint8_t* chunk_buf) {
+    // Don't bother trying if there's nothing to write
+    int64_t buf_size = chunk.size - sizeof(chunk);
+    if (buf_size <= 0) {
+        LOG_MSG(warning, "Chunk size <= 0, skipping\n");
+        return false;
+    }
+
+    // Generate filename
+    char name[1024] = {0};
+    sprintf(name, "streams/0x%02x.bin", chunk.id);
+
+    LOG_MSG(debug, "Writing %d bytes to %s\n", chunk.size, name);
+
+    // Open file in append mode
+    FILE* stream = fopen(name, "ab");
+
+    // Try making the directory if we couldn't open the file.
+    // (This is the most common reason it would fail)
+    if (stream == NULL) {
+        system("mkdir streams");
+        bool result = stream_dump(chunk, chunk_buf);
+        if (!result) {
+            LOG_MSG(error, "Failed to open the file %s for writing.\n", name);
+        }
+        return result;
+    }
+
+    // Write & exit
+    fwrite(chunk_buf, buf_size, 1, stream);
+    fclose(stream);
+    return true;
 }
 
 bool chunk_parse_all(char* alr_filename, flags options) {
@@ -195,6 +229,8 @@ bool chunk_parse_all(char* alr_filename, flags options) {
             if (options.info_mode && options.layout) {
                 LOG_MSG(debug, "0x%x chunk at 0x%x\n", chunk.id, ftell(alr));
             }
+
+            stream_dump(chunk, chunk_buf);
 
             switch (chunk.id) {
                 case 0xD:
