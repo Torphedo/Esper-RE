@@ -1,9 +1,7 @@
-#include <bits/stdint-uintn.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-#include <threads.h>
 
 #include "logging.h"
 
@@ -46,7 +44,7 @@ static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex
 
         uint32_t total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
 
-        LOG_MSG(info, "Surface %2d %-32s: %2d mipmap(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &names[i].name, surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height, res_size);
+        LOG_MSG(info, "Surface %2d %-16s: %2d mip(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &names[i].name, surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height, res_size);
 
         // Print out size, formatted in appropriate unit
         if (res_size < 0x400) {
@@ -129,6 +127,13 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     }
     fread(entries, sizeof(*entries), res_header.array_size, alr);
 
+    // First offset generally points right after the resource layout chunk.
+    // This is just to alert us of anomalies.
+    if (offset_array[0] != ftell(alr)) {
+        LOG_MSG(warning, "Gap between first data chunk & offset!\n");
+        LOG_MSG(debug, "data chunk = 0x%x, offset = 0x%x\n", offset_array[0], ftell(alr));
+    }
+
     uint32_t tex_buf_size = header.last_resource_end - header.resource_offset;
     uint8_t* tex_buf = calloc(1, tex_buf_size);
     if (tex_buf == NULL) {
@@ -151,13 +156,6 @@ bool chunk_parse_all(char* alr_filename, flags options) {
                 LOG_MSG(info, "File %u: 0x%x\n", i, offset_array[i]);
             }
         }
-    }
-
-    // First offset generally points right after the resource layout chunk.
-    // This is just to alert us of anomalies.
-    if (offset_array[0] != ftell(alr)) {
-        LOG_MSG(warning, "Gap between first data chunk & offset!\n");
-        LOG_MSG(debug, "data chunk = 0x%x, offset = 0x%x\n", offset_array[0], ftell(alr));
     }
 
     for (unsigned int i = 0; i < header.offset_array_size; i++) {
