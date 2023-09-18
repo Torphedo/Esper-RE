@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
 #include <stdint.h>
 
 // All ALR files begin with this structure.
@@ -55,12 +56,18 @@ typedef struct {
 // The header of an 0x10 ALR chunk, which stores information about textures in
 // the file
 typedef struct {
-    uint32_t id; // 0x10
-    uint32_t size;
     uint32_t surface_count;
     uint32_t texture_count;
     unsigned char alr_name[0x10];
 }texture_metadata_header;
+
+typedef struct {
+    char name[0x10];
+    uint32_t unk1;
+    uint32_t unk2;
+    uint32_t unk3;
+    uint32_t unk4;
+}tex_name;
 
 // A chunk with metadata about textures stored in the resource section.
 typedef struct {
@@ -70,7 +77,7 @@ typedef struct {
     float unknown[2]; // This is often 1.0f
     uint32_t width;
     uint32_t height;
-}texture_header;
+}tex_info;
 
 typedef struct {
     uint16_t width;
