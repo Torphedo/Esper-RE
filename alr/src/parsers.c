@@ -108,7 +108,7 @@ bool stream_dump(chunk_generic chunk, uint8_t* chunk_buf) {
     char name[1024] = {0};
     sprintf(name, "streams/0x%02x.bin", chunk.id);
 
-    LOG_MSG(debug, "Writing %d bytes to %s\n", chunk.size, name);
+    // LOG_MSG(debug, "Writing %d bytes to %s\n", chunk.size, name);
 
     // Open file in append mode
     FILE* stream = fopen(name, "ab");
