@@ -20,49 +20,48 @@ bool split_alr(char* alr_filename) {
     uint32_t* pointer_array = malloc(header.offset_array_size * sizeof(uint32_t));
     if (pointer_array == NULL) {
         LOG_MSG(error, "Failed to allocate pointer array with %d elements\n", header.offset_array_size);
+        fclose(alr);
         return false;
     }
-    else {
     // Read in pointer array
     fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
 
-        // Write each large chunk of data to a separate file.
-        for (uint32_t i = 0; i < header.offset_array_size; i++) {
-            // Length between the current and next pointer.
-            int32_t size;
-            if (i < header.offset_array_size - 1) {
-                size = pointer_array[i + 1] - pointer_array[i];
-            }
-            else {
-                size = header.resource_offset - pointer_array[i];
-            }
-
-            if (size < 0) {
-                LOG_MSG(warning, "Adjusting for negative chunk size at chunk %d.\n", i);
-                size *= -1;
-            }
-
-            // 256MiB
-            if (size > 0x10000000) {
-                LOG_MSG(error, "Chunk size at chunk %d was unreasonably high (%d bytes)!\n", i, size);
-                return false;
-            }
-            char* buffer = malloc(size);
-            fseek(alr, (long) pointer_array[i], SEEK_SET);
-            fread(buffer, size, 1, alr);
-
-            // Because i is a uint32_t, the longest possible filename is
-            // 4294967295.bin, which is 14 characters
-            char filename[16];
-            if (snprintf(filename, 15, "%u.bin", i) > 0) {
-                FILE *dump = fopen(filename, "wb");
-                fwrite(buffer, size, 1, dump);
-                fclose(dump);
-            }
-            free(buffer);
+    // Write each large chunk of data to a separate file.
+    for (uint32_t i = 0; i < header.offset_array_size; i++) {
+        // Length between the current and next pointer.
+        int32_t size;
+        if (i < header.offset_array_size - 1) {
+            size = pointer_array[i + 1] - pointer_array[i];
         }
-	free(pointer_array);
+        else {
+            size = header.resource_offset - pointer_array[i];
+        }
+
+        if (size < 0) {
+            LOG_MSG(warning, "Adjusting for negative chunk size at chunk %d.\n", i);
+            size *= -1;
+        }
+
+        // 256MiB
+        if (size > 0x10000000) {
+            LOG_MSG(error, "Chunk size at chunk %d was unreasonably high (%d bytes)!\n", i, size);
+            return false;
+        }
+        char* buffer = malloc(size);
+        fseek(alr, (long) pointer_array[i], SEEK_SET);
+        fread(buffer, size, 1, alr);
+
+        // Because i is a uint32_t, the longest possible filename is
+        // 4294967295.bin, which is 14 characters
+        char filename[16];
+        if (snprintf(filename, 15, "%u.bin", i) > 0) {
+            FILE *dump = fopen(filename, "wb");
+            fwrite(buffer, size, 1, dump);
+            fclose(dump);
+        }
+        free(buffer);
     }
+    free(pointer_array);
 
     // Dump all resources to separate files
     fseek(alr, sizeof(chunk_layout) + (header.offset_array_size * sizeof(uint32_t)), SEEK_SET);
@@ -104,8 +103,9 @@ bool split_alr(char* alr_filename) {
                 }
             }
         }
+        free(resources);
     }
-	fclose(alr);
-	return true;
+    fclose(alr);
+    return true;
 }
 
