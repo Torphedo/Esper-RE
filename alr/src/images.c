@@ -1,3 +1,4 @@
+#include <bits/stdint-uintn.h>
 #include <stdio.h>
 
 #include "logging.h"
@@ -50,6 +51,10 @@ typedef enum {
     DDS_BEGIN = 0x20534444 // 'DDS ' (little endian)
 }dds_const;
 
+typedef enum {
+    DDS_DXT1 = 0x31545844 // 'DXT1' (little endian)
+}dds_bc_format;
+
 typedef struct dds_header {
     uint32_t identifier;   // DDS_BEGIN as defined above. aka "file magic" / "magic number".
     uint32_t size;         // Must be 124 (0x7C)
@@ -93,10 +98,19 @@ void write_texture(texture_info texture) {
         header.caps  |= DDSCAPS_MIPMAP | DDSCAPS_COMPLEX;
     }
     switch (texture.bits_per_pixel) {
+        // BC1 / DXT1
+        case 4:
+            header.pixel_format.flags = DDPF_FOURCC;
+            header.pixel_format.format_char_code = DDS_DXT1;
+            header.flags |= DDSD_LINEARSIZE;
+            header.flags ^= DDSD_PITCH;
+            break;
+        // A8
         case 8:
             header.pixel_format.flags = DDPF_ALPHA;
             header.pixel_format.alpha_bitmask = 0x000000FF;
             break;
+        // RGBA8
         case 32:
             header.pixel_format.flags = DDPF_ALPHAPIXELS | DDPF_RGB;
             header.pixel_format.alpha_bitmask = 0xFF000000;
@@ -106,11 +120,12 @@ void write_texture(texture_info texture) {
             break;
     }
 
-    uint8_t bytes_per_pixel = texture.bits_per_pixel / 8;
+    float bytes_per_pixel = texture.bits_per_pixel / 8.0f;
+    uint32_t texture_size = header.height * header.width * bytes_per_pixel;
 
     FILE* tex_out = fopen(texture.filename, "wb");
     fwrite(&header, sizeof(dds_header), 1, tex_out);
-    fwrite(texture.image_data, bytes_per_pixel, header.width * header.height, tex_out);
+    fwrite(texture.image_data, texture_size, 1, tex_out);
     fclose(tex_out);
 }
 

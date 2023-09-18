@@ -1,3 +1,4 @@
+#include <bits/stdint-uintn.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -40,11 +41,12 @@ static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex
             res_size = entries[i + 1].data_ptr - entries[i].data_ptr; // next offset - current offset
         }
 
-        uint8_t bits_per_pixel = (res_size / pixel_count) * 8;
+        // These must be cast to floats to account for textures with < 8 bpp
+        uint8_t bits_per_pixel = ((float)res_size / (float)pixel_count) * 8;
 
         uint32_t total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
 
-        LOG_MSG(info, "Surface %2d %-16s: %2d mip(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &names[i].name, surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height, res_size);
+        LOG_MSG(info, "Surface %2d %-16s: %2d mip(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &names[i].name, surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height);
 
         // Print out size, formatted in appropriate unit
         if (res_size < 0x400) {
@@ -94,6 +96,32 @@ uint64_t filesize(const char* path) {
         return 0;
     }
     return st.st_size;
+}
+
+void brute_tex_dump(uint8_t* tex_buf, uint32_t tex_buf_size, resource_entry* entries, uint32_t entry_count) {
+    for (uint32_t i = 0; i < entry_count; i++) {
+        uint32_t tex_size = 0;
+        if (i == entry_count - 1) {
+            // end - current
+            tex_size = tex_buf_size - entries[i].data_ptr;
+        }
+        else {
+            // next - current
+            tex_size = entries[i + 1].data_ptr - entries[i].data_ptr;
+        }
+        LOG_MSG(info, "texture %d is 0x%x bytes\n", i, tex_size);
+
+        float bytes_per_pixel = 0;
+        uint32_t res[4] = {128, 256, 512, 1024};
+        for (uint32_t j = 0; j < 4; j++) {
+            uint32_t res_square = res[j] * res[j];
+            if ((tex_size / res_square) != 0) {
+            }
+            bytes_per_pixel = (float)tex_size / (float)res_square;
+            LOG_MSG(info, "bytes for texture %d (brute-force): %f at %dx%d\n", i, bytes_per_pixel, res[j], res[j]);
+            LOG_MSG(info, "bpp for texture %d (brute-force): %f at %dx%d\n", i, bytes_per_pixel / 8, res[j], res[j]);
+        }
+    }
 }
 
 bool stream_dump(chunk_generic chunk, uint8_t* chunk_buf) {
@@ -168,7 +196,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
         LOG_MSG(debug, "data chunk = 0x%x, offset = 0x%x\n", offset_array[0], ftell(alr));
     }
 
-    uint32_t tex_buf_size = header.last_resource_end - header.resource_offset;
+    uint32_t tex_buf_size = header.resource_size;
     uint8_t* tex_buf = calloc(1, tex_buf_size);
     if (tex_buf == NULL) {
         free(offset_array);
@@ -182,7 +210,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     // Print some useful info about the file's structure
     if (options.info_mode) {
         LOG_MSG(info, "Resource section = 0x%x\n", header.resource_offset);
-        LOG_MSG(info, "Resources end @ 0x%x\n", header.last_resource_end);
+        LOG_MSG(info, "Resources end @ 0x%x\n", header.resource_size);
         LOG_MSG(info, "%d resources\n", res_header.array_size);
         LOG_MSG(info, "%d internal files\n\n", header.offset_array_size);
         if (options.layout) {
@@ -191,6 +219,10 @@ bool chunk_parse_all(char* alr_filename, flags options) {
             }
         }
     }
+
+    // We set this if we find an 0x10 chunk. Otherwise we need to try to find
+    // texture format and resolution through brute force.
+    bool found_texture_info = false;
 
     for (unsigned int i = 0; i < header.offset_array_size; i++) {
         // Some offsets are 0. Don't know why, it's really weird.
@@ -238,6 +270,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
                     chunk_0xD(chunk);
                     break;
                 case 0x10:
+                    found_texture_info = true;
                     chunk_texture(chunk, chunk_buf, tex_buf, tex_buf_size, entries, options);
                     break;
                 default:
@@ -251,6 +284,13 @@ bool chunk_parse_all(char* alr_filename, flags options) {
         }
     }
     free(offset_array);
+
+    // Try to dump textures through brute force.
+    if (!found_texture_info) {
+        brute_tex_dump(tex_buf, tex_buf_size, entries, res_header.array_size);
+    }
+
+    free(tex_buf);
     free(entries);
     fclose(alr);
 

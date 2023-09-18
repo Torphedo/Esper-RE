@@ -10,7 +10,7 @@ typedef struct {
     uint32_t flags;             // Unknown
     uint32_t resource_offset;   // Offset of resource section (at end of file)
     uint32_t offset_array_size; // Number of offsets in the array
-    uint32_t last_resource_end; // Offset from resource_offset where the last resource ends. This should point to the end of the file
+    uint32_t resource_size; // Offset from resource_offset where the last resource ends. This should point to the end of the file
     uint64_t pad;
 }chunk_layout;
 

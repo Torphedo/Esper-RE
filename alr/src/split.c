@@ -76,7 +76,7 @@ bool split_alr(char* alr_filename) {
         for (uint32_t i = 0; i < resource_header.array_size; i++) {
             uint32_t res_size = 0;
             if (i == resource_header.array_size - 1) {
-                res_size = header.last_resource_end - resources[i].data_ptr;
+                res_size = header.resource_size - resources[i].data_ptr;
             }
             else {
                 res_size = resources[i + 1].data_ptr - resources[i].data_ptr; // next_offset - current_offset
