@@ -1,4 +1,3 @@
-#include <bits/stdint-uintn.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -6,12 +5,13 @@
 
 #include "logging.h"
 
+#include "int_shorthands.h"
 #include "parsers.h"
 #include "alr.h"
 #include "images.h"
 
 // Sanity checks for 0xD chunks that have been observed to always be empty
-static void chunk_0xD(chunk_generic chunk) {
+void chunk_0xD(chunk_generic chunk) {
     // This isn't really a *problem*, but the warning status helps it stand out
     if (chunk.size != 0xC) {
         LOG_MSG(warning, "Non-empty chunk! Size is %d bytes rather than the usual 12 bytes\n", chunk.size);
@@ -19,7 +19,7 @@ static void chunk_0xD(chunk_generic chunk) {
 }
 
 // Reads 0x10 chunks and uses their metadata to write texture data to disk
-static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex_buf, uint32_t tex_buf_size, resource_entry* entries, flags options) {
+void chunk_texture(chunk_generic header, u8* chunk_buf, u8* tex_buf, u32 tex_buf_size, resource_entry* entries, flags options) {
     texture_metadata_header* tex_header = (texture_metadata_header*)chunk_buf;
 
     LOG_MSG(info, "Surface count: %d Image count: %d\n\n", tex_header->surface_count, tex_header->texture_count);
@@ -30,10 +30,10 @@ static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex
     surface_info* surfaces = (surface_info*)&names[tex_header->surface_count];
     tex_info* textures = (tex_info*)&surfaces[tex_header->surface_count];
 
-    for (uint32_t i = 0; i < tex_header->surface_count; i++) {
-        uint32_t pixel_count = surfaces[i].width * surfaces[i].height;
-        uint32_t texture_id = textures[i].index;
-        uint32_t res_size = 0;
+    for (u32 i = 0; i < tex_header->surface_count; i++) {
+        u32 pixel_count = surfaces[i].width * surfaces[i].height;
+        u32 texture_id = textures[i].index;
+        u32 res_size = 0;
         if (i == tex_header->surface_count - 1) {
             res_size = tex_buf_size - entries[i].data_ptr;
         }
@@ -42,9 +42,9 @@ static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex
         }
 
         // These must be cast to floats to account for textures with < 8 bpp
-        uint8_t bits_per_pixel = ((float)res_size / (float)pixel_count) * 8;
+        u8 bits_per_pixel = ((float)res_size / (float)pixel_count) * 8;
 
-        uint32_t total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
+        u32 total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
 
         LOG_MSG(info, "Surface %2d %-16s: %2d mip(s), estimated %2d bpp, 0x%05x pixels, %4dx%-4d (", i, &names[i].name, surfaces[i].mipmap_count, bits_per_pixel, total_pixel_count, surfaces[i].width, surfaces[i].height);
 
@@ -81,15 +81,15 @@ static void chunk_texture(chunk_generic header, uint8_t* chunk_buf, uint8_t* tex
     }
     printf("\n");
 
-    uint32_t total_image_pixels = 0;
-    for (unsigned int i = 0; i < tex_header->texture_count; i++) {
+    u32 total_image_pixels = 0;
+    for (u32 i = 0; i < tex_header->texture_count; i++) {
         LOG_MSG(info, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
         total_image_pixels += textures[i].width * textures[i].height;
     }
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
 }
 
-uint64_t filesize(const char* path) {
+u64 filesize(const char* path) {
     struct stat st = {0};
     if (stat(path, &st) != 0) {
         LOG_MSG(error, "Failed to get file metadata for %s\n", path);
@@ -98,9 +98,9 @@ uint64_t filesize(const char* path) {
     return st.st_size;
 }
 
-void brute_tex_dump(uint8_t* tex_buf, uint32_t tex_buf_size, resource_entry* entries, uint32_t entry_count) {
-    for (uint32_t i = 0; i < entry_count; i++) {
-        uint32_t tex_size = 0;
+void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 entry_count) {
+    for (u32 i = 0; i < entry_count; i++) {
+        u32 tex_size = 0;
         if (i == entry_count - 1) {
             // end - current
             tex_size = tex_buf_size - entries[i].data_ptr;
@@ -112,9 +112,9 @@ void brute_tex_dump(uint8_t* tex_buf, uint32_t tex_buf_size, resource_entry* ent
         LOG_MSG(info, "texture %d is 0x%x bytes\n", i, tex_size);
 
         float bytes_per_pixel = 0;
-        uint32_t res[4] = {128, 256, 512, 1024};
-        for (uint32_t j = 0; j < 4; j++) {
-            uint32_t res_square = res[j] * res[j];
+        u32 res[4] = {128, 256, 512, 1024};
+        for (u32 j = 0; j < 4; j++) {
+            u32 res_square = res[j] * res[j];
             if ((tex_size / res_square) != 0) {
             }
             bytes_per_pixel = (float)tex_size / (float)res_square;
@@ -124,9 +124,9 @@ void brute_tex_dump(uint8_t* tex_buf, uint32_t tex_buf_size, resource_entry* ent
     }
 }
 
-bool stream_dump(chunk_generic chunk, uint8_t* chunk_buf) {
+bool stream_dump(chunk_generic chunk, u8* chunk_buf) {
     // Don't bother trying if there's nothing to write
-    int64_t buf_size = chunk.size - sizeof(chunk);
+    s64 buf_size = chunk.size - sizeof(chunk);
     if (buf_size <= 0) {
         LOG_MSG(warning, "Chunk size <= 0, skipping\n");
         return false;
@@ -170,7 +170,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     // Read the file header & offset array
     chunk_layout header = {0};
     fread(&header, sizeof(header), 1, alr);
-    uint32_t* offset_array = calloc(header.offset_array_size, sizeof(*offset_array));
+    u32* offset_array = calloc(header.offset_array_size, sizeof(*offset_array));
     if (offset_array == NULL) {
         fclose(alr);
         return false;
@@ -196,8 +196,8 @@ bool chunk_parse_all(char* alr_filename, flags options) {
         LOG_MSG(debug, "data chunk = 0x%x, offset = 0x%x\n", offset_array[0], ftell(alr));
     }
 
-    uint32_t tex_buf_size = header.resource_size;
-    uint8_t* tex_buf = calloc(1, tex_buf_size);
+    u32 tex_buf_size = header.resource_size;
+    u8* tex_buf = calloc(1, tex_buf_size);
     if (tex_buf == NULL) {
         free(offset_array);
         free(entries);
@@ -214,7 +214,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
         LOG_MSG(info, "%d resources\n", res_header.array_size);
         LOG_MSG(info, "%d internal files\n\n", header.offset_array_size);
         if (options.layout) {
-            for (unsigned int i = 0; i < header.offset_array_size; i++) {
+            for (u32 i = 0; i < header.offset_array_size; i++) {
                 LOG_MSG(info, "File %u: 0x%x\n", i, offset_array[i]);
             }
         }
@@ -224,7 +224,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
     // texture format and resolution through brute force.
     bool found_texture_info = false;
 
-    for (unsigned int i = 0; i < header.offset_array_size; i++) {
+    for (u32 i = 0; i < header.offset_array_size; i++) {
         // Some offsets are 0. Don't know why, it's really weird.
         if (offset_array[i] == 0) {
             LOG_MSG(warning, "Offset %d was 0, skipping...\n", i);
@@ -237,14 +237,14 @@ bool chunk_parse_all(char* alr_filename, flags options) {
         // Breaks when chunk ID 0 is found.
         // A while(true) here is a little gross but it avoids some duplication.
         while (true) {
-            uint64_t chunk_start = ftell(alr);
+            u64 chunk_start = ftell(alr);
             fread(&chunk, sizeof(chunk), 1, alr);
             if (chunk.id == 0) {
                 break;
             }
             // Need to subtract sizeof(chunk) because the size includes size & ID
-            uint64_t buf_size = chunk.size - sizeof(chunk);
-            uint8_t* chunk_buf = calloc(1, buf_size);
+            u64 buf_size = chunk.size - sizeof(chunk);
+            u8* chunk_buf = calloc(1, buf_size);
             if (chunk_buf == NULL) {
                 LOG_MSG(error, "Failed to allocate 0x%x bytes for chunk buffer!\n", buf_size);
                 break;

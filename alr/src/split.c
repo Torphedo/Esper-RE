@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <malloc.h>
 
+#include "int_shorthands.h"
 #include "logging.h"
 #include "alr.h"
 
@@ -17,19 +18,19 @@ bool split_alr(char* alr_filename) {
     chunk_layout header = {0};
     // Read header
     fread(&header, sizeof(chunk_layout), 1, alr);
-    uint32_t* pointer_array = malloc(header.offset_array_size * sizeof(uint32_t));
+    u32* pointer_array = malloc(header.offset_array_size * sizeof(u32));
     if (pointer_array == NULL) {
         LOG_MSG(error, "Failed to allocate pointer array with %d elements\n", header.offset_array_size);
         fclose(alr);
         return false;
     }
     // Read in pointer array
-    fread(pointer_array, sizeof(uint32_t), header.offset_array_size, alr);
+    fread(pointer_array, sizeof(u32), header.offset_array_size, alr);
 
     // Write each large chunk of data to a separate file.
-    for (uint32_t i = 0; i < header.offset_array_size; i++) {
+    for (u32 i = 0; i < header.offset_array_size; i++) {
         // Length between the current and next pointer.
-        int32_t size;
+        s32 size;
         if (i < header.offset_array_size - 1) {
             size = pointer_array[i + 1] - pointer_array[i];
         }
@@ -51,7 +52,7 @@ bool split_alr(char* alr_filename) {
         fseek(alr, (long) pointer_array[i], SEEK_SET);
         fread(buffer, size, 1, alr);
 
-        // Because i is a uint32_t, the longest possible filename is
+        // Because i is a u32, the longest possible filename is
         // 4294967295.bin, which is 14 characters
         char filename[16];
         if (snprintf(filename, 15, "%u.bin", i) > 0) {
@@ -64,7 +65,7 @@ bool split_alr(char* alr_filename) {
     free(pointer_array);
 
     // Dump all resources to separate files
-    fseek(alr, sizeof(chunk_layout) + (header.offset_array_size * sizeof(uint32_t)), SEEK_SET);
+    fseek(alr, sizeof(chunk_layout) + (header.offset_array_size * sizeof(u32)), SEEK_SET);
     resource_layout_header resource_header = {0};
     fread(&resource_header, sizeof(resource_layout_header), 1, alr);
     resource_entry* resources = calloc(resource_header.array_size, sizeof(resource_entry));
@@ -73,8 +74,8 @@ bool split_alr(char* alr_filename) {
     }
     else {
         fread(resources, sizeof(resource_entry), resource_header.array_size, alr);
-        for (uint32_t i = 0; i < resource_header.array_size; i++) {
-            uint32_t res_size = 0;
+        for (u32 i = 0; i < resource_header.array_size; i++) {
+            u32 res_size = 0;
             if (i == resource_header.array_size - 1) {
                 res_size = header.resource_size - resources[i].data_ptr;
             }
@@ -93,7 +94,7 @@ bool split_alr(char* alr_filename) {
             else {
                 fseek(alr, header.resource_offset + resources[i].data_ptr, SEEK_SET);
                 fread(buffer, res_size, 1, alr);
-                // Because i is a uint32_t, the longest possible filename is resource_4294967295.bin, which is 23 characters
+                // Because i is a u32, the longest possible filename is resource_4294967295.bin, which is 23 characters
                 char filename[32];
                 if (snprintf(filename, 24, "resource_%u.bin", i) > 0) {
                     LOG_MSG(info, "Resource %d: %d (0x%x) bytes\n", i, res_size, res_size);

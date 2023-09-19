@@ -1,6 +1,6 @@
-#include <bits/stdint-uintn.h>
 #include <stdio.h>
 
+#include "int_shorthands.h"
 #include "logging.h"
 #include "images.h"
 
@@ -35,14 +35,14 @@ typedef enum dds_caps_flags {
 }dds_caps_flags;
 
 typedef struct dds_pixel_format {
-    uint32_t size; // Must be 32 (0x20)
-    uint32_t flags;
-    uint32_t format_char_code; // See dwFourCC here: https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat
-    uint32_t bits_per_pixel;
-    uint32_t red_bitmask;
-    uint32_t green_bitmask;
-    uint32_t blue_bitmask;
-    uint32_t alpha_bitmask;
+    u32 size; // Must be 32 (0x20)
+    u32 flags;
+    u32 format_char_code; // See dwFourCC here: https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dds-pixelformat
+    u32 bits_per_pixel;
+    u32 red_bitmask;
+    u32 green_bitmask;
+    u32 blue_bitmask;
+    u32 alpha_bitmask;
 }dds_pixel_format;
 
 // We can't just check equality with "DDS" because it's 'DDS ' with no null
@@ -56,21 +56,21 @@ typedef enum {
 }dds_bc_format;
 
 typedef struct dds_header {
-    uint32_t identifier;   // DDS_BEGIN as defined above. aka "file magic" / "magic number".
-    uint32_t size;         // Must be 124 (0x7C)
-    uint32_t flags;
-    uint32_t height;
-    uint32_t width;
-    uint32_t pitch_or_linear_size;
-    uint32_t depth;
-    uint32_t mipmap_count;
-    uint32_t reserved[11]; // Unused
+    u32 identifier;   // DDS_BEGIN as defined above. aka "file magic" / "magic number".
+    u32 size;         // Must be 124 (0x7C)
+    u32 flags;
+    u32 height;
+    u32 width;
+    u32 pitch_or_linear_size;
+    u32 depth;
+    u32 mipmap_count;
+    u32 reserved[11]; // Unused
     dds_pixel_format pixel_format;
-    uint32_t caps;         // Flags for complexity of the surface
-    uint32_t caps2;        // Always 0 because we don't use cubemaps or volumes
-    uint32_t caps3;        // Unused
-    uint32_t caps4;        // Unused
-    uint32_t reserved2;    // Unused
+    u32 caps;         // Flags for complexity of the surface
+    u32 caps2;        // Always 0 because we don't use cubemaps or volumes
+    u32 caps3;        // Unused
+    u32 caps4;        // Unused
+    u32 reserved2;    // Unused
 }dds_header;
 
 void write_texture(texture_info texture) {
@@ -121,7 +121,7 @@ void write_texture(texture_info texture) {
     }
 
     float bytes_per_pixel = texture.bits_per_pixel / 8.0f;
-    uint32_t texture_size = header.height * header.width * bytes_per_pixel;
+    u32 texture_size = header.height * header.width * bytes_per_pixel;
 
     FILE* tex_out = fopen(texture.filename, "wb");
     fwrite(&header, sizeof(dds_header), 1, tex_out);
@@ -129,9 +129,9 @@ void write_texture(texture_info texture) {
     fclose(tex_out);
 }
 
-uint64_t full_pixel_count(uint32_t width, uint32_t height, uint32_t mipmap_count) {
-    uint64_t pixel_count = width * height;
-    for (uint32_t i = 0; i < mipmap_count - 1; i++) {
+u64 full_pixel_count(u32 width, u32 height, u32 mipmap_count) {
+    u64 pixel_count = width * height;
+    for (u32 i = 0; i < mipmap_count - 1; i++) {
         width /= 2;
         height /= 2;
         pixel_count += (width * height);

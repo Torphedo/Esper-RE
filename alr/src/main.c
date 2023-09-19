@@ -2,6 +2,7 @@
 
 #include "logging.h"
 
+#include "split.h"
 #include "parsers.h"
 #include "arguments.h"
 
@@ -32,3 +33,4 @@ int main(int argc, char* argv[]) {
         return !(chunk_parse_all(options.filename, options));
     }
 }
+

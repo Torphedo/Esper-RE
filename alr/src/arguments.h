@@ -16,3 +16,4 @@ typedef struct {
 // Pass in arguments from main(), and it will return a bitfield with all of
 // the settings that were specified
 flags parse_arguments(int argc, char** argv);
+
