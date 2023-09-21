@@ -73,6 +73,13 @@ typedef struct dds_header {
     u32 reserved2;    // Unused
 }dds_header;
 
+u32 intmax(u32 x, u32 y) {
+    if (x > y) {
+        return x;
+    }
+    return y;
+}
+
 void write_texture(texture_info texture) {
     dds_header header = {
         .identifier = DDS_BEGIN,
@@ -104,6 +111,11 @@ void write_texture(texture_info texture) {
             header.pixel_format.format_char_code = DDS_DXT1;
             header.flags |= DDSD_LINEARSIZE;
             header.flags ^= DDSD_PITCH;
+
+            // Pitch calculation for DXT1 from MSDN.
+            u32 dxt1_block_size = 0x8;
+            u32 pitch = intmax(1, ((header.width + 3) / 4)) * dxt1_block_size;
+            header.pitch_or_linear_size = pitch;
             break;
         // A8
         case 8:
