@@ -98,6 +98,11 @@ u64 filesize(const char* path) {
     return st.st_size;
 }
 
+bool dir_exists(const char* path) {
+    struct stat st = {0};
+    return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
+}
+
 void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 entry_count) {
     for (u32 i = 0; i < entry_count; i++) {
         u32 tex_size = 0;
@@ -109,18 +114,43 @@ void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 
             // next - current
             tex_size = entries[i + 1].data_ptr - entries[i].data_ptr;
         }
-        LOG_MSG(info, "texture %d is 0x%x bytes\n", i, tex_size);
 
-        float bytes_per_pixel = 0;
-        u32 res[4] = {128, 256, 512, 1024};
-        for (u32 j = 0; j < 4; j++) {
-            u32 res_square = res[j] * res[j];
-            if ((tex_size / res_square) != 0) {
-            }
-            bytes_per_pixel = (float)tex_size / (float)res_square;
-            LOG_MSG(info, "bytes for texture %d (brute-force): %f at %dx%d\n", i, bytes_per_pixel, res[j], res[j]);
-            LOG_MSG(info, "bpp for texture %d (brute-force): %f at %dx%d\n", i, bytes_per_pixel / 8, res[j], res[j]);
+        char filename[256] = {0};
+        sprintf(filename, "textures/%d.dds", i);
+
+        // Make the directory if it doesn't exist.
+        if (!dir_exists("textures")) {
+            system("mkdir textures");
         }
+
+        u32 resolution = 1 << entries[i].resolution_pwr;
+        u8 format = entries[i].pixel_format;
+        LOG_MSG(info, "texture %02d is 0x%05x bytes, %3dx%-3d", i, tex_size, resolution, resolution);
+        printf(", format 0b%08b\n", entries[i].pixel_format);
+        texture_info tex = {
+            .width = resolution,
+            .height = resolution,
+            .filename = filename,
+            .image_data = (char*)&tex_buf[entries[i].data_ptr],
+            .mipmap_count = 0,
+        };
+
+        if ((format & 0x0F) == FORMAT_RGBA8) {
+            tex.bits_per_pixel = 32;
+        }
+        else if ((format & 0x0F) == FORMAT_DXT5) {
+            // Block-compressed dual-channel texture at 16 bytes per block
+            // (1 byte per pixel)
+            tex.bits_per_pixel = 8;
+            tex.compressed = true;
+        }
+        else {
+            // BC1 texture.
+            tex.bits_per_pixel = 4;
+            tex.compressed = true;
+        }
+
+        write_texture(tex);
     }
 }
 
@@ -136,21 +166,13 @@ bool stream_dump(chunk_generic chunk, u8* chunk_buf) {
     char name[1024] = {0};
     sprintf(name, "streams/0x%02x.bin", chunk.id);
 
-    // LOG_MSG(debug, "Writing %d bytes to %s\n", chunk.size, name);
+    // Make the directory if it doesn't exist.
+    if (!dir_exists("streams")) {
+        system("mkdir streams");
+    }
 
     // Open file in append mode
     FILE* stream = fopen(name, "ab");
-
-    // Try making the directory if we couldn't open the file.
-    // (This is the most common reason it would fail)
-    if (stream == NULL) {
-        system("mkdir streams");
-        bool result = stream_dump(chunk, chunk_buf);
-        if (!result) {
-            LOG_MSG(error, "Failed to open the file %s for writing.\n", name);
-        }
-        return result;
-    }
 
     // Write & exit
     fwrite(chunk_buf, buf_size, 1, stream);

@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "int_shorthands.h"
 
@@ -7,6 +8,7 @@ typedef struct {
     char* filename;
     char* image_data;
     u8 bits_per_pixel;
+    bool compressed;
     u16 width;
     u16 height;
     u16 mipmap_count;

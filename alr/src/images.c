@@ -52,7 +52,12 @@ typedef enum {
 }dds_const;
 
 typedef enum {
-    DDS_DXT1 = 0x31545844 // 'DXT1' (little endian)
+    DDS_DXT1 = 0x31545844, // 'DXT1' (little endian)
+    DDS_DXT3 = 0x33545844, // 'DXT3' (little endian)
+    DDS_DXT5 = 0x35545844, // 'DXT5' (little endian)
+    DXT1_BLOCK_SIZE = 0x8,
+    DXT3_BLOCK_SIZE = 0x10,
+    DXT5_BLOCK_SIZE = 0x10
 }dds_bc_format;
 
 typedef struct dds_header {
@@ -80,6 +85,13 @@ u32 intmax(u32 x, u32 y) {
     return y;
 }
 
+u32 dxt_pitch(u32 height, u32 width, u32 block_size) {
+    u32 block_res = 0x10;
+    float bytes_per_pixel = (float)block_res / (float)block_size;
+    u32 pitch = (width * height) * bytes_per_pixel;
+    return pitch;
+}
+
 void write_texture(texture_info texture) {
     dds_header header = {
         .identifier = DDS_BEGIN,
@@ -97,30 +109,36 @@ void write_texture(texture_info texture) {
         .caps = DDSCAPS_TEXTURE
     };
 
-    // Disable mipmaps until we can figure out where they're actually stored
-    // texture.mipmap_count = 1;
-
     if (texture.mipmap_count > 1) {
         header.flags |= DDSD_MIPMAPCOUNT;
         header.caps  |= DDSCAPS_MIPMAP | DDSCAPS_COMPLEX;
     }
     switch (texture.bits_per_pixel) {
-        // BC1 / DXT1
+        // DXT1
         case 4:
             header.pixel_format.flags = DDPF_FOURCC;
             header.pixel_format.format_char_code = DDS_DXT1;
             header.flags |= DDSD_LINEARSIZE;
             header.flags ^= DDSD_PITCH;
 
-            // Pitch calculation for DXT1 from MSDN.
-            u32 dxt1_block_size = 0x8;
-            u32 pitch = intmax(1, ((header.width + 3) / 4)) * dxt1_block_size;
+            u32 pitch = dxt_pitch(texture.height, texture.width, DXT5_BLOCK_SIZE);
             header.pitch_or_linear_size = pitch;
             break;
-        // A8
+        // A8 / DXT3 / DXT5
         case 8:
-            header.pixel_format.flags = DDPF_ALPHA;
-            header.pixel_format.alpha_bitmask = 0x000000FF;
+            if (texture.compressed) {
+                header.pixel_format.flags = DDPF_FOURCC;
+                header.pixel_format.format_char_code = DDS_DXT5;
+                header.flags |= DDSD_LINEARSIZE;
+                header.flags ^= DDSD_PITCH;
+
+                u32 pitch = dxt_pitch(texture.height, texture.width, DXT5_BLOCK_SIZE);
+                header.pitch_or_linear_size = pitch;
+            }
+            else {
+                header.pixel_format.flags = DDPF_ALPHA;
+                header.pixel_format.alpha_bitmask = 0x000000FF;
+            }
             break;
         // RGBA8
         case 32:

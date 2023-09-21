@@ -32,14 +32,22 @@ typedef struct {
 
 // Next, there are [array_size] instances of this structure:
 
+typedef enum {
+    FORMAT_RGBA8 = 0b0110,
+    FORMAT_DXT5 = 0b1111,
+}alr_pixel_format;
+
 typedef struct {
     u32 flags;    // Unknown, always 01 00 04 00 so far
     u32 data_ptr; // Offset to some data in the resource section (relative to chunk_layout.resource_offset)
     u32 pad;      // Always 0 (so far)
-    u32 unknown;
-    u32 unknown2; // Often 0
+    u8 unknown; // Usually 0x29
+    u8 pixel_format; // May be mip count, unsure.
+    u8 unknown2;
+    u8 resolution_pwr; // 1 << [resolution_pwr] == height/width
+    u32 unknown3; // Often 0
     u32 ID; // Same in all variations of the same model. Use to identify specific ALRs in memory.
-    u32 unknown3;
+    u32 pad2;
 }resource_entry;
 
 typedef struct {
