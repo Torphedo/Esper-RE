@@ -6,6 +6,7 @@
 #include "logging.h"
 
 #include "int_shorthands.h"
+#include "filesystem.h"
 #include "parsers.h"
 #include "alr.h"
 #include "images.h"
@@ -89,20 +90,6 @@ void chunk_texture(chunk_generic header, u8* chunk_buf, u8* tex_buf, u32 tex_buf
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
 }
 
-u64 filesize(const char* path) {
-    struct stat st = {0};
-    if (stat(path, &st) != 0) {
-        LOG_MSG(error, "Failed to get file metadata for %s\n", path);
-        return 0;
-    }
-    return st.st_size;
-}
-
-bool dir_exists(const char* path) {
-    struct stat st = {0};
-    return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
-}
-
 void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 entry_count) {
     for (u32 i = 0; i < entry_count; i++) {
         u32 tex_size = 0;
@@ -132,7 +119,8 @@ void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 
             .height = resolution,
             .filename = filename,
             .image_data = (char*)&tex_buf[entries[i].data_ptr],
-            .mipmap_count = 0,
+            .mipmap_count = entries[i].resolution_pwr,
+            .size_override = tex_size
         };
 
         if ((format & 0x0F) == FORMAT_RGBA8) {

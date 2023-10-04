@@ -2,8 +2,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <malloc.h>
+#include <stdlib.h>
 
 #include "int_shorthands.h"
+#include "filesystem.h"
 #include "logging.h"
 #include "alr.h"
 
@@ -52,10 +54,12 @@ bool split_alr(char* alr_filename) {
         fseek(alr, (long) pointer_array[i], SEEK_SET);
         fread(buffer, size, 1, alr);
 
-        // Because i is a u32, the longest possible filename is
-        // 4294967295.bin, which is 14 characters
-        char filename[16];
-        if (snprintf(filename, 15, "%u.bin", i) > 0) {
+        if (!dir_exists("resources")) {
+            system("mkdir resources");
+        }
+
+        char filename[256] = {0};
+        if (snprintf(filename, 256, "resources/%u.bin", i) > 0) {
             FILE *dump = fopen(filename, "wb");
             fwrite(buffer, size, 1, dump);
             fclose(dump);
@@ -94,9 +98,14 @@ bool split_alr(char* alr_filename) {
             else {
                 fseek(alr, header.resource_offset + resources[i].data_ptr, SEEK_SET);
                 fread(buffer, res_size, 1, alr);
-                // Because i is a u32, the longest possible filename is resource_4294967295.bin, which is 23 characters
-                char filename[32];
-                if (snprintf(filename, 24, "resource_%u.bin", i) > 0) {
+
+
+                if (!dir_exists("resources")) {
+                    system("mkdir resources");
+                }
+
+                char filename[256] = {0};
+                if (snprintf(filename, 256, "resources/resource_%u.bin", i) > 0) {
                     LOG_MSG(info, "Resource %d: %d (0x%x) bytes\n", i, res_size, res_size);
                     FILE* dump = fopen(filename, "wb");
                     fwrite(buffer, res_size, 1, dump);
