@@ -272,6 +272,7 @@ bool chunk_parse_all(char* alr_filename, flags options) {
                 LOG_MSG(debug, "0x%x chunk at 0x%x\n", chunk.id, ftell(alr));
             }
 
+            // Dump data from all chunks to the separated stream files
             stream_dump(chunk, chunk_buf);
 
             switch (chunk.id) {

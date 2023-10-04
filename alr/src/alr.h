@@ -4,26 +4,24 @@
 #include "int_shorthands.h"
 
 // All ALR files begin with this structure.
+// Followed by a u32 array whose size is listed in the header. The u32s are
+// offsets to chunks of data throughout the file, and aren't always in order.
+// It's unclear what these offsets are used for or if there's any pattern to
+// the grouping. They are part of the header chunk, so the size includes this
+// array.
 typedef struct {
     u32 id;                // 0x11
-    u32 chunk_size;        // Size of this entire chunk
+    u32 chunk_size;        // Size of this chunk (includes ID & size)
     u32 flags;             // Unknown
-    u32 resource_offset;   // Offset of resource section (at end of file)
+    u32 resource_offset;   // Offset of resource buffer at end of file
     u32 offset_array_size; // Number of offsets in the array
-    u32 resource_size; // Offset from resource_offset where the last resource ends. This should point to the end of the file
+    u32 resource_size;     // Total size of resource buffer at end of the file
     u64 pad;
 }chunk_layout;
 
-// Next, there is an array of u32 absolute offsets to various chunks of
-// data throughout the file. It's unclear why these are split into these large
-// chunks or if there's any pattern to the grouping. The size listed in the
-// chunk layout struct includes this array, which has a size of
-// (chunk_layout.offset_array_size * 0x4).
-
-// After the chunk layout structure, there is a (poorly understood) structure
-// containing several absolute offsets into the resource section, which is
-// known to store raw textures.
-
+// This structure follows the offset array. It has offsets into the resource
+// buffer which is always at the end of the file. It also has some metadata
+// about textures in the file, which aren't fully understood.
 typedef struct {
     u32 id;         // 0x15
     u32 chunk_size; // Size of this entire chunk
@@ -39,14 +37,18 @@ typedef enum {
 
 typedef struct {
     u32 flags;    // Unknown, always 01 00 04 00 so far
-    u32 data_ptr; // Offset to some data in the resource section (relative to chunk_layout.resource_offset)
+    u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.resource_offset)
     u32 pad;      // Always 0 (so far)
-    u8 unknown; // Usually 0x29
-    u8 pixel_format; // May be mip count, unsure.
+    u8 unknown;   // Usually 0x29
+    u8 pixel_format;
     u8 unknown2;
-    u8 resolution_pwr; // 1 << [resolution_pwr] == height/width
+    // I think this is actually the mip count, but often the textures have the
+    // maximum possible mip count, so 1 << [mip count] == height/width.
+    u8 resolution_pwr;
     u32 unknown3; // Often 0
-    u32 ID; // Same in all variations of the same model. Use to identify specific ALRs in memory.
+    // Same in all variations of the same model. Can be used to identify
+    // specific ALRs in memory.
+    u32 ID;
     u32 pad2;
 }resource_entry;
 
@@ -103,8 +105,8 @@ typedef struct {
     float total_time; // This often matches the number of frames(?)
     u16 unknown_settings1;
     u16 array_width_1; // # of bytes in each element of the second array
-    u32 translation_key_count; // Derived from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
-    u32 rotation_key_count;    // Derived from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)
+    u32 translation_key_count; // Name from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
+    u32 rotation_key_count;    // Name from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)
     u32 scale_key_count; // Hasn't been tested yet
     u16 unknown_settings2;
     u16 translation_key_size;
