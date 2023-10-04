@@ -12,6 +12,9 @@ typedef struct {
     u16 width;
     u16 height;
     u16 mipmap_count;
+    // When we know the size but our resolution or mip count might be wrong,
+    // this prevents EOF errors in other software.
+    u32 size_override;
 }texture_info;
 
 void write_texture(texture_info texture);

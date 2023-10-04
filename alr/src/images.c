@@ -102,6 +102,7 @@ void write_texture(texture_info texture) {
         .pitch_or_linear_size = (texture.width * texture.bits_per_pixel + 7) / 8,
         .depth = 0,
         .mipmap_count = texture.mipmap_count,
+        // .mipmap_count = 0,
         .pixel_format = {
                 .size = sizeof(dds_pixel_format),
                 .bits_per_pixel = texture.bits_per_pixel
@@ -152,6 +153,11 @@ void write_texture(texture_info texture) {
 
     float bytes_per_pixel = texture.bits_per_pixel / 8.0f;
     u32 texture_size = header.height * header.width * bytes_per_pixel;
+ 
+    // Apply size override from caller if applicable.
+    if (texture.size_override > 0) {
+        texture_size = texture.size_override;
+    }
 
     FILE* tex_out = fopen(texture.filename, "wb");
     fwrite(&header, sizeof(dds_header), 1, tex_out);
