@@ -121,7 +121,13 @@ void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 
             .height = resolution,
             .filename = filename,
             .image_data = (char*)&tex_buf[entries[i].data_ptr],
-            .mipmap_count = entries[i].resolution_pwr,
+            .mipmap_count = 0,
+                /* Disable mipmaps. Based on the texture at index 7 of st06.alr,
+                 * the field we bitshift by to get resolution cannot possibly be a
+                 * mipmap count. In this texture, the value is 9. 9 mipmaps require
+                 * ~349000 pixels, and the texture buffer is only 128KiB.
+                 * Line to re-enable mipmaps:
+                 * .mipmap_count = entries[i].resolution_pwr, */
             .size_override = tex_size
         };
 
