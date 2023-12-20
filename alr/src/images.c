@@ -116,7 +116,7 @@ void write_texture(texture_info texture) {
             header.flags |= DDSD_LINEARSIZE;
             header.flags ^= DDSD_PITCH;
 
-            u32 pitch = dxt_pitch(texture.height, texture.width, DXT5_BLOCK_SIZE);
+            u32 pitch = dxt_pitch(texture.height, texture.width, DXT1_BLOCK_SIZE);
             header.pitch_or_linear_size = pitch;
             break;
         // A8 / DXT3 / DXT5
