@@ -90,6 +90,8 @@ void chunk_texture(chunk_generic header, u8* chunk_buf, u8* tex_buf, u32 tex_buf
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
 }
 
+// Try to deduce texture metadata by brute force using the limited data in the
+// resource header (0x15 chunk)
 void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 entry_count) {
     for (u32 i = 0; i < entry_count; i++) {
         u32 tex_size = 0;
