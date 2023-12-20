@@ -115,7 +115,7 @@ void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 
         u32 resolution = 1 << entries[i].resolution_pwr;
         u8 format = entries[i].pixel_format;
         LOG_MSG(info, "texture %02d is 0x%05x bytes, %3dx%-3d", i, tex_size, resolution, resolution);
-        printf(", format 0b%08b\n", entries[i].pixel_format);
+        printf(", format 0b%08b\n", format);
         texture_info tex = {
             .width = resolution,
             .height = resolution,
@@ -131,19 +131,25 @@ void brute_tex_dump(u8* tex_buf, u32 tex_buf_size, resource_entry* entries, u32 
             .size_override = tex_size
         };
 
-        if ((format & 0x0F) == FORMAT_RGBA8) {
-            tex.bits_per_pixel = 32;
-        }
-        else if ((format & 0x0F) == FORMAT_DXT5) {
-            // Block-compressed dual-channel texture at 16 bytes per block
-            // (1 byte per pixel)
-            tex.bits_per_pixel = 8;
-            tex.compressed = true;
-        }
-        else {
-            // BC1 texture.
-            tex.bits_per_pixel = 4;
-            tex.compressed = true;
+        switch (format) {
+            case FORMAT_MONO_16:
+                // LOG_MSG(debug, "Setting bpp to 16.\n");
+                tex.bits_per_pixel = 16;
+                break;
+            case FORMAT_RGBA8:
+                tex.bits_per_pixel = 32;
+                break;
+            case FORMAT_DXT5:
+                // Block-compressed dual-channel texture at 16 bytes per block
+                // (1 byte per pixel)
+                tex.bits_per_pixel = 8;
+                tex.compressed = true;
+                break;
+            default:
+                // BC1 texture.
+                tex.bits_per_pixel = 4;
+                tex.compressed = true;
+                break;
         }
 
         write_texture(tex);

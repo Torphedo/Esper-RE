@@ -135,6 +135,14 @@ void write_texture(texture_info texture) {
                 header.pixel_format.alpha_bitmask = 0x000000FF;
             }
             break;
+
+        case 16:
+            // We assume this is a 16-bit single channel texture
+            // (e.g. for a specular map)
+            header.pixel_format.flags = DDPF_LUMINANCE;
+            header.pixel_format.bits_per_pixel = texture.bits_per_pixel;
+            header.pixel_format.red_bitmask = 0x0000FFFF;
+            break;
         // RGBA8
         case 32:
             header.pixel_format.flags = DDPF_ALPHAPIXELS | DDPF_RGB;
@@ -142,6 +150,10 @@ void write_texture(texture_info texture) {
             header.pixel_format.red_bitmask   = 0x00FF0000;
             header.pixel_format.green_bitmask = 0x0000FF00;
             header.pixel_format.blue_bitmask  = 0x000000FF;
+            break;
+        default:
+            LOG_MSG(warning, "No case for %d bpp for texture %s\n", texture.bits_per_pixel, texture.filename);
+            LOG_MSG(info, "(proceeding anyway)");
             break;
     }
 
