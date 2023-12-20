@@ -79,9 +79,9 @@ typedef struct dds_header {
 }dds_header;
 
 u32 dxt_pitch(u32 height, u32 width, u32 block_size) {
-    u32 block_res = 0x10;
+    u32 block_res = 16; // 16 pixels per block
     // TODO: Divide by pixels per byte instead, so we don't need to use floats.
-    float bytes_per_pixel = (float)block_res / (float)block_size;
+    float bytes_per_pixel = (float)block_size/ (float)block_res;
     u32 pitch = (width * height) * bytes_per_pixel;
     return pitch;
 }
