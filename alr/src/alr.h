@@ -31,8 +31,9 @@ typedef struct {
 // Next, there are [array_size] instances of this structure:
 
 typedef enum {
-    FORMAT_RGBA8 = 0b0110,
-    FORMAT_DXT5 = 0b1111,
+    FORMAT_MONO_16 = 0b10000010,
+    FORMAT_RGBA8 = 0b00000110,
+    FORMAT_DXT5 = 0b00001111,
 }alr_pixel_format;
 
 typedef struct {
