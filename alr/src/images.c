@@ -153,7 +153,7 @@ void write_texture(texture_info texture) {
             break;
         default:
             LOG_MSG(warning, "No case for %d bpp for texture %s\n", texture.bits_per_pixel, texture.filename);
-            LOG_MSG(info, "(proceeding anyway)");
+            LOG_MSG(info, "(proceeding anyway)\n");
             break;
     }
 
@@ -166,6 +166,10 @@ void write_texture(texture_info texture) {
     }
 
     FILE* tex_out = fopen(texture.filename, "wb");
+    if (tex_out == NULL) {
+        LOG_MSG(error, "Unable to open %s for writing\n", texture.filename);
+        return;
+    }
     fwrite(&header, sizeof(dds_header), 1, tex_out);
     fwrite(texture.image_data, texture_size, 1, tex_out);
     fclose(tex_out);
