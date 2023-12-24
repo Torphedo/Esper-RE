@@ -46,7 +46,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
     fread(res_chunk_buf, (sizeof(*entries) * res_header.array_size) + sizeof(u32), 1, alr);
 
     chunk_generic res_chunk_header = *(chunk_generic*)&res_header;
-    handlers.chunk_0x15(res_chunk_header, res_chunk_buf);
+    handlers.chunk_0x15(res_chunk_header, res_chunk_buf, 0);
 
     // First offset generally points right after the resource layout chunk.
     // This is just to alert us of anomalies.
@@ -119,68 +119,68 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
 
             switch (chunk.id) {
                 case 0x1:
-                    handlers.chunk_0x1(chunk, chunk_buf);
+                    handlers.chunk_0x1(chunk, chunk_buf, i);
                     break;
                 case 0x2:
-                    handlers.chunk_0x2(chunk, chunk_buf);
+                    handlers.chunk_0x2(chunk, chunk_buf, i);
                     break;
                 case 0x3:
-                    handlers.chunk_0x3(chunk, chunk_buf);
+                    handlers.chunk_0x3(chunk, chunk_buf, i);
                     break;
                 case 0x4:
-                    handlers.chunk_0x4(chunk, chunk_buf);
+                    handlers.chunk_0x4(chunk, chunk_buf, i);
                     break;
                 case 0x5:
-                    handlers.chunk_0x5(chunk, chunk_buf);
+                    handlers.chunk_0x5(chunk, chunk_buf, i);
                     break;
                 case 0x6:
-                    handlers.chunk_0x6(chunk, chunk_buf);
+                    handlers.chunk_0x6(chunk, chunk_buf, i);
                     break;
                 case 0x7:
-                    handlers.chunk_0x7(chunk, chunk_buf);
+                    handlers.chunk_0x7(chunk, chunk_buf, i);
                     break;
                 case 0x8:
-                    handlers.chunk_0x8(chunk, chunk_buf);
+                    handlers.chunk_0x8(chunk, chunk_buf, i);
                     break;
                 case 0x9:
-                    handlers.chunk_0x9(chunk, chunk_buf);
+                    handlers.chunk_0x9(chunk, chunk_buf, i);
                     break;
                 case 0xA:
-                    handlers.chunk_0xA(chunk, chunk_buf);
+                    handlers.chunk_0xA(chunk, chunk_buf, i);
                     break;
                 case 0xB:
-                    handlers.chunk_0xB(chunk, chunk_buf);
+                    handlers.chunk_0xB(chunk, chunk_buf, i);
                     break;
                 case 0xC:
-                    handlers.chunk_0xC(chunk, chunk_buf);
+                    handlers.chunk_0xC(chunk, chunk_buf, i);
                     break;
                 case 0xD:
-                    handlers.chunk_0xD(chunk, chunk_buf);
+                    handlers.chunk_0xD(chunk, chunk_buf, i);
                     break;
                 case 0xE:
-                    handlers.chunk_0xE(chunk, chunk_buf);
+                    handlers.chunk_0xE(chunk, chunk_buf, i);
                     break;
                 case 0xF:
-                    handlers.chunk_0xF(chunk, chunk_buf);
+                    handlers.chunk_0xF(chunk, chunk_buf, i);
                     break;
                 case 0x10:
-                    handlers.chunk_0x10(chunk, chunk_buf);
+                    handlers.chunk_0x10(chunk, chunk_buf, i);
                     break;
                 // 0x11 is the header and isn't in the chunk loop
                 case 0x12:
-                    handlers.chunk_0x12(chunk, chunk_buf);
+                    handlers.chunk_0x12(chunk, chunk_buf, i);
                     break;
                 case 0x13:
-                    handlers.chunk_0x13(chunk, chunk_buf);
+                    handlers.chunk_0x13(chunk, chunk_buf, i);
                     break;
                 case 0x14:
-                    handlers.chunk_0x14(chunk, chunk_buf);
+                    handlers.chunk_0x14(chunk, chunk_buf, i);
                     break;
                 case 0x15:
-                    handlers.chunk_0x15(chunk, chunk_buf);
+                    handlers.chunk_0x15(chunk, chunk_buf, i);
                     break;
                 case 0x16:
-                    handlers.chunk_0x16(chunk, chunk_buf);
+                    handlers.chunk_0x16(chunk, chunk_buf, i);
                     break;
                 default:
                     LOG_MSG(error, "Unhandled chunk type 0x%x!\n", chunk.id);

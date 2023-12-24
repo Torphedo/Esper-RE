@@ -155,7 +155,9 @@ typedef struct {
 }chunk_generic;
 
 // Interfaces for handling the ALR data.
-typedef void (*chunk_handler)(chunk_generic chunk, u8* chunk_buf);
+// Chunk size & ID, then the chunk data, then the offset array index this chunk
+// is located in. (idx is used for split function)
+typedef void (*chunk_handler)(chunk_generic chunk, u8* chunk_buf, u32 idx);
 typedef void (*buffer_handler)(u8* buf, u32 size, u32 idx);
 
 // ALR processing interface. The chunk loop will call the appropriate function

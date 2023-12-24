@@ -1,15 +1,15 @@
 #include "alr.h"
 #include "int_shorthands.h"
 
-static void chunk_any(chunk_generic chunk, u8* chunk_buf) {
+static void chunk_any(chunk_generic chunk, u8* chunk_buf, u32 idx) {
     return;
 }
 
-void chunk_0xD(chunk_generic chunk, u8* chunk_buf);
-void chunk_texture(chunk_generic header, u8* chunk_buf);
+void chunk_0xD(chunk_generic chunk, u8* chunk_buf, u32 idx);
+void chunk_texture(chunk_generic header, u8* chunk_buf, u32 idx);
 void process_texture(u8* buf, u32 size, u32 idx);
 
-void res_layout(chunk_generic chunk, u8* chunk_buf);
+void res_layout(chunk_generic chunk, u8* chunk_buf, u32 idx);
 void stream_dump(chunk_generic chunk, u8* chunk_buf);
 
 const alr_interface dump_interface = {

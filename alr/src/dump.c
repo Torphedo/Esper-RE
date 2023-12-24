@@ -19,7 +19,7 @@ resource_entry* entries = NULL;
 u32 res_entry_count = 0;
 
 // Sanity checks for 0xD chunks that have been observed to always be empty
-void chunk_0xD(chunk_generic chunk, u8* chunk_buf) {
+void chunk_0xD(chunk_generic chunk, u8* chunk_buf, u32 idx) {
     // This isn't really a *problem*, but the warning status helps it stand out
     if (chunk.size != 0xC) {
         LOG_MSG(warning, "Non-empty chunk! Size is %d bytes rather than the usual 12 bytes\n", chunk.size);
@@ -27,7 +27,7 @@ void chunk_0xD(chunk_generic chunk, u8* chunk_buf) {
 }
 
 // Reads 0x10 chunks and uses their metadata to write texture data to disk
-void chunk_texture(chunk_generic header, u8* chunk_buf) {
+void chunk_texture(chunk_generic header, u8* chunk_buf, u32 idx) {
     texture_metadata_header* tex_header = (texture_metadata_header*)chunk_buf;
     found_texture_meta = true;
     texture_meta_count = tex_header->surface_count;
@@ -75,7 +75,7 @@ void chunk_texture(chunk_generic header, u8* chunk_buf) {
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
 }
 
-void res_layout(chunk_generic chunk, u8* chunk_buf) {
+void res_layout(chunk_generic chunk, u8* chunk_buf, u32 idx) {
     entries = (resource_entry*)(chunk_buf + sizeof(u32));
     res_entry_count = *(u32*)chunk_buf;
 }
