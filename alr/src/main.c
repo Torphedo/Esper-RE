@@ -2,16 +2,10 @@
 
 #include "logging.h"
 
-#include "split.h"
 #include "alr.h"
 #include "dump.h"
+#include "split.h"
 #include "arguments.h"
-
-// Cross-platform pause
-static inline void pause() {
-    LOG_MSG(info, "Press Enter to exit...");
-    unsigned char dummy = getchar();
-}
 
 int main(int argc, char* argv[]) {
     // Parse command-line arguments.
@@ -25,6 +19,8 @@ int main(int argc, char* argv[]) {
     if (options.silent) {
         disable_logging();
     }
+    // Default to dump behaviour if nothing is specified. No arguments probably
+    // means someone drag-and-dropped, which means they probably want textures.
     alr_interface interface = dump_interface;
 
     if (options.split) {

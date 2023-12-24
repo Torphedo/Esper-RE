@@ -1,8 +1,5 @@
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
-#include <sys/stat.h>
 
 #include "logging.h"
 
@@ -45,11 +42,13 @@ void chunk_texture(chunk_generic header, u8* chunk_buf, u32 idx) {
 
         texture_meta[i].width = surfaces[i].width;
         texture_meta[i].height = surfaces[i].height;
-        //
+
         // Mip count here includes base texture.
         texture_meta[i].mipmap_count = surfaces[i].mipmap_count - 1;
+
+        // TODO: Make this also go into the textures folder. This would require
+        // another allocation.
         texture_meta[i].filename = (char*)&names[i].name;
-        // strncpy(texture_meta[i].filename, (char*)&names[i].name, 0x10);
 
         u32 total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
 

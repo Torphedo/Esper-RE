@@ -1,14 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <sys/stat.h>
 
 #include "logging.h"
 
 #include "int_shorthands.h"
 #include "filesystem.h"
 #include "alr.h"
-#include "images.h"
 
 bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
     FILE* alr = fopen(alr_filename, "rb");

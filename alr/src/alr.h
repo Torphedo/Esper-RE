@@ -1,5 +1,4 @@
 #pragma once
-#include <stdint.h>
 #include "arguments.h"
 
 #include "int_shorthands.h"

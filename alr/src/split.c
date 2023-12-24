@@ -1,10 +1,6 @@
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <stdlib.h>
 
-#include "int_shorthands.h"
 #include "filesystem.h"
 #include "logging.h"
 #include "alr.h"
@@ -15,7 +11,7 @@ void split_generic_chunk(chunk_generic chunk, u8* chunk_buf, u32 idx) {
     }
 
     char filename[256] = {0};
-    if (snprintf(filename, 256, "resources/%u.bin", chunk.id) < 0) {
+    if (snprintf(filename, 256, "resources/%u.bin", idx) < 0) {
         LOG_MSG(error, "Couldn't print output name for resource %d\n", idx);
         return;
     }

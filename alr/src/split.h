@@ -1,13 +1,15 @@
 #pragma once
-#include <stdbool.h>
 #include "alr.h"
 
-// Writes each distinct section of an ALR to separate files on disk.
-// bool split_alr(char* alr_filename);
-
+// Write chunks to separate files based on their index in the header's offset
+// array.
 void split_generic_chunk(chunk_generic chunk, u8* chunk_buf, u32 idx);
+
+// Write each texture buffer to its own file. Useful for pasting into image
+// preview tools, and hand-crafting your own image headers.
 void split_resource(u8* buf, u32 size, u32 idx);
 
+// Interface to call parse_alr() with to trigger splitting behaviour.
 alr_interface split_interface = {
     .chunk_0x1 = split_generic_chunk,
     .chunk_0x2 = split_generic_chunk,
