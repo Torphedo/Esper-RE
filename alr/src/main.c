@@ -25,13 +25,15 @@ int main(int argc, char* argv[]) {
     if (options.silent) {
         disable_logging();
     }
+    alr_interface interface = dump_interface;
+
     if (options.split) {
-        // Return value must be inverted because stdbool false == 0, and an
-        // exit code of 0 means success.
-        return !(split_alr(options.filename));
+        interface = split_interface;
     }
-    else {
-        return !(alr_parse(options.filename, options, dump_interface));
-    }
+
+    // Parse ALR with selected interface.
+    // Return value must be inverted because stdbool false == 0, and an exit
+    // code of 0 means success.
+    return !(alr_parse(options.filename, options, interface));
 }
 
