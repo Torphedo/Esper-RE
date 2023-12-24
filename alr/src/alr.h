@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "arguments.h"
 
 #include "int_shorthands.h"
 
@@ -152,4 +153,40 @@ typedef struct {
     u32 id;
     u32 size;
 }chunk_generic;
+
+// Interfaces for handling the ALR data.
+typedef void (*chunk_handler)(chunk_generic chunk, u8* chunk_buf);
+typedef void (*buffer_handler)(u8* buf, u32 size, u32 idx);
+
+// ALR processing interface. The chunk loop will call the appropriate function
+// for each chunk and for each texture buffer. Data from the resource layout
+// header (0x15 chunk) is needed for texture metadata, so that chunk handler
+// should store some state for later.
+typedef struct {
+    chunk_handler chunk_0x1;
+    chunk_handler chunk_0x2;
+    chunk_handler chunk_0x3;
+    chunk_handler chunk_0x4;
+    chunk_handler chunk_0x5;
+    chunk_handler chunk_0x6;
+    chunk_handler chunk_0x7;
+    chunk_handler chunk_0x8;
+    chunk_handler chunk_0x9;
+    chunk_handler chunk_0xA;
+    chunk_handler chunk_0xB;
+    chunk_handler chunk_0xC;
+    chunk_handler chunk_0xD;
+    chunk_handler chunk_0xE;
+    chunk_handler chunk_0xF;
+    chunk_handler chunk_0x10;
+    chunk_handler chunk_0x11;
+    chunk_handler chunk_0x12;
+    chunk_handler chunk_0x13;
+    chunk_handler chunk_0x14;
+    chunk_handler chunk_0x15;
+    chunk_handler chunk_0x16;
+    buffer_handler tex_handler;
+}alr_interface;
+
+bool alr_parse(char* alr_filename, flags options, alr_interface handlers);
 

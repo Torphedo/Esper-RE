@@ -9,6 +9,8 @@ set(CMAKE_C_STANDARD 99)
 add_executable(alr
     "src/main.c"
     "src/parsers.c"
+    "src/alr.c"
+    "src/dump.c"
     "src/split.c"
     "src/images.c"
     "src/arguments.c"

@@ -3,7 +3,8 @@
 #include "logging.h"
 
 #include "split.h"
-#include "parsers.h"
+#include "alr.h"
+#include "dump.h"
 #include "arguments.h"
 
 // Cross-platform pause
@@ -30,7 +31,7 @@ int main(int argc, char* argv[]) {
         return !(split_alr(options.filename));
     }
     else {
-        return !(chunk_parse_all(options.filename, options));
+        return !(alr_parse(options.filename, options, dump_interface));
     }
 }
 
