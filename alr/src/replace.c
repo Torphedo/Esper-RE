@@ -11,17 +11,6 @@
 // Size of DDS header and pixel format header
 #define DDS_HEADER_SIZE (0x7F)
 
-// const char* output_name = "out.alr";
-
-// Chunk callback for texture replacement
-void replace_chunk(chunk_generic chunk, u8* chunk_buf, u32 idx) {
-    // FILE* output = fopen(output_name, "ab");
-    // fwrite(&chunk, sizeof(chunk), 1, output);
-    // fwrite(chunk_buf, chunk.size - sizeof(chunk), 1, output);
-    // fclose(output);
-    return;
-}
-
 u32 u32_min(u32 x, u32 y) {
     if (x < y) {
         return x;
@@ -55,12 +44,5 @@ void replace_texture(u8* buf, u32 size, u32 idx) {
     else {
         LOG_MSG(info, "%s not found, skipping\n", path);
     }
-
-    /*
-    // Write texture buffer to the output file, whether or not it was modified
-    FILE* output = fopen(output_name, "ab");
-    fwrite(buf, size, 1, output);
-    fclose(output);
-    */
 }
 

@@ -1,7 +1,12 @@
 #pragma once
 #include "alr.h"
 
-void replace_chunk(chunk_generic chunk, u8* chunk_buf, u32 idx);
+// Stub to fill out the interface
+// TODO: Allow NULL interface functions and replace them with a stub in the alr
+// functions at runtime. Will make the declarations much simpler and clearer.
+static void replace_chunk(chunk_generic chunk, u8* chunk_buf, u32 idx) {
+    return;
+}
 
 void replace_texture(u8* buf, u32 size, u32 idx);
 
