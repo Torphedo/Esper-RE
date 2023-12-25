@@ -13,7 +13,9 @@ add_executable(alr
     "src/split.c"
     "src/images.c"
     "src/arguments.c"
+
     "src/logging.c"
+    "src/filesystem.c"
 )
 
 # Copy ALR files to [build]/src/bin/ so they can be accessed while debugging. 
