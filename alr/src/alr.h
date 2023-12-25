@@ -19,6 +19,16 @@ typedef struct {
     u64 pad;
 }chunk_layout;
 
+
+// chunk_layout except with the id and size removed, so it can be used on a
+// chunk buffer.
+typedef struct {
+    u32 flags;             // Unknown
+    u32 resource_offset;   // Offset of resource buffer at end of file
+    u32 offset_array_size; // Number of offsets in the array
+    u32 resource_size;     // Total size of resource buffer at end of the file
+}alr_header;
+
 // This structure follows the offset array. It has offsets into the resource
 // buffer which is always at the end of the file. It also has some metadata
 // about textures in the file, which aren't fully understood.
@@ -189,5 +199,13 @@ typedef struct {
     buffer_handler tex_handler;
 }alr_interface;
 
+
+// Sends chunk data to callbacks via the provided interface, which can modify
+// the input data. The ALR is written to the output file with any modifications
+// made by callbacks. This allows callbacks to easily edit individual buffers
+// of an ALR without handling the output themselves.
+bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interface handlers);
+
+// Sends chunk data to callbacks via the provided interface.
 bool alr_parse(char* alr_filename, flags options, alr_interface handlers);
 

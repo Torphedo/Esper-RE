@@ -9,6 +9,7 @@ typedef struct {
     bool split: 1;
     bool layout: 1;
     bool animation: 1;
+    bool replace: 1;
     uint8_t : 0; // Pads out struct to next boundary
     char* filename;
 }flags;

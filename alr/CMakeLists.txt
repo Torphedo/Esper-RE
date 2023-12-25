@@ -11,6 +11,7 @@ add_executable(alr
     "src/alr.c"
     "src/dump.c"
     "src/split.c"
+    "src/replace.c"
     "src/images.c"
     "src/arguments.c"
 

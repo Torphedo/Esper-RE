@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -8,6 +9,208 @@
 #include "filesystem.h"
 #include "alr.h"
 
+void call_chunk_handlers(chunk_generic chunk, u8* chunk_buf, alr_interface handlers, u32 idx) {
+    switch(chunk.id) {
+        case 0x0:
+            break;
+        case 0x1:
+            (handlers.chunk_0x1)(chunk, chunk_buf, idx);
+            break;
+        case 0x2:
+            (handlers.chunk_0x2)(chunk, chunk_buf, idx);
+            break;
+        case 0x3:
+            (handlers.chunk_0x3)(chunk, chunk_buf, idx);
+            break;
+        case 0x4:
+            (handlers.chunk_0x4)(chunk, chunk_buf, idx);
+            break;
+        case 0x5:
+            (handlers.chunk_0x5)(chunk, chunk_buf, idx);
+            break;
+        case 0x6:
+            (handlers.chunk_0x6)(chunk, chunk_buf, idx);
+            break;
+        case 0x7:
+            (handlers.chunk_0x7)(chunk, chunk_buf, idx);
+            break;
+        case 0x8:
+            (handlers.chunk_0x8)(chunk, chunk_buf, idx);
+            break;
+        case 0x9:
+            (handlers.chunk_0x9)(chunk, chunk_buf, idx);
+            break;
+        case 0xA:
+            (handlers.chunk_0xA)(chunk, chunk_buf, idx);
+            break;
+        case 0xB:
+            (handlers.chunk_0xB)(chunk, chunk_buf, idx);
+            break;
+        case 0xC:
+            (handlers.chunk_0xC)(chunk, chunk_buf, idx);
+            break;
+        case 0xD:
+            (handlers.chunk_0xD)(chunk, chunk_buf, idx);
+            break;
+        case 0xE:
+            (handlers.chunk_0xE)(chunk, chunk_buf, idx);
+            break;
+        case 0xF:
+            (handlers.chunk_0xF)(chunk, chunk_buf, idx);
+            break;
+        case 0x10:
+            (handlers.chunk_0x10)(chunk, chunk_buf,idx);
+            break;
+        case 0x11:
+            (handlers.chunk_0x11)(chunk, chunk_buf,idx);
+            break;
+        case 0x12:
+            (handlers.chunk_0x12)(chunk, chunk_buf,idx);
+            break;
+        case 0x13:
+            (handlers.chunk_0x13)(chunk, chunk_buf,idx);
+            break;
+        case 0x14:
+            (handlers.chunk_0x14)(chunk, chunk_buf, idx);
+            break;
+        case 0x15:
+            (handlers.chunk_0x15)(chunk, chunk_buf, idx);
+            break;
+        case 0x16:
+            (handlers.chunk_0x16)(chunk, chunk_buf, idx);
+            break;
+        default:
+            LOG_MSG(error, "Unhandled chunk type 0x%x!\n", chunk.id);
+            break;
+    }
+}
+
+bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interface handlers) {
+    FILE* alr = fopen(alr_filename, "rb");
+    FILE* alr_out = fopen(out_filename, "wb");
+    if (alr == NULL || alr_out == NULL) {
+        LOG_MSG(error, "The input or output file failed to open: %s->%s.\n", alr_filename, out_filename);
+        return false;
+    }
+
+    LOG_MSG(debug, "Starting ALR edit with output file %s\n", out_filename);
+    LOG_MSG(debug, "Loading %s (%d bytes)\n", alr_filename, filesize(alr_filename));
+
+    // Start with a fake 0x0 chunk
+    chunk_generic chunk = {
+        .id = 0,
+        .size = 8
+    };
+    bool hit_chunk_0 = false;
+    u32 texbuf_offset = 0;
+    u32 texbuf_size = 0;
+    u32 tex_entry_count = 0;
+    resource_entry* entries = NULL;
+
+    while (chunk.size > 0) {
+        fread(&chunk, sizeof(chunk), 1, alr);
+
+        // Trying to allocate with 0 size will cause lots of problems
+        if (chunk.size == 0) {
+            break;
+        }
+
+        // LOG_MSG(debug, "Got chunk id %d with size 0x%x @ 0x%x\n", chunk.id, chunk.size, ftell(alr) - sizeof(chunk));
+        u8* chunk_buf = calloc(1, chunk.size);
+        if (chunk_buf == NULL) {
+            // We probably got off-track and read the wrong value as the size
+            // somehow.
+            long pos = ftell(alr);
+            LOG_MSG(error, "Failed to allocate %d bytes for chunk buffer at 0x%x\n", chunk.size, pos);
+            break;
+        }
+        fread(chunk_buf, chunk.size - sizeof(chunk), 1, alr);
+
+        hit_chunk_0 = (chunk.id == 0);
+
+        // Special handling for alr and texture header chunks
+        switch(chunk.id) {
+            case 0x11:
+                // Save resource offset for later
+                alr_header* header = (alr_header*)chunk_buf;
+                texbuf_offset = header->resource_offset;
+                texbuf_size = header->resource_size;
+
+                (handlers.chunk_0x11)(chunk, chunk_buf, 0);
+                break;
+            case 0x15:
+                // Save texture entry info for later
+                tex_entry_count = *(u32*)chunk_buf;
+                u32 entries_size = tex_entry_count * sizeof(resource_entry);
+                u8* entries_buf = (chunk_buf + sizeof(u32));
+
+                // Copy entry data to new buffer to be used & freed later.
+                entries = calloc(1, entries_size);
+                if (entries == NULL) {
+                    LOG_MSG(error, "Couldn't allocate %d bytes for texture entries\n", entries_size);
+                }
+                memcpy(entries, entries_buf, entries_size);
+
+                (handlers.chunk_0x15)(chunk, chunk_buf, 0);
+                break;
+        }
+        // Call handler functions through the interface
+        call_chunk_handlers(chunk, chunk_buf, handlers, 0);
+
+        // Copy (potentially modified) chunk to output file
+        fwrite(&chunk, sizeof(chunk), 1, alr_out);
+        fwrite(chunk_buf, chunk.size - sizeof(chunk), 1, alr_out);
+
+        free(chunk_buf);
+    }
+
+    // Read in the texture buffer
+    u8* tex_buf = calloc(1, texbuf_size);
+    if (tex_buf == NULL) {
+        LOG_MSG(error, "Failed to allocate %d bytes for texture buffer.\n", texbuf_size);
+        fclose(alr);
+        return false;
+    }
+    fseek(alr, texbuf_offset, SEEK_SET);
+    fread(tex_buf, texbuf_size, 1, alr);
+    fclose(alr); // At this point we're done with the input, and can close it
+    LOG_MSG(debug, "Read %d bytes into texture buffer\n", texbuf_size);
+    LOG_MSG(debug, "%d texture entries\n", tex_entry_count);
+
+    for (u32 i = 0; i < tex_entry_count; i++) {
+        LOG_MSG(debug, "data_ptr = 0x%x\n", entries[i].data_ptr);
+        u32 tex_size = 0;
+        if (i == (tex_entry_count - 1)) {
+            // end - current
+            tex_size = texbuf_size - entries[i].data_ptr;
+        }
+        else {
+            // next - current
+            tex_size = entries[i + 1].data_ptr - entries[i].data_ptr;
+        }
+        u8* cur_tex = tex_buf + entries[i].data_ptr;
+
+        // Call handler to maybe modify this texture
+        (handlers.tex_handler)(cur_tex, tex_size, i);
+
+        // Write (maybe modified) texture to ouptut file
+        // Position needs to be 1 before the intended address to start writing
+        u32 tex_offset = texbuf_offset + entries[i].data_ptr - 1;
+        LOG_MSG(debug, "writing %d bytes @ 0x%x for texture %d\n", tex_size, tex_offset, i);
+        LOG_MSG(debug, "texbuf_offset = 0x%x, data_ptr = 0x%x\n", texbuf_offset, entries[i].data_ptr);
+        fseek(alr_out, tex_offset, SEEK_SET);
+        fwrite(cur_tex, tex_size, 1, alr_out);
+    }
+
+    // Can't forget to free :P
+    free(entries);
+    free(tex_buf);
+
+    fclose(alr_out);
+
+    return true;
+}
+
 bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
     FILE* alr = fopen(alr_filename, "rb");
     if (alr == NULL) {
@@ -15,7 +218,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
         return false;
     }
 
-    LOG_MSG(debug, "Loaded %s (%d bytes)\n", alr_filename, filesize(alr_filename));
+    LOG_MSG(debug, "Loading %s (%d bytes)\n", alr_filename, filesize(alr_filename));
 
     // Read the file header & offset array
     chunk_layout header = {0};
@@ -115,75 +318,8 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
                 LOG_MSG(debug, "0x%x chunk at 0x%x\n", chunk.id, ftell(alr));
             }
 
-            switch (chunk.id) {
-                case 0x1:
-                    handlers.chunk_0x1(chunk, chunk_buf, i);
-                    break;
-                case 0x2:
-                    handlers.chunk_0x2(chunk, chunk_buf, i);
-                    break;
-                case 0x3:
-                    handlers.chunk_0x3(chunk, chunk_buf, i);
-                    break;
-                case 0x4:
-                    handlers.chunk_0x4(chunk, chunk_buf, i);
-                    break;
-                case 0x5:
-                    handlers.chunk_0x5(chunk, chunk_buf, i);
-                    break;
-                case 0x6:
-                    handlers.chunk_0x6(chunk, chunk_buf, i);
-                    break;
-                case 0x7:
-                    handlers.chunk_0x7(chunk, chunk_buf, i);
-                    break;
-                case 0x8:
-                    handlers.chunk_0x8(chunk, chunk_buf, i);
-                    break;
-                case 0x9:
-                    handlers.chunk_0x9(chunk, chunk_buf, i);
-                    break;
-                case 0xA:
-                    handlers.chunk_0xA(chunk, chunk_buf, i);
-                    break;
-                case 0xB:
-                    handlers.chunk_0xB(chunk, chunk_buf, i);
-                    break;
-                case 0xC:
-                    handlers.chunk_0xC(chunk, chunk_buf, i);
-                    break;
-                case 0xD:
-                    handlers.chunk_0xD(chunk, chunk_buf, i);
-                    break;
-                case 0xE:
-                    handlers.chunk_0xE(chunk, chunk_buf, i);
-                    break;
-                case 0xF:
-                    handlers.chunk_0xF(chunk, chunk_buf, i);
-                    break;
-                case 0x10:
-                    handlers.chunk_0x10(chunk, chunk_buf, i);
-                    break;
-                // 0x11 is the header and isn't in the chunk loop
-                case 0x12:
-                    handlers.chunk_0x12(chunk, chunk_buf, i);
-                    break;
-                case 0x13:
-                    handlers.chunk_0x13(chunk, chunk_buf, i);
-                    break;
-                case 0x14:
-                    handlers.chunk_0x14(chunk, chunk_buf, i);
-                    break;
-                case 0x15:
-                    handlers.chunk_0x15(chunk, chunk_buf, i);
-                    break;
-                case 0x16:
-                    handlers.chunk_0x16(chunk, chunk_buf, i);
-                    break;
-                default:
-                    LOG_MSG(error, "Unhandled chunk type 0x%x!\n", chunk.id);
-                    break;
-            }
+            // This avoids a massive switch statement here
+            call_chunk_handlers(chunk, chunk_buf, handlers, i);
         }
 
         // I would be very concerned to see a non-empty 0x0 chunk.

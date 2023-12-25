@@ -5,6 +5,7 @@
 #include "alr.h"
 #include "dump.h"
 #include "split.h"
+#include "replace.h"
 #include "arguments.h"
 
 int main(int argc, char* argv[]) {
@@ -25,6 +26,10 @@ int main(int argc, char* argv[]) {
 
     if (options.split) {
         interface = split_interface;
+    }
+
+    if (options.replace) {
+        return !(alr_edit(options.filename, "out.alr", options, replace_interface));
     }
 
     // Parse ALR with selected interface.

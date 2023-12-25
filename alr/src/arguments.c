@@ -11,7 +11,8 @@ static const char* arguments[] = {
         "--dump",
         "--silent",
         "--layout",
-        "--animation"
+        "--animation",
+        "--replace"
 };
 
 flags parse_arguments(int argc, char** argv) {
@@ -60,6 +61,10 @@ flags parse_arguments(int argc, char** argv) {
                         break;
                     case 5:
                         output.animation = true;
+                        break;
+                    case 6:
+                        LOG_MSG(debug, "Enabling texture replacement.\n");
+                        output.replace = true;
                         break;
                     default:
                         break;
