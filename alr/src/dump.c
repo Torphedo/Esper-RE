@@ -129,8 +129,6 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
 
     u32 resolution = 1 << entries[idx].resolution_pwr;
     u8 format = entries[idx].pixel_format;
-    LOG_MSG(info, "texture %02d is 0x%05x bytes, %3dx%-3d", idx, size, resolution, resolution);
-    printf(", format 0b%08b\n", format);
     texture_info tex = {
         .width = resolution,
         .height = resolution,
@@ -165,6 +163,15 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
             tex.compressed = true;
             break;
     }
+    LOG_MSG(info, "texture %02d is 0x%05x bytes, %3dx%-3d", idx, size, resolution, resolution);
+    printf(", format 0b%08b (%d bpp)\n", format, tex.bits_per_pixel);
+
+    u32 pixel_count = pixel_count_max_mips(tex.width, tex.height);
+    float bytes_per_pixel = (float)tex.bits_per_pixel / 8.0f;
+    if ((pixel_count * bytes_per_pixel) > tex.size_override) {
+        LOG_MSG(warning, "format or res might be wrong. pixel_count = 0x%x @ %1.1fBpp, but size = 0x%x\n", pixel_count, bytes_per_pixel, tex.size_override);
+    }
+
     write_texture(tex);
 }
 

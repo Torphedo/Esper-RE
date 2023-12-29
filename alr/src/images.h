@@ -19,6 +19,10 @@ typedef struct {
 
 void write_texture(texture_info texture);
 
+// Calculates the total number of pixels required to store an image, assuming
+// the highest possible mipmap count.
+u64 pixel_count_max_mips(u32 width, u32 height);
+
 // Calculates the total number of pixels required to store an image with the
 // specified mipmap count. Assumes that a mipmap count of 1 means 1 full
 // resolution image with no mipmaps.

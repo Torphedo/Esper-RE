@@ -175,6 +175,17 @@ void write_texture(texture_info texture) {
     fclose(tex_out);
 }
 
+u64 pixel_count_max_mips(u32 width, u32 height) {
+    u64 count = width * height;
+
+    while (width % 2 == 0) {
+        width /= 2;
+        height /= 2;
+        count += width * height;
+    }
+    return count;
+}
+
 u64 full_pixel_count(u32 width, u32 height, u32 mipmap_count) {
     u64 pixel_count = width * height;
     for (u32 i = 0; i < mipmap_count - 1; i++) {
