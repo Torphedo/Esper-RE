@@ -134,13 +134,6 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
         .height = resolution,
         .filename = filename,
         .image_data = (char*)buf,
-        .mipmap_count = 0,
-        /* Disable mipmaps. Based on the texture at index 7 of st06.alr,
-         * the field we bitshift by to get resolution cannot possibly be a
-         * mipmap count. In this texture, the value is 9. 9 mipmaps require
-         * ~349000 pixels, and the texture buffer is only 128KiB.
-         * Line to re-enable mipmaps:
-         * .mipmap_count = entries[i].resolution_pwr, */
         .size_override = size
     };
 
@@ -179,7 +172,7 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
         LOG_MSG(warning, "format or res might be wrong, mipmaps are disabled. pixel_count = 0x%x @ %1.1fBpp, but size = 0x%x\n", pixel_count, bytes_per_pixel, tex.size_override);
     }
     else {
-        tex.mipmap_count = entries[idx].resolution_pwr;
+        tex.mipmap_count = entries[idx].resolution_pwr + 1;
     }
 
     if (apparent_size * 2 < tex.size_override && !tex.cubemap) {
