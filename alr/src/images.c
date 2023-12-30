@@ -99,7 +99,6 @@ void write_texture(texture_info texture) {
         // .mipmap_count = 0,
         .pixel_format = {
                 .size = sizeof(dds_pixel_format),
-                .bits_per_pixel = texture.bits_per_pixel
         },
         .caps = DDSCAPS_TEXTURE
     };
