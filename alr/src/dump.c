@@ -168,9 +168,23 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
 
     u32 pixel_count = pixel_count_max_mips(tex.width, tex.height);
     float bytes_per_pixel = (float)tex.bits_per_pixel / 8.0f;
-    if ((pixel_count * bytes_per_pixel) > tex.size_override) {
-        LOG_MSG(warning, "format or res might be wrong. pixel_count = 0x%x @ %1.1fBpp, but size = 0x%x\n", pixel_count, bytes_per_pixel, tex.size_override);
+    u32 apparent_size = pixel_count * bytes_per_pixel; // Size it ought to be, based on the info we have
+    // Disable mipmaps and give a debug message when our size guessing is way
+    // off. Reduces the chance of a DDS file that fails to load
+    if (apparent_size > tex.size_override) {
+        LOG_MSG(warning, "format or res might be wrong, mipmaps are disabled. pixel_count = 0x%x @ %1.1fBpp, but size = 0x%x\n", pixel_count, bytes_per_pixel, tex.size_override);
     }
+    else {
+        tex.mipmap_count = entries[idx].resolution_pwr;
+    }
+
+    if (apparent_size * 2 < tex.size_override) {
+        // Buffer is more than double what should be needed...
+        LOG_MSG(warning, "Way more space than needed, texture might be a cubemap.\n");
+    }
+    // LOG_MSG(debug, "unknown = 0x%hx, ", entries[idx].unknown);
+    // printf("unknown2 = 0x%hx, ", entries[idx].unknown2);
+    // printf("unknown3 = 0x%x\n", entries[idx].unknown3);
 
     write_texture(tex);
 }
