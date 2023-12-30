@@ -46,6 +46,13 @@ typedef enum {
     FORMAT_DXT5 = 0b00001111,
 }alr_pixel_format;
 
+// Bad enum name. I don't know what this value means except for these 2
+// constants. Maybe a bitfield??
+typedef enum {
+    TEXTURE_REGULAR = 0x29,
+    TEXTURE_CUBEMAP = 0x2D
+}alr_texture_style;
+
 typedef struct {
     u32 flags;    // Unknown, always 01 00 04 00 so far
     u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.resource_offset)

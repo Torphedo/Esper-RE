@@ -166,6 +166,10 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
     LOG_MSG(info, "texture %02d is 0x%05x bytes, %3dx%-3d", idx, size, resolution, resolution);
     printf(", format 0b%08b (%d bpp)\n", format, tex.bits_per_pixel);
 
+    if (entries[idx].unknown == TEXTURE_CUBEMAP) {
+        tex.cubemap = true;
+    }
+
     u32 pixel_count = pixel_count_max_mips(tex.width, tex.height);
     float bytes_per_pixel = (float)tex.bits_per_pixel / 8.0f;
     u32 apparent_size = pixel_count * bytes_per_pixel; // Size it ought to be, based on the info we have
@@ -178,7 +182,7 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
         tex.mipmap_count = entries[idx].resolution_pwr;
     }
 
-    if (apparent_size * 2 < tex.size_override) {
+    if (apparent_size * 2 < tex.size_override && !tex.cubemap) {
         // Buffer is more than double what should be needed...
         LOG_MSG(warning, "Way more space than needed, texture might be a cubemap.\n");
     }
