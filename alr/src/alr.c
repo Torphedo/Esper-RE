@@ -131,12 +131,16 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
         // Special handling for alr and texture header chunks
         switch(chunk.id) {
             case 0x11:
-                // Save resource offset for later
-                alr_header* header = (alr_header*)chunk_buf;
-                texbuf_offset = header->resource_offset;
-                texbuf_size = header->resource_size;
+                // This scope is required by some compilers to declare new
+                // variables in a switch case. Needed to compile with "zig cc".
+                {
+                    // Save resource offset for later
+                    alr_header* header = (alr_header*)chunk_buf;
+                    texbuf_offset = header->resource_offset;
+                    texbuf_size = header->resource_size;
 
-                (handlers.chunk_0x11)(chunk, chunk_buf, 0);
+                    (handlers.chunk_0x11)(chunk, chunk_buf, 0);
+                }
                 break;
             case 0x15:
                 // Save texture entry info for later
