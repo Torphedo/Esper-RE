@@ -9,15 +9,6 @@
 #include "filesystem.h"
 #include "alr.h"
 
-void call_chunk_handlers(chunk_generic chunk, u8* chunk_buf, alr_interface handlers, u32 idx) {
-    if (idx > ALR_MAX_CHUNK_ID) {
-        LOG_MSG(error, "Invalid chunk ID 0x%x!\n", chunk.id);
-    }
-    if (handlers.chunk_handlers[chunk.id] != NULL) {
-        (handlers.chunk_handlers[chunk.id])(chunk, chunk_buf, idx);
-    }
-}
-
 bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interface handlers) {
     FILE* alr = fopen(alr_filename, "rb");
     FILE* alr_out = fopen(out_filename, "wb");
@@ -72,7 +63,9 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
                     texbuf_offset = header->resource_offset;
                     texbuf_size = header->resource_size;
 
-                    (handlers.chunk_handlers[0x11])(chunk, chunk_buf, 0);
+                    if (handlers.chunk_handlers[0x11] != NULL) {
+                        (handlers.chunk_handlers[0x11])(chunk, chunk_buf, 0);
+                    }
                 }
                 break;
             case 0x15:
@@ -88,11 +81,21 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
                 }
                 memcpy(entries, entries_buf, entries_size);
 
-                (handlers.chunk_handlers[0x15])(chunk, chunk_buf, 0);
+                if (handlers.chunk_handlers[0x15] != NULL) {
+                    (handlers.chunk_handlers[0x15])(chunk, chunk_buf, 0);
+                }
                 break;
         }
+
+        if (chunk.id > ALR_MAX_CHUNK_ID) {
+            LOG_MSG(error, "Invalid chunk ID 0x%X at 0x%X\n", chunk.id, ftell(alr));
+            return false;
+        }
+
         // Call handler functions through the interface
-        call_chunk_handlers(chunk, chunk_buf, handlers, 0);
+        if (handlers.chunk_handlers[chunk.id] != NULL) {
+            (handlers.chunk_handlers[chunk.id])(chunk, chunk_buf, 0);
+        }
 
         // Copy (potentially modified) chunk to output file
         fwrite(&chunk, sizeof(chunk), 1, alr_out);
@@ -128,13 +131,15 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
         u8* cur_tex = tex_buf + entries[i].data_ptr;
 
         // Call handler to maybe modify this texture
-        (handlers.tex_handler)(cur_tex, tex_size, i);
+        if (handlers.tex_handler != NULL) {
+            (handlers.tex_handler)(cur_tex, tex_size, i);
+        }
 
         // Write (maybe modified) texture to ouptut file
         // Position needs to be 1 before the intended address to start writing
         u32 tex_offset = texbuf_offset + entries[i].data_ptr - 1;
-        LOG_MSG(debug, "writing %d bytes @ 0x%x for texture %d\n", tex_size, tex_offset, i);
-        LOG_MSG(debug, "texbuf_offset = 0x%x, data_ptr = 0x%x\n", texbuf_offset, entries[i].data_ptr);
+        LOG_MSG(debug, "writing %d bytes @ 0x%X for texture %d\n", tex_size, tex_offset, i);
+        LOG_MSG(debug, "texbuf_offset = 0x%X, data_ptr = 0x%X\n", texbuf_offset, entries[i].data_ptr);
         fseek(alr_out, tex_offset, SEEK_SET);
         fwrite(cur_tex, tex_size, 1, alr_out);
     }
@@ -184,13 +189,15 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
     fread(res_chunk_buf, (sizeof(*entries) * res_header.array_size) + sizeof(u32), 1, alr);
 
     chunk_generic res_chunk_header = *(chunk_generic*)&res_header;
-    (handlers.chunk_handlers[0x15])(res_chunk_header, res_chunk_buf, 0);
+    if (handlers.chunk_handlers[0x15] != NULL) {
+        (handlers.chunk_handlers[0x15])(res_chunk_header, res_chunk_buf, 0);
+    }
 
     // First offset generally points right after the resource layout chunk.
     // This is just to alert us of anomalies.
     if (offset_array[0] != ftell(alr)) {
         LOG_MSG(warning, "Gap between first data chunk & offset!\n");
-        LOG_MSG(debug, "data chunk = 0x%x, offset = 0x%x\n", offset_array[0], ftell(alr));
+        LOG_MSG(debug, "data chunk = 0x%X, offset = 0x%X\n", offset_array[0], ftell(alr));
     }
 
     u32 tex_buf_size = header.resource_size;
@@ -247,16 +254,17 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
             // Jump to the next chunk regardless of how our previous reads went
             fseek(alr, chunk_start + chunk.size, SEEK_SET);
 
-            if (chunk.id > 0x16) {
-                LOG_MSG(warning, "Invalid chunk ID 0x%x at 0x%x (internal file %d, %s)!\n", chunk.id, ftell(alr), i, alr_filename);
+            if (chunk.id > ALR_MAX_CHUNK_ID) {
+                LOG_MSG(error, "Invalid chunk ID 0x%X at 0x%X (internal file %d, %s)!\n", chunk.id, ftell(alr), i, alr_filename);
                 return false;
             }
-            if (options.info_mode && options.layout) {
-                LOG_MSG(debug, "0x%x chunk at 0x%x\n", chunk.id, ftell(alr));
-            }
 
-            // This avoids a massive switch statement here
-            call_chunk_handlers(chunk, chunk_buf, handlers, i);
+            // This clutters up the log a lot.
+            // LOG_MSG(debug, "0x%x chunk @ 0x%x\n", chunk.id, ftell(alr));
+
+            if (handlers.chunk_handlers[chunk.id] != NULL) {
+                (handlers.chunk_handlers[chunk.id])(chunk, chunk_buf, 0);
+            }
         }
 
         // I would be very concerned to see a non-empty 0x0 chunk.
@@ -278,7 +286,9 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
         }
         u8* cur_tex = tex_buf + entries[i].data_ptr;
 
-        handlers.tex_handler(cur_tex, tex_size, i);
+        if (handlers.tex_handler != NULL) {
+            (handlers.tex_handler)(cur_tex, tex_size, i);
+        }
     }
 
     free(tex_buf);
