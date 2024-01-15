@@ -199,3 +199,6 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
 // Sends chunk data to callbacks via the provided interface.
 bool alr_parse(char* alr_filename, flags options, alr_interface handlers);
 
+// Stub interface that does nothing, for info-only mode that produces no output
+static const alr_interface stub_interface = {0};
+

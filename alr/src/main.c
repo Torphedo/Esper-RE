@@ -24,12 +24,23 @@ int main(int argc, char* argv[]) {
     // means someone drag-and-dropped, which means they probably want textures.
     alr_interface interface = dump_interface;
 
-    if (options.split) {
-        interface = split_interface;
-    }
-
-    if (options.replace) {
-        return !(alr_edit(options.filename, "out.alr", options, replace_interface));
+    switch (options.mode) {
+        case info_only:
+            // Stops all output
+            interface = stub_interface;
+            break;
+        case split:
+            interface = split_interface;
+            break;
+        case dumptex:
+            interface = dump_interface;
+            break;
+        case animation:
+            LOG_MSG(error, "Unimplemented program mode, exiting.\n");
+            return 1;
+        case replacetex:
+            return !(alr_edit(options.filename, "out.alr", options, replace_interface));
+            break;
     }
 
     // Parse ALR with selected interface.

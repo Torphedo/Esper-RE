@@ -5,72 +5,43 @@
 #include "int_shorthands.h"
 #include "arguments.h"
 
-static const char* arguments[] = {
-        "--split",
-        "--info",
-        "--dump",
-        "--silent",
-        "--layout",
-        "--animation",
-        "--replace"
-};
-
 flags parse_arguments(int argc, char** argv) {
-    flags output = {0};
+    flags output = {
+        .mode = split // Default mode is split
+    };
 
-    // This size is calculated at compile time
-    u16 options_count = sizeof(arguments) / sizeof(char*);
-
-    // Loop over every argument
+    // Loop over every argument, skipping the first which is just our program
+    // name.
     for (u32 i = 1; i < argc; i++) {
         // Check if first 2 characters are "--"
         if (argv[i][0] != '-' || argv[i][1] != '-') {
             // If it's not a flag, it must be a filename
             output.filename = argv[i];
-            if (argc == 2) {
-                LOG_MSG(warning, "No action specified, defaulting to --split\n");
-                output.split = true;
-            }
             continue;
         }
 
-        // Check each argument against each valid option
-        for (u16 j = 0; j < options_count; j++) {
-            // Early exit if the lengths are different
-            if (strlen(argv[i]) != strlen(arguments[j])) {
-                continue;
-            }
-
-            bool matches = (strcmp(argv[i], arguments[j]) == 0);
-            if (matches) {
-                switch(j) {
-                    case 0:
-                        output.split = true;
-                        break;
-                    case 1:
-                        output.info_mode = true;
-                        break;
-                    case 2:
-                        output.dump_images = true;
-                        break;
-                    case 3:
-                        output.silent = true;
-                        break;
-                    case 4:
-                        output.layout = true;
-                        break;
-                    case 5:
-                        output.animation = true;
-                        break;
-                    case 6:
-                        LOG_MSG(debug, "Enabling texture replacement.\n");
-                        output.replace = true;
-                        break;
-                    default:
-                        break;
-                }
-            }
+        if (strcmp(argv[i], "--dump") == 0) {
+            output.mode = dumptex;
         }
+        else if (strcmp(argv[i], "--replace") == 0) {
+            output.mode = replacetex;
+        }
+        else if (strcmp(argv[i], "--info") == 0) {
+            output.mode = info_only;
+        }
+        else if (strcmp(argv[i], "--silent") == 0) {
+            output.silent = true;
+        }
+        // This seems redundant because split is the default. But if it's set
+        // after another option, it should override that one.
+        else if (strcmp(argv[i], "--split") == 0) {
+            output.mode = split;
+        }
+        else if (strcmp(argv[i], "--animation") == 0) {
+            LOG_MSG(warning, "Animation dumping is unimplemented right now.\n");
+            output.mode = animation;
+        }
+
     }
 
     return output;

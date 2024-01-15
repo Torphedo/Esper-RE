@@ -1,20 +1,21 @@
 #pragma once
-#include <stdint.h>
 #include <stdbool.h>
 
+typedef enum {
+    info_only,
+    replacetex,
+    dumptex,
+    split,
+    animation, // Unused at the moment, should be added back soon.
+}program_mode;
+
 typedef struct {
-    bool info_mode: 1;
-    bool dump_images: 1;
-    bool silent: 1;
-    bool split: 1;
-    bool layout: 1;
-    bool animation: 1;
-    bool replace: 1;
-    uint8_t : 0; // Pads out struct to next boundary
     char* filename;
+    program_mode mode;
+    bool silent;
 }flags;
 
-// Pass in arguments from main(), and it will return a bitfield with all of
-// the settings that were specified
+// Pass in arguments from main(), and it will return the above struct with the
+// settings from the user
 flags parse_arguments(int argc, char** argv);
 

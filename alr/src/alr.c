@@ -212,17 +212,8 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
     fread(tex_buf, tex_buf_size, 1, alr);
 
     // Print some useful info about the file's structure
-    if (options.info_mode) {
-        LOG_MSG(info, "Resource section = 0x%x\n", header.resource_offset);
-        LOG_MSG(info, "Resources end @ 0x%x\n", header.resource_size);
-        LOG_MSG(info, "%d resources\n", res_header.array_size);
-        LOG_MSG(info, "%d internal files\n\n", header.offset_array_size);
-        if (options.layout) {
-            for (u32 i = 0; i < header.offset_array_size; i++) {
-                LOG_MSG(info, "File %u: 0x%x\n", i, offset_array[i]);
-            }
-        }
-    }
+    LOG_MSG(info, "texbuf is 0x%X bytes @ 0x%X, holding %d textures\n", header.resource_size, header.resource_offset, res_header.array_size);
+    LOG_MSG(info, "%d internal files\n\n", header.offset_array_size);
 
     for (u32 i = 0; i < header.offset_array_size; i++) {
         // Some offsets are 0. Don't know why, it's really weird.
