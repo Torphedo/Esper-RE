@@ -18,6 +18,7 @@ u32 res_entry_count = 0;
 // Sanity checks for 0xD chunks that have been observed to always be empty
 void chunk_0xD(chunk_generic chunk, u8* chunk_buf, u32 idx) {
     // This isn't really a *problem*, but the warning status helps it stand out
+    // (also acts as a nice sanity check)
     if (chunk.size != 0xC) {
         LOG_MSG(warning, "Non-empty chunk! Size is %d bytes rather than the usual 12 bytes\n", chunk.size);
     }

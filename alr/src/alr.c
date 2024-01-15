@@ -10,78 +10,11 @@
 #include "alr.h"
 
 void call_chunk_handlers(chunk_generic chunk, u8* chunk_buf, alr_interface handlers, u32 idx) {
-    switch(chunk.id) {
-        case 0x0:
-            break;
-        case 0x1:
-            (handlers.chunk_0x1)(chunk, chunk_buf, idx);
-            break;
-        case 0x2:
-            (handlers.chunk_0x2)(chunk, chunk_buf, idx);
-            break;
-        case 0x3:
-            (handlers.chunk_0x3)(chunk, chunk_buf, idx);
-            break;
-        case 0x4:
-            (handlers.chunk_0x4)(chunk, chunk_buf, idx);
-            break;
-        case 0x5:
-            (handlers.chunk_0x5)(chunk, chunk_buf, idx);
-            break;
-        case 0x6:
-            (handlers.chunk_0x6)(chunk, chunk_buf, idx);
-            break;
-        case 0x7:
-            (handlers.chunk_0x7)(chunk, chunk_buf, idx);
-            break;
-        case 0x8:
-            (handlers.chunk_0x8)(chunk, chunk_buf, idx);
-            break;
-        case 0x9:
-            (handlers.chunk_0x9)(chunk, chunk_buf, idx);
-            break;
-        case 0xA:
-            (handlers.chunk_0xA)(chunk, chunk_buf, idx);
-            break;
-        case 0xB:
-            (handlers.chunk_0xB)(chunk, chunk_buf, idx);
-            break;
-        case 0xC:
-            (handlers.chunk_0xC)(chunk, chunk_buf, idx);
-            break;
-        case 0xD:
-            (handlers.chunk_0xD)(chunk, chunk_buf, idx);
-            break;
-        case 0xE:
-            (handlers.chunk_0xE)(chunk, chunk_buf, idx);
-            break;
-        case 0xF:
-            (handlers.chunk_0xF)(chunk, chunk_buf, idx);
-            break;
-        case 0x10:
-            (handlers.chunk_0x10)(chunk, chunk_buf,idx);
-            break;
-        case 0x11:
-            (handlers.chunk_0x11)(chunk, chunk_buf,idx);
-            break;
-        case 0x12:
-            (handlers.chunk_0x12)(chunk, chunk_buf,idx);
-            break;
-        case 0x13:
-            (handlers.chunk_0x13)(chunk, chunk_buf,idx);
-            break;
-        case 0x14:
-            (handlers.chunk_0x14)(chunk, chunk_buf, idx);
-            break;
-        case 0x15:
-            (handlers.chunk_0x15)(chunk, chunk_buf, idx);
-            break;
-        case 0x16:
-            (handlers.chunk_0x16)(chunk, chunk_buf, idx);
-            break;
-        default:
-            LOG_MSG(error, "Unhandled chunk type 0x%x!\n", chunk.id);
-            break;
+    if (idx > ALR_MAX_CHUNK_ID) {
+        LOG_MSG(error, "Invalid chunk ID 0x%x!\n", chunk.id);
+    }
+    if (handlers.chunk_handlers[chunk.id] != NULL) {
+        (handlers.chunk_handlers[chunk.id])(chunk, chunk_buf, idx);
     }
 }
 
@@ -139,7 +72,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
                     texbuf_offset = header->resource_offset;
                     texbuf_size = header->resource_size;
 
-                    (handlers.chunk_0x11)(chunk, chunk_buf, 0);
+                    (handlers.chunk_handlers[0x11])(chunk, chunk_buf, 0);
                 }
                 break;
             case 0x15:
@@ -155,7 +88,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
                 }
                 memcpy(entries, entries_buf, entries_size);
 
-                (handlers.chunk_0x15)(chunk, chunk_buf, 0);
+                (handlers.chunk_handlers[0x15])(chunk, chunk_buf, 0);
                 break;
         }
         // Call handler functions through the interface
@@ -251,7 +184,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
     fread(res_chunk_buf, (sizeof(*entries) * res_header.array_size) + sizeof(u32), 1, alr);
 
     chunk_generic res_chunk_header = *(chunk_generic*)&res_header;
-    handlers.chunk_0x15(res_chunk_header, res_chunk_buf, 0);
+    (handlers.chunk_handlers[0x15])(res_chunk_header, res_chunk_buf, 0);
 
     // First offset generally points right after the resource layout chunk.
     // This is just to alert us of anomalies.
