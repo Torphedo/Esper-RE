@@ -25,7 +25,6 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
         .id = 0,
         .size = 8
     };
-    bool hit_chunk_0 = false;
     u32 texbuf_offset = 0;
     u32 texbuf_size = 0;
     u32 tex_entry_count = 0;
@@ -39,6 +38,11 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
             break;
         }
 
+        // Don't try to read 0 bytes, it also causes problems
+        if (chunk.size - sizeof(chunk) == 0) {
+            continue;
+        }
+
         // LOG_MSG(debug, "Got chunk id %d with size 0x%X @ 0x%X\n", chunk.id, chunk.size, ftell(alr) - sizeof(chunk));
         u8* chunk_buf = calloc(1, chunk.size);
         if (chunk_buf == NULL) {
@@ -48,9 +52,8 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
             LOG_MSG(error, "Failed to allocate %d bytes for chunk buffer at 0x%X\n", chunk.size, pos);
             break;
         }
-        fread(chunk_buf, chunk.size - sizeof(chunk), 1, alr);
 
-        hit_chunk_0 = (chunk.id == 0);
+        fread(chunk_buf, chunk.size - sizeof(chunk), 1, alr);
 
         // Special handling for alr and texture header chunks
         switch(chunk.id) {
@@ -114,7 +117,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
     fseek(alr, texbuf_offset, SEEK_SET);
     fread(tex_buf, texbuf_size, 1, alr);
     fclose(alr); // At this point we're done with the input, and can close it
-    LOG_MSG(debug, "Read %d bytes into texture buffer\n", texbuf_size);
+    LOG_MSG(debug, "Read 0x%X bytes into texture buffer\n", texbuf_size);
     LOG_MSG(debug, "%d texture entries\n", tex_entry_count);
 
     for (u32 i = 0; i < tex_entry_count; i++) {
