@@ -39,13 +39,13 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
             break;
         }
 
-        // LOG_MSG(debug, "Got chunk id %d with size 0x%x @ 0x%x\n", chunk.id, chunk.size, ftell(alr) - sizeof(chunk));
+        // LOG_MSG(debug, "Got chunk id %d with size 0x%X @ 0x%X\n", chunk.id, chunk.size, ftell(alr) - sizeof(chunk));
         u8* chunk_buf = calloc(1, chunk.size);
         if (chunk_buf == NULL) {
             // We probably got off-track and read the wrong value as the size
             // somehow.
             long pos = ftell(alr);
-            LOG_MSG(error, "Failed to allocate %d bytes for chunk buffer at 0x%x\n", chunk.size, pos);
+            LOG_MSG(error, "Failed to allocate %d bytes for chunk buffer at 0x%X\n", chunk.size, pos);
             break;
         }
         fread(chunk_buf, chunk.size - sizeof(chunk), 1, alr);
@@ -118,7 +118,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
     LOG_MSG(debug, "%d texture entries\n", tex_entry_count);
 
     for (u32 i = 0; i < tex_entry_count; i++) {
-        LOG_MSG(debug, "data_ptr = 0x%x\n", entries[i].data_ptr);
+        LOG_MSG(debug, "data_ptr = 0x%X\n", entries[i].data_ptr);
         u32 tex_size = 0;
         if (i == (tex_entry_count - 1)) {
             // end - current
@@ -237,7 +237,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
             u64 buf_size = chunk.size - sizeof(chunk);
             u8* chunk_buf = calloc(1, buf_size);
             if (chunk_buf == NULL) {
-                LOG_MSG(error, "Failed to allocate 0x%x bytes for chunk buffer!\n", buf_size);
+                LOG_MSG(error, "Failed to allocate 0x%X bytes for chunk buffer!\n", buf_size);
                 break;
             }
             fread(chunk_buf, buf_size, 1, alr);
@@ -251,7 +251,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
             }
 
             // This clutters up the log a lot.
-            // LOG_MSG(debug, "0x%x chunk @ 0x%x\n", chunk.id, ftell(alr));
+            // LOG_MSG(debug, "0x%X chunk @ 0x%X\n", chunk.id, ftell(alr));
 
             if (handlers.chunk_handlers[chunk.id] != NULL) {
                 (handlers.chunk_handlers[chunk.id])(chunk, chunk_buf, 0);

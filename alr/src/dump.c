@@ -54,15 +54,15 @@ void chunk_texture(chunk_generic header, u8* chunk_buf, u32 idx) {
         u32 total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
 
         LOG_MSG(info, "Surface %2d %-16s: %2d mip(s),", i, &names[i].name, surfaces[i].mipmap_count - 1);
-        printf(" 0x%05x pixels, %4dx%-4d (", total_pixel_count, surfaces[i].width, surfaces[i].height);
+        printf(" 0x%05X pixels, %4dx%-4d (", total_pixel_count, surfaces[i].width, surfaces[i].height);
 
-        printf("@ buf + 0x%x)\n", entries[i].data_ptr);
+        printf("@ buf + 0x%X)\n", entries[i].data_ptr);
 
         if (entries[i].pad != 0) {
-            LOG_MSG(warning, "Resource meta (0x15) anomaly, apparent padding at sub-chunk %d was 0x%x\n", i, entries[i].pad);
+            LOG_MSG(warning, "Resource meta (0x15) anomaly, apparent padding at sub-chunk %d was 0x%X\n", i, entries[i].pad);
         }
         if (entries[i].flags != 0x00040001) {
-            LOG_MSG(warning, "Resource meta (0x15) anomaly, ID at sub-chunk %d was 0x%x\n", i, entries[i].flags);
+            LOG_MSG(warning, "Resource meta (0x15) anomaly, ID at sub-chunk %d was 0x%X\n", i, entries[i].flags);
         }
     }
     printf("\n");
@@ -72,7 +72,7 @@ void chunk_texture(chunk_generic header, u8* chunk_buf, u32 idx) {
         LOG_MSG(info, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
         total_image_pixels += textures[i].width * textures[i].height;
     }
-    LOG_MSG(debug, "Total pixel count for all textures: 0x%08x\n", total_image_pixels);
+    LOG_MSG(debug, "Total pixel count for all textures: 0x%08X\n", total_image_pixels);
 }
 
 void res_layout(chunk_generic chunk, u8* chunk_buf, u32 idx) {
@@ -90,7 +90,7 @@ void stream_dump(chunk_generic chunk, u8* chunk_buf) {
 
     // Generate filename
     char name[1024] = {0};
-    sprintf(name, "streams/0x%02x.bin", chunk.id);
+    sprintf(name, "streams/0x%02X.bin", chunk.id);
 
     // Make the directory if it doesn't exist.
     if (!dir_exists("streams")) {
@@ -157,7 +157,7 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
             tex.compressed = true;
             break;
     }
-    LOG_MSG(info, "texture %02d is 0x%05x bytes, %3dx%-3d", idx, size, resolution, resolution);
+    LOG_MSG(info, "texture %02d is 0x%05X bytes, %3dX%-3d", idx, size, resolution, resolution);
     printf(", format 0b%08b (%d bpp)\n", format, tex.bits_per_pixel);
 
     if (entries[idx].unknown == TEXTURE_CUBEMAP) {
@@ -170,7 +170,7 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
     // Disable mipmaps and give a debug message when our size guessing is way
     // off. Reduces the chance of a DDS file that fails to load
     if (apparent_size > tex.size_override) {
-        LOG_MSG(warning, "format or res might be wrong, mipmaps are disabled. pixel_count = 0x%x @ %1.1fBpp, but size = 0x%x\n", pixel_count, bytes_per_pixel, tex.size_override);
+        LOG_MSG(warning, "format or res might be wrong, mipmaps are disabled. pixel_count = 0x%X @ %1.1fBpp, but size = 0x%X\n", pixel_count, bytes_per_pixel, tex.size_override);
     }
     else {
         tex.mipmap_count = entries[idx].resolution_pwr + 1;
@@ -180,9 +180,9 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
         // Buffer is more than double what should be needed...
         LOG_MSG(warning, "Way more space than needed, texture might be a cubemap.\n");
     }
-    // LOG_MSG(debug, "unknown = 0x%hx, ", entries[idx].unknown);
-    // printf("unknown2 = 0x%hx, ", entries[idx].unknown2);
-    // printf("unknown3 = 0x%x\n", entries[idx].unknown3);
+    // LOG_MSG(debug, "unknown = 0x%hX, ", entries[idx].unknown);
+    // printf("unknown2 = 0x%hX, ", entries[idx].unknown2);
+    // printf("unknown3 = 0x%X\n", entries[idx].unknown3);
 
     write_texture(tex);
 }
