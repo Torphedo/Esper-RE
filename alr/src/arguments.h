@@ -10,7 +10,8 @@ typedef enum {
 }program_mode;
 
 typedef struct {
-    char* filename;
+    char* input_path;
+    char* output_path;
     program_mode mode;
     bool silent;
 }flags;

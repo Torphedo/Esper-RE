@@ -12,14 +12,14 @@ int main(int argc, char* argv[]) {
     // Parse command-line arguments.
     flags options = parse_arguments(argc, argv);
 
-    if (options.filename == NULL) {
-        LOG_MSG(error, "No filenames detected.\n");
+    if (options.input_path == NULL) {
+        LOG_MSG(error, "No ALR to operate on, exiting\n");
         return 1;
     }
-
     if (options.silent) {
         disable_logging();
     }
+
     // Default to dump behaviour if nothing is specified. No arguments probably
     // means someone drag-and-dropped, which means they probably want textures.
     alr_interface interface = dump_interface;
@@ -39,13 +39,17 @@ int main(int argc, char* argv[]) {
             LOG_MSG(error, "Unimplemented program mode, exiting.\n");
             return 1;
         case replacetex:
-            return !(alr_edit(options.filename, "out.alr", options, replace_interface));
+            if (options.output_path == NULL) {
+                LOG_MSG(error, "No output file provided.\n");
+                return 1;
+            }
+            return !(alr_edit(options.input_path, options.output_path, options, replace_interface));
             break;
     }
 
     // Parse ALR with selected interface.
     // Return value must be inverted because stdbool false == 0, and an exit
     // code of 0 means success.
-    return !(alr_parse(options.filename, options, interface));
+    return !(alr_parse(options.input_path, options, interface));
 }
 

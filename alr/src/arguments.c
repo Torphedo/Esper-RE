@@ -16,7 +16,17 @@ flags parse_arguments(int argc, char** argv) {
         // Check if first 2 characters are "--"
         if (argv[i][0] != '-' || argv[i][1] != '-') {
             // If it's not a flag, it must be a filename
-            output.filename = argv[i];
+            if (output.input_path != NULL) {
+                if (output.output_path != NULL) {
+                    output.input_path = output.output_path;
+                }
+                output.output_path = argv[i];
+            }
+            else {
+                output.input_path = argv[i];
+            }
+
+
             continue;
         }
 

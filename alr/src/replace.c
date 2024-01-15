@@ -6,7 +6,6 @@
 
 #include "int_shorthands.h"
 #include "filesystem.h"
-#include "alr.h"
 
 // Size of DDS header and pixel format header
 #define DDS_HEADER_SIZE (0x7F)
