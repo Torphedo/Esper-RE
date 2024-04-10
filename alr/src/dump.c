@@ -151,6 +151,10 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
             tex.bits_per_pixel = 8;
             tex.compressed = true;
             break;
+        case FORMAT_A8:
+            tex.bits_per_pixel = 8;
+            tex.compressed = false;
+            break;
         default:
             // BC1 texture.
             tex.bits_per_pixel = 4;

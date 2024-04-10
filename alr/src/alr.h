@@ -44,6 +44,7 @@ typedef enum {
     FORMAT_MONO_16 = 0b10000010,
     FORMAT_RGBA8 = 0b00000110,
     FORMAT_DXT5 = 0b00001111,
+    FORMAT_A8 = 0b10000000
 }alr_pixel_format;
 
 // Bad enum name. I don't know what this value means except for these 2
