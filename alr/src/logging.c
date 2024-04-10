@@ -13,7 +13,7 @@ void enable_logging() {
 }
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 // Enables ANSI escape codes on Windows
