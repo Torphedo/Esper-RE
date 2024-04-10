@@ -12,6 +12,26 @@ void enable_logging() {
     print_msgs = true;
 }
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
+// Enables ANSI escape codes on Windows
+unsigned short enable_win_ansi() {
+#ifdef _WIN32
+    DWORD prev_console_mode;
+    HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (console_handle  != INVALID_HANDLE_VALUE) {
+        GetConsoleMode(console_handle , (LPDWORD) &prev_console_mode);
+        if (prev_console_mode != 0) {
+            SetConsoleMode(console_handle , prev_console_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT);
+            return 1;
+        }
+    }
+#endif
+    return 0;
+}
+
 int logging_print(char* type, char* function, char* format_str, ...) {
     if (!print_msgs) {
         return 0;

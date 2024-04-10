@@ -9,6 +9,7 @@
 #include "arguments.h"
 
 int main(int argc, char* argv[]) {
+    enable_win_ansi(); // Enable color on Windows
     // Parse command-line arguments.
     flags options = parse_arguments(argc, argv);
 

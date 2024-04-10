@@ -9,6 +9,8 @@ static const char debug[] = "34";
 void disable_logging();
 void enable_logging();
 
+unsigned short enable_win_ansi();
+
 /// The function used by the LOG_MSG() macro
 /// \param type Color code to show the type of message
 /// \param function The name of the function printing the message. You should
