@@ -188,10 +188,10 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
 }
 
 void process_texture(u8* buf, u32 size, u32 idx) {
-    if (!found_texture_meta || idx >= texture_meta_count) {
-        texture_brute(buf, size, idx);
-        return;
+    if (found_texture_meta && idx <= texture_meta_count) {
+        // Try to pull data intelligently where possible
+        texture_from_meta(buf, size, idx);
     }
-    texture_from_meta(buf, size, idx);
+    texture_brute(buf, size, idx);
 }
 
