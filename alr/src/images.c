@@ -147,6 +147,10 @@ void write_texture(texture_info texture) {
         header.caps  |= DDSCAPS_MIPMAP | DDSCAPS_COMPLEX;
     }
 
+    if (!texture.compressed) {
+        header.pixel_format.bits_per_pixel = texture.bits_per_pixel;
+    }
+
     switch (texture.bits_per_pixel) {
         // DXT1
         case 4:
@@ -179,7 +183,6 @@ void write_texture(texture_info texture) {
             // We assume this is a 16-bit single channel texture
             // (e.g. for a specular map)
             header.pixel_format.flags = DDPF_LUMINANCE;
-            header.pixel_format.bits_per_pixel = texture.bits_per_pixel;
             header.pixel_format.red_bitmask = 0x0000FFFF;
             break;
         // RGBA8
