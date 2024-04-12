@@ -9,6 +9,18 @@
 #include "filesystem.h"
 #include "alr.h"
 
+void fix_alr_name(char* path) {
+    u32 len = strlen(path);
+    u32 last_slash_idx = 0;
+    for (u32 i = 0; i < len; i++) {
+        char c = path[i];
+        if (c == '/' || c == '\\') {
+            last_slash_idx = i;
+        }
+    }
+    memmove(path, &path[last_slash_idx + 1], len - last_slash_idx - 1);
+}
+
 bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interface handlers) {
     FILE* alr = fopen(alr_filename, "rb");
     FILE* alr_out = fopen(out_filename, "wb");
@@ -67,7 +79,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
                     texbuf_size = header->resource_size;
 
                     if (handlers.chunk_handlers[0x11] != NULL) {
-                        (handlers.chunk_handlers[0x11])(chunk, chunk_buf, 0);
+                        (handlers.chunk_handlers[0x11])(alr_filename, chunk, chunk_buf, 0);
                     }
                 }
                 break;
@@ -85,7 +97,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
                 memcpy(entries, entries_buf, entries_size);
 
                 if (handlers.chunk_handlers[0x15] != NULL) {
-                    (handlers.chunk_handlers[0x15])(chunk, chunk_buf, 0);
+                    (handlers.chunk_handlers[0x15])(alr_filename, chunk, chunk_buf, 0);
                 }
                 break;
         }
@@ -97,7 +109,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
 
         // Call handler functions through the interface
         if (handlers.chunk_handlers[chunk.id] != NULL) {
-            (handlers.chunk_handlers[chunk.id])(chunk, chunk_buf, 0);
+            (handlers.chunk_handlers[chunk.id])(alr_filename, chunk, chunk_buf, 0);
         }
 
         // Copy (potentially modified) chunk to output file
@@ -135,7 +147,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
 
         // Call handler to maybe modify this texture
         if (handlers.tex_handler != NULL) {
-            (handlers.tex_handler)(cur_tex, tex_size, i);
+            (handlers.tex_handler)(alr_filename, cur_tex, tex_size, i);
         }
 
         // Write (maybe modified) texture to ouptut file
@@ -165,6 +177,9 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
 
     LOG_MSG(debug, "Loading %s (%d bytes)\n", alr_filename, filesize(alr_filename));
 
+    fix_alr_name(alr_filename);
+    handlers.filename = alr_filename;
+
     // Read the file header & offset array
     chunk_layout header = {0};
     fread(&header, sizeof(header), 1, alr);
@@ -193,7 +208,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
 
     chunk_generic res_chunk_header = *(chunk_generic*)&res_header;
     if (handlers.chunk_handlers[0x15] != NULL) {
-        (handlers.chunk_handlers[0x15])(res_chunk_header, res_chunk_buf, 0);
+        (handlers.chunk_handlers[0x15])(alr_filename, res_chunk_header, res_chunk_buf, 0);
     }
 
     // First offset generally points right after the resource layout chunk.
@@ -257,7 +272,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
             // LOG_MSG(debug, "0x%X chunk @ 0x%X\n", chunk.id, ftell(alr));
 
             if (handlers.chunk_handlers[chunk.id] != NULL) {
-                (handlers.chunk_handlers[chunk.id])(chunk, chunk_buf, 0);
+                (handlers.chunk_handlers[chunk.id])(alr_filename, chunk, chunk_buf, 0);
             }
         }
 
@@ -281,7 +296,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
         u8* cur_tex = tex_buf + entries[i].data_ptr;
 
         if (handlers.tex_handler != NULL) {
-            (handlers.tex_handler)(cur_tex, tex_size, i);
+            (handlers.tex_handler)(alr_filename, cur_tex, tex_size, i);
         }
     }
 

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "logging.h"
 
@@ -16,7 +17,7 @@ resource_entry* entries = NULL;
 u32 res_entry_count = 0;
 
 // Sanity checks for 0xD chunks that have been observed to always be empty
-void chunk_0xD(chunk_generic chunk, u8* chunk_buf, u32 idx) {
+void chunk_0xD(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
     // This isn't really a *problem*, but the warning status helps it stand out
     // (also acts as a nice sanity check)
     if (chunk.size != 0xC) {
@@ -25,7 +26,7 @@ void chunk_0xD(chunk_generic chunk, u8* chunk_buf, u32 idx) {
 }
 
 // Reads 0x10 chunks and uses their metadata to write texture data to disk
-void chunk_texture(chunk_generic header, u8* chunk_buf, u32 idx) {
+void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
     texture_metadata_header* tex_header = (texture_metadata_header*)chunk_buf;
     found_texture_meta = true;
     texture_meta_count = tex_header->surface_count;
@@ -75,7 +76,7 @@ void chunk_texture(chunk_generic header, u8* chunk_buf, u32 idx) {
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08X\n", total_image_pixels);
 }
 
-void res_layout(chunk_generic chunk, u8* chunk_buf, u32 idx) {
+void res_layout(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
     entries = (resource_entry*)(chunk_buf + sizeof(u32));
     res_entry_count = *(u32*)chunk_buf;
 }
@@ -119,9 +120,17 @@ void texture_from_meta(u8* buf, u32 size, u32 idx) {
 
 // Try to deduce texture metadata by brute force using the limited data in the
 // resource header (0x15 chunk)
-void texture_brute(const u8* buf, u32 size, u32 idx) {
+void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
+    u32 dot_idx;
+    for (u32 i = strlen(path); i > 0; i--) {
+        if (path[i] == '.') {
+            dot_idx = i;
+        }
+    }
+    path[dot_idx] = 0x00;
     char filename[256] = {0};
-    sprintf(filename, "textures/%d.dds", idx);
+    sprintf(filename, "textures/%s_%d.dds", path, idx);
+    path[dot_idx] = '.';
 
     // Make the directory if it doesn't exist.
     if (!dir_exists("textures")) {
@@ -191,11 +200,13 @@ void texture_brute(const u8* buf, u32 size, u32 idx) {
     write_texture(tex);
 }
 
-void process_texture(u8* buf, u32 size, u32 idx) {
+void process_texture(void* ctx, u8* buf, u32 size, u32 idx) {
     if (found_texture_meta && idx <= texture_meta_count) {
         // Try to pull data intelligently where possible
         texture_from_meta(buf, size, idx);
     }
-    texture_brute(buf, size, idx);
+    if (ctx != NULL) {
+        texture_brute((char*)ctx, buf, size, idx);
+    }
 }
 
