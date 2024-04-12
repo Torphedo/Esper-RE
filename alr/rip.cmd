@@ -1,5 +1,5 @@
 @echo off
 for %%A IN (bin\*.alr) DO (
-    start alr --dump %%A
+    start /b alr --dump %%A > nul
 )
 
