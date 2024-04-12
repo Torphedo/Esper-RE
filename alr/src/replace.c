@@ -17,16 +17,27 @@ u32 u32_min(u32 x, u32 y) {
     return y;
 }
 
-void replace_texture(u8* buf, u32 size, u32 idx) {
-    char path[256] = {0};
-    snprintf(path, sizeof(path), "textures/%d.dds", idx);
-    if (file_exists(path)) {
-        u32 tex_size = filesize(path);
+void replace_texture(void* ctx, u8* buf, u32 size, u32 idx) {
+    char* path = (char*) ctx;
+    u32 dot_idx;
+    for (u32 i = strlen(path); i > 0; i--) {
+        if (path[i] == '.') {
+            dot_idx = i;
+        }
+    }
+    path[dot_idx] = 0x00;
+    char filename[256] = {0};
+    sprintf(filename, "textures/%s_%d.dds", path, idx);
+    path[dot_idx] = '.';
+
+    // Make the directory if it doesn't exist.
+    if (file_exists(filename)) {
+        u32 tex_size = filesize(filename);
 
         // Load the mod texture data
-        u8* mod_dds = file_load(path);
+        u8* mod_dds = file_load(filename);
         if (mod_dds == NULL) {
-            LOG_MSG(error, "Failed to load %d bytes from %s\n", tex_size, path);
+            LOG_MSG(error, "Failed to load %d bytes from %s\n", tex_size, filename);
         }
         else {
             // Raw buffer without DDS header
@@ -41,7 +52,7 @@ void replace_texture(u8* buf, u32 size, u32 idx) {
         }
     }
     else {
-        LOG_MSG(info, "%s not found, skipping\n", path);
+        LOG_MSG(info, "%s not found, skipping\n", filename);
     }
 }
 

@@ -5,7 +5,7 @@
 #include "logging.h"
 #include "alr.h"
 
-void split_generic_chunk(chunk_generic chunk, u8* chunk_buf, u32 idx) {
+void split_generic_chunk(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
     if (!dir_exists("resources")) {
         system("mkdir resources");
     }
@@ -25,7 +25,7 @@ void split_generic_chunk(chunk_generic chunk, u8* chunk_buf, u32 idx) {
     fclose(dump);
 }
 
-void split_resource(u8* buf, u32 size, u32 idx) {
+void split_resource(void* ctx, u8* buf, u32 size, u32 idx) {
     if (!dir_exists("resources")) {
         system("mkdir resources");
     }

@@ -202,7 +202,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
     }
     resource_entry* entries = (resource_entry*)(res_chunk_buf + sizeof(u32));
 
-    fseek(alr, sizeof(u32) * -1, SEEK_CUR);
+    fseek(alr, -1 * (signed long)sizeof(u32), SEEK_CUR);
     long pos = ftell(alr);
     fread(res_chunk_buf, (sizeof(*entries) * res_header.array_size) + sizeof(u32), 1, alr);
 
