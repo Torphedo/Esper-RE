@@ -10,6 +10,12 @@ flags parse_arguments(int argc, char** argv) {
         .mode = split // Default mode is split
     };
 
+    // Print help when no arguments are provided
+    if (argc == 1) {
+        output.mode = help;
+        return output;
+    }
+
     // Loop over every argument, skipping the first which is just our program
     // name.
     for (u32 i = 1; i < argc; i++) {
@@ -50,6 +56,12 @@ flags parse_arguments(int argc, char** argv) {
         else if (strcmp(argv[i], "--animation") == 0) {
             LOG_MSG(warning, "Animation dumping is unimplemented right now.\n");
             output.mode = animation;
+        }
+        else if (strcmp(argv[i], "--version") == 0) {
+            output.mode = version;
+        }
+        else if (strcmp(argv[i], "--help") == 0) {
+            output.mode = help;
         }
 
     }

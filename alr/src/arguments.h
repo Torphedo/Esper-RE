@@ -7,6 +7,8 @@ typedef enum {
     dumptex,
     split,
     animation, // Unused at the moment, should be added back soon.
+    help,
+    version
 }program_mode;
 
 typedef struct {
