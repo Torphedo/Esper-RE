@@ -121,15 +121,18 @@ void texture_from_meta(u8* buf, u32 size, u32 idx) {
 // Try to deduce texture metadata by brute force using the limited data in the
 // resource header (0x15 chunk)
 void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
-    u32 dot_idx;
+    // Find the position of the '.' in the filename.
+    u32 dot_idx = 0;
     for (u32 i = strlen(path); i > 0; i--) {
         if (path[i] == '.') {
             dot_idx = i;
         }
     }
+    // We temporarily replace the '.' with a null terminator so it's not in the
+    // output filename.
     path[dot_idx] = 0x00;
-    char filename[256] = {0};
-    sprintf(filename, "textures/%s_%d.dds", path, idx);
+    char filename[256] = { 0 };
+    snprintf(filename, sizeof(filename), "textures/%s_%d.dds", path, idx);
     path[dot_idx] = '.';
 
     // Make the directory if it doesn't exist.
