@@ -68,38 +68,38 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
         fread(chunk_buf, chunk.size - sizeof(chunk), 1, alr);
 
         // Special handling for alr and texture header chunks
-        switch(chunk.id) {
-            case 0x11:
-                // This scope is required by some compilers to declare new
-                // variables in a switch case. Needed to compile with "zig cc".
-                {
-                    // Save resource offset for later
-                    alr_header* header = (alr_header*)chunk_buf;
-                    texbuf_offset = header->resource_offset;
-                    texbuf_size = header->resource_size;
+        switch (chunk.id) {
+        case 0x11:
+            // This scope is required by some compilers to declare new
+            // variables in a switch case. Needed to compile with "zig cc".
+            {
+                // Save resource offset for later
+                alr_header* header = (alr_header*)chunk_buf;
+                texbuf_offset = header->resource_offset;
+                texbuf_size = header->resource_size;
 
-                    if (handlers.chunk_handlers[0x11] != NULL) {
-                        (handlers.chunk_handlers[0x11])(alr_filename, chunk, chunk_buf, 0);
-                    }
+                if (handlers.chunk_handlers[0x11] != NULL) {
+                    (handlers.chunk_handlers[0x11])(alr_filename, chunk, chunk_buf, 0);
                 }
-                break;
-            case 0x15:
-                // Save texture entry info for later
-                tex_entry_count = *(u32*)chunk_buf;
-                u32 entries_size = tex_entry_count * sizeof(resource_entry);
-                u8* entries_buf = (chunk_buf + sizeof(u32));
+            }
+            break;
+        case 0x15:
+            // Save texture entry info for later
+            tex_entry_count = *(u32*)chunk_buf;
+            u32 entries_size = tex_entry_count * sizeof(resource_entry);
+            u8* entries_buf = (chunk_buf + sizeof(u32));
 
-                // Copy entry data to new buffer to be used & freed later.
-                entries = calloc(1, entries_size);
-                if (entries == NULL) {
-                    LOG_MSG(error, "Couldn't allocate %d bytes for texture entries\n", entries_size);
-                }
-                memcpy(entries, entries_buf, entries_size);
+            // Copy entry data to new buffer to be used & freed later.
+            entries = calloc(1, entries_size);
+            if (entries == NULL) {
+                LOG_MSG(error, "Couldn't allocate %d bytes for texture entries\n", entries_size);
+            }
+            memcpy(entries, entries_buf, entries_size);
 
-                if (handlers.chunk_handlers[0x15] != NULL) {
-                    (handlers.chunk_handlers[0x15])(alr_filename, chunk, chunk_buf, 0);
-                }
-                break;
+            if (handlers.chunk_handlers[0x15] != NULL) {
+                (handlers.chunk_handlers[0x15])(alr_filename, chunk, chunk_buf, 0);
+            }
+            break;
         }
 
         if (chunk.id > ALR_MAX_CHUNK_ID) {
@@ -138,8 +138,7 @@ bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interfa
         if (i == (tex_entry_count - 1)) {
             // end - current
             tex_size = texbuf_size - entries[i].data_ptr;
-        }
-        else {
+        } else {
             // next - current
             tex_size = entries[i + 1].data_ptr - entries[i].data_ptr;
         }
@@ -288,8 +287,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
         if (i == res_header.array_size - 1) {
             // end - current
             tex_size = tex_buf_size - entries[i].data_ptr;
-        }
-        else {
+        } else {
             // next - current
             tex_size = entries[i + 1].data_ptr - entries[i].data_ptr;
         }

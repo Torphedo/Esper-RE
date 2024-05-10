@@ -147,31 +147,31 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
         .height = resolution,
         .filename = filename,
         .image_data = (char*)buf,
-        .size_override = size
+        .size_override = size,
     };
 
     switch (format) {
-        case FORMAT_MONO_16:
-            tex.bits_per_pixel = 16;
-            break;
-        case FORMAT_RGBA8:
-            tex.bits_per_pixel = 32;
-            break;
-        case FORMAT_DXT5:
-            // Block-compressed dual-channel texture at 16 bytes per block
-            // (1 byte per pixel)
-            tex.bits_per_pixel = 8;
-            tex.compressed = true;
-            break;
-        case FORMAT_A8:
-            tex.bits_per_pixel = 8;
-            tex.compressed = false;
-            break;
-        default:
-            // BC1 texture.
-            tex.bits_per_pixel = 4;
-            tex.compressed = true;
-            break;
+    case FORMAT_MONO_16:
+        tex.bits_per_pixel = 16;
+        break;
+    case FORMAT_RGBA8:
+        tex.bits_per_pixel = 32;
+        break;
+    case FORMAT_DXT5:
+        // Block-compressed dual-channel texture at 16 bytes per block
+        // (1 byte per pixel)
+        tex.bits_per_pixel = 8;
+        tex.compressed = true;
+        break;
+    case FORMAT_A8:
+        tex.bits_per_pixel = 8;
+        tex.compressed = false;
+        break;
+    default:
+        // BC1 texture.
+        tex.bits_per_pixel = 4;
+        tex.compressed = true;
+        break;
     }
     LOG_MSG(info, "texture %02d is 0x%05X bytes, %3dX%-3d", idx, size, resolution, resolution);
     printf(", format 0b%08b (%d bpp)\n", format, tex.bits_per_pixel);

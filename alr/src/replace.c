@@ -18,7 +18,7 @@ u32 u32_min(u32 x, u32 y) {
 }
 
 void replace_texture(void* ctx, u8* buf, u32 size, u32 idx) {
-    char* path = (char*) ctx;
+    char* path = (char*)ctx;
     u32 dot_idx;
     for (u32 i = strlen(path); i > 0; i--) {
         if (path[i] == '.') {
@@ -38,8 +38,7 @@ void replace_texture(void* ctx, u8* buf, u32 size, u32 idx) {
         u8* mod_dds = file_load(filename);
         if (mod_dds == NULL) {
             LOG_MSG(error, "Failed to load %d bytes from %s\n", tex_size, filename);
-        }
-        else {
+        } else {
             // Raw buffer without DDS header
             u8* raw_mod_tex = mod_dds + DDS_HEADER_SIZE;
 
@@ -50,8 +49,7 @@ void replace_texture(void* ctx, u8* buf, u32 size, u32 idx) {
             memcpy(buf, raw_mod_tex, copy_size);
             free(mod_dds); // Can't forget to free :P
         }
-    }
-    else {
+    } else {
         LOG_MSG(info, "%s not found, skipping\n", filename);
     }
 }
