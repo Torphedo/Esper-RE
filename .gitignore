@@ -8,14 +8,19 @@ CMakeSettings.json
 
 # Built binaries
 out/
-cmake-build-debug/
-cmake-build-release/
-cmake-build-minsizerel/
-cmake-build-relwithdebinfo/
-*.exe
+cmake-*/
 cmake_*/
+*.exe
+*.pdb
 compile_commands.json
+*.zip
+alr/alr
 
-# Binary files outputted from the program
+# Files outputted from the program
 *.bin
 *.png
+*.dds
+
+# Binary input files
+*.alr
+
