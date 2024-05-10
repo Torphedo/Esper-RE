@@ -1,0 +1,9 @@
+---
+BasedOnStyle: WebKit
+
+InsertNewlineAtEOF: true
+TabWidth: 4
+BreakBeforeBraces: Attach
+BreakStringLiterals: false
+ColumnLimit: 100
+...
