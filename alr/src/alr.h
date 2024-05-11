@@ -1,7 +1,6 @@
 #pragma once
-#include "arguments.h"
-
-#include "int_shorthands.h"
+#include <common/int.h>
+#include <common/arguments.h>
 
 // All ALR files begin with this structure.
 // Followed by a u32 array whose size is listed in the header. The u32s are

@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "filesystem.h"
-#include "logging.h"
+#include <common/filesystem.h>
+#include <common/logging.h>
+
 #include "alr.h"
 
 void split_generic_chunk(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {

@@ -1,7 +1,8 @@
 #include <stdio.h>
 
-#include "int_shorthands.h"
-#include "logging.h"
+#include <common/int.h>
+#include <common/logging.h>
+
 #include "images.h"
 
 // DDS structures

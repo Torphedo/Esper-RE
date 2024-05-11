@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "logging.h"
+#include <common/logging.h>
+#include <common/int.h>
+#include <common/filesystem.h>
 
-#include "int_shorthands.h"
-#include "filesystem.h"
 #include "alr.h"
 #include "images.h"
 

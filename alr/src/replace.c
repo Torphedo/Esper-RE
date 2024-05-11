@@ -2,10 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "logging.h"
-
-#include "int_shorthands.h"
-#include "filesystem.h"
+#include <common/logging.h>
+#include <common/int.h>
+#include <common/filesystem.h>
 
 // Size of DDS header and pixel format header
 #define DDS_HEADER_SIZE (0x7F)

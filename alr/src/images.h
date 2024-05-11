@@ -1,8 +1,7 @@
 #pragma once
-#include <stdint.h>
 #include <stdbool.h>
 
-#include "int_shorthands.h"
+#include <common/int.h>
 
 typedef struct {
     char* filename;
