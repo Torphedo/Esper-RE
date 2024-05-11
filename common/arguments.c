@@ -36,7 +36,7 @@ flags parse_arguments(int argc, char** argv, char* args[], u32 args_count) {
         for (u32 j = 0; j < args_count; j++) {
             if (strcmp(argv[i], args[j]) == 0) {
                 output.mode = j;
-                return output;
+                break;
             }
         }
     }

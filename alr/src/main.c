@@ -1,20 +1,43 @@
 #include <stdio.h>
 
-#include "logging.h"
+#include <common/logging.h>
+#include <common/arguments.h>
 
 #include "alr.h"
 #include "dump.h"
 #include "split.h"
 #include "replace.h"
-#include "arguments.h"
 
 static const char* version_string = "0.6.6";
 static const char* url = "https://github.com/Torphedo/Esper-RE";
 
+#define ARRAY_LEN(arr) (sizeof((arr)) / (sizeof((arr)[0])))
+
+char* args[] = {
+    "--help",
+    "--version",
+    "--dump",
+    "--replace",
+    "--info",
+    // "--silent",
+    "--split",
+    "--animation",
+};
+
+typedef enum {
+    help,
+    version,
+    dumptex,
+    replacetex,
+    info_only,
+    split,
+    animation,
+}mode;
+
 int main(int argc, char* argv[]) {
     enable_win_ansi(); // Enable color on Windows
     // Parse command-line arguments.
-    flags options = parse_arguments(argc, argv);
+    flags options = parse_arguments(argc, argv, args, ARRAY_LEN(args));
 
     if (options.silent) {
         disable_logging();
