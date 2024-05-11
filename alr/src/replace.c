@@ -18,15 +18,20 @@ u32 u32_min(u32 x, u32 y) {
 
 void replace_texture(void* ctx, u8* buf, u32 size, u32 idx) {
     char* path = (char*)ctx;
-    u32 dot_idx;
+    u32 dot_idx = 0;
+    u32 name_offset = 0;
     for (u32 i = strlen(path); i > 0; i--) {
         if (path[i] == '.') {
             dot_idx = i;
         }
+        if (is_dirsep(path[i])) {
+            name_offset = i;
+            break;
+        }
     }
     path[dot_idx] = 0x00;
     char filename[256] = {0};
-    sprintf(filename, "textures/%s_%d.dds", path, idx);
+    snprintf(filename, sizeof(filename), "textures/%s_%d.dds", path + name_offset, idx);
     path[dot_idx] = '.';
 
     // Make the directory if it doesn't exist.

@@ -50,3 +50,7 @@ u8* file_load(const char* path) {
     return buffer;
 }
 
+bool is_dirsep(char c) {
+    return (c == '/' || c == '\\');
+}
+

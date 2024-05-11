@@ -13,3 +13,5 @@ bool dir_exists(const char* path);
 // returns NULL on error.
 u8* file_load(const char* path);
 
+bool is_dirsep(char c);
+
