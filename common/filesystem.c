@@ -3,7 +3,7 @@
 #include <sys/stat.h>
 
 #include "logging.h"
-#include "int_shorthands.h"
+#include "int.h"
 
 u64 filesize(const char* path) {
     struct stat st = {0};

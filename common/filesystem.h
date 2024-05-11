@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 
-#include "int_shorthands.h"
+#include "int.h"
 
 u64 filesize(const char* path);
 
