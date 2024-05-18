@@ -27,8 +27,8 @@ void print_deck(deck d) {
     for (u32 i = 0; i < skill_count; i++) {
 	printf("|| Skill #%-2d", i + 1);
 
-        // ID of -1 is for Aura Particle
-        if (d.skills[i] == -1) {
+        // ID of -1 is for Aura Particle, and no other IDs are negative
+        if (d.skills[i] < 0) {
             printf(": %-26s", SkillIDs[0]);
         }
         // IDs 394 - 499 are all copies of Psycho Wave
@@ -202,18 +202,16 @@ int main(int argc, char** argv) {
             }
             clear_stdin();
             
-            u32 id = -2;
-            printf("Enter the new skill ID: ");
-            scanf("%d", &id);
+            u32 id = 0;
             printed_lines++;
-            if (id == -2) {
+            printf("Enter the new skill ID: ");
+            if (scanf("%d", &id) != 1) {
                 LOG_MSG(warning, "No skill ID entered\n");
                 pause();
                 printed_lines += 2;
                 break;
             }
             d.skills[idx - 1] = id;
-
             break;
         case 'w':
             {
