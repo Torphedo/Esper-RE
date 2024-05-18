@@ -66,12 +66,36 @@ void clear_stdin() {
     }
 }
 
+void version() {
+    const char* version_string = "1.1.1";
+    const char* url = "https://github.com/Torphedo/Esper-RE";
+    printf("deck_reader (Esper-RE tools) v%s\n", version_string);
+    printf("Open-source @ %s\n", url);
+    printf("Written by Torphedo\n");
+}
+
+void help() {
+    LOG_MSG(info, "Drag-and-drop a file onto the program, or use it on command-line:\n");
+    printf("\tdeck_reader [deck file]\n");
+    LOG_MSG(info, "Commands:\n");
+    printf("\t1-8: edit a property of the deck (each field is numbered on-screen)\n");
+    printf("\tw: overwrite the deck file with the new data\n");
+    printf("\tq: quit\n");
+}
+
 int main(int argc, char** argv) {
     enable_win_ansi(); // Allow ANSI escape codes on Windows
     if (argc == 1) {
         LOG_MSG(error, "Pass in a filename on command-line, or drag-and-drop a file onto the program.\n\n");
         pause(); // Make the message visible to people who double-click the EXE
         return 1;
+    }
+    if (strcmp(argv[1], "--help") == 0) {
+        help();
+        return 0;
+    } else if (strcmp(argv[1], "--version") == 0) {
+        version();
+        return 0;
     }
     char* filepath = argv[1];
     deck d = {0};
