@@ -102,11 +102,11 @@ int main(int argc, char** argv) {
 
         switch (c) {
         case '1':
-            printf("Enter new deck name: ");
-            // The 20 in format specifier stops buffer overflow, and the "\n"
-            // in brackets makes it scan until a newline (instead of going
+            printf("Enter new deck name [limit 15 characters]: ");
+            // The number in the format specifier stops an overflow, and the
+            // "\n" in brackets makes it scan until a newline (instead of going
             // until whitespace).
-            scanf("%20[^\n]s", d.name);
+            scanf("%15[^\n]s", d.name);
             break;
         case '2':
             printf("Enter new school count: ");
