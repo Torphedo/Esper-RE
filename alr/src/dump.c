@@ -6,7 +6,7 @@
 #include <common/int.h>
 #include <common/filesystem.h>
 
-#include "alr.h"
+#include "alr_interface.h"
 #include "images.h"
 
 bool found_texture_meta = false;

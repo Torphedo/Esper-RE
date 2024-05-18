@@ -1,5 +1,5 @@
 #pragma once
-#include "alr.h"
+#include "alr_interface.h"
 
 // Write chunks to separate files based on their index in the header's offset
 // array.

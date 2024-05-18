@@ -1,5 +1,5 @@
 #pragma once
-#include "alr.h"
+#include "alr_interface.h"
 
 // Stub to fill out the interface
 // TODO: Allow NULL interface functions and replace them with a stub in the alr

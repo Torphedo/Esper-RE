@@ -7,7 +7,7 @@
 #include <common/int.h>
 #include <common/filesystem.h>
 
-#include "alr.h"
+#include "alr_interface.h"
 
 void fix_alr_name(char* path) {
     u32 len = strlen(path);

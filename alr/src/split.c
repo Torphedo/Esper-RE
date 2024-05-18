@@ -4,7 +4,7 @@
 #include <common/filesystem.h>
 #include <common/logging.h>
 
-#include "alr.h"
+#include "alr_interface.h"
 
 void split_generic_chunk(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
     if (!dir_exists("resources")) {

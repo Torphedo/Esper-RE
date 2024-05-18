@@ -3,7 +3,7 @@
 #include <common/logging.h>
 #include <common/arguments.h>
 
-#include "alr.h"
+#include "alr_interface.h"
 #include "dump.h"
 #include "split.h"
 #include "replace.h"

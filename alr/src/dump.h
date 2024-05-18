@@ -1,5 +1,5 @@
 #pragma once
-#include "alr.h"
+#include "alr_interface.h"
 
 // Stub function to skip chunks we don't care about for texture dumping.
 static void chunk_any(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
