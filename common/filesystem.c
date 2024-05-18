@@ -23,6 +23,34 @@ bool file_exists(const char* path) {
     return ((result == 0) && is_regular_file);
 }
 
+bool path_is_file(const char* path) {
+    struct stat st = {0};
+    if (stat(path, &st) != 0) {
+        return false;
+    }
+    return S_ISREG(st.st_mode);
+}
+
+bool path_is_dir(const char* path) {
+    struct stat st = {0};
+    if (stat(path, &st) != 0) {
+        return false;
+    }
+    return S_ISDIR(st.st_mode);
+}
+
+bool path_has_extension(const char* path, const char* extension) {
+    uint32_t pos = strlen(path);
+    uint16_t ext_length = strlen(extension);
+
+    // File extension is longer than input string.
+    if (ext_length > pos) {
+        return false;
+    }
+    return (strncmp(&path[pos - ext_length], extension, ext_length) == 0);
+}
+
+
 bool dir_exists(const char* path) {
     struct stat st = {0};
     return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
