@@ -25,29 +25,8 @@ void process_texture(void* ctx, u8* buf, u32 size, u32 idx);
 // Interface to call parse_alr() with to trigger texture dumping.
 const alr_interface dump_interface = {
     .chunk_handlers = {
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_0xD,
-        chunk_any,
-        chunk_any,
-        chunk_texture,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        chunk_any,
-        res_layout,
-        chunk_any
+        [0x10] = chunk_texture,
+        [0x15] = res_layout,
     },
 
     .tex_handler = process_texture

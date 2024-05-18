@@ -1,3 +1,4 @@
+#pragma once
 #include <common/int.h>
 
 typedef struct {
