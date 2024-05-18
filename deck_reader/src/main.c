@@ -54,7 +54,7 @@ void print_deck(deck d) {
 }
 
 void pause() {
-    printf("Press Enter to exit.");
+    printf("Press Enter to continue.");
     char dummy = 0;
     scanf("%c", &dummy);
 }
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
             }
             break;
         case '7':
-            printf("Enter new multiplayer win rate (in %): ");
+            printf("Enter new multiplayer win rate (in %%): ");
             if (scanf("%d", &d.multiplayer_win_rate) != 1) {
                 LOG_MSG(warning, "No number read.\n");
                 pause();
@@ -192,15 +192,17 @@ int main(int argc, char** argv) {
 
             break;
         case 'w':
-            FILE* f = fopen(filepath, "wb");
-            if (f == NULL) {
-                LOG_MSG("Failed to open deck file %s\n", filepath);
-                pause();
-                printed_lines += 2;
-                break;
+            {
+                FILE* f = fopen(filepath, "wb");
+                if (f == NULL) {
+                    LOG_MSG("Failed to open deck file %s\n", filepath);
+                    pause();
+                    printed_lines += 2;
+                    break;
+                }
+                fwrite(&d, sizeof(d), 1, f);
+                fclose(f);
             }
-            fwrite(&d, sizeof(d), 1, f);
-            fclose(f);
             LOG_MSG(info, "Saved deck file as %s\n", filepath);
             pause();
             printed_lines += 2;
