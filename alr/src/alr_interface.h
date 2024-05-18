@@ -2,7 +2,7 @@
 #include <common/int.h>
 #include <common/arguments.h>
 
-#include "alr.h"
+#include <formats/alr.h>
 
 // Interfaces for handling the ALR data.
 // Chunk size & ID, then the chunk data, then the offset array index this chunk
