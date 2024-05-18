@@ -35,7 +35,7 @@ flags parse_arguments(int argc, char** argv, char* args[], u32 args_count) {
         // Disable all output on silent mode
         if (strcmp(argv[i], "--silent") == 0) {
             disable_logging();
-            break;
+            continue;
         }
 
         // Check for flags the caller asked us to look for

@@ -18,6 +18,12 @@ add_executable(alr
     "common/logging.c"
     "common/filesystem.c"
 )
+
+add_executable(deck_reader
+    "common/logging.c"
+    "deck_reader/src/main.c"
+)
+
 include_directories(${Esper-RE_SOURCE_DIR})
 
 # Copy ALR files to [build]/src/bin/ so they can be accessed while debugging. 
