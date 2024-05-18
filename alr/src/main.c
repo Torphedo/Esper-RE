@@ -19,7 +19,6 @@ char* args[] = {
     "--dump",
     "--replace",
     "--info",
-    // "--silent",
     "--split",
     "--animation",
 };
@@ -38,10 +37,6 @@ int main(int argc, char* argv[]) {
     enable_win_ansi(); // Enable color on Windows
     // Parse command-line arguments.
     flags options = parse_arguments(argc, argv, args, ARRAY_LEN(args));
-
-    if (options.silent) {
-        disable_logging();
-    }
 
     // Default to dump behaviour if nothing is specified. No arguments probably
     // means someone drag-and-dropped, which means they probably want textures.
