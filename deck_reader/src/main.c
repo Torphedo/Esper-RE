@@ -53,8 +53,8 @@ void print_deck(deck d) {
     printf("header: 0x%04X\n", d.header);
 }
 
-void pause() {
-    printf("Press Enter to continue.");
+void pause_portable() {
+    printf("Press Enter to continue.\n");
     char dummy = 0;
     scanf("%c", &dummy);
 }
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
     enable_win_ansi(); // Allow ANSI escape codes on Windows
     if (argc == 1) {
         LOG_MSG(error, "Pass in a filename on command-line, or drag-and-drop a file onto the program.\n\n");
-        pause(); // Make the message visible to people who double-click the EXE
+        pause_portable(); // Make the message visible to people who double-click the EXE
         return 1;
     }
     if (strcmp(argv[1], "--help") == 0) {
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
             u32 school_count = 0; // Temp var to handle int size issues
             if (scanf("%d", &school_count) != 1) {
                 LOG_MSG(warning, "No number read.\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
             u32 meta = 0; // Temp var to handle int size issues
             if (scanf("%hx", &meta) != 1) {
                 LOG_MSG(warning, "No number read.\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
             printf("Enter new mission clear count: ");
             if (scanf("%d", &d.mission_clears) != 1) {
                 LOG_MSG(warning, "No number read.\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
             printf("Enter new mission attempts count: ");
             if (scanf("%d", &d.mission_attempts) != 1) {
                 LOG_MSG(warning, "No number read.\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
             printf("Enter new multiplayer win count: ");
             if (scanf("%d", &d.multiplayer_wins) != 1) {
                 LOG_MSG(warning, "No number read.\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
             printf("Enter new multiplayer win rate (in %%): ");
             if (scanf("%d", &d.multiplayer_win_rate) != 1) {
                 LOG_MSG(warning, "No number read.\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -196,7 +196,7 @@ int main(int argc, char** argv) {
             scanf("%d", &idx);
             if (idx <= 0 || idx > 30) {
                 LOG_MSG(warning, "Invalid number entered (must be in range [1 - 30])\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
             printf("Enter the new skill ID: ");
             if (scanf("%d", &id) != 1) {
                 LOG_MSG(warning, "No skill ID entered\n");
-                pause();
+                pause_portable();
                 printed_lines += 2;
                 break;
             }
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
                 FILE* f = fopen(filepath, "wb");
                 if (f == NULL) {
                     LOG_MSG("Failed to open deck file %s\n", filepath);
-                    pause();
+                    pause_portable();
                     printed_lines += 2;
                     break;
                 }
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
                 fclose(f);
             }
             LOG_MSG(info, "Saved deck file as %s\n", filepath);
-            pause();
+            pause_portable();
             printed_lines += 2;
             break;
         case 'q':
@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
             return 0;
         default:
             LOG_MSG(error, "Unknown command.\n");
-            pause();
+            pause_portable();
             printed_lines += 2;
             break;
         }

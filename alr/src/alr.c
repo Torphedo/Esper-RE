@@ -12,13 +12,17 @@
 void fix_alr_name(char* path) {
     u32 len = strlen(path);
     u32 last_slash_idx = 0;
+    bool found_slash = false;
     for (u32 i = 0; i < len; i++) {
         char c = path[i];
         if (c == '/' || c == '\\') {
             last_slash_idx = i;
+            found_slash = true;
         }
     }
-    memmove(path, &path[last_slash_idx + 1], len - last_slash_idx - 1);
+    if (found_slash) {
+        memmove(path, &path[last_slash_idx + 1], len - last_slash_idx - 1);
+    }
 }
 
 bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interface handlers) {
