@@ -159,6 +159,12 @@ typedef struct {
 }anim_rotation_keys;
 
 typedef struct {
+    u16 transform_count; // Number of non-identity matrices
+    u16 unknown; // Usually 1
+    u32 pad;
+}chunk_transform;
+
+typedef struct {
     u32 id;
     u32 chunk_size;
     u16 sub_chunk_count; // Each sub-chunk is 0x4C large

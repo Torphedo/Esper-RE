@@ -6,6 +6,9 @@ static void chunk_any(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
     return;
 }
 
+// 0x3 (transform matrices). Saves to resources/transforms.txt
+void chunk_0x3(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx);
+
 // Sanity checks for 0xD chunks that ought to be empty.
 void chunk_0xD(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx);
 
@@ -25,6 +28,7 @@ void process_texture(void* ctx, u8* buf, u32 size, u32 idx);
 // Interface to call parse_alr() with to trigger texture dumping.
 const alr_interface dump_interface = {
     .chunk_handlers = {
+        [0x3]  = chunk_0x3,
         [0x10] = chunk_texture,
         [0x15] = res_layout,
     },
