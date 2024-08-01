@@ -22,6 +22,7 @@ void fix_alr_name(char* path) {
     }
     if (found_slash) {
         memmove(path, &path[last_slash_idx + 1], len - last_slash_idx - 1);
+        path[len - last_slash_idx - 1] = 0x00;
     }
 }
 
@@ -275,7 +276,7 @@ bool alr_parse(char* alr_filename, flags options, alr_interface handlers) {
             // LOG_MSG(debug, "0x%X chunk @ 0x%X\n", chunk.id, ftell(alr));
 
             if (handlers.chunk_handlers[chunk.id] != NULL) {
-                (handlers.chunk_handlers[chunk.id])(alr_filename, chunk, chunk_buf, 0);
+                (handlers.chunk_handlers[chunk.id])(alr_filename, chunk, chunk_buf, i);
             }
         }
 
