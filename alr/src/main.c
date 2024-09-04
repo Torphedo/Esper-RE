@@ -13,7 +13,7 @@ static const char* url = "https://github.com/Torphedo/Esper-RE";
 
 #define ARRAY_LEN(arr) (sizeof((arr)) / (sizeof((arr)[0])))
 
-char* args[] = {
+const char* args[] = {
     "--help",
     "--version",
     "--dump",

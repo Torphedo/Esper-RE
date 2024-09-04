@@ -10,6 +10,7 @@ CMakeSettings.json
 out/
 cmake-*/
 cmake_*/
+zig-*/
 *.exe
 *.pdb
 compile_commands.json

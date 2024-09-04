@@ -5,6 +5,7 @@ project(Esper-RE
 )
 
 set(CMAKE_C_STANDARD 99)
+# set(CMAKE_C_FLAGS "-mtiny")
 
 add_executable(alr
     "alr/src/main.c"
@@ -22,6 +23,13 @@ add_executable(alr
 add_executable(deck_reader
     "common/logging.c"
     "deck_reader/src/main.c"
+)
+
+add_executable(ssb
+    "common/logging.c"
+    "common/arguments.c"
+    "ssb/src/main.c"
+    "ssb/src/ssb.c"
 )
 
 include_directories(${Esper-RE_SOURCE_DIR})

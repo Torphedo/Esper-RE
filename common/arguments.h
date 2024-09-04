@@ -12,5 +12,5 @@ typedef struct {
 
 // Pass in arguments from main(), and it will return the above struct with the
 // settings from the user
-flags parse_arguments(int argc, char** argv, char* args[], u32 args_count);
+flags parse_arguments(int argc, char** argv, const char* args[], u32 args_count);
 

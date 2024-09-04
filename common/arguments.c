@@ -4,7 +4,7 @@
 #include "int.h"
 #include "arguments.h"
 
-flags parse_arguments(int argc, char** argv, char* args[], u32 args_count) {
+flags parse_arguments(int argc, char** argv, const char* args[], u32 args_count) {
     flags output = {
         .mode = 0 // Default mode is the first option
     };
