@@ -9,23 +9,14 @@
 // array.
 typedef struct {
     u32 id;                // 0x11
-    u32 chunk_size;        // Size of this chunk (includes ID & size)
+    s32 chunk_size;        // Size of this chunk (includes ID & size)
     u32 flags;             // Unknown
-    u32 resource_offset;   // Offset of resource buffer at end of file
+    u32 texbuf_offset;   // Offset of resource buffer at end of file
     u32 offset_array_size; // Number of offsets in the array
-    u32 resource_size;     // Total size of resource buffer at end of the file
+    u32 texbuf_size;     // Total size of resource buffer at end of the file
     u64 pad;
 }chunk_layout;
 
-
-// chunk_layout except with the id and size removed, so it can be used on a
-// chunk buffer.
-typedef struct {
-    u32 flags;             // Unknown
-    u32 resource_offset;   // Offset of resource buffer at end of file
-    u32 offset_array_size; // Number of offsets in the array
-    u32 resource_size;     // Total size of resource buffer at end of the file
-}alr_header;
 
 // This structure follows the offset array. It has offsets into the resource
 // buffer which is always at the end of the file. It also has some metadata
@@ -54,7 +45,7 @@ typedef enum {
 
 typedef struct {
     u32 flags;    // Unknown, always 01 00 04 00 so far
-    u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.resource_offset)
+    u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.texbuf_offset)
     u32 pad;      // Always 0 (so far)
     u8 unknown;   // Usually 0x29
     u8 pixel_format;
@@ -173,6 +164,6 @@ typedef struct {
 
 typedef struct {
     u32 id;
-    u32 size;
+    s32 size;
 }chunk_generic;
 

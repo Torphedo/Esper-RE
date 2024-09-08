@@ -29,14 +29,15 @@ alr_interface split_interface = {
         split_generic_chunk,
         split_generic_chunk,
         split_generic_chunk,
+        NULL, // 0x11 chunks aren't passed to us
         split_generic_chunk,
         split_generic_chunk,
         split_generic_chunk,
-        split_generic_chunk,
-        split_generic_chunk,
+        NULL, // 0x15 chunks aren't passed to us
         split_generic_chunk
     },
 
+    // TODO: Write resource header handler
     .tex_handler = split_resource
 };
 

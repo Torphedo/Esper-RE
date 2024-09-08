@@ -8,6 +8,7 @@
 // Chunk size & ID, then the chunk data, then the offset array index this chunk
 // is located in. (idx is used for split function)
 typedef void (*chunk_handler)(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx);
+typedef void (*res_handler)(resource_layout_header chunk, resource_entry* entries);
 typedef void (*buffer_handler)(void* ctx, u8* buf, u32 size, u32 idx);
 
 typedef enum {
@@ -20,6 +21,7 @@ typedef enum {
 // should store some state for later.
 typedef struct {
     chunk_handler chunk_handlers[ALR_MAX_CHUNK_ID + 1];
+    res_handler resheader_handler;
     buffer_handler tex_handler;
     char* filename;
 }alr_interface;
@@ -29,10 +31,7 @@ typedef struct {
 // the input data. The ALR is written to the output file with any modifications
 // made by callbacks. This allows callbacks to easily edit individual buffers
 // of an ALR without handling the output themselves.
-bool alr_edit(char* alr_filename, char* out_filename, flags options, alr_interface handlers);
-
-// Sends chunk data to callbacks via the provided interface.
-bool alr_parse(char* alr_filename, flags options, alr_interface handlers);
+bool alr_edit(flags options, alr_interface handlers);
 
 // Stub interface that does nothing, for info-only mode that produces no output
 static const alr_interface stub_interface = {0};

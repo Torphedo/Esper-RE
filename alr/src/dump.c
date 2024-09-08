@@ -96,9 +96,9 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08X\n", total_image_pixels);
 }
 
-void res_layout(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
-    entries = (resource_entry*)(chunk_buf + sizeof(u32));
-    res_entry_count = *(u32*)chunk_buf;
+void res_layout(resource_layout_header chunk, resource_entry* entries_ptr) {
+    entries = entries_ptr;
+    res_entry_count = chunk.array_size;
 }
 
 void stream_dump(chunk_generic chunk, u8* chunk_buf) {
@@ -155,13 +155,8 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
     snprintf(filename, sizeof(filename), "textures/%s_%d.dds", path, idx);
     path[dot_idx] = '.';
 
-    // Make the directory if it doesn't exist.
-    if (!dir_exists("textures")) {
-        system("mkdir textures");
-    }
-
-    u32 resolution = 1 << entries[idx].resolution_pwr;
-    u8 format = entries[idx].pixel_format;
+    const u32 resolution = 1 << entries[idx].resolution_pwr;
+    const u8 format = entries[idx].pixel_format;
     texture_info tex = {
         .width = resolution,
         .height = resolution,
@@ -193,16 +188,16 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
         tex.compressed = true;
         break;
     }
-    LOG_MSG(info, "texture %02d is 0x%05X bytes, %3dX%-3d", idx, size, resolution, resolution);
+    LOG_MSG(info, "texture %02d is 0x%05X bytes, %3dx%-3d", idx, size, resolution, resolution);
     printf(", format 0b%08b (%d bpp)\n", format, tex.bits_per_pixel);
 
     if (entries[idx].unknown == TEXTURE_CUBEMAP) {
         tex.cubemap = true;
     }
 
-    u32 pixel_count = pixel_count_max_mips(tex.width, tex.height);
-    float bytes_per_pixel = (float)tex.bits_per_pixel / 8.0f;
-    u32 apparent_size = pixel_count * bytes_per_pixel; // Size it ought to be, based on the info we have
+    const u32 pixel_count = pixel_count_max_mips(tex.width, tex.height);
+    const float bytes_per_pixel = (float)tex.bits_per_pixel / 8.0f;
+    const u32 apparent_size = pixel_count * bytes_per_pixel; // Size it ought to be, based on the info we have
     // Disable mipmaps and give a debug message when our size guessing is way
     // off. Reduces the chance of a DDS file that fails to load
     if (apparent_size > tex.size_override) {
@@ -212,9 +207,16 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
         tex.mipmap_count = entries[idx].resolution_pwr + 1;
     }
 
-    if (apparent_size * 2 < tex.size_override && !tex.cubemap) {
+    // Cubemaps are stored as 6 textures each aligned to 0x100 bytes, so a
+    // texture that's near that size is likely to be a cubemap.
+    const s32 diff_from_cubemap_size = (apparent_size * 6) - tex.size_override;
+    const bool probably_cubemap = abs(diff_from_cubemap_size) < 0x600;
+    if (probably_cubemap) {
+        LOG_MSG(info, "Texture is probably a cubemap!\n");
+    }
+    else if (apparent_size * 2 < tex.size_override) {
         // Buffer is more than double what should be needed...
-        LOG_MSG(warning, "Way more space than needed, texture might be a cubemap.\n");
+        LOG_MSG(warning, "Size estimation is at least 2x too small, these texture dimensions are wrong\n");
     }
     // LOG_MSG(debug, "unknown = 0x%hX, ", entries[idx].unknown);
     // printf("unknown2 = 0x%hX, ", entries[idx].unknown2);
@@ -224,6 +226,11 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
 }
 
 void process_texture(void* ctx, u8* buf, u32 size, u32 idx) {
+    // Make the directory if it doesn't exist.
+    if (!dir_exists("textures")) {
+        system("mkdir textures");
+    }
+
     if (found_texture_meta && idx <= texture_meta_count) {
         // Try to pull data intelligently where possible
         texture_from_meta(buf, size, idx);
@@ -232,4 +239,3 @@ void process_texture(void* ctx, u8* buf, u32 size, u32 idx) {
         texture_brute((char*)ctx, buf, size, idx);
     }
 }
-

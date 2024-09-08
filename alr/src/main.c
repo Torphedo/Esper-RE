@@ -98,7 +98,6 @@ int main(int argc, char* argv[]) {
                 LOG_MSG(error, "No input file provided.\n");
                 return 1;
             }
-            return !(alr_edit(options.input_path, options.output_path, options, replace_interface));
             break;
     }
 
@@ -110,6 +109,6 @@ int main(int argc, char* argv[]) {
         LOG_MSG(error, "No ALR to operate on, exiting\n");
         return 1;
     }
-    return !(alr_parse(options.input_path, options, interface));
+    return !(alr_edit(options, interface));
 }
 

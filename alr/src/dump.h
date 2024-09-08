@@ -18,7 +18,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx);
 
 // 0x15 (Resource/texture buffer layout) chunk handling. Saves information to
 // dump.c's internal state.
-void res_layout(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx);
+void res_layout(resource_layout_header chunk, resource_entry* entries_ptr);
 
 // This is run for each resource/texture buffer and dumps it to a DDS file as
 // best it can. Metadata from 0x10 chunks will be used if available, and
@@ -30,9 +30,9 @@ const alr_interface dump_interface = {
     .chunk_handlers = {
         [0x3]  = chunk_0x3,
         [0x10] = chunk_texture,
-        [0x15] = res_layout,
     },
 
-    .tex_handler = process_texture
+    .resheader_handler = res_layout,
+    .tex_handler = process_texture,
 };
 
