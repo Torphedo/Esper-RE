@@ -1,4 +1,5 @@
 #include <common/int.h>
+#include <formats/pd_common.h>
 
 // These structures could be out of date. If you use this file as reference for
 // your own code, double-check them against the latest information at:
@@ -37,12 +38,8 @@ typedef enum {
     IDX_PUSH = 0x09,
 }ssb_opcode;
 
-enum {
-    SSB_ENCODED_CHAR_COUNT = 12,
-};
-
 typedef struct {
-    char data[SSB_ENCODED_CHAR_COUNT];
+    char data[PD_ENCODED_CHAR_COUNT];
     char null_terminator;
 }decoded_text;
 
@@ -53,4 +50,3 @@ typedef struct {
 }ssb_functable_entry;
 
 decoded_text decode_text(ssb_functable_entry val);
-

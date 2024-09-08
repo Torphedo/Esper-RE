@@ -5,6 +5,7 @@
 #include <common/logging.h>
 #include <common/int.h>
 #include <common/filesystem.h>
+#include <formats/pd_common.h>
 
 #include "alr_interface.h"
 #include "images.h"
@@ -148,11 +149,17 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
             dot_idx = i;
         }
     }
+
+    char text[PD_ENCODED_CHAR_COUNT + 1] = {0};
+    decode_single32(text, entries[idx].text1);
+    decode_single32(&text[6], entries[idx].text2);
+    LOG_MSG(debug, "Texture name: %s\n", text);
+
     // We temporarily replace the '.' with a null terminator so it's not in the
     // output filename.
     path[dot_idx] = 0x00;
     char filename[256] = { 0 };
-    snprintf(filename, sizeof(filename), "textures/%s_%d.dds", path, idx);
+    snprintf(filename, sizeof(filename), "textures/%s.dds", text);
     path[dot_idx] = '.';
 
     const u32 resolution = 1 << entries[idx].resolution_pwr;
@@ -172,10 +179,23 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
     case FORMAT_RGBA8:
         tex.bits_per_pixel = 32;
         break;
+    case FORMAT_DXT1:
+        // BC1 texture (8 bytes per block, 0.5 bytes per pixel)
+        tex.bits_per_pixel = 4;
+        tex.compressed_fmt = DXT1;
+        tex.compressed = true;
+        break;
+    case FORMAT_DXT3:
+        // BC1 texture (8 bytes per block, 0.5 bytes per pixel)
+        tex.bits_per_pixel = 8;
+        tex.compressed_fmt = DXT3;
+        tex.compressed = true;
+        break;
     case FORMAT_DXT5:
         // Block-compressed dual-channel texture at 16 bytes per block
         // (1 byte per pixel)
         tex.bits_per_pixel = 8;
+        tex.compressed_fmt = DXT5;
         tex.compressed = true;
         break;
     case FORMAT_A8:
@@ -183,9 +203,10 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
         tex.compressed = false;
         break;
     default:
-        // BC1 texture.
-        tex.bits_per_pixel = 4;
-        tex.compressed = true;
+        // Assume RGBA8 if no format is found
+        LOG_MSG(warning, "Unknown texture format, assuming RGBA8!\n");
+        tex.compressed = false;
+        tex.bits_per_pixel = 32;
         break;
     }
     LOG_MSG(info, "texture %02d is 0x%05X bytes, %3dx%-3d", idx, size, resolution, resolution);

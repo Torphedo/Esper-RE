@@ -71,7 +71,8 @@ typedef struct {
 // https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format
 typedef enum {
     DXGI_FORMAT_BC1_UNORM_SRGB = 71,
-    DXGI_FORMAT_BC3_UNORM_SRGB = 78
+    DXGI_FORMAT_BC2_UNORM_SRGB = 75,
+    DXGI_FORMAT_BC3_UNORM_SRGB = 78,
 }dxgi_formats;
 
 typedef enum {
@@ -167,11 +168,15 @@ void write_texture(texture_info texture) {
         case 8:
             if (texture.compressed) {
                 header.pixel_format.flags = DDPF_FOURCC;
-                header.pixel_format.format_char_code = DDS_DXT5;
+                if (texture.compressed_fmt == DXT3) {
+                    header.pixel_format.format_char_code = DDS_DXT3;
+                } else {
+                    header.pixel_format.format_char_code = DDS_DXT5;
+                }
                 header.flags |= DDSD_LINEARSIZE;
                 header.flags ^= DDSD_PITCH;
 
-                u32 pitch = dxt_pitch(texture.height, texture.width, DXT5_BLOCK_SIZE);
+                const u32 pitch = dxt_pitch(texture.height, texture.width, DXT5_BLOCK_SIZE);
                 header.pitch_or_linear_size = pitch;
             }
             else {
@@ -232,11 +237,16 @@ void write_texture(texture_info texture) {
         };
 
         // Write appropriate texture format
-        if (texture.bits_per_pixel == 4) {
+        switch (texture.compressed_fmt) {
+        case DXT1:
             dx10_header.dxgi_format = DXGI_FORMAT_BC1_UNORM_SRGB;
-        }
-        else {
+            break;
+        case DXT3:
             dx10_header.dxgi_format = DXGI_FORMAT_BC3_UNORM_SRGB;
+            break;
+        case DXT5:
+            dx10_header.dxgi_format = DXGI_FORMAT_BC2_UNORM_SRGB;
+            break;
         }
         fwrite(&dx10_header, sizeof(dx10_header), 1, tex_out);
     }

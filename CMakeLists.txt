@@ -18,6 +18,7 @@ add_executable(alr
     "common/arguments.c"
     "common/logging.c"
     "common/filesystem.c"
+	"formats/pd_common.c"
 )
 
 add_executable(deck_reader
@@ -30,6 +31,7 @@ add_executable(ssb
     "common/arguments.c"
     "ssb/src/main.c"
     "ssb/src/ssb.c"
+	"formats/pd_common.c"
 )
 
 include_directories(${Esper-RE_SOURCE_DIR})

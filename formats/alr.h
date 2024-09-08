@@ -32,6 +32,8 @@ typedef struct {
 typedef enum {
     FORMAT_MONO_16 = 0b10000010,
     FORMAT_RGBA8 = 0b00000110,
+    FORMAT_DXT1 = 0b00001100,
+    FORMAT_DXT3 = 0b00001110,
     FORMAT_DXT5 = 0b00001111,
     FORMAT_A8 = 0b10000000
 }alr_pixel_format;
@@ -54,10 +56,8 @@ typedef struct {
     // maximum possible mip count, so 1 << [mip count] == height/width.
     u8 resolution_pwr;
     u32 unknown3; // Often 0
-    // Same in all variations of the same model. Can be used to identify
-    // specific ALRs in memory.
-    u32 ID;
-    u32 pad2;
+    u32 text1;
+    u32 text2;
 }resource_entry;
 
 typedef struct {

@@ -3,6 +3,13 @@
 
 #include <common/int.h>
 
+typedef enum {
+    DXT1, // BC1
+    DXT3, // BC2
+    DXT5, // BC3
+    DXT_ENUM_MAX,
+}img_fmt_compressed;
+
 typedef struct {
     char* filename;
     char* image_data;
@@ -12,6 +19,8 @@ typedef struct {
     u16 height;
     u16 mipmap_count;
     bool cubemap;
+    img_fmt_compressed compressed_fmt;
+
     // When we know the size but our resolution or mip count might be wrong,
     // this prevents EOF errors in other software.
     u32 size_override;
