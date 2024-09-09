@@ -191,9 +191,13 @@ void create_alr_tex_folder(char* alr_path) {
     }
 
     char filename[256] = {0};
-    snprintf(filename, sizeof(filename), "textures/%s", alr_path);
+    char dirsep = '/';
+#ifdef _WIN32
+    dirsep = '\\';
+#endif
+    snprintf(filename, sizeof(filename), "textures%c%s", dirsep, alr_path);
     if (!dir_exists(filename)) {
-        snprintf(filename, sizeof(filename), "mkdir textures/%s", alr_path);
+        snprintf(filename, sizeof(filename), "mkdir textures%c%s", dirsep, alr_path);
         system(filename);
     }
 

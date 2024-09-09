@@ -234,7 +234,7 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
     write_texture(tex);
 }
 
-void process_texture(void* ctx, u8* buf, u32 size, u32 idx) {
+void process_texture(void* ctx, u8* buf, u32 size, char* name, u32 idx) {
     char* path = (char*)ctx;
     create_alr_tex_folder(path);
     // Find the position of the '.' in the filename.
