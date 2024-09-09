@@ -11,3 +11,11 @@ typedef int16_t s16;
 typedef uint8_t u8;
 typedef int8_t s8;
 
+// Round a number up to any boundary
+#define ALIGN_UP(x, bound) (x + (bound - (x % bound)))
+
+// Return the larger of 2 values
+#define MAX(a, b) ((a > b) ? a : b)
+
+// Return the smaller of 2 values
+#define MIN(a, b) ((a < b) ? a : b)

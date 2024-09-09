@@ -249,6 +249,19 @@ void write_texture(texture_info texture) {
             break;
         }
         fwrite(&dx10_header, sizeof(dx10_header), 1, tex_out);
+
+        // For cubemaps we need to write the image data in a special way to skip
+        // over the padding they inserted into the file
+        u32 pos = 0;
+        const u32 pixel_count = pixel_count_max_mips(texture.width, texture.height, true);
+        // This is the rough size of the first cubemap texture. This is like
+        // linear size, but includes mipmaps
+        const u32 apparent_size = pixel_count * bytes_per_pixel;
+        for (u8 i = 0; i < 6; i++) {
+            fwrite(&texture.image_data[pos], apparent_size, 1, tex_out);
+            pos += apparent_size;
+            pos = ALIGN_UP(pos, 0x100); // Round up to skip padding
+        }
     }
 
     // TODO: Don't write padding data for texture arrays in cubemaps. The
@@ -259,22 +272,36 @@ void write_texture(texture_info texture) {
     fclose(tex_out);
 }
 
-u64 pixel_count_max_mips(u32 width, u32 height) {
+u64 pixel_count_max_mips(u32 width, u32 height, bool compressed) {
     u64 count = width * height;
 
     while (width % 2 == 0) {
         width /= 2;
         height /= 2;
-        count += width * height;
+        u32 res = width * height;
+        if (compressed) {
+            // Don't include 1x1 as a mipmap, it breaks cubemaps
+            if (width < 2) {
+                break;
+            }
+            // Compressed textures can only go as low as a 4x4 mipmap
+            res = MAX(res, 16);
+        }
+        count += res;
     }
     return count;
 }
 
-u64 full_pixel_count(u32 width, u32 height, u32 mipmap_count) {
+u64 full_pixel_count(u32 width, u32 height, u32 mipmap_count, bool compressed) {
     u64 pixel_count = width * height;
     for (u32 i = 0; i < mipmap_count - 1; i++) {
         width /= 2;
         height /= 2;
+        u32 res = width * height;
+        if (compressed) {
+            // Compressed textures can only go as low as a 4x4 mipmap
+            res = MAX(res, 16);
+        }
         pixel_count += (width * height);
     }
     return pixel_count;

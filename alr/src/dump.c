@@ -73,7 +73,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
         // another allocation.
         texture_meta[i].filename = (char*)&names[i].name;
 
-        u32 total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count);
+        u32 total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count, false);
 
         LOG_MSG(info, "Surface %2d %-16s: %2d mip(s),", i, &names[i].name, surfaces[i].mipmap_count - 1);
         printf(" 0x%05X pixels, %4dx%-4d (", total_pixel_count, surfaces[i].width, surfaces[i].height);
@@ -131,7 +131,7 @@ void texture_from_meta(u8* buf, u32 size, u32 idx) {
     texture_info* tex = &texture_meta[idx];
     tex->image_data = (char*)buf;
     tex->size_override = size;
-    u32 total_pixels = full_pixel_count(tex->width, tex->height, tex->mipmap_count + 1);
+    u32 total_pixels = full_pixel_count(tex->width, tex->height, tex->mipmap_count + 1, tex->compressed);
 
     // These must be cast to floats to account for textures with < 8 bpp
     tex->bits_per_pixel = ((float)size / (float)total_pixels) * 8;
@@ -216,7 +216,7 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
         tex.cubemap = true;
     }
 
-    const u32 pixel_count = pixel_count_max_mips(tex.width, tex.height);
+    const u32 pixel_count = pixel_count_max_mips(tex.width, tex.height, tex.compressed);
     const float bytes_per_pixel = (float)tex.bits_per_pixel / 8.0f;
     const u32 apparent_size = pixel_count * bytes_per_pixel; // Size it ought to be, based on the info we have
     // Disable mipmaps and give a debug message when our size guessing is way
