@@ -39,7 +39,9 @@ bool alr_edit(flags options, alr_interface handlers) {
         return false;
     }
 
-    LOG_MSG(debug, "Starting ALR edit with output file %s\n", options.output_path);
+    if (alr_out != NULL) {
+        LOG_MSG(debug, "Starting ALR edit with output file %s\n", options.output_path);
+    }
     LOG_MSG(debug, "Loading %s (%d bytes)\n", options.input_path, filesize(options.input_path));
     fix_alr_name(options.input_path);
 
