@@ -23,7 +23,7 @@ void res_layout(resource_layout_header chunk, resource_entry* entries_ptr);
 // This is run for each resource/texture buffer and dumps it to a DDS file as
 // best it can. Metadata from 0x10 chunks will be used if available, and
 // estimates from 0x15 chunks will be used as a fallback.
-void process_texture(void* ctx, u8* buf, u32 size, u32 idx);
+void process_texture(void* ctx, u8* buf, u32 size, char* name, u32 idx);
 
 // Interface to call parse_alr() with to trigger texture dumping.
 const alr_interface dump_interface = {

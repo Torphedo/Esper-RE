@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
                 LOG_MSG(error, "No input file provided.\n");
                 return 1;
             }
+            interface = replace_interface;
             break;
     }
 

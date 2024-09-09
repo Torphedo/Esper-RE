@@ -6,6 +6,7 @@
 #include <common/logging.h>
 #include <common/int.h>
 #include <common/filesystem.h>
+#include <formats/pd_common.h>
 
 #include "alr_interface.h"
 
@@ -141,9 +142,13 @@ bool alr_edit(flags options, alr_interface handlers) {
         }
         u8* cur_tex = tex_buf + entries[i].data_ptr;
 
+        char text[PD_ENCODED_CHAR_COUNT + 1] = {0};
+        decode_single32(text, entries[i].text1);
+        decode_single32(&text[6], entries[i].text2);
+
         // Call handler to maybe modify this texture
         if (handlers.tex_handler != NULL) {
-            (handlers.tex_handler)(options.input_path, cur_tex, tex_size, i);
+            (handlers.tex_handler)(options.input_path, cur_tex, tex_size, text, i);
         }
 
         // Write (maybe modified) texture to ouptut file
@@ -166,4 +171,31 @@ bool alr_edit(flags options, alr_interface handlers) {
     }
 
     return true;
+}
+
+void create_alr_tex_folder(char* alr_path) {
+    // Find the position of the '.' in the filename.
+    u32 dot_idx = 0;
+    for (u32 i = strlen(alr_path); i > 0; i--) {
+        if (alr_path[i] == '.') {
+            dot_idx = i;
+        }
+    }
+    // We temporarily replace the '.' with a null terminator so it's not in the
+    // output filename.
+    alr_path[dot_idx] = 0x00;
+
+    // Make the directory if it doesn't exist.
+    if (!dir_exists("textures")) {
+        system("mkdir textures");
+    }
+
+    char filename[256] = {0};
+    snprintf(filename, sizeof(filename), "textures/%s", alr_path);
+    if (!dir_exists(filename)) {
+        snprintf(filename, sizeof(filename), "mkdir textures/%s", alr_path);
+        system(filename);
+    }
+
+    alr_path[dot_idx] = '.'; // Put the file extension back
 }

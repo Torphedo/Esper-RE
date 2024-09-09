@@ -9,7 +9,7 @@
 // is located in. (idx is used for split function)
 typedef void (*chunk_handler)(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx);
 typedef void (*res_handler)(resource_layout_header chunk, resource_entry* entries);
-typedef void (*buffer_handler)(void* ctx, u8* buf, u32 size, u32 idx);
+typedef void (*buffer_handler)(void* ctx, u8* buf, u32 size, char* name, u32 idx);
 
 typedef enum {
     ALR_MAX_CHUNK_ID = 0x16
@@ -32,6 +32,8 @@ typedef struct {
 // made by callbacks. This allows callbacks to easily edit individual buffers
 // of an ALR without handling the output themselves.
 bool alr_edit(flags options, alr_interface handlers);
+
+void create_alr_tex_folder(char* alr_path);
 
 // Stub interface that does nothing, for info-only mode that produces no output
 static const alr_interface stub_interface = {0};

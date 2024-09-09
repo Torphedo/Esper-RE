@@ -264,10 +264,6 @@ void write_texture(texture_info texture) {
         }
     }
 
-    // TODO: Don't write padding data for texture arrays in cubemaps. The
-    // padding makes cubemaps after the first be offset by a few blocks,
-    // causing corruption which gets worse each time. Texture arrays are
-    // aligned to 0x100.
     fwrite(texture.image_data, texture_size, 1, tex_out);
     fclose(tex_out);
 }

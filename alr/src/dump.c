@@ -142,25 +142,13 @@ void texture_from_meta(u8* buf, u32 size, u32 idx) {
 // Try to deduce texture metadata by brute force using the limited data in the
 // resource header (0x15 chunk)
 void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
-    // Find the position of the '.' in the filename.
-    u32 dot_idx = 0;
-    for (u32 i = strlen(path); i > 0; i--) {
-        if (path[i] == '.') {
-            dot_idx = i;
-        }
-    }
-
     char text[PD_ENCODED_CHAR_COUNT + 1] = {0};
     decode_single32(text, entries[idx].text1);
     decode_single32(&text[6], entries[idx].text2);
     LOG_MSG(debug, "Texture name: %s\n", text);
 
-    // We temporarily replace the '.' with a null terminator so it's not in the
-    // output filename.
-    path[dot_idx] = 0x00;
     char filename[256] = { 0 };
-    snprintf(filename, sizeof(filename), "textures/%s.dds", text);
-    path[dot_idx] = '.';
+    snprintf(filename, sizeof(filename), "textures/%s/%s.dds", path, text);
 
     const u32 resolution = 1 << entries[idx].resolution_pwr;
     const u8 format = entries[idx].pixel_format;
@@ -247,16 +235,26 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
 }
 
 void process_texture(void* ctx, u8* buf, u32 size, u32 idx) {
-    // Make the directory if it doesn't exist.
-    if (!dir_exists("textures")) {
-        system("mkdir textures");
+    char* path = (char*)ctx;
+    create_alr_tex_folder(path);
+    // Find the position of the '.' in the filename.
+    u32 dot_idx = 0;
+    for (u32 i = strlen(path); i > 0; i--) {
+        if (path[i] == '.') {
+            dot_idx = i;
+        }
     }
+    // We temporarily replace the '.' with a null terminator so it's not in the
+    // output filename.
+    path[dot_idx] = 0x00;
 
     if (found_texture_meta && idx <= texture_meta_count) {
         // Try to pull data intelligently where possible
         texture_from_meta(buf, size, idx);
     }
     if (ctx != NULL) {
-        texture_brute((char*)ctx, buf, size, idx);
+        texture_brute((char*)path, buf, size, idx);
     }
+
+    path[dot_idx] = '.'; // Put the file extension back
 }
