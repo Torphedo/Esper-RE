@@ -43,7 +43,6 @@ bool alr_edit(flags options, alr_interface handlers) {
         LOG_MSG(debug, "Starting ALR edit with output file %s\n", options.output_path);
     }
     LOG_MSG(debug, "Loading %s (%d bytes)\n", options.input_path, filesize(options.input_path));
-    fix_alr_name(options.input_path);
 
     // Read header
     chunk_layout header = {0};
@@ -51,13 +50,21 @@ bool alr_edit(flags options, alr_interface handlers) {
     if (header.chunk_size <= sizeof(chunk_generic) || header.id != 0x11) {
         return false;
     }
+    if (header.texbuf_size == 0) {
+        // Some ALRs don't set this field... not sure why.
+        header.texbuf_size = filesize(options.input_path) - header.texbuf_offset;
+    }
     fseek(alr, header.chunk_size, SEEK_SET); // Jump to next chunk
+    fix_alr_name(options.input_path);
 
     // Read texture header
     resource_layout_header resheader = {0};
     fread(&resheader, sizeof(resheader), 1, alr);
     if (resheader.chunk_size <= sizeof(chunk_generic) || resheader.id != 0x15) {
         return false;
+    }
+    if (resheader.array_size == 0 && resheader.chunk_size > sizeof(resheader)) {
+        resheader.array_size = (resheader.chunk_size - sizeof(resheader)) / sizeof(resource_entry);
     }
     const u32 entries_size = resheader.array_size * sizeof(resource_entry);
 
@@ -67,9 +74,11 @@ bool alr_edit(flags options, alr_interface handlers) {
         LOG_MSG(error, "Failed to alloc %d bytes for texture entries\n", entries_size);
         return false;
     }
-    fread(entries, entries_size, 1, alr);
-    if (handlers.resheader_handler != NULL) {
-        (handlers.resheader_handler)(resheader, entries);
+    if (resheader.array_size > 0) {
+        fread(entries, entries_size, 1, alr);
+        if (handlers.resheader_handler != NULL) {
+            (handlers.resheader_handler)(resheader, entries);
+        }
     }
 
     // Start with a fake 0x0 chunk
@@ -78,7 +87,9 @@ bool alr_edit(flags options, alr_interface handlers) {
         .size = 8
     };
     while (chunk.size > 0) {
-        fread(&chunk, sizeof(chunk), 1, alr);
+        if (fread(&chunk, sizeof(chunk), 1, alr) == 0) {
+            break; // EOF reached
+        }
 
         // Since size includes the chunk size, a size any less than that will
         // try to read zero (or negative) bytes which doesn't make any sense.
@@ -90,7 +101,7 @@ bool alr_edit(flags options, alr_interface handlers) {
 
         // LOG_MSG(debug, "Got chunk id %d with size 0x%X @ 0x%X\n", chunk.id, chunk.size, ftell(alr) - sizeof(chunk));
         u8* chunk_buf = calloc(1, chunk.size);
-        if (chunk_buf == NULL) {
+        if (chunk_buf == NULL || chunk.size == 0) {
             // We probably got off-track and read the wrong value as the size
             // somehow.
             const long pos = ftell(alr);
@@ -98,7 +109,9 @@ bool alr_edit(flags options, alr_interface handlers) {
             break;
         }
 
-        fread(chunk_buf, chunk.size - sizeof(chunk), 1, alr);
+        if (fread(chunk_buf, chunk.size - sizeof(chunk), 1, alr) == 0) {
+            break; // EOF reached
+        }
 
         if (chunk.id > ALR_MAX_CHUNK_ID) {
             LOG_MSG(error, "Invalid chunk ID 0x%X at 0x%X\n", chunk.id, ftell(alr));
@@ -120,6 +133,17 @@ bool alr_edit(flags options, alr_interface handlers) {
     }
 
     // Read in the texture buffer
+    if (header.texbuf_size == 0) {
+        // Can't forget to free :P
+        if (resheader.array_size > 0) {
+            free(entries);
+        }
+        if (alr_out != NULL) {
+            fclose(alr_out);
+        }
+
+        return true; // Silently exit
+    }
     u8* tex_buf = calloc(1, header.texbuf_size);
     if (tex_buf == NULL) {
         LOG_MSG(error, "Failed to allocate %d bytes for texture buffer.\n", header.texbuf_size);
@@ -165,7 +189,9 @@ bool alr_edit(flags options, alr_interface handlers) {
     }
 
     // Can't forget to free :P
-    free(entries);
+    if (resheader.array_size > 0) {
+        free(entries);
+    }
     free(tex_buf);
 
     if (alr_out != NULL) {

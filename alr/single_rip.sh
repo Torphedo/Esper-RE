@@ -12,6 +12,9 @@ cd $filename
 # Rip textures.
 pwd
 ./alr --dump "../$1"
+if [ $? -eq 1 ]; then
+    echo "Failed on $1" >> ../crash_reports.txt
+fi
 
 # Delete temp copy of alr binary
 rm alr

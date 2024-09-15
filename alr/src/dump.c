@@ -51,6 +51,17 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
     texture_metadata_header* tex_header = (texture_metadata_header*)chunk_buf;
     found_texture_meta = true;
     texture_meta_count = tex_header->surface_count;
+    if (abs((s32)tex_header->texture_count - (s32)header.size) < 100) {
+        // Some ALRs (like boss03b & boss01) replace the texture count field
+        // with a size in bytes fairly close to the chunk size. I don't
+        // understand why, but we can try to guess the correct number using the
+        // other data we have.
+
+        // Size minus space used for surfaces
+        const u32 texentries_size = header.size - 0x10 - (tex_header->surface_count * (sizeof(surface_info) + sizeof(tex_name)));
+        tex_header->texture_count = texentries_size / sizeof(tex_info);
+        // tex_header->texture_count /= sizeof(tex_info);
+    }
 
     LOG_MSG(info, "Surface count: %d Image count: %d\n\n", tex_header->surface_count, tex_header->texture_count);
 
