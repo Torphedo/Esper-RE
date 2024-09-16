@@ -4,7 +4,7 @@
 
 #include <common/logging.h>
 #include <common/int.h>
-#include <common/filesystem.h>
+#include <common/file.h>
 #include <formats/pd_common.h>
 
 #include "alr_interface.h"
@@ -22,7 +22,7 @@ void chunk_0x3(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
     const u32 transform_count = (chunk.size - sizeof(chunk_transform)) / sizeof(mat4);
     const chunk_transform* transform_header = (chunk_transform*)chunk_buf;
     const mat4* transforms = (mat4*)(chunk_buf + sizeof(chunk_transform));
-    if (!dir_exists("resources")) {
+    if (!path_is_dir("resources")) {
         system("mkdir resources");
     }
     FILE* out = fopen("resources/transforms.txt", "ab");
@@ -126,7 +126,7 @@ void stream_dump(chunk_generic chunk, u8* chunk_buf) {
     sprintf(name, "streams/0x%02X.bin", chunk.id);
 
     // Make the directory if it doesn't exist.
-    if (!dir_exists("streams")) {
+    if (!path_is_dir("streams")) {
         system("mkdir streams");
     }
 

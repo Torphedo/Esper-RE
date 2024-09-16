@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdbool.h>
 
+#include <common/int.h>
 #include <common/logging.h>
 #include <common/arguments.h>
 
@@ -26,7 +28,7 @@ int main(int argc, char* argv[]) {
     const flags options = parse_arguments(argc, argv, args, 3);
 
     if (options.silent) {
-        disable_logging();
+        logging_enabled = false;
     }
 
     switch (options.mode) {

@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <common/filesystem.h>
+#include <common/file.h>
 #include <common/logging.h>
 
 #include "alr_interface.h"
 
 void split_generic_chunk(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
-    if (!dir_exists("resources")) {
+    if (!path_is_dir("resources")) {
         system("mkdir resources");
     }
 
@@ -27,7 +27,7 @@ void split_generic_chunk(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx)
 }
 
 void split_resource(void* ctx, u8* buf, u32 size, u32 idx) {
-    if (!dir_exists("resources")) {
+    if (!path_is_dir("resources")) {
         system("mkdir resources");
     }
 

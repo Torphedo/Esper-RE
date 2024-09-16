@@ -1,10 +1,11 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <common/logging.h>
 #include <common/int.h>
-#include <common/filesystem.h>
+#include <common/file.h>
 #include <formats/pd_common.h>
 
 #include "alr_interface.h"
@@ -18,6 +19,11 @@ u32 u32_min(u32 x, u32 y) {
     }
     return y;
 }
+
+bool is_dirsep(char c) {
+    return (c == '/' || c == '\\');
+}
+
 
 void replace_texture(void* ctx, u8* buf, u32 size, char* name, u32 idx) {
     char* path = (char*)ctx;
@@ -41,7 +47,7 @@ void replace_texture(void* ctx, u8* buf, u32 size, char* name, u32 idx) {
 
     // Make the directory if it doesn't exist.
     if (file_exists(filename)) {
-        u32 tex_size = filesize(filename);
+        u32 tex_size = file_size(filename);
 
         // Load the mod texture data
         u8* mod_dds = file_load(filename);

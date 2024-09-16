@@ -5,7 +5,7 @@
 
 #include <common/logging.h>
 #include <common/int.h>
-#include <common/filesystem.h>
+#include <common/file.h>
 #include <formats/pd_common.h>
 
 #include "alr_interface.h"
@@ -42,7 +42,7 @@ bool alr_edit(flags options, alr_interface handlers) {
     if (alr_out != NULL) {
         LOG_MSG(debug, "Starting ALR edit with output file %s\n", options.output_path);
     }
-    LOG_MSG(debug, "Loading %s (%d bytes)\n", options.input_path, filesize(options.input_path));
+    LOG_MSG(debug, "Loading %s (%d bytes)\n", options.input_path, file_size(options.input_path));
 
     // Read header
     chunk_layout header = {0};
@@ -52,7 +52,7 @@ bool alr_edit(flags options, alr_interface handlers) {
     }
     if (header.texbuf_size == 0) {
         // Some ALRs don't set this field... not sure why.
-        header.texbuf_size = filesize(options.input_path) - header.texbuf_offset;
+        header.texbuf_size = file_size(options.input_path) - header.texbuf_offset;
     }
     fseek(alr, header.chunk_size, SEEK_SET); // Jump to next chunk
     fix_alr_name(options.input_path);
@@ -214,7 +214,7 @@ void create_alr_tex_folder(char* alr_path) {
     alr_path[dot_idx] = 0x00;
 
     // Make the directory if it doesn't exist.
-    if (!dir_exists("textures")) {
+    if (!path_is_dir("textures")) {
         system("mkdir textures");
     }
 
@@ -224,7 +224,7 @@ void create_alr_tex_folder(char* alr_path) {
     dirsep = '\\';
 #endif
     snprintf(filename, sizeof(filename), "textures%c%s", dirsep, alr_path);
-    if (!dir_exists(filename)) {
+    if (!path_is_dir(filename)) {
         snprintf(filename, sizeof(filename), "mkdir textures%c%s", dirsep, alr_path);
         system(filename);
     }

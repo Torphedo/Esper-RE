@@ -5,7 +5,7 @@
 // C structures.
 
 #include <common/int.h>
-#include <common/filesystem.h>
+#include <common/file.h>
 
 enum {
     STX_MAGIC = MAGIC('S', 'T', 'H', 'D'),
