@@ -92,7 +92,7 @@ typedef struct {
     u32 index;
     unsigned char filename[32];
     u32 padding[2]; // Can't be a u64 because of struct padding
-    float unknown[2]; // This is often 1.0f
+    float atlas_texcoords[2]; // This is often 1.0f
     u32 width;
     u32 height;
 }tex_info;

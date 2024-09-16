@@ -102,7 +102,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
 
     u32 total_image_pixels = 0;
     for (u32 i = 0; i < tex_header->texture_count; i++) {
-        LOG_MSG(info, "%-32s: Width %4hi, Height %4hi (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].index);
+        LOG_MSG(info, "%-32s: Width %4hi, Height %4hi, \"pad\" 0x%x, texcoord (%f,%f) (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].padding, textures[i].atlas_texcoords[0], textures[i].atlas_texcoords[1], textures[i].index);
         total_image_pixels += textures[i].width * textures[i].height;
     }
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08X\n", total_image_pixels);
@@ -146,6 +146,19 @@ void texture_from_meta(u8* buf, u32 size, u32 idx) {
 
     // These must be cast to floats to account for textures with < 8 bpp
     tex->bits_per_pixel = ((float)size / (float)total_pixels) * 8;
+    if (tex->bits_per_pixel < 8) {
+        tex->compressed = true;
+        tex->mipmap_count = 0;
+        if (tex->bits_per_pixel == 3) {
+            tex->compressed_fmt = DXT1; // Default to most common format for now
+            tex->bits_per_pixel = 4;
+        }
+        if (tex->bits_per_pixel == 6) {
+            tex->compressed_fmt = DXT5; // Default to most common format for now
+            tex->bits_per_pixel = 8;
+        }
+    }
+    LOG_MSG(info, "Texture %d @ %d bpp\n", idx, tex->bits_per_pixel);
 
     write_texture(*tex);
 }
@@ -208,16 +221,10 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
         tex.bits_per_pixel = 32;
         break;
     }
-    LOG_MSG(info, "texture %02d is 0x%05X bytes, %3dx%-3d", idx, size, resolution, resolution);
-    printf(", format 0b%08b (%d bpp)\n", format, tex.bits_per_pixel);
-
-    if (entries[idx].unknown == TEXTURE_CUBEMAP) {
-        tex.cubemap = true;
-    }
-
     const u32 pixel_count = pixel_count_max_mips(tex.width, tex.height, tex.compressed);
     const float bytes_per_pixel = (float)tex.bits_per_pixel / 8.0f;
     const u32 apparent_size = pixel_count * bytes_per_pixel; // Size it ought to be, based on the info we have
+
     // Disable mipmaps and give a debug message when our size guessing is way
     // off. Reduces the chance of a DDS file that fails to load
     if (apparent_size > tex.size_override) {
@@ -236,8 +243,20 @@ void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
     }
     else if (apparent_size * 2 < tex.size_override) {
         // Buffer is more than double what should be needed...
-        LOG_MSG(warning, "Size estimation is at least 2x too small, these texture dimensions are wrong\n");
+        LOG_MSG(warning, "Brute force texture size is definitely wrong, trying to look up correct size\n");
+        if (idx < texture_meta_count) {
+            tex.width = texture_meta[idx].width;
+            tex.mipmap_count = 0;
+        }
     }
+
+    LOG_MSG(info, "texture %02d is 0x%05X bytes, %3dx%-3d", idx, size, tex.height, tex.width);
+    printf(", format 0b%08b (%d bpp)\n", format, tex.bits_per_pixel);
+
+    if (entries[idx].unknown == TEXTURE_CUBEMAP) {
+        tex.cubemap = true;
+    }
+
     // LOG_MSG(debug, "unknown = 0x%hX, ", entries[idx].unknown);
     // printf("unknown2 = 0x%hX, ", entries[idx].unknown2);
     // printf("unknown3 = 0x%X\n", entries[idx].unknown3);
