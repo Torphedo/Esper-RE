@@ -16,6 +16,7 @@ zig-*/
 compile_commands.json
 *.zip
 alr/alr
+ssb/ssb
 
 # Files outputted from the program
 *.bin
@@ -24,4 +25,5 @@ alr/alr
 
 # Binary input files
 *.alr
+*.ssb
 

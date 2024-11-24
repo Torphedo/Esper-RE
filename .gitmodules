@@ -1,3 +1,12 @@
 [submodule "ext/bobtail"]
 	path = ext/bobtail
 	url = https://github.com/Torphedo/bobtail
+[submodule "ext/cglm"]
+	path = ext/cglm
+	url = https://github.com/recp/cglm
+[submodule "ext/imgui"]
+	path = ext/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = https://github.com/glfw/glfw
