@@ -93,7 +93,7 @@ bool polaris::do_gui(GLFWwindow* window) {
         for (size_t n = 0; n < this->chunks.size(); n++) {
             chunk_desc chunk = this->chunks.at(n);
             char buf[128];
-            sprintf(buf, "0x%x chunk @ 0x%lx [%d bytes] ##%d", chunk.id, chunk.offset, chunk.size, n);
+            sprintf(buf, "0x%02X chunk @ 0x%02lX [%d bytes] ##%lu", chunk.id, chunk.offset, chunk.size, n);
             const bool is_selected = (this->selected_chunk == n);
             if (ImGui::Selectable(buf, is_selected)) {
                 this->selected_chunk = n;
@@ -194,6 +194,9 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
         case 0x10:
             this->chunk_0x10(chunk);
             break;
+        case 0x11:
+            this->chunk_0x11(chunk);
+            break;
         case 0x15:
             this->chunk_0x15(chunk);
             break;
@@ -269,6 +272,26 @@ void polaris::chunk_0x10(chunk_desc chunk) {
 
         ImGui::EndListBox();
     }
+}
+
+void polaris::chunk_0x11(chunk_desc chunk) {
+    if (chunk.id != 0x11) {
+        return;
+    }
+
+    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    auto* layout = (chunk_layout*)vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*layout));
+    auto* offsets = (u32*)vfile_cur(vf);
+
+    ImGui::Text("Texture buffer @ 0x%X [%d bytes]", layout->texbuf_offset, layout->texbuf_size);
+    ImGui::Text("%d offsets in array:\n", layout->offset_array_size);
+
+    ImGui::BeginListBox("Offsets");
+    for (u32 i = 0; i < layout->offset_array_size; i++) {
+        ImGui::Text("0x%X", offsets[i]);
+    }
+    ImGui::EndListBox();
 }
 
 void polaris::chunk_0x15(chunk_desc chunk) {

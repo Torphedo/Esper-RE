@@ -49,6 +49,10 @@ public:
     /// @param chunk The chunk to display
     void chunk_0x10(chunk_desc chunk);
 
+    /// @brief The menu for 0x11 texture chunks.
+    /// @param chunk The chunk to display
+    void chunk_0x11(chunk_desc chunk);
+
     /// @brief The menu for 0x15 texture chunks.
     /// @param chunk The chunk to display
     void chunk_0x15(chunk_desc chunk);

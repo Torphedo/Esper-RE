@@ -11,9 +11,9 @@ typedef struct {
     u32 id;                // 0x11
     s32 chunk_size;        // Size of this chunk (includes ID & size)
     u32 flags;             // Unknown
-    u32 texbuf_offset;   // Offset of resource buffer at end of file
+    u32 texbuf_offset;     // Offset of resource buffer at end of file
     u32 offset_array_size; // Number of offsets in the array
-    u32 texbuf_size;     // Total size of resource buffer at end of the file
+    u32 texbuf_size;       // Total size of resource buffer at end of the file
     u64 pad;
 }chunk_layout;
 
