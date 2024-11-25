@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 #include <ImGuiFileDialog.h>
+#include "polaris_gui.hxx"
 
 extern "C" {
     #include <GLFW/glfw3.h>
@@ -15,19 +16,34 @@ extern "C" {
     #include "viewer/camera.h"
 }
 
-bool polaris_gui(GLFWwindow* window) {
-    static img_state img_ctx = {0};
-    static input_internal input_prev = input;
+bool polaris::do_gui(GLFWwindow* window) {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
         // so we'll suppress the real cursor state this frame.
-        input.cursor = input_prev.cursor;
+        input.cursor = this->prev_input.cursor;
     }
 
-    ImGui::Begin("Temp Window");
+    ImGui::Begin("ALR Select");
 
+    static s32 selected = 0;
+    ImGui::BeginListBox(" ");
+    for (int n = 0; n < 55; n++) {
+        char buf[32];
+        sprintf(buf, "Object %d", n);
+        const bool is_selected = (selected == n);
+        if (ImGui::Selectable(buf, is_selected)) {
+            selected = n;
+        }
+        if (is_selected) {
+            ImGui::SetItemDefaultFocus();
+        }
+    }
+    ImGui::EndListBox();
+    ImGui::End();
+
+    ImGui::Begin("Texture Select");
     if (ImGui::Button("Open File Dialog")) {
-        ImGuiFileDialog::Instance()->OpenDialog("chooseTex", "Choose File", ".dds,.bin", {});
+        ImGuiFileDialog::Instance()->OpenDialog("chooseTex", "Choose Texture File", ".dds,.bin", {});
     }
 
     // Display file dialog if appropriate
@@ -43,7 +59,7 @@ bool polaris_gui(GLFWwindow* window) {
             if (buf != NULL && file_exists(path.c_str())) {
                 // The buffer pointer we just allocated is copied into the context
                 const texture tex = image_buf_load(path.c_str(), buf, size);
-                img_ctx = image_init(tex);
+                this->img_ctx = image_init(tex);
             }
         }
     
@@ -53,22 +69,22 @@ bool polaris_gui(GLFWwindow* window) {
 
     ImGui::End();
 
-    float ratio = (float)img_ctx.img.width / (float)img_ctx.img.height;
-    if (img_ctx.img.width == 0 || img_ctx.img.height == 0) {
+    float ratio = (float)this->img_ctx.img.width / (float)img_ctx.img.height;
+    if (this->img_ctx.img.width == 0 || this->img_ctx.img.height == 0) {
         ratio = 1.0f; 
     }
     camera_update(NULL, ratio);
 
-    if (img_ctx.img.data != NULL) {
-        image_render(&img_ctx, window);
+    if (this->img_ctx.img.data != NULL) {
+        image_render(&this->img_ctx, window);
 
         // Manages active texture's format, dimensions, etc.
-        viewer_update(&img_ctx.img, img_ctx.gl_img);
+        viewer_update(&this->img_ctx.img, this->img_ctx.gl_img);
     }
 
     ImGui::ShowDemoWindow();
 
     // It's the end of the frame for us, save the current input
-    input_prev = input;
+    this->prev_input = input;
     return true;
 }

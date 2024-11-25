@@ -5,14 +5,18 @@
 extern "C" {
     #include <glad/glad.h>
     #include <GLFW/glfw3.h>
+    #include <common/logging.h>
     #include <common/gl/gl_setup.h>
     #include <common/gl/input.h>
 }
 
-bool gui_main(bool (*gui_callback)(GLFWwindow* window)) {
+#include "polaris_gui.hxx"
+
+bool gui_main() {
     // Create window with graphics context
     GLFWwindow* window = setup_opengl(1280, 720, "Polaris", ENABLE_DEBUG, GLFW_CURSOR_NORMAL, true);
     if (window == nullptr) {
+        LOG_MSG(error, "Failed to setup GLFW\n");
         return false;
     }
 
@@ -45,8 +49,10 @@ bool gui_main(bool (*gui_callback)(GLFWwindow* window)) {
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != nullptr);
+    io.FontGlobalScale = 1.7f;
 
     // Main loop
+    polaris pol = {0};
     while (!glfwWindowShouldClose(window)) {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -67,9 +73,9 @@ bool gui_main(bool (*gui_callback)(GLFWwindow* window)) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // The GUI callback renders the actual UI and "drives" the program. It
-        // can return false to close the program.
-        if (!(gui_callback)(window)) {
+        // The input's do_gui() callback renders the actual UI and "drives" the
+        // program. It can return false to close the program.
+        if (!pol.do_gui(window)) {
             break;
         }
 
