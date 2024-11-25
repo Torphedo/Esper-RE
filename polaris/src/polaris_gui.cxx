@@ -290,7 +290,7 @@ void polaris::chunk_0x15(chunk_desc chunk) {
             char buf[0x30] = {0};
             char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
             decode_single32(name, entries[i].text1);
-            decode_single32(&name[5], entries[i].text2);
+            decode_single32(&name[6], entries[i].text2);
 
             const u32 size = 1 << entries[i].resolution_pwr;
             snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", name, size, size);
