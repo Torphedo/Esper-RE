@@ -20,25 +20,29 @@ extern "C" {
 }
 
 polaris::polaris() {
-    this->matrixHex.OptShowDataPreview = true;
-    this->matrixHex.PreviewDataType = ImGuiDataType_Float;
+    matrixHex.OptShowDataPreview = true;
+    matrixHex.PreviewDataType = ImGuiDataType_Float;
 }
 
 polaris::~polaris() {
-    free(this->alr_data);
+    free(alr_data);
+    // TODO: The image may be in the middle of another buffer, so it doesn't
+    // free the buffer on destruction. We need some other pointer or pool for
+    // texture buffers.
+    image_destroy(img_ctx);
 }
 
 bool polaris::do_gui(GLFWwindow* window) {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
         // so we'll suppress the real mouse state this frame.
-        input.cursor = this->prev_input.cursor;
-        input.scroll = this->prev_input.scroll;
-        input.click_left = this->prev_input.click_left;
-        input.click_right = this->prev_input.click_right;
-        input.click_middle = this->prev_input.click_middle;
-        input.mouse_button_4 = this->prev_input.mouse_button_4;
-        input.mouse_button_5 = this->prev_input.mouse_button_5;
+        input.cursor = prev_input.cursor;
+        input.scroll = prev_input.scroll;
+        input.click_left = prev_input.click_left;
+        input.click_right = prev_input.click_right;
+        input.click_middle = prev_input.click_middle;
+        input.mouse_button_4 = prev_input.mouse_button_4;
+        input.mouse_button_5 = prev_input.mouse_button_5;
     }
 
     if (ImGui::GetIO().WantCaptureKeyboard) {
@@ -58,7 +62,7 @@ bool polaris::do_gui(GLFWwindow* window) {
         const gamepad_t gp = input.gp;
 
         // Copy over all keyboard input
-        input = this->prev_input;
+        input = prev_input;
 
         // Restore non-keyboard input
         input.cursor = cursor;
@@ -87,11 +91,11 @@ bool polaris::do_gui(GLFWwindow* window) {
             const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
 
             // Load the texture
-            free(this->alr_data);
-            this->alr_data = file_load(path.c_str());
-            if (this->alr_data != nullptr) {
-                this->alr_size = file_size(path.c_str());
-                this->chunks = shatter_alr(this->alr_data, this->alr_size);
+            free(alr_data);
+            alr_data = file_load(path.c_str());
+            if (alr_data != nullptr) {
+                alr_size = file_size(path.c_str());
+                chunks = shatter_alr(alr_data, alr_size);
             }
         }
 
@@ -100,13 +104,13 @@ bool polaris::do_gui(GLFWwindow* window) {
     }
 
     if (ImGui::BeginListBox(" ", ImVec2(0, -FLT_MIN))) {
-        for (size_t n = 0; n < this->chunks.size(); n++) {
-            chunk_desc chunk = this->chunks.at(n);
+        for (size_t n = 0; n < chunks.size(); n++) {
+            chunk_desc chunk = chunks.at(n);
             char buf[128];
             sprintf(buf, "0x%02X chunk @ 0x%02lX [%d bytes] ##%lu", chunk.id, chunk.offset, chunk.size, n);
-            const bool is_selected = (this->selected_chunk == n);
+            const bool is_selected = (selected_chunk == n);
             if (ImGui::Selectable(buf, is_selected)) {
-                this->selected_chunk = n;
+                selected_chunk = n;
             }
         }
         ImGui::EndListBox();
@@ -116,8 +120,8 @@ bool polaris::do_gui(GLFWwindow* window) {
 
     // Window for the currently selected chunk
     ImGui::Begin("ALR Editor");
-    if (this->selected_chunk < this->chunks.size()) {
-        this->do_chunk_menu(this->chunks.at(this->selected_chunk));
+    if (selected_chunk < chunks.size()) {
+        this->do_chunk_menu(chunks.at(selected_chunk));
     }
     ImGui::End();
 
@@ -139,7 +143,7 @@ bool polaris::do_gui(GLFWwindow* window) {
             if (buf != nullptr && file_exists(path.c_str())) {
                 // The buffer pointer we just allocated is copied into the context
                 const texture tex = image_buf_load(path.c_str(), buf, size);
-                this->img_ctx = image_init(tex);
+                img_ctx = image_init(tex);
             }
         }
     
@@ -149,23 +153,23 @@ bool polaris::do_gui(GLFWwindow* window) {
 
     ImGui::End();
 
-    float ratio = (float)this->img_ctx.img.width / (float)img_ctx.img.height;
-    if (this->img_ctx.img.width == 0 || this->img_ctx.img.height == 0) {
+    float ratio = (float)img_ctx.img.width / (float)img_ctx.img.height;
+    if (img_ctx.img.width == 0 || img_ctx.img.height == 0) {
         ratio = 1.0f; 
     }
     camera_update(nullptr, ratio);
 
-    if (this->img_ctx.img.data != nullptr) {
-        image_render(&this->img_ctx, window);
+    if (img_ctx.img.data != nullptr) {
+        image_render(&img_ctx, window);
 
         // Manages active texture's format, dimensions, etc.
-        viewer_update(&this->img_ctx.img, this->img_ctx.gl_img);
+        viewer_update(&img_ctx.img, img_ctx.gl_img);
     }
 
     ImGui::ShowDemoWindow();
 
     // It's the end of the frame for us, save the current input
-    this->prev_input = input;
+    prev_input = input;
     return true;
 }
 
@@ -200,7 +204,7 @@ std::vector<chunk_desc> polaris::shatter_alr(const u8* buf, s64 size) {
 }
 
 void polaris::do_chunk_menu(chunk_desc chunk) {
-    if (this->alr_data == nullptr || this->alr_size == 0) {
+    if (alr_data == nullptr || alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
         return;
     }
@@ -227,7 +231,7 @@ void polaris::chunk_0x3(chunk_desc chunk) {
         return;
     }
 
-    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
     vfile_seek(&vf, sizeof(chunk_generic)); // Skip ID & size
 
     const u32 num_matrices = (chunk.size - sizeof(chunk_generic) - sizeof(chunk_transform)) / sizeof(mat4);
@@ -240,12 +244,12 @@ void polaris::chunk_0x3(chunk_desc chunk) {
     const u32 max = MAX(num_matrices - 1, 0);
     ImGui::Checkbox("Use slider", &mat_slider);
     if (mat_slider) {
-        ImGui::SliderScalar("Selected Matrix", ImGuiDataType_S32, &this->selected_mat, &min, &max);
+        ImGui::SliderScalar("Selected Matrix", ImGuiDataType_S32, &selected_mat, &min, &max);
     } else {
-        ImGui::InputInt("Selected Matrix", (int*)&this->selected_mat);
+        ImGui::InputScalar("Selected Matrix", ImGuiDataType_S32, &selected_mat);
     }
     // Don't allow out of bounds index
-    this->selected_mat = CLAMP(min, this->selected_mat, max);
+    selected_mat = CLAMP(min, selected_mat, max);
 
     ImGui::Text("%d matrices [%d identity]", num_matrices, num_matrices - num_non_identity);
 
@@ -259,7 +263,7 @@ void polaris::chunk_0x3(chunk_desc chunk) {
                 for (u32 k = 0; k < 4; k++) {
                     char buf[0x20] = {0};
                     sprintf(buf, "##%d%d%d", j, k);
-                    ImGui::InputFloat(buf, &matrices[this->selected_mat][j][k]);
+                    ImGui::InputFloat(buf, &matrices[selected_mat][j][k]);
                     ImGui::SameLine();
                 }
                 ImGui::Text(" "); // Cause a new line
@@ -270,7 +274,7 @@ void polaris::chunk_0x3(chunk_desc chunk) {
 
         if (ImGui::BeginTabItem("Hex Editing")) {
             // Show hex editor
-            matrixHex.DrawContents(&matrices[this->selected_mat], sizeof(matrices[this->selected_mat]));
+            matrixHex.DrawContents(&matrices[selected_mat], sizeof(matrices[selected_mat]));
 
             ImGui::EndTabItem();
         }
@@ -286,7 +290,7 @@ void polaris::chunk_0x10(chunk_desc chunk) {
     }
 
     // We use the vfile API to handle the chunk data
-    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
     // Skip over the ID and size fields we already have (both 32-bit)
     vfile_seek(&vf, sizeof(chunk.id) + sizeof(chunk.size));
 
@@ -315,8 +319,8 @@ void polaris::chunk_0x10(chunk_desc chunk) {
             atlas_info surface = atlases[i];
             snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", atlas_names[i].name, surface.width, surface.height);
 
-            if (ImGui::Selectable(buf, this->selected_atlas == i)) {
-                this->selected_atlas = i;
+            if (ImGui::Selectable(buf, selected_atlas == i)) {
+                selected_atlas = i;
             }
         }
         ImGui::EndListBox();
@@ -327,15 +331,15 @@ void polaris::chunk_0x10(chunk_desc chunk) {
         for (u32 i = 0; i < header->texture_count; i++) {
             const tex_info tex = textures[i];
             // Only list textures belonging to the selected atlases
-            if (tex.index != this->selected_atlas) {
+            if (tex.index != selected_atlas) {
                 continue;
             }
 
             char buf[sizeof(textures[i].filename) + 0x20] = {0};
             snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", tex.filename, tex.width, tex.height);
 
-            if (ImGui::Selectable(buf, this->selected_atlas_texture == i)) {
-                this->selected_atlas_texture = i;
+            if (ImGui::Selectable(buf, selected_atlas_texture == i)) {
+                selected_atlas_texture = i;
                 // Once we have a mechanism to find the atlases' position in the
                 // texture buffer, clicking on a texture should set it as the
                 // active texture and display it.
@@ -351,7 +355,7 @@ void polaris::chunk_0x11(chunk_desc chunk) {
         return;
     }
 
-    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*layout));
     auto* offsets = (u32*)vfile_cur(vf);
@@ -373,7 +377,7 @@ void polaris::chunk_0x15(chunk_desc chunk) {
     }
 
     // We use the vfile API to handle the chunk data
-    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
     // Skip over the ID and size fields we already have (both 32-bit)
     vfile_seek(&vf, sizeof(chunk.id) + sizeof(chunk.size));
 

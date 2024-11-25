@@ -126,6 +126,5 @@ void image_destroy(img_state state) {
     glDeleteVertexArrays(1, &state.vertex_array);
     glDeleteBuffers(1, &state.vertex_buffer);
     glDeleteTextures(1, &state.gl_img);
-    free(state.img.data);
     state.img = (texture){0};
 }
