@@ -6,6 +6,7 @@ extern "C" {
     #include <glad/glad.h>
     #include <GLFW/glfw3.h>
     #include <common/gl/gl_setup.h>
+    #include <common/gl/input.h>
 }
 
 bool gui_main(bool (*gui_callback)(GLFWwindow* window)) {
@@ -56,6 +57,7 @@ bool gui_main(bool (*gui_callback)(GLFWwindow* window)) {
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         glfwPollEvents();
+        update_mods(window);
         if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
             // Skip rendering if minimized
             ImGui_ImplGlfw_Sleep(10);
@@ -63,6 +65,7 @@ bool gui_main(bool (*gui_callback)(GLFWwindow* window)) {
         }
 
         // Start the Dear ImGui frame
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -75,7 +78,6 @@ bool gui_main(bool (*gui_callback)(GLFWwindow* window)) {
 
         // Rendering
         ImGui::Render();
-        glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
