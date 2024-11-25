@@ -30,7 +30,8 @@ struct polaris {
     img_state img_ctx = {0};
 
     // State for 0x3 (transform matrix) window
-    u32 selected_mat = 0;
+    s32 selected_mat = 0;
+    bool mat_slider = false;
     MemoryEditor matrixHex;
 
     // State for 0x10 chunk window

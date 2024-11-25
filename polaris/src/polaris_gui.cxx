@@ -234,11 +234,18 @@ void polaris::chunk_0x3(chunk_desc chunk) {
     const u16 num_non_identity = VFILE_READ(u16, &vf);
     const u16 unk = VFILE_READ(u16, &vf);
     const u32 pad = VFILE_READ(u32, &vf);
-    auto* matrices = (mat4*)vfile_cur(vf);
+    auto *matrices = (mat4 *) vfile_cur(vf);
 
-    ImGui::InputInt("Selected Matrix", (int*)&this->selected_mat);
+    const u32 min = 0;
+    const u32 max = MAX(num_matrices - 1, 0);
+    ImGui::Checkbox("Use slider", &mat_slider);
+    if (mat_slider) {
+        ImGui::SliderScalar("Selected Matrix", ImGuiDataType_S32, &this->selected_mat, &min, &max);
+    } else {
+        ImGui::InputInt("Selected Matrix", (int*)&this->selected_mat);
+    }
     // Don't allow out of bounds index
-    this->selected_mat = MIN(this->selected_mat, MAX(num_matrices - 1, 0));
+    this->selected_mat = CLAMP(min, this->selected_mat, max);
 
     ImGui::Text("%d matrices [%d identity]", num_matrices, num_matrices - num_non_identity);
 
