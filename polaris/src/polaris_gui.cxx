@@ -12,6 +12,7 @@ extern "C" {
     #include <common/vfile.h>
     #include <common/logging.h>
     #include <common/gl/input.h>
+    #include <formats/alr.h>
     #include "viewer/render_image.h"
     #include "viewer/viewer.h"
     #include "viewer/camera.h"
@@ -47,21 +48,25 @@ bool polaris::do_gui(GLFWwindow* window) {
         ImGuiFileDialog::Instance()->Close();
     }
 
-    static s32 selected = 0;
     if (ImGui::BeginListBox(" ", ImVec2(0, -FLT_MIN))) {
         for (size_t n = 0; n < this->chunks.size(); n++) {
             chunk_desc chunk = this->chunks.at(n);
             char buf[128];
             sprintf(buf, "0x%x chunk @ 0x%lx [%d bytes] ##%d", chunk.id, chunk.offset, chunk.size, n);
-            const bool is_selected = (selected == n);
+            const bool is_selected = (this->selected_chunk == n);
             if (ImGui::Selectable(buf, is_selected)) {
-                selected = n;
-            }
-            if (is_selected) {
-                ImGui::SetItemDefaultFocus();
+                this->selected_chunk = n;
             }
         }
         ImGui::EndListBox();
+    }
+
+    ImGui::End();
+
+    // Window for the currently selected chunk
+    ImGui::Begin("ALR Editor");
+    if (this->selected_chunk < this->chunks.size()) {
+        this->do_chunk_menu(this->chunks.at(this->selected_chunk));
     }
     ImGui::End();
 
@@ -141,4 +146,83 @@ std::vector<chunk_desc> polaris::shatter_alr(const u8* buf, s64 size) {
     }
 
     return out;
+}
+
+void polaris::do_chunk_menu(chunk_desc chunk) {
+    switch (chunk.id) {
+        case 0x10:
+            this->chunk_0x10(chunk);
+            break;
+        default:
+            return;
+    }
+}
+
+void polaris::chunk_0x10(chunk_desc chunk) {
+    if (chunk.id != 0x10) {
+        // Exit if we were called by mistake
+        return;
+    }
+
+    // We use the vfile API to handle the chunk data
+    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    // Skip over the ID and size fields we already have (both 32-bit)
+    vfile_seek(&vf, sizeof(chunk.id) + sizeof(chunk.size));
+
+    // We use pointers instead of reading into stack copies, so we can edit the
+    // data directly. I'm not usually a big fan of using auto, but it doesn't
+    // hide the real data type so I think it's fine here.
+    auto* header = (texture_metadata_header*) vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*header));
+
+    // Read surface names
+    auto* surface_names = (tex_name*) vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*surface_names) * header->surface_count);
+
+    // Read surface metadata
+    auto* surfaces = (surface_info*) vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*surfaces) * header->surface_count);
+
+    // Read texture metadata
+    auto* textures = (tex_info *) vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*textures) * header->texture_count);
+
+    static u32 selected_surface = 0;
+    ImGui::Text("%d Atlases for %s:", header->surface_count, header->alr_name);
+    if (ImGui::BeginListBox("Texture Atlases")) {
+        for (u32 i = 0; i < header->surface_count; i++) {
+            char buf[sizeof(surface_names[i].name) + 0x20] = {0};
+            surface_info surface = surfaces[i];
+            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", surface_names[i].name, surface.width, surface.height);
+
+            if (ImGui::Selectable(buf, selected_surface == i)) {
+                selected_surface = i;
+            }
+        }
+        ImGui::EndListBox();
+    }
+
+    // Display textures in the selected atlas
+    static u32 selected_texture = 0;
+    if (ImGui::BeginListBox("Atlas Contents")) {
+        for (u32 i = 0; i < header->texture_count; i++) {
+            const tex_info tex = textures[i];
+            // Only list textures belonging to the selected atlas
+            if (tex.index != selected_surface) {
+                continue;
+            }
+
+            char buf[sizeof(textures[i].filename) + 0x20] = {0};
+            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", tex.filename, tex.width, tex.height);
+
+            if (ImGui::Selectable(buf, selected_texture == i)) {
+                selected_texture = i;
+                // Once we have a mechanism to find the atlas' position in the
+                // texture buffer, clicking on a texture should set it as the
+                // active texture and display it.
+            }
+        }
+
+        ImGui::EndListBox();
+    }
 }
