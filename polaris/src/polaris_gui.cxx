@@ -9,6 +9,7 @@ extern "C" {
     #include <common/image.h>
     #include <common/file.h>
     #include <common/logging.h>
+    #include <common/gl/input.h>
     #include "viewer/render_image.h"
     #include "viewer/viewer.h"
     #include "viewer/camera.h"
@@ -16,6 +17,12 @@ extern "C" {
 
 bool polaris_gui(GLFWwindow* window) {
     static img_state img_ctx = {0};
+    static input_internal input_prev = input;
+    if (ImGui::GetIO().WantCaptureMouse) {
+        // ImGui wants control of the mouse (it's probably over a window),
+        // so we'll suppress the real cursor state this frame.
+        input.cursor = input_prev.cursor;
+    }
 
     ImGui::Begin("Temp Window");
 
@@ -25,7 +32,8 @@ bool polaris_gui(GLFWwindow* window) {
 
     // Display file dialog if appropriate
     if (ImGuiFileDialog::Instance()->Display("chooseTex")) {
-        if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+        // If user cancels, we can't load anything
+        if (ImGuiFileDialog::Instance()->IsOk()) {
             const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
 
             // Load the texture
@@ -39,7 +47,7 @@ bool polaris_gui(GLFWwindow* window) {
             }
         }
     
-        // close
+        // Close the dialog
         ImGuiFileDialog::Instance()->Close();
     }
 
@@ -60,5 +68,7 @@ bool polaris_gui(GLFWwindow* window) {
 
     ImGui::ShowDemoWindow();
 
+    // It's the end of the frame for us, save the current input
+    input_prev = input;
     return true;
 }
