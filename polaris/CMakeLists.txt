@@ -19,6 +19,7 @@ add_library(imgui STATIC
     ../ext/imgui/imgui_widgets.cpp
     ../ext/imgui/backends/imgui_impl_opengl3.cpp
     ../ext/imgui/backends/imgui_impl_glfw.cpp
+    ../ext/ImGuiFileDialog/ImGuiFileDialog.cpp
 )
 
 # Internal build tool to generate headers for GLSL shaders

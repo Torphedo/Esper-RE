@@ -7,7 +7,7 @@ vec3s camera_up = {0.0f, 1.0f, 0.0f};
 vec3s camera_target = {0};
 vec3s camera_pos = {.z = 10.0f};
 
-const float mouse_sens = 0.005f;
+const float mouse_sens = 0.0005f;
 const float scroll_sens = 0.05f;
 
 bool invert_mouse_x = true;

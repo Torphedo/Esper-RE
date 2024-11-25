@@ -15,6 +15,7 @@ include_directories(
     ext/glfw/include
     ext/cglm/include
     ext/imgui
+    ext/ImGuiFileDialog
     ext/bobtail
     ${Esper-RE_SOURCE_DIR}
 )
