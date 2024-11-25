@@ -21,8 +21,48 @@ extern "C" {
 bool polaris::do_gui(GLFWwindow* window) {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
-        // so we'll suppress the real cursor state this frame.
+        // so we'll suppress the real mouse state this frame.
         input.cursor = this->prev_input.cursor;
+        input.scroll = this->prev_input.scroll;
+        input.click_left = this->prev_input.click_left;
+        input.click_right = this->prev_input.click_right;
+        input.click_middle = this->prev_input.click_middle;
+        input.mouse_button_4 = this->prev_input.mouse_button_4;
+        input.mouse_button_5 = this->prev_input.mouse_button_5;
+    }
+
+    if (ImGui::GetIO().WantCaptureKeyboard) {
+        // Save non-keyboard input
+        const vec2s cursor = input.cursor;
+        const vec2s scroll = input.scroll;
+        const bool click_left = input.click_left;
+        const bool click_right = input.click_right;
+        const bool click_middle = input.click_middle;
+        const bool mouse_4 = input.mouse_button_4;
+        const bool mouse_5 = input.mouse_button_5;
+
+        const vec2s LS = input.LS;
+        const vec2s RS = input.RS;
+        const float LT = input.LT;
+        const float RT = input.RT;
+        const gamepad_t gp = input.gp;
+
+        // Copy over all keyboard input
+        input = this->prev_input;
+
+        // Restore non-keyboard input
+        input.cursor = cursor;
+        input.scroll = scroll;
+        input.LS = LS;
+        input.RS = RS;
+        input.LT = LT;
+        input.RT = RT;
+        input.gp = gp;
+        input.click_left = click_left;
+        input.click_right = click_right;
+        input.click_middle = click_middle;
+        input.mouse_button_4 = mouse_4;
+        input.mouse_button_5 = mouse_5;
     }
 
     ImGui::Begin("ALR Select");
