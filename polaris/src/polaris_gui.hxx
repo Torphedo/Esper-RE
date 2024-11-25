@@ -17,7 +17,6 @@ typedef struct {
 }chunk_desc;
 
 struct polaris {
-public:
     // State for the overall editor
     // Currently loaded ALR & metadata for all its chunks
     u8* alr_data;
@@ -28,8 +27,14 @@ public:
     // The texture currently being rendered in the background (buffpeep integration)
     img_state img_ctx;
 
+    // State for 0x10 chunk window
+    u32 selected_atlas;
+    u32 selected_atlas_texture;
+
     // The currently selected chunk to be displayed
     s32 selected_chunk;
+
+    ~polaris();
 
     /// @brief Effectively the "real" entry point for Polaris, driving the UI
     /// @param window The main window, needed for aspect ratio & input and such

@@ -19,6 +19,11 @@ extern "C" {
     #include "viewer/camera.h"
 }
 
+
+polaris::~polaris() {
+    free(this->alr_data);
+}
+
 bool polaris::do_gui(GLFWwindow* window) {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
@@ -78,6 +83,7 @@ bool polaris::do_gui(GLFWwindow* window) {
             const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
 
             // Load the texture
+            free(this->alr_data);
             this->alr_data = file_load(path.c_str());
             if (this->alr_data != nullptr) {
                 this->alr_size = file_size(path.c_str());
@@ -238,7 +244,6 @@ void polaris::chunk_0x10(chunk_desc chunk) {
     auto* textures = (tex_info *) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*textures) * header->texture_count);
 
-    static u32 selected_surface = 0;
     ImGui::Text("%d Atlases for %s:", header->surface_count, header->alr_name);
     if (ImGui::BeginListBox("Texture Atlases")) {
         for (u32 i = 0; i < header->surface_count; i++) {
@@ -246,28 +251,27 @@ void polaris::chunk_0x10(chunk_desc chunk) {
             surface_info surface = surfaces[i];
             snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", surface_names[i].name, surface.width, surface.height);
 
-            if (ImGui::Selectable(buf, selected_surface == i)) {
-                selected_surface = i;
+            if (ImGui::Selectable(buf, this->selected_atlas == i)) {
+                this->selected_atlas = i;
             }
         }
         ImGui::EndListBox();
     }
 
     // Display textures in the selected atlas
-    static u32 selected_texture = 0;
     if (ImGui::BeginListBox("Atlas Contents")) {
         for (u32 i = 0; i < header->texture_count; i++) {
             const tex_info tex = textures[i];
             // Only list textures belonging to the selected atlas
-            if (tex.index != selected_surface) {
+            if (tex.index != this->selected_atlas) {
                 continue;
             }
 
             char buf[sizeof(textures[i].filename) + 0x20] = {0};
             snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", tex.filename, tex.width, tex.height);
 
-            if (ImGui::Selectable(buf, selected_texture == i)) {
-                selected_texture = i;
+            if (ImGui::Selectable(buf, this->selected_atlas_texture == i)) {
+                this->selected_atlas_texture = i;
                 // Once we have a mechanism to find the atlas' position in the
                 // texture buffer, clicking on a texture should set it as the
                 // active texture and display it.
@@ -320,7 +324,7 @@ void polaris::chunk_0x15(chunk_desc chunk) {
             decode_single32(&name[6], entries[i].text2);
 
             const u32 size = 1 << entries[i].resolution_pwr;
-            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", name, size, size);
+            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d] @ 0x%X", name, size, size, entries[i].data_ptr);
 
             ImGui::Selectable(buf, false);
         }
