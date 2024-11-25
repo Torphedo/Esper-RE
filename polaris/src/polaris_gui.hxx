@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <imgui.h>
+#include <imgui_hex_editor.h>
 
 extern "C" {
     #include <GLFW/glfw3.h>
@@ -19,21 +21,26 @@ typedef struct {
 struct polaris {
     // State for the overall editor
     // Currently loaded ALR & metadata for all its chunks
-    u8* alr_data;
-    s64 alr_size;
+    u8* alr_data = nullptr;
+    s64 alr_size = 0;
     std::vector<chunk_desc> chunks;
     // Input state from the previous frame
-    input_internal prev_input;
+    input_internal prev_input = {};
     // The texture currently being rendered in the background (buffpeep integration)
-    img_state img_ctx;
+    img_state img_ctx = {0};
+
+    // State for 0x3 (transform matrix) window
+    u32 selected_mat = 0;
+    MemoryEditor matrixHex;
 
     // State for 0x10 chunk window
-    u32 selected_atlas;
-    u32 selected_atlas_texture;
+    u32 selected_atlas = 0;
+    u32 selected_atlas_texture = 0;
 
     // The currently selected chunk to be displayed
-    s32 selected_chunk;
+    s32 selected_chunk = 0;
 
+    polaris();
     ~polaris();
 
     /// @brief Effectively the "real" entry point for Polaris, driving the UI
@@ -49,6 +56,10 @@ struct polaris {
     /// The user might modify the ALR data via the menu.
     /// @param chunk Metadata about the chunk to be edited
     void do_chunk_menu(chunk_desc chunk);
+
+    /// @brief The menu for 0x3 transform matrix chunks.
+    /// @param chunk The chunk to display
+    void chunk_0x3(chunk_desc chunk);
 
     /// @brief The menu for 0x10 texture atlas chunks.
     /// @param chunk The chunk to display

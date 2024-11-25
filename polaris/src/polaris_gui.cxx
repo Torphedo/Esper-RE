@@ -19,6 +19,10 @@ extern "C" {
     #include "viewer/camera.h"
 }
 
+polaris::polaris() {
+    this->matrixHex.OptShowDataPreview = true;
+    this->matrixHex.PreviewDataType = ImGuiDataType_Float;
+}
 
 polaris::~polaris() {
     free(this->alr_data);
@@ -201,6 +205,9 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
         return;
     }
     switch (chunk.id) {
+        case 0x3:
+            this->chunk_0x3(chunk);
+            break;
         case 0x10:
             this->chunk_0x10(chunk);
             break;
@@ -212,6 +219,56 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
             break;
         default:
             return;
+    }
+}
+
+void polaris::chunk_0x3(chunk_desc chunk) {
+    if (chunk.id != 0x3) {
+        return;
+    }
+
+    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    vfile_seek(&vf, sizeof(chunk_generic)); // Skip ID & size
+
+    const u32 num_matrices = (chunk.size - sizeof(chunk_generic) - sizeof(chunk_transform)) / sizeof(mat4);
+    const u16 num_non_identity = VFILE_READ(u16, &vf);
+    const u16 unk = VFILE_READ(u16, &vf);
+    const u32 pad = VFILE_READ(u32, &vf);
+    auto* matrices = (mat4*)vfile_cur(vf);
+
+    ImGui::InputInt("Selected Matrix", (int*)&this->selected_mat);
+    // Don't allow out of bounds index
+    this->selected_mat = MIN(this->selected_mat, MAX(num_matrices - 1, 0));
+
+    ImGui::Text("%d matrices [%d identity]", num_matrices, num_matrices - num_non_identity);
+
+    if (ImGui::BeginTabBar("Matrix Editing")) {
+        if (ImGui::BeginTabItem("Raw editor")) {
+
+            // Matrix inputs
+            ImGui::PushItemWidth(200.0f); // Make inputs narrower
+            ImGui::Text("Matrix Editor");
+            for (u32 j = 0; j < 4; j++) {
+                for (u32 k = 0; k < 4; k++) {
+                    char buf[0x20] = {0};
+                    sprintf(buf, "##%d%d%d", j, k);
+                    ImGui::InputFloat(buf, &matrices[this->selected_mat][j][k]);
+                    ImGui::SameLine();
+                }
+                ImGui::Text(" "); // Cause a new line
+            }
+            ImGui::PopItemWidth();
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Hex Editing")) {
+            // Show hex editor
+            matrixHex.DrawContents(&matrices[this->selected_mat], sizeof(matrices[this->selected_mat]));
+
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
 }
 

@@ -52,7 +52,7 @@ bool gui_main() {
     io.FontGlobalScale = 1.7f;
 
     // Main loop
-    polaris pol = {0};
+    polaris pol;
     while (!glfwWindowShouldClose(window)) {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
