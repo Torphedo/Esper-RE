@@ -79,6 +79,28 @@ void camera_update(mat4* view, float aspect_ratio) {
     camera_pos.z += scroll_delta.y;
     camera_pos.z = clampf(camera_pos.z, 0.1f, 100.0f);
     
+    mat4 temp = {0};
+    if (view == NULL) {
+        view = &temp;
+    }
     glm_lookat((float*)&camera_pos, (float*)&camera_target, (float*)&camera_up, *view);
 }
 
+void camera_view_matrix(mat4 out) {
+    glm_lookat((float*)&camera_pos, (float*)&camera_target, (float*)&camera_up, out);
+}
+
+void camera_proj_view(mat4 out) {
+    // Pre-multiply the projection & view components of the PVM matrix
+
+    // Projection matrix
+    mat4 projection = {0};
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    float aspect = (float)mode->width / (float)mode->height;
+    glm_perspective_rh_no(glm_rad(45), aspect, 0.1f, 1000.0f, projection);
+
+    // Camera matrix
+    mat4 view = {0};
+    camera_view_matrix(view);
+    glm_mat4_mul(projection, view, (vec4*)out);
+}

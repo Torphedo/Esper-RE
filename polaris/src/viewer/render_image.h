@@ -7,10 +7,9 @@ typedef struct {
     gl_obj gl_img;
     texture img;
 
+    // Shader uniforms
     gl_obj u_img_aspect;
-    gl_obj u_proj;
-    gl_obj u_model;
-    gl_obj u_view;
+    gl_obj u_pvm;
 }img_state;
 
 img_state image_init(texture img);

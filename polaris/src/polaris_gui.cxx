@@ -7,6 +7,8 @@ extern "C" {
     #include <common/image.h>
     #include <common/file.h>
     #include "viewer/render_image.h"
+    #include "viewer/viewer.h"
+    #include "viewer/camera.h"
 }
 
 bool polaris_gui(GLFWwindow* window) {
@@ -25,6 +27,11 @@ bool polaris_gui(GLFWwindow* window) {
 
     if (img_ctx.img.data != NULL) {
         image_render(&img_ctx, window);
+
+        const float ratio = (float)img_ctx.img.width / (float)img_ctx.img.height;
+        camera_update(NULL, ratio);
+        // Manages active texture's format, dimensions, etc.
+        viewer_update(&img_ctx.img, img_ctx.gl_img);
     }
 
     ImGui::ShowDemoWindow();
