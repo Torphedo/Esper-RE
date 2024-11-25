@@ -53,6 +53,7 @@ add_executable(polaris
     src/viewer/render_image.c
     src/viewer/viewer.c
     src/viewer/camera.c
+    ../formats/pd_common.c
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}

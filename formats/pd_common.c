@@ -1,7 +1,3 @@
-//
-// Created by torph on 9/8/24.
-//
-
 #include "pd_common.h"
 const char char_lookup[] = "0123456789abcdefghijklmnopqrstuvwxyz_";
 

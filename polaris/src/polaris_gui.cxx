@@ -13,6 +13,7 @@ extern "C" {
     #include <common/logging.h>
     #include <common/gl/input.h>
     #include <formats/alr.h>
+    #include <formats/pd_common.h>
     #include "viewer/render_image.h"
     #include "viewer/viewer.h"
     #include "viewer/camera.h"
@@ -193,6 +194,9 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
         case 0x10:
             this->chunk_0x10(chunk);
             break;
+        case 0x15:
+            this->chunk_0x15(chunk);
+            break;
         default:
             return;
     }
@@ -263,6 +267,36 @@ void polaris::chunk_0x10(chunk_desc chunk) {
             }
         }
 
+        ImGui::EndListBox();
+    }
+}
+
+void polaris::chunk_0x15(chunk_desc chunk) {
+    if (chunk.id != 0x15) {
+        // Exit if we were called by mistake
+        return;
+    }
+
+    // We use the vfile API to handle the chunk data
+    vfile vf = vfile_open(this->alr_data + chunk.offset, chunk.size);
+    // Skip over the ID and size fields we already have (both 32-bit)
+    vfile_seek(&vf, sizeof(chunk.id) + sizeof(chunk.size));
+
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    auto* entries = (resource_entry*)vfile_cur(vf);
+
+    if (ImGui::BeginListBox("Textures")) {
+        for (u32 i = 0; i < num_entries; i++) {
+            char buf[0x30] = {0};
+            char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
+            decode_single32(name, entries[i].text1);
+            decode_single32(&name[5], entries[i].text2);
+
+            const u32 size = 1 << entries[i].resolution_pwr;
+            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", name, size, size);
+
+            ImGui::Selectable(buf, false);
+        }
         ImGui::EndListBox();
     }
 }
