@@ -190,6 +190,10 @@ std::vector<chunk_desc> polaris::shatter_alr(const u8* buf, s64 size) {
 }
 
 void polaris::do_chunk_menu(chunk_desc chunk) {
+    if (this->alr_data == nullptr || this->alr_size == 0) {
+        // There's no data to work on, we can't display any useful data.
+        return;
+    }
     switch (chunk.id) {
         case 0x10:
             this->chunk_0x10(chunk);
