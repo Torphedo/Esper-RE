@@ -50,7 +50,7 @@ void chunk_0xD(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
 void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
     texture_metadata_header* tex_header = (texture_metadata_header*)chunk_buf;
     found_texture_meta = true;
-    texture_meta_count = tex_header->surface_count;
+    texture_meta_count = tex_header->atlas_count;
     if (abs((s32)tex_header->texture_count - (s32)header.size) < 100) {
         // Some ALRs (like boss03b & boss01) replace the texture count field
         // with a size in bytes fairly close to the chunk size. I don't
@@ -58,20 +58,20 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
         // other data we have.
 
         // Size minus space used for surfaces
-        const u32 texentries_size = header.size - 0x10 - (tex_header->surface_count * (sizeof(surface_info) + sizeof(tex_name)));
+        const u32 texentries_size = header.size - 0x10 - (tex_header->atlas_count * (sizeof(atlas_info) + sizeof(atlas_name)));
         tex_header->texture_count = texentries_size / sizeof(tex_info);
         // tex_header->texture_count /= sizeof(tex_info);
     }
 
-    LOG_MSG(info, "Surface count: %d Image count: %d\n\n", tex_header->surface_count, tex_header->texture_count);
+    LOG_MSG(info, "Surface count: %d Image count: %d\n\n", tex_header->atlas_count, tex_header->texture_count);
 
     // &tex_header[1] = the address after the header.
-    tex_name* names = (tex_name*)&tex_header[1];
+    atlas_name* names = (atlas_name*)&tex_header[1];
 
-    surface_info* surfaces = (surface_info*)&names[tex_header->surface_count];
-    tex_info* textures = (tex_info*)&surfaces[tex_header->surface_count];
+    atlas_info* surfaces = (atlas_info*)&names[tex_header->atlas_count];
+    tex_info* textures = (tex_info*)&surfaces[tex_header->atlas_count];
 
-    for (u32 i = 0; i < tex_header->surface_count; i++) {
+    for (u32 i = 0; i < tex_header->atlas_count; i++) {
         u32 pixel_count = surfaces[i].width * surfaces[i].height;
 
         texture_meta[i].width = surfaces[i].width;

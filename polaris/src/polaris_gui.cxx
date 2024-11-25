@@ -233,23 +233,23 @@ void polaris::chunk_0x10(chunk_desc chunk) {
     vfile_seek(&vf, sizeof(*header));
 
     // Read surface names
-    auto* surface_names = (tex_name*) vfile_cur(vf);
-    vfile_seek(&vf, sizeof(*surface_names) * header->surface_count);
+    auto* atlas_names = (atlas_name*) vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*atlas_names) * header->atlas_count);
 
     // Read surface metadata
-    auto* surfaces = (surface_info*) vfile_cur(vf);
-    vfile_seek(&vf, sizeof(*surfaces) * header->surface_count);
+    auto* atlases = (atlas_info*) vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*atlases) * header->atlas_count);
 
     // Read texture metadata
     auto* textures = (tex_info *) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*textures) * header->texture_count);
 
-    ImGui::Text("%d Atlases for %s:", header->surface_count, header->alr_name);
+    ImGui::Text("%d Atlases for %s:", header->atlas_count, header->alr_name);
     if (ImGui::BeginListBox("Texture Atlases")) {
-        for (u32 i = 0; i < header->surface_count; i++) {
-            char buf[sizeof(surface_names[i].name) + 0x20] = {0};
-            surface_info surface = surfaces[i];
-            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", surface_names[i].name, surface.width, surface.height);
+        for (u32 i = 0; i < header->atlas_count; i++) {
+            char buf[sizeof(atlas_names[i].name) + 0x20] = {0};
+            atlas_info surface = atlases[i];
+            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", atlas_names[i].name, surface.width, surface.height);
 
             if (ImGui::Selectable(buf, this->selected_atlas == i)) {
                 this->selected_atlas = i;
@@ -258,11 +258,11 @@ void polaris::chunk_0x10(chunk_desc chunk) {
         ImGui::EndListBox();
     }
 
-    // Display textures in the selected atlas
+    // Display textures in the selected atlases
     if (ImGui::BeginListBox("Atlas Contents")) {
         for (u32 i = 0; i < header->texture_count; i++) {
             const tex_info tex = textures[i];
-            // Only list textures belonging to the selected atlas
+            // Only list textures belonging to the selected atlases
             if (tex.index != this->selected_atlas) {
                 continue;
             }
@@ -272,7 +272,7 @@ void polaris::chunk_0x10(chunk_desc chunk) {
 
             if (ImGui::Selectable(buf, this->selected_atlas_texture == i)) {
                 this->selected_atlas_texture = i;
-                // Once we have a mechanism to find the atlas' position in the
+                // Once we have a mechanism to find the atlases' position in the
                 // texture buffer, clicking on a texture should set it as the
                 // active texture and display it.
             }

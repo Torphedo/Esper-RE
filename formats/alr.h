@@ -71,32 +71,24 @@ typedef struct {
 }resource_entry_0x16;
 
 
-// The header of an 0x10 ALR chunk, which stores information about textures in
-// the file
+// The header of an 0x10 ALR chunk, which stores information about texture
+// atlases in the file.
 typedef struct {
-    u32 surface_count;
-    u32 texture_count;
-    unsigned char alr_name[0x10];
+    u32 atlas_count; // The number of texture atlases
+    u32 texture_count; // The total number of textures in all atlases
+    unsigned char alr_name[0x10]; // Usually the name of the ALR with no extension
 }texture_metadata_header;
 
+// The header is followed by [atlas_count] instances of this structure:
 typedef struct {
     unsigned char name[0x10];
     u32 unk1;
     u32 unk2;
     u32 unk3;
     u32 unk4;
-}tex_name;
+}atlas_name;
 
-// A chunk with metadata about textures stored in the resource section.
-typedef struct {
-    u32 index;
-    unsigned char filename[32];
-    u32 padding[2]; // Can't be a u64 because of struct padding
-    float atlas_texcoords[2]; // This is often 1.0f
-    u32 width;
-    u32 height;
-}tex_info;
-
+// The above structure is followed by [atlas_count] instances of this structure:
 typedef struct {
     u16 width;
     u16 height;
@@ -104,7 +96,17 @@ typedef struct {
     u32 mipmap_count;
     u32 unknown; // Often 4 or 8, sometimes counts up from 13?
     u32 pad;
-}surface_info;
+}atlas_info;
+
+// The above structure is followed by [texture_count] instances of this structure:
+typedef struct {
+    u32 index; // The atlas index this texture belongs to
+    unsigned char filename[32];
+    u32 padding[2]; // Can't be a u64 because of struct padding
+    float atlas_texcoords[2]; // This is often 1.0f
+    u32 width;
+    u32 height;
+}tex_info;
 
 // This whole structure appears to hold animation data, or MAYBE mesh data.
 typedef struct {
@@ -166,4 +168,3 @@ typedef struct {
     u32 id;
     s32 size;
 }chunk_generic;
-
