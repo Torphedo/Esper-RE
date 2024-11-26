@@ -160,8 +160,8 @@ bool polaris::do_gui(GLFWwindow* window) {
     if (ImGui::BeginListBox(" ", ImVec2(0, -FLT_MIN))) {
         for (size_t n = 0; n < chunks.size(); n++) {
             chunk_desc chunk = chunks.at(n);
-            char buf[128];
-            sprintf(buf, "0x%02X chunk @ 0x%02lX [%d bytes] ##%lu", chunk.id, chunk.offset, chunk.size, n);
+            char buf[128] = {0};
+            snprintf(buf, sizeof(buf), "0x%02X chunk @ 0x%02lX [%d bytes] ##%lu", chunk.id, chunk.offset, chunk.size, n);
 
             // Vectors don't have a "contains" method, we have to use std::find
             const bool is_selected = std::find(selected_chunks.begin(), selected_chunks.end(), n) != selected_chunks.end();
@@ -185,7 +185,7 @@ bool polaris::do_gui(GLFWwindow* window) {
 
         // Each window needs a unique ID, but "##x" isn't shown
         char buf[0x20] = {0};
-        sprintf(buf, "Chunk View [0x%X]##%lu", chunk.id, idx);
+        snprintf(buf, sizeof(buf), "Chunk View [0x%X]##%lu", chunk.id, idx);
 
         bool keep_showing = true;
         if (ImGui::Begin(buf, &keep_showing)) {
@@ -309,7 +309,7 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
     }
 }
 
-void polaris::dump_idx_buf(chunk_desc chunk, FILE* out) {
+void polaris::dump_idx_buf(chunk_desc chunk, FILE* out) const {
     vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
 
     // Skip over chunk header
@@ -400,7 +400,7 @@ void polaris::chunk_0x3(chunk_desc chunk) {
             for (u32 j = 0; j < 4; j++) {
                 for (u32 k = 0; k < 4; k++) {
                     char buf[0x20] = {0};
-                    sprintf(buf, "##%d%d%d", j, k);
+                    snprintf(buf, sizeof(buf), "##%d%d", j, k);
                     ImGui::InputFloat(buf, &matrices[selected_mat][j][k]);
                     ImGui::SameLine();
                 }
@@ -451,7 +451,7 @@ void polaris::chunk_0x10(chunk_desc chunk) {
     vfile_seek(&vf, sizeof(*textures) * header->texture_count);
 
     ImGui::BeginChildFitContent("Atlases", 0.3f);
-    ImGui::Text("%d Atlases for %s:", header->atlas_count, header->alr_name);
+    ImGui::Text("%d Atlases for %.*s:", header->atlas_count, (int)sizeof(header->alr_name), header->alr_name);
     for (u32 i = 0; i < header->atlas_count; i++) {
         char buf[sizeof(atlas_names[i].name) + 0x20] = {0};
         snprintf(buf, sizeof(buf) - 1, "%s", atlas_names[i].name);
@@ -512,12 +512,12 @@ void polaris::chunk_0x10(chunk_desc chunk) {
     ImGui::BeginChild("texInfo");
     const atlas_name aName = atlas_names[selected_atlas];
     const atlas_info atlas = atlases[selected_atlas];
-    ImGui::Text("\nAtlas info for \"%s\":", aName.name);
+    ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
     ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
     ImGui::Text("Texture index %d (see 0x15 chunk for offset)", selected_atlas);
 
     const tex_info tex = textures[selected_atlas_texture];
-    ImGui::Text("\nTexture info for \"%s\":", tex.filename);
+    ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.width, tex.height, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     ImGui::EndChild();
 }

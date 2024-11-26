@@ -78,7 +78,7 @@ struct polaris {
     /// @param chunk Metadata about the chunk to be edited
     void do_chunk_menu(chunk_desc chunk);
 
-    void dump_idx_buf(chunk_desc chunk, FILE* out);
+    void dump_idx_buf(chunk_desc chunk, FILE* out) const;
 
     void chunk_0x2(chunk_desc chunk);
 
