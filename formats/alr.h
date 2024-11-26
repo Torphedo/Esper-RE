@@ -169,7 +169,18 @@ typedef struct {
 
 typedef struct {
     float unk_float[10];
-    u8 unk_bytes[0x38];
+    u32 pad[3]; // Always 0, so far
+    u32 unk1; // Definitely a u32, unknown purpose
+    u16 vertex_buf; // Index of vertex buffer in the 0x16 chunk
+    u16 unk2;
+    u16 vertex_buf2; // Same as above, so far?
+    u16 unk3; // Usually 5?
+    // Seems to be the first index of the first triangle. Maybe used to help order index buffers in optimal order
+    u32 first_idx;
+    u32 num_tris;
+    u32 unk4;
+    u32 unk5;
+    u32 pad2[4];
 }idx_buf_header;
 
 typedef struct {

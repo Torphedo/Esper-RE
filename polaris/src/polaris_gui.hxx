@@ -32,6 +32,9 @@ struct polaris {
     // The texture currently being rendered in the background (buffpeep integration)
     img_state img_ctx = {0};
 
+    // State for 0x2 (index buffer) window
+    MemoryEditor indexBufHex;
+
     // State for 0x3 (transform matrix) window
     s32 selected_mat = 0;
     bool mat_slider = false;
@@ -71,6 +74,8 @@ struct polaris {
     /// The user might modify the ALR data via the menu.
     /// @param chunk Metadata about the chunk to be edited
     void do_chunk_menu(chunk_desc chunk);
+
+    void dump_idx_buf(chunk_desc chunk, FILE* out);
 
     void chunk_0x2(chunk_desc chunk);
 

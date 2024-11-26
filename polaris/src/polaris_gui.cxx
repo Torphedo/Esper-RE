@@ -28,6 +28,10 @@ polaris::polaris() {
     vert_bufHex.OptShowDataPreview = true;
     vert_bufHex.OptShowAscii = false;
     vert_bufHex.PreviewDataType = ImGuiDataType_U32;
+
+    indexBufHex.OptShowDataPreview = true;
+    indexBufHex.OptShowAscii = false;
+    indexBufHex.PreviewDataType = ImGuiDataType_U16;
 }
 
 polaris::~polaris() {
@@ -298,6 +302,29 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
     }
 }
 
+void polaris::dump_idx_buf(chunk_desc chunk, FILE* out) {
+    vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
+
+    // Skip over chunk header
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
+
+    const s32 num_tris = (chunk.size - vf.pos) / (3 * sizeof(u16));
+    for (u32 i = 0; i < num_tris - 1; i++) {
+        u16 idx1 = VFILE_READ(u16, &vf);
+        u16 idx2 = VFILE_READ(u16, &vf);
+        u16 idx3 = VFILE_READ(u16, &vf);
+
+        // OBJ indices start at 1 :(
+        idx1++;
+        idx2++;
+        idx3++;
+
+        fprintf(out, "f %d %d %d\n", idx1, idx2, idx3);
+    }
+
+}
+
 void polaris::chunk_0x2(chunk_desc chunk) {
     char dialog_key[0x20] = {0};
     snprintf(dialog_key, sizeof(dialog_key), "chooseOBJ_idx##%lu", chunk.offset);
@@ -318,32 +345,17 @@ void polaris::chunk_0x2(chunk_desc chunk) {
                 return;
             }
 
-            vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
-
-            // Skip over chunk header
-            vfile_seek(&vf, sizeof(chunk_generic));
-            vfile_seek(&vf, sizeof(idx_buf_header));
-
-            const u32 num_tris = (vf.size - vf.pos) / (3 * sizeof(u16));
-            for (u32 i = 0; i < num_tris; i++) {
-                u16 idx1 = VFILE_READ(u16, &vf);
-                u16 idx2 = VFILE_READ(u16, &vf);
-                u16 idx3 = VFILE_READ(u16, &vf);
-
-                // OBJ indices start at 1 :(
-                idx1++;
-                idx2++;
-                idx3++;
-
-                fprintf(out, "f %d %d %d\n", idx1, idx2, idx3);
-            }
-
+            this->dump_idx_buf(chunk, out);
             fclose(out);
         }
 
         // Close the dialog
         ImGuiFileDialog::Instance()->Close();
     }
+
+    // Index buffer hex editor
+    u8* ptr = alr_data + chunk.offset + sizeof(chunk_generic);
+    indexBufHex.DrawContents(ptr, chunk.size - sizeof(chunk_generic));
 }
 void polaris::chunk_0x3(chunk_desc chunk) {
     if (chunk.id != 0x3) {
@@ -580,6 +592,30 @@ void polaris::chunk_0x16(chunk_desc chunk) {
                     // over it.
                     const u32 skip = entry.vertex_size - (sizeof(vert));
                     vfile_seek(&vf, skip);
+                }
+
+                // Vertices are dumped, now for indices
+                for (chunk_desc idx_chunk : chunks) {
+                    if (idx_chunk.id != 0x2) {
+                        // We only want index buffer chunks
+                        continue;
+                    }
+
+                    if (idx_chunk.offset < chunk.offset) {
+                        continue;
+                    }
+
+                    // Skip to idx_chunk and skip header
+                    vf.pos = idx_chunk.offset;
+                    vfile_seek(&vf, sizeof(chunk_generic));
+                    const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
+
+                    // We only want index buffers meant for this vertex buffer
+                    if (header.vertex_buf != selected_vertex_buf) {
+                        continue;
+                    }
+
+                    this->dump_idx_buf(idx_chunk, out);
                 }
 
                 fclose(out);
