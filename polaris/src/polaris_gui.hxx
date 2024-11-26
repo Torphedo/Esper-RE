@@ -5,7 +5,7 @@
 
 extern "C" {
     #include <GLFW/glfw3.h>
-    #include "common/gl/input.h"
+    #include <common/gl/input.h>
     #include "viewer/render_image.h"
 }
 
@@ -24,6 +24,9 @@ struct polaris {
     u8* alr_data = nullptr;
     s64 alr_size = 0;
     std::vector<chunk_desc> chunks;
+    // Windows for multiple chunks can be active at once, by adding multiple
+    // indices (for the above vector) to this array.
+    std::vector<size_t> selected_chunks;
     // Input state from the previous frame
     input_internal prev_input = {};
     // The texture currently being rendered in the background (buffpeep integration)
@@ -37,9 +40,6 @@ struct polaris {
     // State for 0x10 chunk window
     u32 selected_atlas = 0;
     u32 selected_atlas_texture = 0;
-
-    // The currently selected chunk to be displayed
-    s32 selected_chunk = 0;
 
     polaris();
     ~polaris();

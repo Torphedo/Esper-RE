@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <string>
+#include <algorithm>
 
 #include <imgui.h>
 #include <ImGuiFileDialog.h>
@@ -108,9 +109,12 @@ bool polaris::do_gui(GLFWwindow* window) {
             chunk_desc chunk = chunks.at(n);
             char buf[128];
             sprintf(buf, "0x%02X chunk @ 0x%02lX [%d bytes] ##%lu", chunk.id, chunk.offset, chunk.size, n);
-            const bool is_selected = (selected_chunk == n);
-            if (ImGui::Selectable(buf, is_selected)) {
-                selected_chunk = n;
+
+            // Vectors don't have a "contains" method, we have to use std::find
+            const bool is_selected = std::find(selected_chunks.begin(), selected_chunks.end(), n) != selected_chunks.end();
+            if (ImGui::Selectable(buf, is_selected) && !is_selected) {
+                // Add chunk index to the list
+                selected_chunks.push_back(n);
             }
         }
         ImGui::EndListBox();
@@ -118,12 +122,29 @@ bool polaris::do_gui(GLFWwindow* window) {
 
     ImGui::End();
 
-    // Window for the currently selected chunk
-    ImGui::Begin("ALR Editor");
-    if (selected_chunk < chunks.size()) {
-        this->do_chunk_menu(chunks.at(selected_chunk));
+    // Draw window for all chunks being displayed right now
+    for (u32 i = 0; i < selected_chunks.size(); i++ ) {
+        size_t idx = selected_chunks.at(i);
+        if (idx >= chunks.size()) {
+            continue;
+        }
+        const chunk_desc chunk = chunks.at(idx);
+
+        // Each window needs a unique ID, but "##x" isn't shown
+        char buf[0x20] = {0};
+        sprintf(buf, "Chunk View [0x%X]##%lu", chunk.id, idx);
+
+        bool keep_showing = true;
+        if (ImGui::Begin(buf, &keep_showing)) {
+            this->do_chunk_menu(chunk);
+        }
+
+        if (!keep_showing) {
+            // Vectors have strange methods for dealing with indices, sorry.
+            selected_chunks.erase(selected_chunks.begin() + i);
+        }
+        ImGui::End();
     }
-    ImGui::End();
 
     ImGui::Begin("Texture Select");
     if (ImGui::Button("Open File Dialog")) {
@@ -143,7 +164,7 @@ bool polaris::do_gui(GLFWwindow* window) {
             if (buf != nullptr && file_exists(path.c_str())) {
                 // The buffer pointer we just allocated is copied into the context
                 const texture tex = image_buf_load(path.c_str(), buf, size);
-                img_ctx = image_init(tex);
+                img_ctx = image_init(tex, true);
             }
         }
     
@@ -208,6 +229,7 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
         // There's no data to work on, we can't display any useful data.
         return;
     }
+
     switch (chunk.id) {
         case 0x3:
             this->chunk_0x3(chunk);
@@ -222,6 +244,8 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
             this->chunk_0x15(chunk);
             break;
         default:
+            // Unimplemented window
+            ImGui::Text("Unimplemented chunk type");
             return;
     }
 }
@@ -363,11 +387,12 @@ void polaris::chunk_0x11(chunk_desc chunk) {
     ImGui::Text("Texture buffer @ 0x%X [%d bytes]", layout->texbuf_offset, layout->texbuf_size);
     ImGui::Text("%d offsets in array:\n", layout->offset_array_size);
 
-    ImGui::BeginListBox("Offsets");
-    for (u32 i = 0; i < layout->offset_array_size; i++) {
-        ImGui::Text("0x%X", offsets[i]);
+    if (ImGui::BeginListBox("Offsets")) {
+        for (u32 i = 0; i < layout->offset_array_size; i++) {
+            ImGui::Text("0x%X", offsets[i]);
+        }
+        ImGui::EndListBox();
     }
-    ImGui::EndListBox();
 }
 
 void polaris::chunk_0x15(chunk_desc chunk) {
