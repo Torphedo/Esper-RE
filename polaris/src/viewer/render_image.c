@@ -41,8 +41,8 @@ static const char vert[] = {
     #include "shader/tex_viewer.vert.h"
 };
 
-img_state image_init(texture img) {
-    img_state state = {.img = img};
+img_state image_init(texture img, bool free_on_destroy) {
+    img_state state = {.img = img, .free_on_destroy = free_on_destroy};
 
     // Setup VAO to store our state
     glGenVertexArrays(1, &state.vertex_array);
@@ -126,5 +126,8 @@ void image_destroy(img_state state) {
     glDeleteVertexArrays(1, &state.vertex_array);
     glDeleteBuffers(1, &state.vertex_buffer);
     glDeleteTextures(1, &state.gl_img);
-    state.img = (texture){0};
+
+    if (state.free_on_destroy) {
+        free(state.img.data);
+    }
 }
