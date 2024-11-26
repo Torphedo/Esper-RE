@@ -21,6 +21,7 @@ extern "C" {
 }
 
 polaris::polaris() {
+    // We basically always want to preview as a float for matrices
     matrixHex.OptShowDataPreview = true;
     matrixHex.PreviewDataType = ImGuiDataType_Float;
 }
@@ -33,7 +34,7 @@ polaris::~polaris() {
     image_destroy(img_ctx);
 }
 
-bool polaris::do_gui(GLFWwindow* window) {
+void polaris::handle_input_suppression() {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
         // so we'll suppress the real mouse state this frame.
@@ -79,6 +80,26 @@ bool polaris::do_gui(GLFWwindow* window) {
         input.mouse_button_4 = mouse_4;
         input.mouse_button_5 = mouse_5;
     }
+}
+
+bool polaris::save_alr(const char* path) {
+    FILE* out = fopen(path, "wb");
+    if (out == nullptr) {
+        return false;
+    }
+
+    bool result = true;
+    if (fwrite(alr_data, alr_size, 1, out) != 1) {
+        // Incomplete write
+        result = false;
+    }
+    fclose(out);
+
+    return result;
+}
+
+bool polaris::do_gui(GLFWwindow* window) {
+    this->handle_input_suppression();
 
     ImGui::Begin("ALR Select");
     if (ImGui::Button("Load ALR")) {
@@ -98,6 +119,23 @@ bool polaris::do_gui(GLFWwindow* window) {
                 alr_size = file_size(path.c_str());
                 chunks = shatter_alr(alr_data, alr_size);
             }
+        }
+
+        // Close the dialog
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Save ALR")) {
+        ImGuiFileDialog::Instance()->OpenDialog("chooseALRSave", "Choose ALR File", ".alr", {});
+    }
+
+    // Display file dialog if appropriate
+    if (ImGuiFileDialog::Instance()->Display("chooseALRSave")) {
+        // If user cancels, we can't load anything
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+
         }
 
         // Close the dialog
@@ -231,6 +269,9 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
     }
 
     switch (chunk.id) {
+        case 0x2:
+            this->chunk_0x2(chunk);
+            break;
         case 0x3:
             this->chunk_0x3(chunk);
             break;
@@ -243,6 +284,9 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
         case 0x15:
             this->chunk_0x15(chunk);
             break;
+        case 0x16:
+            this->chunk_0x16(chunk);
+            break;
         default:
             // Unimplemented window
             ImGui::Text("Unimplemented chunk type");
@@ -250,6 +294,53 @@ void polaris::do_chunk_menu(chunk_desc chunk) {
     }
 }
 
+void polaris::chunk_0x2(chunk_desc chunk) {
+    char dialog_key[0x20] = {0};
+    snprintf(dialog_key, sizeof(dialog_key), "chooseOBJ_idx##%lu", chunk.offset);
+    if (ImGui::Button("Append indices to OBJ")) {
+        // All we can do this frame is open the dialog
+        ImGuiFileDialog::Instance()->OpenDialog(dialog_key, "Choose OBJ File", ".obj", {});
+    }
+
+    // Display file dialog if appropriate
+    if (ImGuiFileDialog::Instance()->Display(dialog_key)) {
+        // If user cancels, we can't load anything
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+
+            // Dump to OBJ
+            FILE* out = fopen(path.c_str(), "ab");
+            if (out == nullptr) {
+                return;
+            }
+
+            vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
+
+            // Skip over chunk header
+            vfile_seek(&vf, sizeof(chunk_generic));
+            vfile_seek(&vf, sizeof(idx_buf_header));
+
+            const u32 num_tris = (vf.size - vf.pos) / (3 * sizeof(u16));
+            for (u32 i = 0; i < num_tris; i++) {
+                u16 idx1 = VFILE_READ(u16, &vf);
+                u16 idx2 = VFILE_READ(u16, &vf);
+                u16 idx3 = VFILE_READ(u16, &vf);
+
+                // OBJ indices start at 1 :(
+                idx1++;
+                idx2++;
+                idx3++;
+
+                fprintf(out, "f %d %d %d\n", idx1, idx2, idx3);
+            }
+
+            fclose(out);
+        }
+
+        // Close the dialog
+        ImGuiFileDialog::Instance()->Close();
+    }
+}
 void polaris::chunk_0x3(chunk_desc chunk) {
     if (chunk.id != 0x3) {
         return;
@@ -404,7 +495,7 @@ void polaris::chunk_0x15(chunk_desc chunk) {
     // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
     // Skip over the ID and size fields we already have (both 32-bit)
-    vfile_seek(&vf, sizeof(chunk.id) + sizeof(chunk.size));
+    vfile_seek(&vf, sizeof(chunk_generic));
 
     const u32 num_entries = VFILE_READ(u32, &vf);
     auto* entries = (resource_entry*)vfile_cur(vf);
@@ -423,4 +514,67 @@ void polaris::chunk_0x15(chunk_desc chunk) {
         }
         ImGui::EndListBox();
     }
+}
+
+void polaris::chunk_0x16(chunk_desc chunk) {
+    if (chunk.id != 0x16) {
+        // Exit if we were called by mistake
+        return;
+    }
+
+    // We use the vfile API to handle the chunk data
+    vfile vf = vfile_open(alr_data + chunk.offset, chunk.size);
+    // Skip over the ID and size fields we already have (both 32-bit)
+    vfile_seek(&vf, sizeof(chunk_generic));
+
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    auto* entries = (resource_entry_0x16*)vfile_cur(vf);
+
+    ImGui::BeginChild("Vertex Buffers", ImVec2(300, 0));
+    for (u32 i = 0; i < num_entries; i++) {
+        char buf[0x30] = {0};
+        snprintf(buf, sizeof(buf) - 1, "0x%X verts @ 0x%X", entries[i].data_ptr, entries[i].vertex_count);
+
+        const bool is_selected = selected_vertex_buf == i;
+        if (ImGui::Selectable(buf, is_selected)) {
+            selected_vertex_buf = i;
+        }
+    }
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    ImGui::BeginChild("Vertex Buffer Settings", ImVec2(300, 0));
+    if (ImGui::Button("Dump to OBJ")) {
+        // All we can do this frame is open the dialog
+        ImGuiFileDialog::Instance()->OpenDialog("chooseOBJ", "Choose OBJ File", ".obj", {});
+    }
+
+    // Display file dialog if appropriate
+    if (ImGuiFileDialog::Instance()->Display("chooseOBJ")) {
+        // If user cancels, we can't load anything
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+
+            // Dump to OBJ
+            resource_entry_0x16 entry = entries[selected_vertex_buf];
+            FILE *out = fopen(path.c_str(), "wb");
+            if (out != nullptr) {
+                vf = vfile_open(alr_data, alr_size);
+                chunk_layout layout = VFILE_READ(chunk_layout, &vf);
+                vf.pos = layout.texbuf_offset + entry.data_ptr;
+
+                for (u32 i = 0; i < entry.vertex_count; i++) {
+                    const vertex_entry v = VFILE_READ(vertex_entry, &vf);
+                    fprintf(out, "v %f %f %f\n", v.vert[0], v.vert[1], v.vert[2]);
+                }
+
+                fclose(out);
+            }
+        }
+
+        // Close the dialog
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+    ImGui::EndChild();
 }

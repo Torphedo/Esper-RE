@@ -60,16 +60,21 @@ typedef struct {
     u32 text2;
 }resource_entry;
 
+// This is like the 0x15 structure, but for meshes instead of textures
 typedef struct {
     u32 flags;
     u32 unknown3;
-    u32 unknown;
+    u32 vertex_count;
     u32 pad;
     u32 unknown2;
     u32 data_ptr; // This is speculation
     u32 pad2;
 }resource_entry_0x16;
 
+typedef struct {
+    float vert[3];
+    char meta[0xC];
+}vertex_entry;
 
 // The header of an 0x10 ALR chunk, which stores information about texture
 // atlases in the file.
@@ -163,6 +168,11 @@ typedef struct {
     u16 sub_chunk_count; // Each sub-chunk is 0x4C large
     u16 unknown;
 }chunk_0x1_header;
+
+typedef struct {
+    float unk_float[10];
+    u8 unk_bytes[0x38];
+}idx_buf_header;
 
 typedef struct {
     u32 id;

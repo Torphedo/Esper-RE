@@ -41,8 +41,21 @@ struct polaris {
     u32 selected_atlas = 0;
     u32 selected_atlas_texture = 0;
 
+    // State for 0x16 chunk window
+    u32 selected_vertex_buf = 0;
+
     polaris();
     ~polaris();
+
+    /// @brief Supresses input from the rest of the program if needed
+    ///
+    /// ImGui sometimes wants full mouse and/or keyboard control (for moving
+    /// windows around, input fields, etc.). If ImGui is "in control", it sets
+    /// a flag to let us know, and this function hides the real input from
+    /// other code using the global input data.
+    void handle_input_suppression();
+
+    bool save_alr(const char* path);
 
     /// @brief Effectively the "real" entry point for Polaris, driving the UI
     /// @param window The main window, needed for aspect ratio & input and such
@@ -57,6 +70,8 @@ struct polaris {
     /// The user might modify the ALR data via the menu.
     /// @param chunk Metadata about the chunk to be edited
     void do_chunk_menu(chunk_desc chunk);
+
+    void chunk_0x2(chunk_desc chunk);
 
     /// @brief The menu for 0x3 transform matrix chunks.
     /// @param chunk The chunk to display
@@ -73,4 +88,8 @@ struct polaris {
     /// @brief The menu for 0x15 texture chunks.
     /// @param chunk The chunk to display
     void chunk_0x15(chunk_desc chunk);
+
+    /// @brief The menu for 0x15 mesh info chunks.
+    /// @param chunk The chunk to display
+    void chunk_0x16(chunk_desc chunk);
 };
