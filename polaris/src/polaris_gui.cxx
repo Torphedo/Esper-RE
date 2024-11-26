@@ -24,6 +24,10 @@ polaris::polaris() {
     // We basically always want to preview as a float for matrices
     matrixHex.OptShowDataPreview = true;
     matrixHex.PreviewDataType = ImGuiDataType_Float;
+
+    vert_bufHex.OptShowDataPreview = true;
+    vert_bufHex.OptShowAscii = false;
+    vert_bufHex.PreviewDataType = ImGuiDataType_U32;
 }
 
 polaris::~polaris() {
@@ -533,7 +537,7 @@ void polaris::chunk_0x16(chunk_desc chunk) {
     ImGui::BeginChild("Vertex Buffers", ImVec2(300, 0));
     for (u32 i = 0; i < num_entries; i++) {
         char buf[0x30] = {0};
-        snprintf(buf, sizeof(buf) - 1, "0x%X verts @ 0x%X", entries[i].data_ptr, entries[i].vertex_count);
+        snprintf(buf, sizeof(buf) - 1, "0x%X verts @ 0x%X", entries[i].vertex_count, entries[i].data_ptr);
 
         const bool is_selected = selected_vertex_buf == i;
         if (ImGui::Selectable(buf, is_selected)) {
@@ -543,11 +547,13 @@ void polaris::chunk_0x16(chunk_desc chunk) {
     ImGui::EndChild();
     ImGui::SameLine();
 
-    ImGui::BeginChild("Vertex Buffer Settings", ImVec2(300, 0));
+    ImGui::BeginChild("Vertex Buffer Settings", ImVec2(600, 0));
     if (ImGui::Button("Dump to OBJ")) {
         // All we can do this frame is open the dialog
         ImGuiFileDialog::Instance()->OpenDialog("chooseOBJ", "Choose OBJ File", ".obj", {});
     }
+
+    vert_bufHex.DrawContents(&entries[selected_vertex_buf], sizeof(*entries));
 
     // Display file dialog if appropriate
     if (ImGuiFileDialog::Instance()->Display("chooseOBJ")) {
@@ -560,12 +566,20 @@ void polaris::chunk_0x16(chunk_desc chunk) {
             FILE *out = fopen(path.c_str(), "wb");
             if (out != nullptr) {
                 vf = vfile_open(alr_data, alr_size);
+
+                // Jump to resource buffer
                 chunk_layout layout = VFILE_READ(chunk_layout, &vf);
                 vf.pos = layout.texbuf_offset + entry.data_ptr;
 
                 for (u32 i = 0; i < entry.vertex_count; i++) {
-                    const vertex_entry v = VFILE_READ(vertex_entry, &vf);
-                    fprintf(out, "v %f %f %f\n", v.vert[0], v.vert[1], v.vert[2]);
+                    // Read our vertex positions, which always come first
+                    const vec3s vert = VFILE_READ(vec3s, &vf);
+                    fprintf(out, "v %f %f %f\n", vert.x, vert.y, vert.z);
+
+                    // There might be some data left over, for now we just skip
+                    // over it.
+                    const u32 skip = entry.vertex_size - (sizeof(vert));
+                    vfile_seek(&vf, skip);
                 }
 
                 fclose(out);

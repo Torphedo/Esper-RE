@@ -42,6 +42,7 @@ struct polaris {
     u32 selected_atlas_texture = 0;
 
     // State for 0x16 chunk window
+    MemoryEditor vert_bufHex;
     u32 selected_vertex_buf = 0;
 
     polaris();

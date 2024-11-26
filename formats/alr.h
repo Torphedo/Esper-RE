@@ -62,7 +62,10 @@ typedef struct {
 
 // This is like the 0x15 structure, but for meshes instead of textures
 typedef struct {
-    u32 flags;
+    u8 unknown_flag;
+    u8 vertex_size; // These are always the same (so far?)
+    u8 vertex_size2;
+    u8 unknown_flag2;
     u32 unknown3;
     u32 vertex_count;
     u32 pad;
@@ -70,11 +73,6 @@ typedef struct {
     u32 data_ptr; // This is speculation
     u32 pad2;
 }resource_entry_0x16;
-
-typedef struct {
-    float vert[3];
-    char meta[0xC];
-}vertex_entry;
 
 // The header of an 0x10 ALR chunk, which stores information about texture
 // atlases in the file.
