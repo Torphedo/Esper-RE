@@ -557,20 +557,55 @@ void polaris::chunk_0x15(chunk_desc chunk) {
     const u32 num_entries = VFILE_READ(u32, &vf);
     auto* entries = (resource_entry*)vfile_cur(vf);
 
-    if (ImGui::BeginListBox("Textures")) {
-        for (u32 i = 0; i < num_entries; i++) {
-            char buf[0x30] = {0};
-            char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
-            decode_single32(name, entries[i].text1);
-            decode_single32(&name[6], entries[i].text2);
+    ImGui::BeginChildFitContent("Textures", 0.3f);
+    for (u32 i = 0; i < num_entries; i++) {
+        char buf[0x30] = {0};
+        char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
+        decode_single32(name, entries[i].text1);
+        decode_single32(&name[6], entries[i].text2);
 
-            const u32 size = 1 << entries[i].resolution_pwr;
-            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d] @ 0x%X", name, size, size, entries[i].data_ptr);
+        snprintf(buf, sizeof(buf) - 1, "#%d \"%s\" @ resbuf+0x%X", i, name, entries[i].data_ptr);
 
-            ImGui::Selectable(buf, false);
+        if (ImGui::Selectable(buf, selected_texture == i)) {
+            selected_texture = i;
         }
-        ImGui::EndListBox();
     }
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    ImGui::BeginChildFitContent("Texture Details", 1.0f);
+    const resource_entry entry = entries[selected_texture];
+    char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
+    decode_single32(name, entry.text1);
+    decode_single32(&name[6], entry.text2);
+
+    const u32 size = 1 << entry.resolution_pwr;
+    ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
+    ImGui::Text("\"%s\" is %dx%d pixels @ resbuf+0x%X", name, size, size, entry.data_ptr);
+    const char* format = "[UNKNOWN]";
+    switch ((alr_pixel_format)entry.pixel_format) {
+        case FORMAT_MONO_16:
+            format = "1-channel 16-bit raw";
+            break;
+        case FORMAT_A8:
+            format = "1-channel 8-bit raw";
+            break;
+        case FORMAT_RGBA8:
+            format = "4-channel 8-bit raw [RGBA8]";
+            break;
+        case FORMAT_DXT1:
+            format = "Compressed DXT1/BC1";
+            break;
+        case FORMAT_DXT3:
+            format = "Compressed DXT3/BC2";
+            break;
+        case FORMAT_DXT5:
+            format = "Compressed DXT5/BC3";
+            break;
+    }
+
+    ImGui::Text("Suspected format: %s (code 0x%X)", format, entry.pixel_format);
+    ImGui::EndChild();
 }
 
 void polaris::chunk_0x16(chunk_desc chunk) {
