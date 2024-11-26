@@ -42,6 +42,13 @@ polaris::~polaris() {
     image_destroy(img_ctx);
 }
 
+// Minor helper functions for ImGui
+namespace ImGui {
+    void BeginChildFitContent(const char* id, float width_percent) {
+        ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
+    }
+}
+
 void polaris::handle_input_suppression() {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
@@ -443,42 +450,76 @@ void polaris::chunk_0x10(chunk_desc chunk) {
     auto* textures = (tex_info *) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*textures) * header->texture_count);
 
+    ImGui::BeginChildFitContent("Atlases", 0.3f);
     ImGui::Text("%d Atlases for %s:", header->atlas_count, header->alr_name);
-    if (ImGui::BeginListBox("Texture Atlases")) {
-        for (u32 i = 0; i < header->atlas_count; i++) {
-            char buf[sizeof(atlas_names[i].name) + 0x20] = {0};
-            atlas_info surface = atlases[i];
-            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", atlas_names[i].name, surface.width, surface.height);
+    for (u32 i = 0; i < header->atlas_count; i++) {
+        char buf[sizeof(atlas_names[i].name) + 0x20] = {0};
+        snprintf(buf, sizeof(buf) - 1, "%s", atlas_names[i].name);
 
-            if (ImGui::Selectable(buf, selected_atlas == i)) {
-                selected_atlas = i;
-            }
+        if (ImGui::Selectable(buf, selected_atlas == i)) {
+            selected_atlas = i;
         }
-        ImGui::EndListBox();
+    }
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+
+    // The currently selected texture might be in a different atlas, which would
+    // display a strange & unintuitive result. We find the first and last index
+    // of textures in the atlas, and make sure the selected texture is always
+    // a child of the selected atlas.
+    u32 first_idx_in_atlas = 0;
+    u32 last_idx_in_atlas = 0;
+    for (u32 i = 0; i < header->texture_count; i++) {
+        if (textures[i].index != selected_atlas) {
+            continue;
+        }
+
+        if (first_idx_in_atlas == 0) {
+            first_idx_in_atlas = i;
+        } else {
+            last_idx_in_atlas = i;
+        }
+    }
+    if (textures[selected_atlas_texture].index != selected_atlas) {
+        // The selected texture doesn't belong to the current atlas, so select
+        // the first one that does
+        selected_atlas_texture = first_idx_in_atlas;
     }
 
     // Display textures in the selected atlases
-    if (ImGui::BeginListBox("Atlas Contents")) {
-        for (u32 i = 0; i < header->texture_count; i++) {
-            const tex_info tex = textures[i];
-            // Only list textures belonging to the selected atlases
-            if (tex.index != selected_atlas) {
-                continue;
-            }
-
-            char buf[sizeof(textures[i].filename) + 0x20] = {0};
-            snprintf(buf, sizeof(buf) - 1, "%s [%dx%d]", tex.filename, tex.width, tex.height);
-
-            if (ImGui::Selectable(buf, selected_atlas_texture == i)) {
-                selected_atlas_texture = i;
-                // Once we have a mechanism to find the atlases' position in the
-                // texture buffer, clicking on a texture should set it as the
-                // active texture and display it.
-            }
+    ImGui::BeginChildFitContent("Textures", 0.3f);
+    for (u32 i = 0; i < header->texture_count; i++) {
+        const tex_info tex = textures[i];
+        // Only list textures belonging to the selected atlases
+        if (tex.index != selected_atlas) {
+            continue;
         }
 
-        ImGui::EndListBox();
+        char buf[sizeof(textures[i].filename) + 0x20] = {0};
+        snprintf(buf, sizeof(buf) - 1, "%s", tex.filename);
+
+        if (ImGui::Selectable(buf, selected_atlas_texture == i)) {
+            selected_atlas_texture = i;
+            // Once we have a mechanism to find the atlases' position in the
+            // texture buffer, clicking on a texture should set it as the
+            // active texture and display it.
+        }
     }
+    ImGui::EndChild();
+    // ImGui::SameLine();
+
+    ImGui::BeginChild("texInfo");
+    const atlas_name aName = atlas_names[selected_atlas];
+    const atlas_info atlas = atlases[selected_atlas];
+    ImGui::Text("\nAtlas info for \"%s\":", aName.name);
+    ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
+    ImGui::Text("Texture index %d (see 0x15 chunk for offset)", selected_atlas);
+
+    const tex_info tex = textures[selected_atlas_texture];
+    ImGui::Text("\nTexture info for \"%s\":", tex.filename);
+    ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.width, tex.height, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
+    ImGui::EndChild();
 }
 
 void polaris::chunk_0x11(chunk_desc chunk) {
