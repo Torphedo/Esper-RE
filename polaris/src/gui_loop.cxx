@@ -10,7 +10,7 @@ extern "C" {
     #include <common/gl/input.h>
 }
 
-#include "polaris_gui.hxx"
+#include "polaris.hxx"
 
 bool gui_main() {
     // Create window with graphics context

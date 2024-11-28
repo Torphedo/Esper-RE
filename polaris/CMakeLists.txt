@@ -48,7 +48,7 @@ endforeach()
 add_executable(polaris
     src/main.cxx
     src/gui_loop.cxx
-    src/polaris_gui.cxx
+    src/polaris.cxx
 
     src/viewer/render_image.c
     src/viewer/viewer.c

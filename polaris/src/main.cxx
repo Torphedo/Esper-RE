@@ -1,5 +1,4 @@
 #include "gui_loop.hxx"
-#include "polaris_gui.hxx"
 
 extern "C" {
     #include <common/logging.h>
