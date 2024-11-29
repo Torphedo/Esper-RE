@@ -258,6 +258,27 @@ void polaris::chunk::chunk_0x11(polaris *pol) {
     }
 }
 
+void polaris::chunk::import_dds_0x15(polaris* pol, const char* path, u32 num_entries, resource_entry* entries) {
+    if (id != 0x15) {
+        return;
+    }
+
+    const resource_entry cur = entries[window_0x15.selected_texture];
+    const resource_entry next = entries[window_0x15.selected_texture + 1];
+    s64 tex_size = 0;
+    if (window_0x15.selected_texture >= num_entries) {
+        // This is the last entry, so the best guess is that it takes up the
+        // rest of the file
+        tex_size = pol->alr_size - cur.data_ptr;
+    } else {
+        // The most likely texture size is the distance betwen this texture and
+        // the next
+        tex_size = next.data_ptr - cur.data_ptr;
+    }
+
+    window_0x15.tex = image_buf_load(path, window_0x15.tex.data, tex_size);
+}
+
 void polaris::chunk::chunk_0x15(polaris *pol) {
     if (id != 0x15) {
         // Exit if we were called by mistake
@@ -301,8 +322,6 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     const char* format = texformat_str((alr_pixel_format)entry->pixel_format);
     ImGui::Text("Suspected format: %s (code 0x%X)", format, entry->pixel_format);
 
-    ImGui::Checkbox("Render @ actual size", &window_0x15.use_actual_size);
-
     if (window_0x15.gl_tex_id == 0) {
         // Create & upload initial texture state
         glGenTextures(1, &window_0x15.gl_tex_id);
@@ -313,7 +332,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
         // Wrapping & filtering settings
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         update_gl_tex(cur_tex, window_0x15.gl_tex_id);
@@ -332,7 +351,34 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     // This limits resolution to 4096^2, which is plenty for our use case
     entry->resolution_pwr = MIN(entry->resolution_pwr, 12);
 
-    ImGui::Text("\nControl the size to render the texture at:");
+    if (ImGui::Button("Import DDS")) {
+        ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_import0x15", "Choose DDS File", ".dds", {});
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Export DDS")) {
+        // All we can do this frame is open the dialog
+        ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_export0x15", "Choose DDS File", ".dds", {});
+    }
+    // Display file dialog if appropriate
+    if (ImGuiFileDialog::Instance()->Display("chooseDDS_export0x15")) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+            img_write(window_0x15.tex, path.c_str());
+        }
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+    if (ImGuiFileDialog::Instance()->Display("chooseDDS_import0x15")) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+            this->import_dds_0x15(pol, path.c_str(), num_entries, entries);
+        }
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+
+    ImGui::Text("\nRendering settings (doesn't affect ALR data):");
+    ImGui::Checkbox("Render @ actual size", &window_0x15.use_actual_size);
     const u32 step = 16;
     ImGui::InputScalar("Visual Width", ImGuiDataType_U16, &window_0x15.view_width, &step);
     ImGui::InputScalar("Visual Height", ImGuiDataType_U16, &window_0x15.view_height, &step);
@@ -343,6 +389,8 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     if (window_0x15.use_actual_size) {
         view_size = ImVec2(window_0x15.tex.width, window_0x15.tex.height);
     }
+    // TODO: Look into showing mipmap contents
+    // TODO: See if we can scale the image relative to window size
     ImGui::Image(window_0x15.gl_tex_id, view_size);
     ImGui::EndChild();
 }

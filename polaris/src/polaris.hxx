@@ -7,6 +7,7 @@ extern "C" {
     #include <common/int.h>
     #include <common/image.h>
     #include <common/gl/input.h>
+    #include <formats/alr.h>
     #include "viewer/render_image.h"
 }
 
@@ -67,6 +68,8 @@ struct polaris {
         void chunk_0x3(polaris *pol);
         void chunk_0x10(polaris *pol);
         void chunk_0x11(polaris *pol);
+
+        void import_dds_0x15(polaris* pol, const char* path, u32 num_entries, resource_entry* entries);
         void chunk_0x15(polaris *pol);
 
         void dump_idx_buf(polaris *pol, FILE* out) const;
