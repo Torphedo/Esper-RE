@@ -9,15 +9,6 @@ extern "C" {
     #include "viewer/render_image.h"
 }
 
-typedef struct {
-    u32 id;
-    s32 size; // Sizes can actually be signed, not sure why.
-    uintptr_t offset;
-
-    // A chunk is "orphaned" if it can't be found using the offset table
-    bool orphan;
-}chunk_desc;
-
 // State for 0x3 (transform matrix) window
 struct window_state_0x3 {
     s32 selected_mat = 0;
@@ -78,16 +69,24 @@ struct polaris {
     // Currently loaded ALR & metadata for all its chunks
     u8 *alr_data = nullptr;
     s64 alr_size = 0;
+
+    // If we guess the texture format wrong, we might accidentally read beyond
+    // the filesize. Because a mistake will inevitably happen, we reserve a
+    // large chunk of address space to avoid crashes in this case.
+    s64 reserve_size = 1024 * 1024 * 32;
     std::vector<chunk> chunks;
     // Input state from the previous frame
     input_internal prev_input = {};
     // The texture currently being rendered in the background (buffpeep integration)
     img_state img_ctx = {0};
 
-    void handle_input_suppression();
-    static std::vector<chunk> shatter_alr(const u8* buf, s64 size) ;
+    polaris() noexcept;
+    void handle_input_suppression() noexcept;
+    static std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
 
-    bool save_alr(const char *path);
+    bool save_alr(const char *path) const noexcept;
 
-    bool do_gui(GLFWwindow *window);
+    bool do_gui(GLFWwindow *window) noexcept;
+
+    void expand_reservation(s64 new_size) noexcept;
 };

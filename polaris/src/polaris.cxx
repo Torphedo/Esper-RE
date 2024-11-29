@@ -9,6 +9,8 @@ extern "C" {
     #include <cglm/struct.h>
     #include <common/vfile.h>
     #include <common/file.h>
+    #include <common/vmem.h>
+    #include <common/logging.h>
     #include <formats/alr.h>
     #include <formats/pd_common.h>
 }
@@ -19,7 +21,6 @@ namespace ImGui {
         ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
     }
 }
-
 
 void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out) const {
     vfile vf = vfile_open(pol->alr_data + offset, size);
@@ -472,7 +473,39 @@ polaris::chunk::chunk(u32 init_id) {
     }
 }
 
-void polaris::handle_input_suppression() {
+polaris::polaris() noexcept {
+    // TODO: Add an option to commit on reserve in bobtail
+    // TODO: Look into MEM_RESET to reduce impact on page file?
+
+    // "Expand" our reservation from 0 bytes to... not 0.
+    this->expand_reservation(reserve_size);
+}
+
+void polaris::expand_reservation(s64 new_size) noexcept {
+    if (new_size < reserve_size) {
+        LOG_MSG(error, "No reason to shrink reservation from 0x%X -> 0x%X, ignoring!\n", reserve_size, new_size);
+        return;
+    }
+
+    u8* new_buf = (u8*)vmem_reserve(new_size);
+    if (new_buf == nullptr) {
+        return;
+    }
+
+    // Commit the entire region. This ensures it's all accessible, but doesn't
+    // comsume any physical memory until accessed. (May still create page file
+    // entries)
+    vmem_commit(new_buf, new_size);
+
+    // Free old buffer and update our state
+    if (alr_data != nullptr) {
+        vmem_free(alr_data, reserve_size);
+    }
+    alr_data = new_buf;
+    reserve_size = new_size;
+}
+
+void polaris::handle_input_suppression() noexcept {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
         // so we'll suppress the real mouse state this frame.
@@ -520,7 +553,7 @@ void polaris::handle_input_suppression() {
     }
 }
 
-bool polaris::save_alr(const char* path) {
+bool polaris::save_alr(const char* path) const noexcept {
     FILE* out = fopen(path, "wb");
     if (out == nullptr) {
         return false;
@@ -536,7 +569,7 @@ bool polaris::save_alr(const char* path) {
     return result;
 }
 
-bool polaris::do_gui(GLFWwindow* window) {
+bool polaris::do_gui(GLFWwindow* window) noexcept {
     this->handle_input_suppression();
 
     ImGui::Begin("ALR Select");
@@ -544,17 +577,29 @@ bool polaris::do_gui(GLFWwindow* window) {
         ImGuiFileDialog::Instance()->OpenDialog("chooseALR", "Choose ALR File", ".alr", {});
     }
 
+    if (ImGui::Button("Save ALR")) {
+        ImGuiFileDialog::Instance()->OpenDialog("chooseALRSave", "Choose ALR File", ".alr", {});
+    }
+
     // Display file dialog if appropriate
     if (ImGuiFileDialog::Instance()->Display("chooseALR")) {
         // If user cancels, we can't load anything
         if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+            const std::string path_str = ImGuiFileDialog::Instance()->GetFilePathName();
+            const char* path = path_str.c_str();
+            const s64 size = file_size(path);
+            if (file_exists(path) || size > 8) {
+                // Expand reservation if needed
+                if (size > reserve_size) {
+                    // If our reservation needs resizing, we're dealing with a
+                    // truly massive file. Just add its size to the old size,
+                    // more space can never hurt.
+                    this->expand_reservation(reserve_size + size);
+                }
 
-            // Load the texture
-            free(alr_data);
-            alr_data = file_load(path.c_str());
-            if (alr_data != nullptr) {
-                alr_size = file_size(path.c_str());
+                // Load the file into the buffer.
+                file_load_existing(path, alr_data, size);
+                alr_size = size;
                 chunks = shatter_alr(alr_data, alr_size);
             }
         }
@@ -563,17 +608,13 @@ bool polaris::do_gui(GLFWwindow* window) {
         ImGuiFileDialog::Instance()->Close();
     }
 
-    ImGui::SameLine();
-    if (ImGui::Button("Save ALR")) {
-        ImGuiFileDialog::Instance()->OpenDialog("chooseALRSave", "Choose ALR File", ".alr", {});
-    }
-
     // Display file dialog if appropriate
     if (ImGuiFileDialog::Instance()->Display("chooseALRSave")) {
         // If user cancels, we can't load anything
         if (ImGuiFileDialog::Instance()->IsOk()) {
             const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
 
+            this->save_alr(path.c_str());
         }
 
         // Close the dialog
@@ -604,8 +645,23 @@ bool polaris::do_gui(GLFWwindow* window) {
         }
 
         // Each window needs a unique ID, but "##x" isn't shown
-        char buf[0x20] = {0};
-        snprintf(buf, sizeof(buf), "Chunk View [0x%X]##%lu", chunk.id, i);
+        const char* known_name = "";
+        switch (chunk.id) {
+        case 0x2:
+            known_name = "[Index Buffer]";
+            break;
+        case 0x3:
+            known_name = "[Transform Matrix]";
+            break;
+        case 0x10:
+            known_name = "[Texture Atlas]";
+            break;
+        case 0x11:
+            known_name = "[Header]";
+            break;
+        }
+        char buf[0x30] = {0};
+        snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%lX ##%u", chunk.id, known_name, chunk.offset, i);
 
         if (ImGui::Begin(buf, &chunk.active)) {
             chunk.draw(this);
@@ -614,46 +670,6 @@ bool polaris::do_gui(GLFWwindow* window) {
         ImGui::End();
     }
 
-    ImGui::Begin("Texture Select");
-    if (ImGui::Button("Open File Dialog")) {
-        ImGuiFileDialog::Instance()->OpenDialog("chooseTex", "Choose Texture File", ".dds,.bin", {});
-    }
-
-    // Display file dialog if appropriate
-    if (ImGuiFileDialog::Instance()->Display("chooseTex")) {
-        // If user cancels, we can't load anything
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-
-            // Load the texture
-            const s64 size = 32 * 1024 * 1024;
-            u8* buf = (u8*)calloc(1, size);
-            memset(buf, 0xCC, size);
-            if (buf != nullptr && file_exists(path.c_str())) {
-                // The buffer pointer we just allocated is copied into the context
-                const texture tex = image_buf_load(path.c_str(), buf, size);
-                img_ctx = image_init(tex, true);
-            }
-        }
-
-        // Close the dialog
-        ImGuiFileDialog::Instance()->Close();
-    }
-
-    ImGui::End();
-
-    float ratio = (float)img_ctx.img.width / (float)img_ctx.img.height;
-    if (img_ctx.img.width == 0 || img_ctx.img.height == 0) {
-        ratio = 1.0f;
-    }
-    // camera_update(nullptr, ratio);
-
-    if (img_ctx.img.data != nullptr) {
-        image_render(&img_ctx, window);
-
-        // Manages active texture's format, dimensions, etc.
-        // viewer_update(&img_ctx.img, img_ctx.gl_img);
-    }
 
     ImGui::ShowDemoWindow();
 
@@ -662,7 +678,7 @@ bool polaris::do_gui(GLFWwindow* window) {
     return true;
 }
 
-std::vector<polaris::chunk> polaris::shatter_alr(const u8* buf, s64 size) {
+std::vector<polaris::chunk> polaris::shatter_alr(const u8* buf, s64 size) noexcept {
     // Technically we cast away const here, but we don't write any data so it's
     // fine.
     vfile vf = vfile_open((void*)buf, size);
