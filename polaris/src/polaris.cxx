@@ -1,8 +1,9 @@
 #include <cstdlib>
 #include <string>
-#include <algorithm>
 
+#include <glad/glad.h>
 #include <ImGuiFileDialog.h>
+#include "alr_texture.hxx"
 #include "polaris.hxx"
 
 extern "C" {
@@ -265,7 +266,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
 
     // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(pol->alr_data + offset, size);
-    // Skip over the ID and size fields we already have (both 32-bit)
+    // Skip over the ID and tex_size fields we already have (both 32-bit)
     vfile_seek(&vf, sizeof(chunk_generic));
 
     const u32 num_entries = VFILE_READ(u32, &vf);
@@ -293,32 +294,31 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     decode_single32(name, entry.text1);
     decode_single32(&name[6], entry.text2);
 
-    const u32 size = 1 << entry.resolution_pwr;
+    texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, entry);
     ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
-    ImGui::Text("\"%s\" is %dx%d pixels @ resbuf+0x%X", name, size, size, entry.data_ptr);
-    const char* format = "[UNKNOWN]";
-    switch ((alr_pixel_format)entry.pixel_format) {
-        case FORMAT_MONO_16:
-            format = "1-channel 16-bit raw";
-            break;
-        case FORMAT_A8:
-            format = "1-channel 8-bit raw";
-            break;
-        case FORMAT_RGBA8:
-            format = "4-channel 8-bit raw [RGBA8]";
-            break;
-        case FORMAT_DXT1:
-            format = "Compressed DXT1/BC1";
-            break;
-        case FORMAT_DXT3:
-            format = "Compressed DXT3/BC2";
-            break;
-        case FORMAT_DXT5:
-            format = "Compressed DXT5/BC3";
-            break;
+    ImGui::Text("\"%s\" is %dx%d pixels @ resbuf+0x%X", name, cur_tex.height, cur_tex.width, entry.data_ptr);
+
+    const char* format = texformat_str((alr_pixel_format)entry.pixel_format);
+    ImGui::Text("Suspected format: %s (code 0x%X)", format, entry.pixel_format);
+
+    if (window_0x15.gl_tex_id == 0) {
+        // Create & upload initial texture state
+        glGenTextures(1, &window_0x15.gl_tex_id);
+        if (window_0x15.gl_tex_id == 0) {
+            LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
+        }
+        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
+        window_0x15.tex = cur_tex;
+    }
+    else if (memcmp(&cur_tex, &window_0x15.tex, sizeof(cur_tex)) != 0) {
+        // The texture changed since last frame, update the OpenGL state
+        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
+        window_0x15.tex = cur_tex;
     }
 
-    ImGui::Text("Suspected format: %s (code 0x%X)", format, entry.pixel_format);
+    // At this point we're pretty sure the texture is correctly formatted,
+    // so we can render it.
+    ImGui::Image(window_0x15.gl_tex_id, ImVec2(cur_tex.width, cur_tex.height));
     ImGui::EndChild();
 }
 
@@ -370,9 +370,7 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
                 vf = vfile_open(pol->alr_data, pol->alr_size);
 
                 // Jump to resource buffer
-                chunk_layout layout = VFILE_READ(chunk_layout, &vf);
-                vf.pos = layout.texbuf_offset + entry.data_ptr;
-
+                vfile_seek(&vf, pol->resbuf_offset);
                 for (u32 i = 0; i < entry.vertex_count; i++) {
                     // Read our vertex positions, which always come first
                     const vec3s vert = VFILE_READ(vec3s, &vf);
@@ -699,6 +697,18 @@ std::vector<polaris::chunk> polaris::shatter_alr(const u8* buf, s64 size) noexce
             // There's never multiple consecutive chunks with ID 0. This means
             // we've hit an empty area, probably the end of the chunk data.
             break;
+        }
+
+        if (chunk.id == 0x11) {
+            // This chunk has the resource buffer offset, save it for later
+            // Our layout structure includes the id & size, so we have to seek
+            // back for that...
+            vf.pos -= sizeof(chunk_generic);
+            chunk_layout layout = VFILE_READ(chunk_layout, &vf);
+            resbuf_offset = layout.texbuf_offset;
+
+            // Reset the position to what it used to be
+            vf.pos -= sizeof(layout);
         }
 
         // Advance to the next chunk & add to output

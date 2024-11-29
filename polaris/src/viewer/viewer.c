@@ -108,4 +108,3 @@ void viewer_update(texture* img, gl_obj texture_id) {
     // Reset state
     glBindTexture(GL_TEXTURE_2D, 0);
 }
-

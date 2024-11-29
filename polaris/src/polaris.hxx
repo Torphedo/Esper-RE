@@ -5,6 +5,7 @@
 
 extern "C" {
     #include <common/int.h>
+    #include <common/image.h>
     #include <common/gl/input.h>
     #include "viewer/render_image.h"
 }
@@ -24,6 +25,8 @@ struct window_state_0x10 {
 // State for 0x15 texture window
 struct window_state_0x15 {
     u32 selected_texture = 0;
+    texture tex = {};
+    gl_obj gl_tex_id = 0;
 };
 
 // State for 0x16 chunk window
@@ -69,6 +72,7 @@ struct polaris {
     // Currently loaded ALR & metadata for all its chunks
     u8 *alr_data = nullptr;
     s64 alr_size = 0;
+    ptrdiff_t resbuf_offset = 0;
 
     // If we guess the texture format wrong, we might accidentally read beyond
     // the filesize. Because a mistake will inevitably happen, we reserve a
@@ -82,7 +86,14 @@ struct polaris {
 
     polaris() noexcept;
     void handle_input_suppression() noexcept;
-    static std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
+
+    /// @brief "Shatter" an ALR into all its chunks
+    ///
+    /// This also modifies the resource buffer offset.
+    /// @param buf The ALR data
+    /// @param size The size of the ALR buffer
+    /// @return List of chunks
+    std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
 
     bool save_alr(const char *path) const noexcept;
 
