@@ -289,17 +289,19 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     ImGui::SameLine();
 
     ImGui::BeginChildFitContent("Texture Details", 1.0f);
-    const resource_entry entry = entries[window_0x15.selected_texture];
+    resource_entry* entry = &entries[window_0x15.selected_texture];
     char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
-    decode_single32(name, entry.text1);
-    decode_single32(&name[6], entry.text2);
+    decode_single32(name, entry->text1);
+    decode_single32(&name[6], entry->text2);
 
-    texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, entry);
+    texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, *entry);
     ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
-    ImGui::Text("\"%s\" is %dx%d pixels @ resbuf+0x%X", name, cur_tex.height, cur_tex.width, entry.data_ptr);
+    ImGui::Text("\"%s\" is %dx%d pixels @ resbuf+0x%X\n", name, cur_tex.height, cur_tex.width, entry->data_ptr);
 
-    const char* format = texformat_str((alr_pixel_format)entry.pixel_format);
-    ImGui::Text("Suspected format: %s (code 0x%X)", format, entry.pixel_format);
+    const char* format = texformat_str((alr_pixel_format)entry->pixel_format);
+    ImGui::Text("Suspected format: %s (code 0x%X)", format, entry->pixel_format);
+
+    ImGui::Checkbox("Render @ actual size", &window_0x15.use_actual_size);
 
     if (window_0x15.gl_tex_id == 0) {
         // Create & upload initial texture state
@@ -307,8 +309,16 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
         if (window_0x15.gl_tex_id == 0) {
             LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
         }
+
+        // Wrapping & filtering settings
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
         update_gl_tex(cur_tex, window_0x15.gl_tex_id);
         window_0x15.tex = cur_tex;
+        window_0x15.view_width = window_0x15.view_height = 512;
     }
     else if (memcmp(&cur_tex, &window_0x15.tex, sizeof(cur_tex)) != 0) {
         // The texture changed since last frame, update the OpenGL state
@@ -316,9 +326,24 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
         window_0x15.tex = cur_tex;
     }
 
+    ImGui::Text("2^(resolution power) = width = height");
+    const u32 step_pwr = 1; // Step for the resolution power input
+    ImGui::InputScalar("Resolution power", ImGuiDataType_U16, &entry->resolution_pwr, &step_pwr);
+    // This limits resolution to 4096^2, which is plenty for our use case
+    entry->resolution_pwr = MIN(entry->resolution_pwr, 12);
+
+    ImGui::Text("\nControl the size to render the texture at:");
+    const u32 step = 16;
+    ImGui::InputScalar("Visual Width", ImGuiDataType_U16, &window_0x15.view_width, &step);
+    ImGui::InputScalar("Visual Height", ImGuiDataType_U16, &window_0x15.view_height, &step);
+
     // At this point we're pretty sure the texture is correctly formatted,
     // so we can render it.
-    ImGui::Image(window_0x15.gl_tex_id, ImVec2(cur_tex.width, cur_tex.height));
+    ImVec2 view_size = ImVec2(window_0x15.view_width, window_0x15.view_height);
+    if (window_0x15.use_actual_size) {
+        view_size = ImVec2(window_0x15.tex.width, window_0x15.tex.height);
+    }
+    ImGui::Image(window_0x15.gl_tex_id, view_size);
     ImGui::EndChild();
 }
 
