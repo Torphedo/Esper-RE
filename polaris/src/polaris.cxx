@@ -16,6 +16,12 @@ extern "C" {
     #include <formats/pd_common.h>
 }
 
+enum {
+    // The power of 2 to limit texture resolutions to
+    // e.g. 2^12 = 4096
+    ALR_TEX_POWER_LIMIT = 12,
+};
+
 // Minor helper functions for ImGui
 namespace ImGui {
     void BeginChildFitContent(const char* id, float width_percent) {
@@ -277,6 +283,23 @@ void polaris::chunk::import_dds_0x15(polaris* pol, const char* path, u32 num_ent
     }
 
     window_0x15.tex = image_buf_load(path, window_0x15.tex.data, tex_size);
+
+    // The loaded image might not be an even power of 2, here we round to the
+    // nearest one
+    const u16 res = MAX(window_0x15.tex.width, window_0x15.tex.height);
+    for (u8 i = 0; i < ALR_TEX_POWER_LIMIT; i++) {
+        if (exponent(2, i) > res) {
+            // This power is larger than the largest target resolution
+            break;
+        }
+        // Ssve the current power of 2 back to the ALR
+        entries[window_0x15.selected_texture].resolution_pwr = i;
+    }
+
+    // Update our visual dimensions to match the new ALR value
+    const u8 power = entries[window_0x15.selected_texture].resolution_pwr;
+    window_0x15.tex.height = window_0x15.tex.width = exponent(2, power);
+
 }
 
 void polaris::chunk::chunk_0x15(polaris *pol) {
@@ -349,7 +372,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     const u32 step_pwr = 1; // Step for the resolution power input
     ImGui::InputScalar("Resolution power", ImGuiDataType_U16, &entry->resolution_pwr, &step_pwr);
     // This limits resolution to 4096^2, which is plenty for our use case
-    entry->resolution_pwr = MIN(entry->resolution_pwr, 12);
+    entry->resolution_pwr = MIN(entry->resolution_pwr, ALR_TEX_POWER_LIMIT);
 
     if (ImGui::Button("Import DDS")) {
         ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_import0x15", "Choose DDS File", ".dds", {});
@@ -358,22 +381,6 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     if (ImGui::Button("Export DDS")) {
         // All we can do this frame is open the dialog
         ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_export0x15", "Choose DDS File", ".dds", {});
-    }
-    // Display file dialog if appropriate
-    if (ImGuiFileDialog::Instance()->Display("chooseDDS_export0x15")) {
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-            img_write(window_0x15.tex, path.c_str());
-        }
-        ImGuiFileDialog::Instance()->Close();
-    }
-
-    if (ImGuiFileDialog::Instance()->Display("chooseDDS_import0x15")) {
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-            this->import_dds_0x15(pol, path.c_str(), num_entries, entries);
-        }
-        ImGuiFileDialog::Instance()->Close();
     }
 
 
@@ -393,6 +400,23 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     // TODO: See if we can scale the image relative to window size
     ImGui::Image(window_0x15.gl_tex_id, view_size);
     ImGui::EndChild();
+
+    // Display file dialog if appropriate
+    if (ImGuiFileDialog::Instance()->Display("chooseDDS_export0x15")) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+            img_write(window_0x15.tex, path.c_str());
+        }
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+    if (ImGuiFileDialog::Instance()->Display("chooseDDS_import0x15")) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
+            this->import_dds_0x15(pol, path.c_str(), num_entries, entries);
+        }
+        ImGuiFileDialog::Instance()->Close();
+    }
 }
 
 void polaris::chunk::chunk_0x16(polaris *pol) {
