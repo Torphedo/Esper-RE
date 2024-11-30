@@ -96,9 +96,6 @@ void viewer_update(texture* img, gl_obj texture_id) {
         glTexImage2D(GL_TEXTURE_2D, 0, format, img->width, img->height, 0, format, gl_size, img->data);
     }
 
-    // Regenerate mipmaps since texture changed
-    glGenerateMipmap(GL_TEXTURE_2D);
-
     if (input.w && !input_prev.w) {
         img_write(*img, "img.dds");
     }

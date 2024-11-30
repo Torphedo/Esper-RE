@@ -71,6 +71,12 @@ void update_gl_tex(texture img, gl_obj texture_id) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
+    // Wrapping & filtering settings
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
     GLint res = (img.height * img.width);
     if (img.compressed) {
         GLenum format = 0;
@@ -113,9 +119,6 @@ void update_gl_tex(texture img, gl_obj texture_id) {
 
         glTexImage2D(GL_TEXTURE_2D, 0, format, img.width, img.height, 0, format, gl_size, img.data);
     }
-
-    // Regenerate mipmaps since the texture changed
-    glGenerateMipmap(GL_TEXTURE_2D);
 
     // Reset state
     glBindTexture(GL_TEXTURE_2D, 0);

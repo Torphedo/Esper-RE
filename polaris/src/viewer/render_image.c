@@ -80,7 +80,6 @@ img_state image_init(texture img, bool free_on_destroy) {
     glBindTexture(GL_TEXTURE_2D, state.gl_img);
 
     glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, img.width, img.height, 0, (img.width * img.height) / 2, img.data);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
     // Wrapping & filtering settings
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	

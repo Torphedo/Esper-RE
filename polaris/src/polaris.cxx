@@ -352,12 +352,6 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
             LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
         }
 
-        // Wrapping & filtering settings
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
         update_gl_tex(cur_tex, window_0x15.gl_tex_id);
         window_0x15.tex = cur_tex;
         window_0x15.view_width = window_0x15.view_height = 512;
@@ -369,8 +363,8 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     }
 
     ImGui::Text("2^(resolution power) = width = height");
-    const u32 step_pwr = 1; // Step for the resolution power input
-    ImGui::InputScalar("Resolution power", ImGuiDataType_U16, &entry->resolution_pwr, &step_pwr);
+    const u8 step_pwr = 1; // Step for the resolution power input
+    ImGui::InputScalar("Resolution power", ImGuiDataType_U8, &entry->resolution_pwr, &step_pwr);
     // This limits resolution to 4096^2, which is plenty for our use case
     entry->resolution_pwr = MIN(entry->resolution_pwr, ALR_TEX_POWER_LIMIT);
 
