@@ -239,7 +239,7 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
 
     const tex_info tex = textures[window_0x10.selected_atlas_texture];
     ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
-    ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.width, tex.height, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
+    ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.height, tex.width, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     ImGui::EndChild();
 }
 
