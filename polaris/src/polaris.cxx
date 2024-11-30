@@ -171,6 +171,21 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
     auto* textures = (tex_info *) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*textures) * header->texture_count);
 
+    // We have to look up texture entries to find out where each texture is
+    resource_entry* entries = nullptr;
+    for (chunk c : pol->chunks) {
+        if (c.id == 0x15) {
+            // Skip to the chunk
+            vfile tmp = vfile_open(pol->alr_data + c.offset, c.size);
+            vfile_seek(&tmp, sizeof(chunk_generic));
+
+            const u32 num_entries = VFILE_READ(u32, &tmp);
+            entries = (resource_entry*)vfile_cur(tmp);
+            break;
+        }
+    }
+
+
     ImGui::BeginChildFitContent("Atlases", 0.3f);
     ImGui::Text("%d Atlases for %.*s:", header->atlas_count, (int)sizeof(header->alr_name), header->alr_name);
     for (u32 i = 0; i < header->atlas_count; i++) {
@@ -189,23 +204,14 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
     // display a strange & unintuitive result. We find the first and last index
     // of textures in the atlas, and make sure the selected texture is always
     // a child of the selected atlas.
-    u32 first_idx_in_atlas = 0;
-    u32 last_idx_in_atlas = 0;
-    for (u32 i = 0; i < header->texture_count; i++) {
-        if (textures[i].index != window_0x10.selected_atlas) {
-            continue;
-        }
-
-        if (first_idx_in_atlas == 0) {
-            first_idx_in_atlas = i;
-        } else {
-            last_idx_in_atlas = i;
-        }
-    }
     if (textures[window_0x10.selected_atlas_texture].index != window_0x10.selected_atlas) {
-        // The selected texture doesn't belong to the current atlas, so select
-        // the first one that does
-        window_0x10.selected_atlas_texture = first_idx_in_atlas;
+        for (u32 i = 0; i < header->texture_count; i++) {
+            if (textures[i].index == window_0x10.selected_atlas) {
+                // It's a match!
+                window_0x10.selected_atlas_texture = i;
+                break;
+            }
+        }
     }
 
     // Display textures in the selected atlases
@@ -233,13 +239,39 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
     ImGui::BeginChild("texInfo");
     const atlas_name aName = atlas_names[window_0x10.selected_atlas];
     const atlas_info atlas = atlases[window_0x10.selected_atlas];
+    const tex_info tex = textures[window_0x10.selected_atlas_texture];
     ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
     ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
     ImGui::Text("Texture index %d (see 0x15 chunk for offset)", window_0x10.selected_atlas);
 
-    const tex_info tex = textures[window_0x10.selected_atlas_texture];
+
+    texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, entries[tex.index]);
+    // Override dimensions, we only want format info from the other chunk
+    cur_tex.height = atlas.height;
+    cur_tex.width = atlas.width;
+
+    if (window_0x15.gl_tex_id == 0) {
+        // Create & upload initial texture state
+        glGenTextures(1, &window_0x15.gl_tex_id);
+        if (window_0x15.gl_tex_id == 0) {
+            const char* name = (char*)&textures[window_0x10.selected_atlas_texture].filename;
+            LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
+        }
+
+        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
+        window_0x15.tex = cur_tex;
+        window_0x15.view_width = window_0x15.view_height = 512;
+    }
+    else if (memcmp(&cur_tex, &window_0x15.tex, sizeof(cur_tex)) != 0) {
+        // The texture changed since last frame, update the OpenGL state
+        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
+        window_0x15.tex = cur_tex;
+    }
+
+
     ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.height, tex.width, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
+    ImGui::Image(window_0x10.gl_tex_id, ImVec2(atlas.width, atlas.height));
     ImGui::EndChild();
 }
 
@@ -299,7 +331,6 @@ void polaris::chunk::import_dds_0x15(polaris* pol, const char* path, u32 num_ent
     // Update our visual dimensions to match the new ALR value
     const u8 power = entries[window_0x15.selected_texture].resolution_pwr;
     window_0x15.tex.height = window_0x15.tex.width = exponent(2, power);
-
 }
 
 void polaris::chunk::chunk_0x15(polaris *pol) {

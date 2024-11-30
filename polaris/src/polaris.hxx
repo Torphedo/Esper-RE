@@ -21,6 +21,8 @@ struct window_state_0x3 {
 struct window_state_0x10 {
     u32 selected_atlas = 0;
     u32 selected_atlas_texture = 0;
+    texture tex = {};
+    gl_obj gl_tex_id = 0;
 };
 
 // State for 0x15 texture window
