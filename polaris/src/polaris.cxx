@@ -243,7 +243,7 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
     ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
     ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
     ImGui::Text("Texture index %d (see 0x15 chunk for offset)", window_0x10.selected_atlas);
-
+    ImGui::Image(window_0x10.gl_tex_id, ImVec2(atlas.width, atlas.height));
 
     texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, entries[tex.index]);
     // Override dimensions, we only want format info from the other chunk
@@ -271,7 +271,9 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
 
     ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.height, tex.width, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
-    ImGui::Image(window_0x10.gl_tex_id, ImVec2(atlas.width, atlas.height));
+    const ImVec2 uv1 = ImVec2(tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
+    const ImVec2 uv0 = ImVec2(uv1.x - ((float)tex.width / atlas.width), uv1.y - ((float)tex.height / atlas.height));
+    ImGui::Image(window_0x10.gl_tex_id, ImVec2(tex.width, tex.height), uv0, uv1);
     ImGui::EndChild();
 }
 
