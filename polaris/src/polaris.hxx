@@ -23,6 +23,10 @@ struct window_state_0x10 {
     u32 selected_atlas_texture = 0;
     texture tex = {};
     gl_obj gl_tex_id = 0;
+
+    // User can choose to render the texture at its real size, or scaled up
+    bool use_actual_size = false;
+    float scale = 0;
 };
 
 // State for 0x15 texture window
@@ -33,8 +37,7 @@ struct window_state_0x15 {
 
     // User can choose to render the texture at its real size, or scaled up
     bool use_actual_size = false;
-    u16 view_height = 0;
-    u16 view_width = 0;
+    float scale = 0;
 };
 
 // State for 0x16 chunk window

@@ -142,6 +142,22 @@ void polaris::chunk::chunk_0x3(polaris *pol) {
     }
 }
 
+static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* use_actual_size, float* scale_factor, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) {
+    ImGui::Text("\nRendering settings (doesn't affect ALR data):");
+    ImGui::Checkbox("Render @ actual size", use_actual_size);
+    ImGui::SliderFloat("Render Scale", scale_factor, 0.001, 10);
+
+    // At this point we're pretty sure the texture is correctly formatted,
+    // so we can render it.
+    ImVec2 view_size = ImVec2(width * (*scale_factor), height * (*scale_factor));
+    if (*use_actual_size) {
+        view_size = ImVec2(width, height);
+    }
+    // TODO: Look into showing mipmap contents
+    // TODO: See if we can scale the image relative to window size
+    ImGui::Image(tex_id, view_size, uv0, uv1);
+}
+
 void polaris::chunk::chunk_0x10(polaris *pol) {
     if (id != 0x10) {
         // Exit if we were called by mistake
@@ -236,14 +252,9 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
     ImGui::EndChild();
     // ImGui::SameLine();
 
-    ImGui::BeginChild("texInfo");
     const atlas_name aName = atlas_names[window_0x10.selected_atlas];
     const atlas_info atlas = atlases[window_0x10.selected_atlas];
     const tex_info tex = textures[window_0x10.selected_atlas_texture];
-    ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
-    ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
-    ImGui::Text("Texture index %d (see 0x15 chunk for offset)", window_0x10.selected_atlas);
-    ImGui::Image(window_0x10.gl_tex_id, ImVec2(atlas.width, atlas.height));
 
     texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, entries[tex.index]);
     // Override dimensions, we only want format info from the other chunk
@@ -258,22 +269,27 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
             LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
         }
 
-        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
-        window_0x15.tex = cur_tex;
-        window_0x15.view_width = window_0x15.view_height = 512;
+        update_gl_tex(cur_tex, window_0x10.gl_tex_id);
+        window_0x10.tex = cur_tex;
+        window_0x10.scale = 1.0f;
     }
-    else if (memcmp(&cur_tex, &window_0x15.tex, sizeof(cur_tex)) != 0) {
+    else if (memcmp(&cur_tex, &window_0x10.tex, sizeof(cur_tex)) != 0) {
         // The texture changed since last frame, update the OpenGL state
-        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
-        window_0x15.tex = cur_tex;
+        update_gl_tex(cur_tex, window_0x10.gl_tex_id);
+        window_0x10.tex = cur_tex;
     }
 
+    ImGui::BeginChild("texInfo");
+    ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
+    ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
+    ImGui::Text("Texture index %d (see 0x15 chunk for offset)", window_0x10.selected_atlas);
+    ImGui::Image(window_0x10.gl_tex_id, ImVec2(atlas.width, atlas.height));
 
     ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.height, tex.width, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     const ImVec2 uv1 = ImVec2(tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     const ImVec2 uv0 = ImVec2(uv1.x - ((float)tex.width / atlas.width), uv1.y - ((float)tex.height / atlas.height));
-    ImGui::Image(window_0x10.gl_tex_id, ImVec2(tex.width, tex.height), uv0, uv1);
+    draw_image(window_0x10.gl_tex_id, tex.width, tex.height, &window_0x10.use_actual_size, &window_0x10.scale, uv0, uv1);
     ImGui::EndChild();
 }
 
@@ -387,7 +403,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
 
         update_gl_tex(cur_tex, window_0x15.gl_tex_id);
         window_0x15.tex = cur_tex;
-        window_0x15.view_width = window_0x15.view_height = 512;
+        window_0x15.scale = 1.0f;
     }
     else if (memcmp(&cur_tex, &window_0x15.tex, sizeof(cur_tex)) != 0) {
         // The texture changed since last frame, update the OpenGL state
@@ -410,22 +426,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
         ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_export0x15", "Choose DDS File", ".dds", {});
     }
 
-
-    ImGui::Text("\nRendering settings (doesn't affect ALR data):");
-    ImGui::Checkbox("Render @ actual size", &window_0x15.use_actual_size);
-    const u32 step = 16;
-    ImGui::InputScalar("Visual Width", ImGuiDataType_U16, &window_0x15.view_width, &step);
-    ImGui::InputScalar("Visual Height", ImGuiDataType_U16, &window_0x15.view_height, &step);
-
-    // At this point we're pretty sure the texture is correctly formatted,
-    // so we can render it.
-    ImVec2 view_size = ImVec2(window_0x15.view_width, window_0x15.view_height);
-    if (window_0x15.use_actual_size) {
-        view_size = ImVec2(window_0x15.tex.width, window_0x15.tex.height);
-    }
-    // TODO: Look into showing mipmap contents
-    // TODO: See if we can scale the image relative to window size
-    ImGui::Image(window_0x15.gl_tex_id, view_size);
+    draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale);
     ImGui::EndChild();
 
     // Display file dialog if appropriate
