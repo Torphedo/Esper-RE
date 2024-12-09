@@ -25,6 +25,11 @@ struct window_state_0x10 {
     gl_obj gl_tex_id = 0;
 
     // User can choose to render the texture at its real size, or scaled up
+    // Render settings for entire atlas
+    bool use_actual_size_atlas = false;
+    float scale_atlas = 0;
+
+    // Render settings for texture inside atlas
     bool use_actual_size = false;
     float scale = 0;
 };

@@ -142,19 +142,33 @@ void polaris::chunk::chunk_0x3(polaris *pol) {
     }
 }
 
-static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* use_actual_size, float* scale_factor, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) {
+static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) {
     ImGui::Text("\nRendering settings (doesn't affect ALR data):");
-    ImGui::Checkbox("Render @ actual size", use_actual_size);
-    ImGui::SliderFloat("Render Scale", scale_factor, 0.001, 10);
 
-    // At this point we're pretty sure the texture is correctly formatted,
-    // so we can render it.
-    ImVec2 view_size = ImVec2(width * (*scale_factor), height * (*scale_factor));
-    if (*use_actual_size) {
-        view_size = ImVec2(width, height);
+    // We need unique labels every time, so just combine some values that are
+    // usually different. Texture ID is the same in a texture atlas and its
+    // contents. This isn't foolproof but it works.
+    char label[0x20] = {0};
+    snprintf(label, sizeof(label), "Scale to window##%d%lf", tex_id, uv1.x);
+    ImGui::Checkbox(label, scale_to_window);
+
+    snprintf(label, sizeof(label), "Render Scale ##%d%lf", tex_id, uv1.x);
+    ImGui::SliderFloat(label, scale_factor, 0.001, 10);
+
+    // Scale the texture depending on the current settings.
+    ImVec2 view_size = ImVec2((float)width * (*scale_factor), (float)height * (*scale_factor));
+    if (*scale_to_window) {
+        // We try to fill the space available to us
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+
+        // Use the square resolution that fits within the available space
+        view_size.x = view_size.y = MIN(avail.x, avail.y);
+
+        // Scale by the aspect ratio to fix rectangular images
+        const float aspect = (float)width / (float)height;
+        view_size.y /= aspect;
     }
     // TODO: Look into showing mipmap contents
-    // TODO: See if we can scale the image relative to window size
     ImGui::Image(tex_id, view_size, uv0, uv1);
 }
 
@@ -279,18 +293,17 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
         window_0x10.tex = cur_tex;
     }
 
-    ImGui::BeginChild("texInfo");
+    // Draw both textures
     ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
     ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
     ImGui::Text("Texture index %d (see 0x15 chunk for offset)", window_0x10.selected_atlas);
-    ImGui::Image(window_0x10.gl_tex_id, ImVec2(atlas.width, atlas.height));
+    draw_image(window_0x10.gl_tex_id, atlas.width, atlas.height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas);
 
     ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.height, tex.width, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     const ImVec2 uv1 = ImVec2(tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     const ImVec2 uv0 = ImVec2(uv1.x - ((float)tex.width / atlas.width), uv1.y - ((float)tex.height / atlas.height));
     draw_image(window_0x10.gl_tex_id, tex.width, tex.height, &window_0x10.use_actual_size, &window_0x10.scale, uv0, uv1);
-    ImGui::EndChild();
 }
 
 void polaris::chunk::chunk_0x11(polaris *pol) {
@@ -381,7 +394,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     ImGui::EndChild();
     ImGui::SameLine();
 
-    ImGui::BeginChildFitContent("Texture Details", 1.0f);
+    ImGui::BeginGroup();
     resource_entry* entry = &entries[window_0x15.selected_texture];
     char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
     decode_single32(name, entry->text1);
@@ -427,7 +440,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     }
 
     draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale);
-    ImGui::EndChild();
+    ImGui::EndGroup();
 
     // Display file dialog if appropriate
     if (ImGuiFileDialog::Instance()->Display("chooseDDS_export0x15")) {
