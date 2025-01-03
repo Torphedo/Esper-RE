@@ -30,13 +30,13 @@ typedef struct {
 // Next, there are [array_size] instances of this structure:
 
 typedef enum {
-    FORMAT_MONO_16 = 0b10000010,
     FORMAT_RGBA8 = 0b00000110,
     FORMAT_RGBA8_ALT = 0b10010010, // These are both the same(?)
     FORMAT_DXT1 = 0b00001100,
     FORMAT_DXT3 = 0b00001110,
     FORMAT_DXT5 = 0b00001111,
-    FORMAT_A8 = 0b10000000
+    FORMAT_A8 = 0b10000000,
+    FORMAT_MONO_16 = 0b10000010,
 }alr_pixel_format;
 
 // Bad enum name. I don't know what this value means except for these 2
@@ -168,6 +168,7 @@ typedef struct {
     u16 unknown;
 }chunk_0x1_header;
 
+// For 0x2 chunks
 typedef struct {
     float unk_float[10];
     u32 pad[3]; // Always 0, so far

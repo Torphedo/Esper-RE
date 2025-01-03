@@ -33,11 +33,12 @@ void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out) const {
     vfile vf = vfile_open(pol->alr_data + offset, size);
 
     // Skip over chunk header
-    vfile_seek(&vf, sizeof(chunk_generic));
+    const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
     const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
 
-    const s32 num_tris = (size - vf.pos) / (3 * sizeof(u16));
-    for (u32 i = 0; i < num_tris - 1; i++) {
+    s32 num_tris = MAX(0, (size - sizeof(chunk_generic)) / (3 * sizeof(u16)));
+    num_tris = header.num_tris;
+    for (s32 i = 0; i < num_tris - 1; i++) {
         u16 idx1 = VFILE_READ(u16, &vf);
         u16 idx2 = VFILE_READ(u16, &vf);
         u16 idx3 = VFILE_READ(u16, &vf);
@@ -47,7 +48,7 @@ void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out) const {
         idx2++;
         idx3++;
 
-        fprintf(out, "f %d %d %d\n", idx1, idx2, idx3);
+        fprintf(out, "f %hu %hu %hu\n", idx1, idx2, idx3);
     }
 
 }
@@ -90,6 +91,7 @@ void polaris::chunk::chunk_0x3(polaris *pol) {
         return;
     }
 
+    // TODO: add a 3D viewport here so we can see all the matrix positions
     vfile vf = vfile_open(pol->alr_data + offset, size);
     vfile_seek(&vf, sizeof(chunk_generic)); // Skip ID & size
 
@@ -505,10 +507,12 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
             resource_entry_0x16 entry = entries[window_0x16.selected_vertex_buf];
             FILE *out = fopen(path.c_str(), "wb");
             if (out != nullptr) {
+                // Open resource buffer
                 vf = vfile_open(pol->alr_data, pol->alr_size);
 
-                // Jump to resource buffer
+                // Jump to the appropriate data
                 vfile_seek(&vf, pol->resbuf_offset);
+                vfile_seek(&vf, entry.data_ptr);
                 for (u32 i = 0; i < entry.vertex_count; i++) {
                     // Read our vertex positions, which always come first
                     const vec3s vert = VFILE_READ(vec3s, &vf);
@@ -537,11 +541,12 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
                     const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
 
                     // We only want index buffers meant for this vertex buffer
-                    if (header.vertex_buf != window_0x16.selected_vertex_buf) {
+                    if (header.vertex_buf != window_0x16.selected_vertex_buf || header.vertex_buf2 != window_0x16.selected_vertex_buf) {
                         continue;
                     }
 
-                    this->dump_idx_buf(pol, out);
+                    fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
+                    idx_chunk.dump_idx_buf(pol, out);
                 }
 
                 // Cleanup
