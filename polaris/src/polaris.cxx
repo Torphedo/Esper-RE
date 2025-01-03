@@ -541,12 +541,20 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
 
                 // Vertices are dumped, now for indices
                 for (chunk idx_chunk : pol->chunks) {
+                    if (idx_chunk.id == this->id && idx_chunk.offset != this->offset) {
+                        // We've hit another mesh metadata chunk, so any further
+                        // index buffers will be garbage data to us. Quit.
+                        break;
+                    }
+
                     if (idx_chunk.id != 0x2) {
                         // We only want index buffer chunks
                         continue;
                     }
 
                     if (idx_chunk.offset < offset) {
+                        // This index buffer is from a previous mesh, so it's
+                        // garbage data to us. Skip.
                         continue;
                     }
 
