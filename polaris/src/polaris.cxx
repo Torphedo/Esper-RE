@@ -29,19 +29,30 @@ namespace ImGui {
     }
 }
 
-void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out) const {
+void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, resource_entry_0x16* vert_entry) const {
     vfile vf = vfile_open(pol->alr_data + offset, size);
 
     // Skip over chunk header
     const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
     const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
 
-    s32 num_tris = MAX(0, (size - sizeof(chunk_generic)) / (3 * sizeof(u16)));
-    num_tris = header.num_tris;
+    s32 num_tris = MAX(0, (size - sizeof(chunk_generic) - sizeof(header)) / (3 * sizeof(u16)));
+    // If we trust the file for the number of triangles, the ends of some limbs
+    // will often be missing on player models...
+    // num_tris = header.num_tris;
     for (s32 i = 0; i < num_tris - 1; i++) {
         u16 idx1 = VFILE_READ(u16, &vf);
         u16 idx2 = VFILE_READ(u16, &vf);
         u16 idx3 = VFILE_READ(u16, &vf);
+
+        const u16 lower_bound = header.first_idx;
+        const u16 upper_bound = (vert_entry) ? vert_entry->vertex_count : UINT16_MAX;
+        const bool idx_too_small = idx1 > upper_bound || idx2 > upper_bound || idx3 > upper_bound;
+        const bool idx_too_large = idx1 < lower_bound || idx2 < lower_bound || idx3 < lower_bound;
+        if (idx_too_small || idx_too_large) {
+            // We're hitting some invalid data, give up.
+            break;
+        }
 
         // OBJ indices start at 1 :(
         idx1++;
@@ -73,7 +84,7 @@ void polaris::chunk::chunk_0x2(polaris *pol) {
                 return;
             }
 
-            this->dump_idx_buf(pol, out);
+            this->dump_idx_buf(pol, out, NULL);
             fclose(out);
         }
 
@@ -541,12 +552,12 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
                     const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
 
                     // We only want index buffers meant for this vertex buffer
-                    if (header.vertex_buf != window_0x16.selected_vertex_buf || header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+                    if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
                         continue;
                     }
 
                     fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-                    idx_chunk.dump_idx_buf(pol, out);
+                    idx_chunk.dump_idx_buf(pol, out, &entry);
                 }
 
                 // Cleanup

@@ -82,7 +82,7 @@ struct polaris {
         void import_dds_0x15(polaris* pol, const char* path, u32 num_entries, resource_entry* entries);
         void chunk_0x15(polaris *pol);
 
-        void dump_idx_buf(polaris *pol, FILE* out) const;
+        void dump_idx_buf(polaris *pol, FILE* out, resource_entry_0x16* vert_entry) const;
         void chunk_0x16(polaris *pol);
     };
 
