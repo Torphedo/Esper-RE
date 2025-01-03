@@ -3,7 +3,7 @@ project(polaris
     VERSION 0.0.1
     LANGUAGES CXX C
 )
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # Even though its 1 file, this keeps the main source file list shorter
 add_library(glad STATIC

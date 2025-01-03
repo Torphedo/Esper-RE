@@ -29,7 +29,7 @@ namespace ImGui {
     }
 }
 
-void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, resource_entry_0x16* vert_entry) const {
+void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, std::optional<resource_entry_0x16> vert_entry) const {
     vfile vf = vfile_open(pol->alr_data + offset, size);
 
     // Skip over chunk header
@@ -46,7 +46,11 @@ void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, resource_entry_0x16* 
         u16 idx3 = VFILE_READ(u16, &vf);
 
         const u16 lower_bound = header.first_idx;
-        const u16 upper_bound = (vert_entry) ? vert_entry->vertex_count : UINT16_MAX;
+        u16 upper_bound = UINT16_MAX;
+        if (vert_entry.has_value()) {
+            upper_bound = vert_entry.value().vertex_count;
+        }
+
         const bool idx_too_small = idx1 > upper_bound || idx2 > upper_bound || idx3 > upper_bound;
         const bool idx_too_large = idx1 < lower_bound || idx2 < lower_bound || idx3 < lower_bound;
         if (idx_too_small || idx_too_large) {
@@ -84,7 +88,7 @@ void polaris::chunk::chunk_0x2(polaris *pol) {
                 return;
             }
 
-            this->dump_idx_buf(pol, out, NULL);
+            this->dump_idx_buf(pol, out);
             fclose(out);
         }
 
@@ -557,7 +561,7 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
                     }
 
                     fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-                    idx_chunk.dump_idx_buf(pol, out, &entry);
+                    idx_chunk.dump_idx_buf(pol, out, entry);
                 }
 
                 // Cleanup
