@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <string>
 
 #include <glad/glad.h>
@@ -6,15 +5,14 @@
 #include "alr_texture.hxx"
 #include "polaris.hxx"
 
-extern "C" {
-    #include <cglm/struct.h>
-    #include <common/vfile.h>
-    #include <common/file.h>
-    #include <common/vmem.h>
-    #include <common/logging.h>
-    #include <formats/alr.h>
     #include <formats/pd_common.h>
 }
+#include <common/vfile.h>
+#include <common/file.h>
+#include <common/vmem.h>
+#include <common/logging.h>
+#include <formats/pd_common.h>
+#include <formats/alr.h>
 
 enum {
     // The power of 2 to limit texture resolutions to
