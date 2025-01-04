@@ -14,6 +14,7 @@ int main() {
 
     // polaris::do_gui() has the real UI code, and is basically the real entry
     // point. Sorry for the kind of unintuitive structure.
+    enable_win_ansi();
     if (!gui_main()) {
         // Actual error message is reported at the failure point
         LOG_MSG(error, "Failed to start up!\n");
