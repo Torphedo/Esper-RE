@@ -529,21 +529,21 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
                 vfile_seek(&vf, pol->resbuf_offset);
                 vfile_seek(&vf, entry.data_ptr);
                 for (u32 i = 0; i < entry.vertex_count; i++) {
+                    const s64 next_pos = vf.pos + entry.vertex_size;
                     // Read our vertex positions, which always come first
                     const vec3s vert = VFILE_READ(vec3s, &vf);
                     fprintf(out, "v %f %f %f\n", vert.x, vert.y, vert.z);
 
                     // There might be some data left over, for now we just skip
                     // over it.
-                    const u32 skip = entry.vertex_size - (sizeof(vert));
-                    vfile_seek(&vf, skip);
+                    vf.pos = next_pos;
                 }
 
                 // Vertices are dumped, now for indices
                 for (chunk idx_chunk : pol->chunks) {
-                    if (idx_chunk.id == this->id && idx_chunk.offset != this->offset) {
-                        // We've hit another mesh metadata chunk, so any further
-                        // index buffers will be garbage data to us. Quit.
+                    if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
+                        // We've hit a mesh metadata chunk past our own, so any
+                        // further index buffers will be garbage data to us. Quit.
                         break;
                     }
 
@@ -808,7 +808,6 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
             continue;
         }
 
-        // Each window needs a unique ID, but "##x" isn't shown
         const char* known_name = "";
         switch (chunk.id) {
         case 0x2:
@@ -823,8 +822,15 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
         case 0x11:
             known_name = "[Header]";
             break;
+        case 0x15:
+            known_name = "[Texture Metadata]";
+            break;
+        case 0x16:
+            known_name = "[Vertex Metadata]";
+            break;
         }
         char buf[0x30] = {0};
+        // Each window needs a unique ID, but "##x" isn't shown
         snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%lX ##%u", chunk.id, known_name, chunk.offset, i);
 
         if (ImGui::Begin(buf, &chunk.active)) {
