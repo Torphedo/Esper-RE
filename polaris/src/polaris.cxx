@@ -510,7 +510,17 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
         ImGuiFileDialog::Instance()->OpenDialog("chooseOBJ", "Choose OBJ File", ".obj", {});
     }
 
+    // Hex editor for vertex buffer entry
     hex_edit.DrawContents(&entries[window_0x16.selected_vertex_buf], sizeof(*entries));
+    ImGui::EndChild();
+
+    ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));
+
+    // Hex editor for vertex buffer data
+    const resource_entry_0x16 entry = entries[window_0x16.selected_vertex_buf];
+    u8* vertbuf = pol->alr_data + pol->resbuf_offset + entry.data_ptr;
+    window_0x16.hex_vertbuf.DrawContents(vertbuf, entry.vertex_count * entry.vertex_size);
+    ImGui::EndChild();
 
     // Display file dialog if appropriate
     if (ImGuiFileDialog::Instance()->Display("chooseOBJ")) {
@@ -580,8 +590,6 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
         // Close the dialog
         ImGuiFileDialog::Instance()->Close();
     }
-
-    ImGui::EndChild();
 }
 
 void polaris::chunk::draw(polaris *pol) {

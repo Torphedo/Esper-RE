@@ -49,6 +49,7 @@ struct window_state_0x15 {
 // State for 0x16 chunk window
 struct window_state_0x16 {
     u32 selected_vertex_buf = 0;
+    MemoryEditor hex_vertbuf;
 };
 
 struct polaris {

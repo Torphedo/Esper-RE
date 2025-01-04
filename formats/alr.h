@@ -112,7 +112,7 @@ typedef struct {
     u32 height;
 }tex_info;
 
-// This whole structure appears to hold animation data, or MAYBE mesh data.
+// Animation data
 typedef struct {
     u32 id; // 0x5
     u32 size;
