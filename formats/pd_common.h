@@ -1,4 +1,8 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <common/int.h>
 
 enum {
@@ -6,3 +10,7 @@ enum {
 };
 
 void decode_single32(char* output, u32 val);
+
+#ifdef __cplusplus
+}
+#endif

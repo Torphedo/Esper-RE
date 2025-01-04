@@ -74,6 +74,12 @@
 #pragma warning (disable: 4996) // warning C4996: 'sprintf': This function or variable may be unsafe.
 #endif
 
+// SSB: Data type constant and decoding function for the custom type
+#include <formats/pd_common.h>
+enum {
+    ImGuiDataType_SSB_Text = ImGuiDataType_COUNT + 1,
+};
+
 struct MemoryEditor
 {
     enum DataFormat
@@ -245,8 +251,10 @@ struct MemoryEditor
         float footer_height = OptFooterExtraHeight;
         if (OptShowOptions)
             footer_height += height_separator + ImGui::GetFrameHeightWithSpacing() * 1;
-        if (OptShowDataPreview)
-            footer_height += height_separator + ImGui::GetFrameHeightWithSpacing() * 1 + ImGui::GetTextLineHeightWithSpacing() * 3;
+        if (OptShowDataPreview) {
+            // SSB: Added an extra line of preview text
+            footer_height += height_separator + ImGui::GetFrameHeightWithSpacing() * 1 + ImGui::GetTextLineHeightWithSpacing() * 4;
+        }
         ImGui::BeginChild("##scrolling", ImVec2(-FLT_MIN, -footer_height), ImGuiChildFlags_None, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNav);
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
@@ -590,7 +598,8 @@ struct MemoryEditor
         ImGui::SameLine();
         ImGui::SetNextItemWidth((s.GlyphWidth * 10.0f) + style.FramePadding.x * 2.0f + style.ItemInnerSpacing.x);
 
-        static const ImGuiDataType supported_data_types[] = { ImGuiDataType_S8, ImGuiDataType_U8, ImGuiDataType_S16, ImGuiDataType_U16, ImGuiDataType_S32, ImGuiDataType_U32, ImGuiDataType_S64, ImGuiDataType_U64, ImGuiDataType_Float, ImGuiDataType_Double };
+        // SSB: Added data type to the list
+        static const ImGuiDataType supported_data_types[] = { ImGuiDataType_S8, ImGuiDataType_U8, ImGuiDataType_S16, ImGuiDataType_U16, ImGuiDataType_S32, ImGuiDataType_U32, ImGuiDataType_S64, ImGuiDataType_U64, ImGuiDataType_Float, ImGuiDataType_Double, ImGuiDataType_SSB_Text };
         if (ImGui::BeginCombo("##combo_type", DataTypeGetDesc(PreviewDataType), ImGuiComboFlags_HeightLargest))
         {
             for (int n = 0; n < IM_ARRAYSIZE(supported_data_types); n++)
@@ -618,6 +627,17 @@ struct MemoryEditor
             DrawPreviewData(DataPreviewAddr, mem_data, mem_size, PreviewDataType, DataFormat_Bin, buf, (size_t)IM_ARRAYSIZE(buf));
         buf[IM_ARRAYSIZE(buf) - 1] = 0;
         ImGui::Text("Bin"); ImGui::SameLine(x); ImGui::TextUnformatted(has_value ? buf : "N/A");
+
+        // SSB: Decode text into preview
+        if (PreviewDataType == ImGuiDataType_SSB_Text) {
+            if (has_value) {
+                char decoded[8] = {0};
+                decode_single32(decoded, *(u32*)(mem_data + DataPreviewAddr));
+                ImGui::Text("Text \"%s\"", decoded);
+            } else {
+                ImGui::Text("Text N/A");
+            }
+        }
     }
 
     // Utilities for Data Preview (since we don't access imgui_internal.h)
@@ -625,6 +645,11 @@ struct MemoryEditor
     const char* DataTypeGetDesc(ImGuiDataType data_type) const
     {
         const char* descs[] = { "Int8", "Uint8", "Int16", "Uint16", "Int32", "Uint32", "Int64", "Uint64", "Float", "Double" };
+        // SSB: Our data type enum is outside the normal range, so it can't go
+        // into the lookup table easily.
+        if (data_type == ImGuiDataType_SSB_Text) {
+            return "SSB Text";
+        }
         IM_ASSERT(data_type >= 0 && data_type < IM_ARRAYSIZE(descs));
         return descs[data_type];
     }
@@ -632,6 +657,11 @@ struct MemoryEditor
     size_t DataTypeGetSize(ImGuiDataType data_type) const
     {
         const size_t sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8, sizeof(float), sizeof(double) };
+        // SSB: Our data type enum is outside the normal range, so it can't go
+        // into the lookup table easily.
+        if (data_type == ImGuiDataType_SSB_Text) {
+            return 4;
+        }
         IM_ASSERT(data_type >= 0 && data_type < IM_ARRAYSIZE(sizes));
         return sizes[data_type];
     }
@@ -771,6 +801,8 @@ struct MemoryEditor
             if (data_format == DataFormat_Hex) { ImSnprintf(out_buf, out_buf_size, "0x%08x", data); return; }
             break;
         }
+        // SSB: Inherit U32 properties
+        case ImGuiDataType_SSB_Text:
         case ImGuiDataType_U32:
         {
             uint32_t data = 0;
