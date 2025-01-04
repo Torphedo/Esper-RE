@@ -63,7 +63,19 @@ void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, std::optional<resourc
         idx2++;
         idx3++;
 
-        fprintf(out, "f %hu %hu %hu\n", idx1, idx2, idx3);
+        bool has_uvs = false;
+        if (vert_entry.has_value()) {
+            if (vert_entry.value().vertex_size == 24) {
+                // This format has a known UV format, reflect it in the indices
+                has_uvs = true;
+            }
+        }
+
+        if (has_uvs) {
+            fprintf(out, "f %hu/%hu %hu/%hu %hu/%hu\n", idx1, idx1, idx2, idx2, idx3, idx3);
+        } else {
+            fprintf(out, "f %hu %hu %hu\n", idx1, idx2, idx3);
+        }
     }
 
 }
@@ -542,7 +554,16 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
                     const s64 next_pos = vf.pos + entry.vertex_size;
                     // Read our vertex positions, which always come first
                     const vec3s vert = VFILE_READ(vec3s, &vf);
+
                     fprintf(out, "v %f %f %f\n", vert.x, vert.y, vert.z);
+
+                    if (entry.vertex_size == 24) {
+                        // The vertex format with this size has a known UV
+                        // format, using 16-bit values
+                        const u16 uv1 = VFILE_READ(u16, &vf);
+                        const u16 uv2 = VFILE_READ(u16, &vf);
+                        fprintf(out, "vt %f %f\n", (float)uv1 / INT16_MAX, (float)uv2 / INT16_MAX);
+                    }
 
                     // There might be some data left over, for now we just skip
                     // over it.
