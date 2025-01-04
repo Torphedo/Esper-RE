@@ -64,7 +64,11 @@ struct polaris {
             window_state_0x15 window_0x15;
             window_state_0x16 window_0x16;
         };
+        // Hex editor used by specialized editors of each chunk
         MemoryEditor hex_edit;
+
+        // Generic hex editor used in every chunk's draw function
+        MemoryEditor hex_chunk;
 
         u32 id = 0;
         s32 size = 0; // Sizes can actually be signed, not sure why.

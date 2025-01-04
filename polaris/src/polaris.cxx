@@ -79,7 +79,7 @@ void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, std::optional<resourc
 
 void polaris::chunk::chunk_0x2(polaris *pol) {
     char dialog_key[0x20] = {0};
-    snprintf(dialog_key, sizeof(dialog_key), "chooseOBJ_idx##%lu", offset);
+    snprintf(dialog_key, sizeof(dialog_key), "chooseOBJ_idx##%llu", offset);
     if (ImGui::Button("Append indices to OBJ")) {
         // All we can do this frame is open the dialog
         ImGuiFileDialog::Instance()->OpenDialog(dialog_key, "Choose OBJ File", ".obj", {});
@@ -616,29 +616,40 @@ void polaris::chunk::draw(polaris *pol) {
         return;
     }
 
-    switch (id) {
-        case 0x2:
-            this->chunk_0x2(pol);
-            break;
-        case 0x3:
-            this->chunk_0x3(pol);
-            break;
-        case 0x10:
-            this->chunk_0x10(pol);
-            break;
-        case 0x11:
-            this->chunk_0x11(pol);
-            break;
-        case 0x15:
-            this->chunk_0x15(pol);
-            break;
-        case 0x16:
-            this->chunk_0x16(pol);
-            break;
-        default:
-            // Unimplemented window
-            ImGui::Text("Unimplemented chunk type");
-            return;
+    if (ImGui::BeginTabBar("Chunk Tabs")) {
+        if (ImGui::BeginTabItem("Specialized Chunk Editor")) {
+            switch (id) {
+                case 0x2:
+                    this->chunk_0x2(pol);
+                    break;
+                case 0x3:
+                    this->chunk_0x3(pol);
+                    break;
+                case 0x10:
+                    this->chunk_0x10(pol);
+                    break;
+                case 0x11:
+                    this->chunk_0x11(pol);
+                    break;
+                case 0x15:
+                    this->chunk_0x15(pol);
+                    break;
+                case 0x16:
+                    this->chunk_0x16(pol);
+                    break;
+                default:
+                    // Unimplemented window
+                    ImGui::Text("[No special editor available]");
+            }
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Raw Chunk Data")) {
+            // Hex editor for the entire chunk, displayed with correct file offsets
+            hex_chunk.DrawContents(pol->alr_data + this->offset, this->size, this->offset);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
     }
 }
 
