@@ -28,11 +28,11 @@ struct window_state_0x10 {
     // User can choose to render the texture at its real size, or scaled up
     // Render settings for entire atlas
     bool use_actual_size_atlas = false;
-    float scale_atlas = 0;
+    float scale_atlas = 1.0f;
 
     // Render settings for texture inside atlas
     bool use_actual_size = false;
-    float scale = 0;
+    float scale = 1.0f;
 };
 
 // State for 0x15 texture window
@@ -43,7 +43,7 @@ struct window_state_0x15 {
 
     // User can choose to render the texture at its real size, or scaled up
     bool use_actual_size = false;
-    float scale = 0;
+    float scale = 1.0f;
 };
 
 // State for 0x16 chunk window

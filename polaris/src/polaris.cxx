@@ -5,14 +5,13 @@
 #include "alr_texture.hxx"
 #include "polaris.hxx"
 
-    #include <formats/pd_common.h>
-}
 #include <common/vfile.h>
 #include <common/file.h>
 #include <common/vmem.h>
 #include <common/logging.h>
 #include <formats/pd_common.h>
 #include <formats/alr.h>
+#include <cglm/struct.h>
 
 enum {
     // The power of 2 to limit texture resolutions to
@@ -169,18 +168,18 @@ void polaris::chunk::chunk_0x3(polaris *pol) {
     }
 }
 
-static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) {
+static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) {
     ImGui::Text("\nRendering settings (doesn't affect ALR data):");
 
     // We need unique labels every time, so just combine some values that are
     // usually different. Texture ID is the same in a texture atlas and its
     // contents. This isn't foolproof but it works.
     char label[0x20] = {0};
-    snprintf(label, sizeof(label), "Scale to window##%d%lf", tex_id, uv1.x);
+    snprintf(label, sizeof(label), "Scale to window##%d%lf%s", tex_id, uv1.x, id);
     ImGui::Checkbox(label, scale_to_window);
 
-    snprintf(label, sizeof(label), "Render Scale ##%d%lf", tex_id, uv1.x);
-    ImGui::SliderFloat(label, scale_factor, 0.001, 10);
+    snprintf(label, sizeof(label), "Render Scale ##%d%lf%s", tex_id, uv1.x, id);
+    ImGui::SliderFloat(label, scale_factor, 0.001f, 10.0f);
 
     // Scale the texture depending on the current settings.
     ImVec2 view_size = ImVec2((float)width * (*scale_factor), (float)height * (*scale_factor));
@@ -324,13 +323,13 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
     ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
     ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
     ImGui::Text("Texture index %d (see 0x15 chunk for offset)", window_0x10.selected_atlas);
-    draw_image(window_0x10.gl_tex_id, atlas.width, atlas.height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas);
+    draw_image(window_0x10.gl_tex_id, atlas.width, atlas.height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
 
     ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.height, tex.width, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     const ImVec2 uv1 = ImVec2(tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
     const ImVec2 uv0 = ImVec2(uv1.x - ((float)tex.width / atlas.width), uv1.y - ((float)tex.height / atlas.height));
-    draw_image(window_0x10.gl_tex_id, tex.width, tex.height, &window_0x10.use_actual_size, &window_0x10.scale, uv0, uv1);
+    draw_image(window_0x10.gl_tex_id, tex.width, tex.height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
 void polaris::chunk::chunk_0x11(polaris *pol) {
@@ -466,7 +465,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
         ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_export0x15", "Choose DDS File", ".dds", {});
     }
 
-    draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale);
+    draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale, "preview");
     ImGui::EndGroup();
 
     // Display file dialog if appropriate
