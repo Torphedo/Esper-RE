@@ -59,6 +59,7 @@ struct polaris {
 
         // Try to only store primitive data here that can be trivially
         // zero-initialized. Otherwise it's kind of a pain.
+        // TODO: See if we can use std::variant or inheritance to make it harder to call functions on the wrong chunk type
         union {
             window_state_0x3 window_0x3;
             window_state_0x10 window_0x10;
@@ -127,6 +128,10 @@ struct polaris {
     // large chunk of address space to avoid crashes in this case.
     s64 reserve_size = 1024 * 1024 * 32;
     std::vector<chunk> chunks;
+
+    // If present, only display chunks with this ID
+    std::optional<u32> chunk_filter;
+
     // Input state from the previous frame
     input_internal prev_input = {};
     // The texture currently being rendered in the background (buffpeep integration)

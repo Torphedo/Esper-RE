@@ -836,11 +836,33 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
         ImGuiFileDialog::Instance()->Close();
     }
 
+    const char* filter_label = "Chunk ID Filter";
+    const ImGuiInputTextFlags flags = chunk_filter.has_value() ? 0 : ImGuiInputTextFlags_DisplayEmptyRefVal | ImGuiInputTextFlags_AutoSelectAll;
+    u32 val = this->chunk_filter.has_value() ? this->chunk_filter.value() : 0;
+    const u32 step = 1;
+    ImGui::InputScalar(filter_label, ImGuiDataType_U32, &val, &step, &step, nullptr, flags);
+    // InputScalar() doesn't have very good support for optionals where 0 is a
+    // valid value, so we just assume a value of 0 is intended if it loses focus
+    if (ImGui::IsItemEdited() || ImGui::IsItemDeactivated()) {
+        // The value was edited, update it
+        this->chunk_filter = val;
+    }
+    if (ImGui::Button("Clear filter")) {
+        // Set to empty value
+        this->chunk_filter = std::optional<u32>();
+    }
+
     if (ImGui::BeginListBox(" ", ImVec2(0, -FLT_MIN))) {
         for (size_t n = 0; n < chunks.size(); n++) {
             polaris::chunk& chunk = chunks.at(n);
             char buf[128] = {0};
             snprintf(buf, sizeof(buf), "0x%02X chunk @ 0x%02lX [%d bytes] ##%lu", chunk.id, chunk.offset, chunk.size, n);
+            if (this->chunk_filter.has_value()) {
+                if (this->chunk_filter.value() != chunk.id) {
+                    // Only show chunks that match the ID filter
+                    continue;
+                }
+            }
 
             if (ImGui::Selectable(buf, chunk.active)) {
                 // Add chunk to the list
