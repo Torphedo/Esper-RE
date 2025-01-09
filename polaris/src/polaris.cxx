@@ -26,7 +26,11 @@ namespace ImGui {
     }
 }
 
-void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, std::optional<resource_entry_0x16> vert_entry) const {
+void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<resource_entry_0x16> vert_entry) const {
+    if (this->id != 0x2) {
+        return;
+    }
+
     vfile vf = vfile_open(pol->alr_data + offset, size);
 
     // Skip over chunk header
@@ -77,7 +81,11 @@ void polaris::chunk::dump_idx_buf(polaris *pol, FILE* out, std::optional<resourc
 
 }
 
-void polaris::chunk::chunk_0x2(polaris *pol) {
+void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
+    if (this->id != 0x2) {
+        return;
+    }
+
     char dialog_key[0x20] = {0};
     snprintf(dialog_key, sizeof(dialog_key), "chooseOBJ_idx##%llu", offset);
     if (ImGui::Button("Append indices to OBJ")) {
@@ -110,7 +118,7 @@ void polaris::chunk::chunk_0x2(polaris *pol) {
     hex_edit.DrawContents(ptr, size - sizeof(chunk_generic));
 }
 
-void polaris::chunk::chunk_0x3(polaris *pol) {
+void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
     if (id != 0x3) {
         return;
     }
@@ -168,7 +176,7 @@ void polaris::chunk::chunk_0x3(polaris *pol) {
     }
 }
 
-static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) {
+static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept {
     ImGui::Text("\nRendering settings (doesn't affect ALR data):");
 
     // We need unique labels every time, so just combine some values that are
@@ -198,7 +206,7 @@ static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wind
     ImGui::Image(tex_id, view_size, uv0, uv1);
 }
 
-void polaris::chunk::chunk_0x10(polaris *pol) {
+void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
     if (id != 0x10) {
         // Exit if we were called by mistake
         return;
@@ -332,7 +340,7 @@ void polaris::chunk::chunk_0x10(polaris *pol) {
     draw_image(window_0x10.gl_tex_id, tex.width, tex.height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
-void polaris::chunk::chunk_0x11(polaris *pol) {
+void polaris::chunk::chunk_0x11(const polaris *pol) const noexcept {
     if (id != 0x11) {
         return;
     }
@@ -353,7 +361,7 @@ void polaris::chunk::chunk_0x11(polaris *pol) {
     }
 }
 
-void polaris::chunk::import_dds_0x15(polaris* pol, const char* path, u32 num_entries, resource_entry* entries) {
+void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, resource_entry* entries) {
     if (id != 0x15) {
         return;
     }
@@ -381,7 +389,7 @@ void polaris::chunk::import_dds_0x15(polaris* pol, const char* path, u32 num_ent
             // This power is larger than the largest target resolution
             break;
         }
-        // Ssve the current power of 2 back to the ALR
+        // Save the current power of 2 back to the ALR
         entries[window_0x15.selected_texture].resolution_pwr = i;
     }
 
@@ -390,7 +398,7 @@ void polaris::chunk::import_dds_0x15(polaris* pol, const char* path, u32 num_ent
     window_0x15.tex.height = window_0x15.tex.width = exponent(2, power);
 }
 
-void polaris::chunk::chunk_0x15(polaris *pol) {
+void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     if (id != 0x15) {
         // Exit if we were called by mistake
         return;
@@ -486,7 +494,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) {
     }
 }
 
-void polaris::chunk::chunk_0x16(polaris *pol) {
+void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
     if (id != 0x16) {
         // Exit if we were called by mistake
         return;
@@ -610,7 +618,7 @@ void polaris::chunk::chunk_0x16(polaris *pol) {
     }
 }
 
-void polaris::chunk::draw(polaris *pol) {
+void polaris::chunk::draw(polaris *pol) noexcept {
     if (pol->alr_data == nullptr || pol->alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
         return;
@@ -653,9 +661,15 @@ void polaris::chunk::draw(polaris *pol) {
     }
 }
 
-polaris::chunk::chunk(u32 init_id) {
-    id = init_id;
+polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
+    this->id = id;
+    this->size = size;
+    this->offset = offset;
 
+    // Because this is a union, we're not sure which constructors might be run
+    // when, and other union members might set non-zero values to some fields.
+    // To make sure the intended union member is correctly initialized, we use
+    // this switch statement.
     switch (id) {
         case 0x3:
             window_0x3 = {};
@@ -896,11 +910,10 @@ std::vector<polaris::chunk> polaris::shatter_alr(const u8* buf, s64 size) noexce
     while (!vfile_eof(vf)) {
         // Read chunk data. We have to copy it over 1 field at a time because we
         // don't actually want/need any more of the chunk data.
-        const u32 offset = vf.pos; // It's important to save offset before reading
+        const uintptr_t offset = vf.pos; // It's important to save offset before reading
         const u32 id = VFILE_READ(u32, &vf);
-        polaris::chunk chunk(id);
-        chunk.size = VFILE_READ(s32, &vf);
-        chunk.offset = offset;
+        const s32 chunk_size = VFILE_READ(s32, &vf);
+        polaris::chunk chunk(id, chunk_size, offset);
 
         if (chunk.id == 0 && prev_id == 0) {
             // There's never multiple consecutive chunks with ID 0. This means

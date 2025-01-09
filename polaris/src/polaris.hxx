@@ -53,10 +53,11 @@ struct window_state_0x16 {
 };
 
 struct polaris {
+    /// State for each ALR chunk
     struct chunk {
-        chunk(u32 init_id);
+        chunk(u32 id, s32 size, uintptr_t offset) noexcept;
 
-        // Try to only store POD data here that can be trivially
+        // Try to only store primitive data here that can be trivially
         // zero-initialized. Otherwise it's kind of a pain.
         union {
             window_state_0x3 window_0x3;
@@ -70,26 +71,49 @@ struct polaris {
         // Generic hex editor used in every chunk's draw function
         MemoryEditor hex_chunk;
 
+        /// The ID determines what data the chunk should contain
         u32 id = 0;
-        s32 size = 0; // Sizes can actually be signed, not sure why.
+
+        s32 size = 0; // Sizes are sometimes negative, not sure why.
+
+        /// The location of this chunk in the ALR file
         uintptr_t offset = 0;
 
-        // A chunk is "orphaned" if it can't be found using the offset table
+        /// A chunk is "orphaned" if it can't be found using the offset table
         bool orphan = false;
+
+        /// Whether to show this chunk's editing window
         bool active = false;
 
-        void draw(polaris *pol);
+        /// Render and update the chunk's editing window.
+        /// This always draws, and doesn't check the @ref active flag
+        void draw(polaris *pol) noexcept;
 
-        void chunk_0x2(polaris *pol);
-        void chunk_0x3(polaris *pol);
-        void chunk_0x10(polaris *pol);
-        void chunk_0x11(polaris *pol);
+        // Dedicated editing windows for each chunk type
+        void chunk_0x2(const polaris *pol) noexcept;
+        void chunk_0x3(const polaris *pol) noexcept;
+        void chunk_0x10(const polaris *pol) noexcept;
+        void chunk_0x11(const polaris *pol) const noexcept;
 
-        void import_dds_0x15(polaris* pol, const char* path, u32 num_entries, resource_entry* entries);
-        void chunk_0x15(polaris *pol);
+        /// Replace the selected texture with a DDS file from disk, updating the
+        /// metadata in the 0x15 chunk. Does nothing if not called on an 0x15 chunk.
+        /// @param pol The rest of the program's state
+        /// @param path The filepath of the DDS to load
+        /// @param num_entries The number of texture entries in the 0x15 chunk
+        /// @param entries Texture entries to be modified
+        void import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, resource_entry* entries);
+        void chunk_0x15(polaris *pol) noexcept;
 
-        void dump_idx_buf(polaris *pol, FILE* out, std::optional<resource_entry_0x16> vert_entry = std::optional<resource_entry_0x16>()) const;
-        void chunk_0x16(polaris *pol);
+        /// @brief Save index buffer data from an 0x2 chunk into an OBJ file.
+        ///
+        /// @param pol The rest of the program's state
+        /// @param out The output file to write to
+        /// @param vert_entry Optional metadata about the vertex format. If
+        /// present, extra checks occur to avoid saving invalid indices, and
+        /// indices are formatted to use UVs if present. Otherwise, the indices
+        /// are saved as-is.
+        void dump_idx_buf(const polaris *pol, FILE* out, std::optional<resource_entry_0x16> vert_entry = std::optional<resource_entry_0x16>()) const;
+        void chunk_0x16(polaris *pol) noexcept;
     };
 
     // State for the overall editor
@@ -108,7 +132,7 @@ struct polaris {
     // The texture currently being rendered in the background (buffpeep integration)
     img_state img_ctx = {0};
 
-    polaris() noexcept;
+    /// @brief Hide input from the rest of the program when ImGui is using it.
     void handle_input_suppression() noexcept;
 
     /// @brief "Shatter" an ALR into all its chunks
@@ -119,9 +143,14 @@ struct polaris {
     /// @return List of chunks
     std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
 
+    /// @brief Save the ALR data in-memory to the specified path.
     bool save_alr(const char *path) const noexcept;
 
+    /// @brief Render and update all the UI
     bool do_gui(GLFWwindow *window) noexcept;
 
+    /// @brief Increase the amount of address space reserved for the ALR data
     void expand_reservation(s64 new_size) noexcept;
+
+    polaris() noexcept;
 };
