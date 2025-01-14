@@ -27,10 +27,18 @@ namespace ImGui {
     }
 }
 
+// Normally I'd make this a method, but by using a macro we can have LOG_MSG()
+// automatically log the name of the method that shouldn't have been called.
+#define CHUNK_ID_ASSERT(expected_id) \
+do {                                 \
+    if (id != expected_id) {         \
+        LOG_MSG(warning, "Method called on 0x%x chunk @ 0x%x, when it only makes sense for 0x%x chunks!\n", id, offset, expected_id);\
+        return;                      \
+    }                                \
+} while(0)
+
 void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<resource_entry_0x16> vert_entry) const {
-    if (this->id != 0x2) {
-        return;
-    }
+    CHUNK_ID_ASSERT(0x2);
 
     vfile vf = vfile_open(pol->alr_data + offset, size);
 
@@ -82,11 +90,9 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<r
 
 }
 
-void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
-    if (this->id != 0x2) {
-        return;
-    }
 
+void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
+    CHUNK_ID_ASSERT(0x2);
     if (ImGui::Button("Append indices to OBJ")) {
         // All we can do this frame is open the dialog
         nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
@@ -112,44 +118,45 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
 }
 
 void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
-    if (id != 0x3) {
-        return;
-    }
+    CHUNK_ID_ASSERT(0x3);
 
     // TODO: add a 3D viewport here so we can see all the matrix positions
     vfile vf = vfile_open(pol->alr_data + offset, size);
     vfile_seek(&vf, sizeof(chunk_generic)); // Skip ID & size
 
-    const u32 num_matrices = (size - sizeof(chunk_generic) - sizeof(chunk_transform)) / sizeof(mat4);
-    const u16 num_non_identity = VFILE_READ(u16, &vf);
-    const u16 unk = VFILE_READ(u16, &vf);
-    const u32 pad = VFILE_READ(u32, &vf);
-    auto *matrices = (mat4 *) vfile_cur(vf);
+    const u32 num_joints = (size - sizeof(chunk_generic) - sizeof(chunk_armature)) / sizeof(joint_t);
+    const chunk_armature header = VFILE_READ(chunk_armature, &vf);
+    auto* joints = (joint_t *) vfile_cur(vf);
+
+    ImGui::Text("%d joints [%d identity]", num_joints, num_joints - header.joint_count);
 
     const u32 min = 0;
-    const u32 max = MAX(num_matrices - 1, 0);
+    const u32 max = MAX(num_joints - 1, 0);
     ImGui::Checkbox("Use slider", &window_0x3.mat_slider);
+    const char* inputlabel = "Selected Joint";
     if (window_0x3.mat_slider) {
-        ImGui::SliderScalar("Selected Matrix", ImGuiDataType_S32, &window_0x3.selected_mat, &min, &max);
+        ImGui::SliderScalar(inputlabel, ImGuiDataType_S32, &window_0x3.selected_mat, &min, &max);
     } else {
-        ImGui::InputScalar("Selected Matrix", ImGuiDataType_S32, &window_0x3.selected_mat);
+        ImGui::InputScalar(inputlabel, ImGuiDataType_S32, &window_0x3.selected_mat);
     }
     // Don't allow out of bounds index
     window_0x3.selected_mat = CLAMP(min, window_0x3.selected_mat, max);
 
-    ImGui::Text("%d matrices [%d identity]", num_matrices, num_matrices - num_non_identity);
+    char name[8] = {0};
+    decode_single32(name, joints[window_0x3.selected_mat].name);
+    ImGui::Text("Joint name: %s", name);
 
-    if (ImGui::BeginTabBar("Matrix Editing")) {
-        if (ImGui::BeginTabItem("Raw editor")) {
+    if (ImGui::BeginTabBar("editors")) {
+        if (ImGui::BeginTabItem("Float editor")) {
 
             // Matrix inputs
             ImGui::PushItemWidth(200.0f); // Make inputs narrower
-            ImGui::Text("Matrix Editor");
-            for (u32 j = 0; j < 4; j++) {
-                for (u32 k = 0; k < 4; k++) {
+            for (u32 j = 0; j < 3; j++) {
+                for (u32 k = 0; k < 3; k++) {
                     char buf[0x20] = {0};
                     snprintf(buf, sizeof(buf), "##%d%d", j, k);
-                    ImGui::InputFloat(buf, &matrices[window_0x3.selected_mat][j][k]);
+                    mat3* mat = &joints[window_0x3.selected_mat].mat;
+                    ImGui::InputFloat(buf, &(*mat)[j][k]);
                     ImGui::SameLine();
                 }
                 ImGui::Text(" "); // Cause a new line
@@ -158,9 +165,10 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Hex Editing")) {
+        if (ImGui::BeginTabItem("Hex Editor")) {
             // Show hex editor
-            hex_edit.DrawContents(&matrices[window_0x3.selected_mat], sizeof(matrices[window_0x3.selected_mat]));
+            mat3* mat = &joints[window_0x3.selected_mat].mat;
+            hex_edit.DrawContents(mat, sizeof(*mat));
 
             ImGui::EndTabItem();
         }
@@ -200,10 +208,7 @@ static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wind
 }
 
 void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
-    if (id != 0x10) {
-        // Exit if we were called by mistake
-        return;
-    }
+    CHUNK_ID_ASSERT(0x10);
 
     // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(pol->alr_data + offset, size);
@@ -334,9 +339,7 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
 }
 
 void polaris::chunk::chunk_0x11(const polaris *pol) const noexcept {
-    if (id != 0x11) {
-        return;
-    }
+    CHUNK_ID_ASSERT(0x11);
 
     vfile vf = vfile_open(pol->alr_data + offset, size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
@@ -355,9 +358,7 @@ void polaris::chunk::chunk_0x11(const polaris *pol) const noexcept {
 }
 
 void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, resource_entry* entries) {
-    if (id != 0x15) {
-        return;
-    }
+    CHUNK_ID_ASSERT(0x15);
 
     const resource_entry cur = entries[window_0x15.selected_texture];
     const resource_entry next = entries[window_0x15.selected_texture + 1];
@@ -392,10 +393,7 @@ void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 n
 }
 
 void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
-    if (id != 0x15) {
-        // Exit if we were called by mistake
-        return;
-    }
+    CHUNK_ID_ASSERT(0x15);
 
     // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(pol->alr_data + offset, size);
@@ -485,10 +483,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
 }
 
 void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
-    if (id != 0x16) {
-        // Exit if we were called by mistake
-        return;
-    }
+    CHUNK_ID_ASSERT(0x16);
 
     // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(pol->alr_data + offset, size);
@@ -508,6 +503,7 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
             window_0x16.selected_vertex_buf = i;
         }
     }
+
     ImGui::EndChild();
     ImGui::SameLine();
 
@@ -911,7 +907,7 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
             known_name = "[Index Buffer]";
             break;
         case 0x3:
-            known_name = "[Transform Matrix]";
+            known_name = "[Armature]";
             break;
         case 0x10:
             known_name = "[Texture Atlas]";
