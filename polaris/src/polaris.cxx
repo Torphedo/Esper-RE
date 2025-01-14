@@ -1,5 +1,3 @@
-#include <string>
-
 #include <glad/glad.h>
 #include <imgui_internal.h>
 #include <nfd.h>
@@ -845,12 +843,17 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
     ImGui::Begin("ALR Select");
 
     const char* filter_label = "Chunk ID Filter";
-    const ImGuiInputTextFlags flags = chunk_filter.has_value() ? 0 : ImGuiInputTextFlags_DisplayEmptyRefVal | ImGuiInputTextFlags_AutoSelectAll;
-    u32 val = this->chunk_filter.has_value() ? this->chunk_filter.value() : 0;
+    ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll;
+    if (!chunk_filter.has_value()) {
+        // Make the filter look empty
+        flags |= ImGuiInputTextFlags_DisplayEmptyRefVal;
+    }
+
+    int val = this->chunk_filter.has_value() ? this->chunk_filter.value() : 0;
     const u32 step = 1;
-    ImGui::InputScalar(filter_label, ImGuiDataType_U32, &val, &step, &step, nullptr, flags);
-    // InputScalar() doesn't have very good support for optionals where 0 is a
-    // valid value, so we just assume a value of 0 is intended if it loses focus
+    ImGui::InputInt(filter_label, &val, 1, 1, flags);
+    // Input functions don't have good support for optionals where 0 is a valid
+    // value, so we just assume a value of 0 is intended if it loses focus
     if (ImGui::IsItemEdited() || ImGui::IsItemDeactivated()) {
         // The value was edited, update it
         this->chunk_filter = val;
