@@ -132,6 +132,9 @@ struct polaris {
     // If present, only display chunks with this ID
     std::optional<u32> chunk_filter;
 
+    // Whether to show the ImGui Demo Window
+    bool show_demo = true;
+
     // Input state from the previous frame
     input_internal prev_input = {};
     // The texture currently being rendered in the background (buffpeep integration)
@@ -150,6 +153,8 @@ struct polaris {
 
     /// @brief Save the ALR data in-memory to the specified path.
     bool save_alr(const char *path) const noexcept;
+
+    void do_menu_bar() noexcept;
 
     /// @brief Render and update all the UI
     bool do_gui(GLFWwindow *window) noexcept;

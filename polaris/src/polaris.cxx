@@ -2,6 +2,8 @@
 
 #include <glad/glad.h>
 #include <ImGuiFileDialog.h>
+#include <imgui_internal.h>
+
 #include "alr_texture.hxx"
 #include "polaris.hxx"
 
@@ -688,6 +690,10 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     }
 }
 
+
+// =============================================================================
+// The rest of this file is for the main Polaris class
+
 polaris::polaris() noexcept {
     // TODO: Add an option to commit on reserve in bobtail
     // TODO: Look into MEM_RESET to reduce impact on page file?
@@ -784,8 +790,39 @@ bool polaris::save_alr(const char* path) const noexcept {
     return result;
 }
 
+void polaris::do_menu_bar() noexcept {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const float height = ImGui::GetFrameHeight();
+    const ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar;
+
+    if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Load ALR")) {
+
+                }
+                if (ImGui::MenuItem("Save ALR")) {
+
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenuBar();
+        }
+        ImGui::End();
+    }
+}
+
 bool polaris::do_gui(GLFWwindow* window) noexcept {
     this->handle_input_suppression();
+
+    // Make the entire window a giant docking space
+    ImGui::DockSpaceOverViewport();
+    this->do_menu_bar();
+
+    if (this->show_demo) {
+        ImGui::ShowDemoWindow(&this->show_demo);
+    }
 
     ImGui::Begin("ALR Select");
     if (ImGui::Button("Load ALR")) {
@@ -912,9 +949,6 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
 
         ImGui::End();
     }
-
-
-    ImGui::ShowDemoWindow();
 
     // It's the end of the frame for us, save the current input
     prev_input = input;

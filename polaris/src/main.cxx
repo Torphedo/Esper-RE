@@ -1,8 +1,6 @@
 #include "gui_loop.hxx"
 
-extern "C" {
-    #include <common/logging.h>
-}
+#include <common/logging.h>
 
 int main() {
     // In main() we only "kick off" the program, and gui_main() handles the
