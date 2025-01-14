@@ -133,7 +133,7 @@ struct polaris {
     std::optional<u32> chunk_filter;
 
     // Whether to show the ImGui Demo Window
-    bool show_demo = true;
+    bool show_demo = false;
 
     // Input state from the previous frame
     input_internal prev_input = {};

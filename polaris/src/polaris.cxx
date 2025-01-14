@@ -797,35 +797,48 @@ void polaris::do_menu_bar() noexcept {
     const float height = ImGui::GetFrameHeight();
     const ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar;
 
+    const bool ctrl_pressed = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+    bool load_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_L, false);
+    bool save_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_S, false);
+
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Load ALR")) {
-                    // Display the file picker and load the ALR if a file is picked
-                    char* path = NULL;
-                    const nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
-                    nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
-                    if (NFD_OKAY && path != nullptr) {
-                        this->load_alr(path);
-                    }
-                    free(path);
-                }
-                if (ImGui::MenuItem("Save ALR")) {
-                    // Display the file picker and save the ALR if a file is picked
-                    nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
-                    char* path = NULL;
-                    nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
-                    if (NFD_OKAY && path != nullptr) {
-                        this->save_alr(path);
-                    }
-                    free(path);
-                }
+                load_alr |= ImGui::MenuItem("Load ALR", "Ctrl-L");
+                save_alr |= ImGui::MenuItem("Save ALR", "Ctrl-S");
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Extra")) {
+                ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
                 ImGui::EndMenu();
             }
 
             ImGui::EndMenuBar();
         }
         ImGui::End();
+    }
+
+    if (load_alr) {
+        // Display the file picker and load the ALR if a file is picked
+        char* path = NULL;
+        const nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
+        nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        if (NFD_OKAY && path != nullptr) {
+            this->load_alr(path);
+        }
+        free(path);
+    }
+
+    if (save_alr) {
+        // Display the file picker and save the ALR if a file is picked
+        nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
+        char* path = NULL;
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+        if (NFD_OKAY && path != nullptr) {
+            this->save_alr(path);
+        }
+        free(path);
     }
 }
 
