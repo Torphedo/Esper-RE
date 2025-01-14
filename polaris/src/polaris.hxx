@@ -114,6 +114,8 @@ struct polaris {
         /// indices are formatted to use UVs if present. Otherwise, the indices
         /// are saved as-is.
         void dump_idx_buf(const polaris *pol, FILE* out, std::optional<resource_entry_0x16> vert_entry = std::optional<resource_entry_0x16>()) const;
+
+        void dump_vertex_buf(const polaris *pol, const char* path, resource_entry_0x16 entry) const noexcept;
         void chunk_0x16(polaris *pol) noexcept;
     };
 

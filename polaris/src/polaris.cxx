@@ -1,18 +1,20 @@
 #include <glad/glad.h>
+#include <imgui.h>
 #include <imgui_internal.h>
+#include <cglm/struct.h>
 #include <nfd.h>
 
-#include "alr_texture.hxx"
-#include "common/int.h"
-#include "polaris.hxx"
-
+#include <common/int.h>
 #include <common/vfile.h>
 #include <common/file.h>
 #include <common/vmem.h>
 #include <common/logging.h>
+
 #include <formats/pd_common.h>
 #include <formats/alr.h>
-#include <cglm/struct.h>
+
+#include "alr_texture.hxx"
+#include "polaris.hxx"
 
 enum {
     // The power of 2 to limit texture resolutions to
@@ -90,6 +92,75 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<r
 
 }
 
+void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, resource_entry_0x16 entry) const noexcept {
+    CHUNK_ID_ASSERT(0x16);
+
+    // Dump to OBJ
+    FILE *out = fopen(path, "wb");
+    if (out != nullptr) {
+        // Open resource buffer
+        vfile vf = vfile_open(pol->alr_data, pol->alr_size);
+
+        // Jump to the appropriate data
+        vfile_seek(&vf, pol->resbuf_offset);
+        vfile_seek(&vf, entry.data_ptr);
+        for (u32 i = 0; i < entry.vertex_count; i++) {
+            const s64 next_pos = vf.pos + entry.vertex_size;
+            // Read our vertex positions, which always come first
+            const vec3s vert = VFILE_READ(vec3s, &vf);
+
+            fprintf(out, "v %f %f %f\n", vert.x, vert.y, vert.z);
+
+            if (entry.vertex_size == 24) {
+                // The vertex format with this size has a known UV
+                // format, using 16-bit values
+                const u16 uv1 = VFILE_READ(u16, &vf);
+                const u16 uv2 = VFILE_READ(u16, &vf);
+                fprintf(out, "vt %f %f\n", (float)uv1 / INT16_MAX, (float)uv2 / INT16_MAX);
+            }
+
+            // There might be some data left over, for now we just skip
+            // over it.
+            vf.pos = next_pos;
+        }
+
+        // Vertices are dumped, now for indices
+        for (chunk idx_chunk : pol->chunks) {
+            if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
+                // We've hit a mesh metadata chunk past our own, so any
+                // further index buffers will be garbage data to us. Quit.
+                break;
+            }
+
+            if (idx_chunk.id != 0x2) {
+                // We only want index buffer chunks
+                continue;
+            }
+
+            if (idx_chunk.offset < offset) {
+                // This index buffer is from a previous mesh, so it's
+                // garbage data to us. Skip.
+                continue;
+            }
+
+            // Skip to idx_chunk and skip header
+            vf.pos = idx_chunk.offset;
+            vfile_seek(&vf, sizeof(chunk_generic));
+            const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
+
+            // We only want index buffers meant for this vertex buffer
+            if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+                continue;
+            }
+
+            fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
+            idx_chunk.dump_idx_buf(pol, out, entry);
+        }
+
+        // Cleanup
+        fclose(out);
+    }
+}
 
 void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     CHUNK_ID_ASSERT(0x2);
@@ -512,6 +583,7 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
     ImGui::EndChild();
     ImGui::SameLine();
 
+    const resource_entry_0x16* entry = &entries[window_0x16.selected_vertex_buf];
     ImGui::BeginChild("Vertex Buffer Settings", ImVec2(600, 0));
     if (ImGui::Button("Dump to OBJ")) {
         // Display the file picker
@@ -519,86 +591,20 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
         char* path = NULL;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (NFD_OKAY && path != nullptr) {
-            // Dump to OBJ
-            resource_entry_0x16 entry = entries[window_0x16.selected_vertex_buf];
-            FILE *out = fopen(path, "wb");
-            if (out != nullptr) {
-                // Open resource buffer
-                vf = vfile_open(pol->alr_data, pol->alr_size);
-
-                // Jump to the appropriate data
-                vfile_seek(&vf, pol->resbuf_offset);
-                vfile_seek(&vf, entry.data_ptr);
-                for (u32 i = 0; i < entry.vertex_count; i++) {
-                    const s64 next_pos = vf.pos + entry.vertex_size;
-                    // Read our vertex positions, which always come first
-                    const vec3s vert = VFILE_READ(vec3s, &vf);
-
-                    fprintf(out, "v %f %f %f\n", vert.x, vert.y, vert.z);
-
-                    if (entry.vertex_size == 24) {
-                        // The vertex format with this size has a known UV
-                        // format, using 16-bit values
-                        const u16 uv1 = VFILE_READ(u16, &vf);
-                        const u16 uv2 = VFILE_READ(u16, &vf);
-                        fprintf(out, "vt %f %f\n", (float)uv1 / INT16_MAX, (float)uv2 / INT16_MAX);
-                    }
-
-                    // There might be some data left over, for now we just skip
-                    // over it.
-                    vf.pos = next_pos;
-                }
-
-                // Vertices are dumped, now for indices
-                for (chunk idx_chunk : pol->chunks) {
-                    if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
-                        // We've hit a mesh metadata chunk past our own, so any
-                        // further index buffers will be garbage data to us. Quit.
-                        break;
-                    }
-
-                    if (idx_chunk.id != 0x2) {
-                        // We only want index buffer chunks
-                        continue;
-                    }
-
-                    if (idx_chunk.offset < offset) {
-                        // This index buffer is from a previous mesh, so it's
-                        // garbage data to us. Skip.
-                        continue;
-                    }
-
-                    // Skip to idx_chunk and skip header
-                    vf.pos = idx_chunk.offset;
-                    vfile_seek(&vf, sizeof(chunk_generic));
-                    const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
-
-                    // We only want index buffers meant for this vertex buffer
-                    if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
-                        continue;
-                    }
-
-                    fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-                    idx_chunk.dump_idx_buf(pol, out, entry);
-                }
-
-                // Cleanup
-                fclose(out);
-            }
+            this->dump_vertex_buf(pol, path, *entry);
         }
         free(path);
     }
 
     // Hex editor for vertex buffer entry
-    hex_edit.DrawContents(&entries[window_0x16.selected_vertex_buf], sizeof(*entries));
+    hex_edit.DrawContents((void*)entry, sizeof(*entries));
     ImGui::EndChild();
 
     ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));
 
     // Hex editor for vertex buffer data
-    const resource_entry_0x16 entry = entries[window_0x16.selected_vertex_buf];
-    u8* vertbuf = pol->alr_data + pol->resbuf_offset + entry.data_ptr;
-    window_0x16.hex_vertbuf.DrawContents(vertbuf, entry.vertex_count * entry.vertex_size);
+    u8* vertbuf = pol->alr_data + pol->resbuf_offset + entry->data_ptr;
+    window_0x16.hex_vertbuf.DrawContents(vertbuf, entry->vertex_count * entry->vertex_size);
     ImGui::EndChild();
 }
 
