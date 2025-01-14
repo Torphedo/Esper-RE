@@ -93,6 +93,7 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<r
 
 void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     CHUNK_ID_ASSERT(0x2);
+
     if (ImGui::Button("Append indices to OBJ")) {
         // All we can do this frame is open the dialog
         nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
@@ -132,19 +133,24 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
 
     const u32 min = 0;
     const u32 max = MAX(num_joints - 1, 0);
-    ImGui::Checkbox("Use slider", &window_0x3.mat_slider);
+    ImGui::Checkbox("Use slider", &window_0x3.slider);
     const char* inputlabel = "Selected Joint";
-    if (window_0x3.mat_slider) {
-        ImGui::SliderScalar(inputlabel, ImGuiDataType_S32, &window_0x3.selected_mat, &min, &max);
+    if (window_0x3.slider) {
+        ImGui::SliderScalar(inputlabel, ImGuiDataType_S32, &window_0x3.selected_joint, &min, &max);
     } else {
-        ImGui::InputScalar(inputlabel, ImGuiDataType_S32, &window_0x3.selected_mat);
+        ImGui::InputScalar(inputlabel, ImGuiDataType_S32, &window_0x3.selected_joint);
     }
     // Don't allow out of bounds index
-    window_0x3.selected_mat = CLAMP(min, window_0x3.selected_mat, max);
+    window_0x3.selected_joint = CLAMP(min, window_0x3.selected_joint, max);
 
-    char name[8] = {0};
-    decode_single32(name, joints[window_0x3.selected_mat].name);
+    joint_t* joint = &joints[window_0x3.selected_joint];
+    char name[8] = "[empty]";
+    if (joint->name != -1) {
+        memset(name, 0, sizeof(name));
+        decode_single32(name, joint->name);
+    }
     ImGui::Text("Joint name: %s", name);
+    ImGui::Text("Parent index: %d", joint->parent_idx);
 
     if (ImGui::BeginTabBar("editors")) {
         if (ImGui::BeginTabItem("Float editor")) {
@@ -155,7 +161,7 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
                 for (u32 k = 0; k < 3; k++) {
                     char buf[0x20] = {0};
                     snprintf(buf, sizeof(buf), "##%d%d", j, k);
-                    mat3* mat = &joints[window_0x3.selected_mat].mat;
+                    mat3* mat = &joint->mat;
                     ImGui::InputFloat(buf, &(*mat)[j][k]);
                     ImGui::SameLine();
                 }
@@ -167,8 +173,7 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
 
         if (ImGui::BeginTabItem("Hex Editor")) {
             // Show hex editor
-            mat3* mat = &joints[window_0x3.selected_mat].mat;
-            hex_edit.DrawContents(mat, sizeof(*mat));
+            hex_edit.DrawContents(joint, sizeof(*joint));
 
             ImGui::EndTabItem();
         }
@@ -644,6 +649,7 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     this->id = id;
     this->size = size;
     this->offset = offset;
+    hex_edit.OptShowDataPreview = true;
 
     // Because this is a union, we're not sure which constructors might be run
     // when, and other union members might set non-zero values to some fields.
@@ -652,6 +658,7 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     switch (id) {
         case 0x3:
             window_0x3 = {};
+            hex_edit.PreviewDataType = ImGuiDataType_Float;
             break;
         case 0x10:
             window_0x10 = {};

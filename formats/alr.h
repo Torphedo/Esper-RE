@@ -156,10 +156,20 @@ typedef struct {
 }anim_rotation_keys;
 
 typedef struct {
-    u16 transform_count; // Number of non-identity matrices
+    u16 joint_count;
     u16 unknown; // Usually 1
     u32 pad;
-}chunk_transform;
+}chunk_armature;
+
+typedef struct {
+    float mat[3][3];
+    u16 unk1;
+    u16 unk2;
+    u16 unk3;
+    s16 parent_idx;
+    u32 name;
+    u8 pad[0x10];
+}joint_t;
 
 typedef struct {
     u32 id;

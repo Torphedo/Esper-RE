@@ -14,8 +14,8 @@ extern "C" {
 
 // State for 0x3 (transform matrix) window
 struct window_state_0x3 {
-    s32 selected_mat = 0;
-    bool mat_slider = false;
+    s32 selected_joint = 0;
+    bool slider = false;
 };
 
 // State for 0x10 chunk window

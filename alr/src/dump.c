@@ -19,14 +19,14 @@ u32 res_entry_count = 0;
 typedef float mat4[4][4]; // 4x4 transformation matrix
 
 void chunk_0x3(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
-    const u32 transform_count = (chunk.size - sizeof(chunk_transform)) / sizeof(mat4);
-    const chunk_transform* transform_header = (chunk_transform*)chunk_buf;
-    const mat4* transforms = (mat4*)(chunk_buf + sizeof(chunk_transform));
+    const u32 transform_count = (chunk.size - sizeof(chunk_armature)) / sizeof(mat4);
+    const chunk_armature* transform_header = (chunk_armature*)chunk_buf;
+    const mat4* transforms = (mat4*)(chunk_buf + sizeof(chunk_armature));
     if (!path_is_dir("resources")) {
         system("mkdir resources");
     }
     FILE* out = fopen("resources/transforms.txt", "ab");
-    fprintf(out, "%d total matrices, %d non-identity\n", transform_count, transform_header->transform_count);
+    fprintf(out, "%d total matrices, %d non-identity\n", transform_count, transform_header->joint_count);
     for (u32 i = 0; i < transform_count; i++) {
         for (u8 j = 0; j < 4; j++) {
             fprintf(out, "[%f, %f, %f, %f]\n", transforms[i][j][0], transforms[i][j][1], transforms[i][j][2], transforms[i][j][3]);
