@@ -23,6 +23,7 @@ include_directories(
 set(BOBTAIL_OPENGL ON)
 add_subdirectory(ext/bobtail)
 add_subdirectory(ext/glfw)
+add_subdirectory(ext/nfde)
 
 # Build Polaris
 add_subdirectory(polaris)

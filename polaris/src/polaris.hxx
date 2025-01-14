@@ -151,6 +151,9 @@ struct polaris {
     /// @return List of chunks
     std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
 
+    /// @brief Overwrite the loaded ALR with a new one
+    bool load_alr(const char* path) noexcept;
+
     /// @brief Save the ALR data in-memory to the specified path.
     bool save_alr(const char *path) const noexcept;
 

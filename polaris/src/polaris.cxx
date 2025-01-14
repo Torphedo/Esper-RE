@@ -1,10 +1,11 @@
 #include <string>
 
 #include <glad/glad.h>
-#include <ImGuiFileDialog.h>
 #include <imgui_internal.h>
+#include <nfd.h>
 
 #include "alr_texture.hxx"
+#include "common/int.h"
 #include "polaris.hxx"
 
 #include <common/vfile.h>
@@ -88,21 +89,15 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
         return;
     }
 
-    char dialog_key[0x20] = {0};
-    snprintf(dialog_key, sizeof(dialog_key), "chooseOBJ_idx##%llu", offset);
     if (ImGui::Button("Append indices to OBJ")) {
         // All we can do this frame is open the dialog
-        ImGuiFileDialog::Instance()->OpenDialog(dialog_key, "Choose OBJ File", ".obj", {});
-    }
-
-    // Display file dialog if appropriate
-    if (ImGuiFileDialog::Instance()->Display(dialog_key)) {
-        // If user cancels, we can't load anything
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-
+        nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
+        // Display the file picker
+        char* path = NULL;
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+        if (NFD_OKAY && path != nullptr) {
             // Dump to OBJ
-            FILE* out = fopen(path.c_str(), "ab");
+            FILE* out = fopen(path, "ab");
             if (out == nullptr) {
                 return;
             }
@@ -110,9 +105,7 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
             this->dump_idx_buf(pol, out);
             fclose(out);
         }
-
-        // Close the dialog
-        ImGuiFileDialog::Instance()->Close();
+        free(path);
     }
 
     // Index buffer hex editor
@@ -467,33 +460,30 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     entry->resolution_pwr = MIN(entry->resolution_pwr, ALR_TEX_POWER_LIMIT);
 
     if (ImGui::Button("Import DDS")) {
-        ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_import0x15", "Choose DDS File", ".dds", {});
+        // Display the file picker
+        nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
+        char* path = NULL;
+        nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        if (NFD_OKAY && path != nullptr) {
+            this->import_dds_0x15(pol, path, num_entries, entries);
+        }
+        free(path);
     }
+
     ImGui::SameLine();
     if (ImGui::Button("Export DDS")) {
-        // All we can do this frame is open the dialog
-        ImGuiFileDialog::Instance()->OpenDialog("chooseDDS_export0x15", "Choose DDS File", ".dds", {});
+        // Display the file picker
+        nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
+        char* path = NULL;
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, name);
+        if (NFD_OKAY && path != nullptr) {
+            img_write(window_0x15.tex, path);
+        }
+        free(path);
     }
 
     draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale, "preview");
     ImGui::EndGroup();
-
-    // Display file dialog if appropriate
-    if (ImGuiFileDialog::Instance()->Display("chooseDDS_export0x15")) {
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-            img_write(window_0x15.tex, path.c_str());
-        }
-        ImGuiFileDialog::Instance()->Close();
-    }
-
-    if (ImGuiFileDialog::Instance()->Display("chooseDDS_import0x15")) {
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-            this->import_dds_0x15(pol, path.c_str(), num_entries, entries);
-        }
-        ImGuiFileDialog::Instance()->Close();
-    }
 }
 
 void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
@@ -525,31 +515,14 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
 
     ImGui::BeginChild("Vertex Buffer Settings", ImVec2(600, 0));
     if (ImGui::Button("Dump to OBJ")) {
-        // All we can do this frame is open the dialog
-        ImGuiFileDialog::Instance()->OpenDialog("chooseOBJ", "Choose OBJ File", ".obj", {});
-    }
-
-    // Hex editor for vertex buffer entry
-    hex_edit.DrawContents(&entries[window_0x16.selected_vertex_buf], sizeof(*entries));
-    ImGui::EndChild();
-
-    ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));
-
-    // Hex editor for vertex buffer data
-    const resource_entry_0x16 entry = entries[window_0x16.selected_vertex_buf];
-    u8* vertbuf = pol->alr_data + pol->resbuf_offset + entry.data_ptr;
-    window_0x16.hex_vertbuf.DrawContents(vertbuf, entry.vertex_count * entry.vertex_size);
-    ImGui::EndChild();
-
-    // Display file dialog if appropriate
-    if (ImGuiFileDialog::Instance()->Display("chooseOBJ")) {
-        // If user cancels, we can't load anything
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-
+        // Display the file picker
+        nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
+        char* path = NULL;
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+        if (NFD_OKAY && path != nullptr) {
             // Dump to OBJ
             resource_entry_0x16 entry = entries[window_0x16.selected_vertex_buf];
-            FILE *out = fopen(path.c_str(), "wb");
+            FILE *out = fopen(path, "wb");
             if (out != nullptr) {
                 // Open resource buffer
                 vf = vfile_open(pol->alr_data, pol->alr_size);
@@ -614,10 +587,20 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
                 fclose(out);
             }
         }
-
-        // Close the dialog
-        ImGuiFileDialog::Instance()->Close();
+        free(path);
     }
+
+    // Hex editor for vertex buffer entry
+    hex_edit.DrawContents(&entries[window_0x16.selected_vertex_buf], sizeof(*entries));
+    ImGui::EndChild();
+
+    ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));
+
+    // Hex editor for vertex buffer data
+    const resource_entry_0x16 entry = entries[window_0x16.selected_vertex_buf];
+    u8* vertbuf = pol->alr_data + pol->resbuf_offset + entry.data_ptr;
+    window_0x16.hex_vertbuf.DrawContents(vertbuf, entry.vertex_count * entry.vertex_size);
+    ImGui::EndChild();
 }
 
 void polaris::chunk::draw(polaris *pol) noexcept {
@@ -774,6 +757,27 @@ void polaris::handle_input_suppression() noexcept {
     }
 }
 
+bool polaris::load_alr(const char* path) noexcept {
+    const s64 size = file_size(path);
+    if (file_exists(path) && size > 8) {
+        // Expand reservation if needed
+        if (size > reserve_size) {
+            // If our reservation needs resizing, we're dealing with a
+            // truly massive file. Just add its size to the old size,
+            // more space can never hurt.
+            this->expand_reservation(reserve_size + size);
+        }
+
+        // Load the file into the buffer.
+        file_load_existing(path, alr_data, size);
+        alr_size = size;
+        chunks = shatter_alr(alr_data, alr_size);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool polaris::save_alr(const char* path) const noexcept {
     FILE* out = fopen(path, "wb");
     if (out == nullptr) {
@@ -799,10 +803,24 @@ void polaris::do_menu_bar() noexcept {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("Load ALR")) {
-
+                    // Display the file picker and load the ALR if a file is picked
+                    char* path = NULL;
+                    const nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
+                    nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+                    if (NFD_OKAY && path != nullptr) {
+                        this->load_alr(path);
+                    }
+                    free(path);
                 }
                 if (ImGui::MenuItem("Save ALR")) {
-
+                    // Display the file picker and save the ALR if a file is picked
+                    nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
+                    char* path = NULL;
+                    nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+                    if (NFD_OKAY && path != nullptr) {
+                        this->save_alr(path);
+                    }
+                    free(path);
                 }
                 ImGui::EndMenu();
             }
@@ -825,53 +843,6 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
     }
 
     ImGui::Begin("ALR Select");
-    if (ImGui::Button("Load ALR")) {
-        ImGuiFileDialog::Instance()->OpenDialog("chooseALR", "Choose ALR File", ".alr", {});
-    }
-
-    if (ImGui::Button("Save ALR")) {
-        ImGuiFileDialog::Instance()->OpenDialog("chooseALRSave", "Choose ALR File", ".alr", {});
-    }
-
-    // Display file dialog if appropriate
-    if (ImGuiFileDialog::Instance()->Display("chooseALR")) {
-        // If user cancels, we can't load anything
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path_str = ImGuiFileDialog::Instance()->GetFilePathName();
-            const char* path = path_str.c_str();
-            const s64 size = file_size(path);
-            if (file_exists(path) || size > 8) {
-                // Expand reservation if needed
-                if (size > reserve_size) {
-                    // If our reservation needs resizing, we're dealing with a
-                    // truly massive file. Just add its size to the old size,
-                    // more space can never hurt.
-                    this->expand_reservation(reserve_size + size);
-                }
-
-                // Load the file into the buffer.
-                file_load_existing(path, alr_data, size);
-                alr_size = size;
-                chunks = shatter_alr(alr_data, alr_size);
-            }
-        }
-
-        // Close the dialog
-        ImGuiFileDialog::Instance()->Close();
-    }
-
-    // Display file dialog if appropriate
-    if (ImGuiFileDialog::Instance()->Display("chooseALRSave")) {
-        // If user cancels, we can't load anything
-        if (ImGuiFileDialog::Instance()->IsOk()) {
-            const std::string path = ImGuiFileDialog::Instance()->GetFilePathName();
-
-            this->save_alr(path.c_str());
-        }
-
-        // Close the dialog
-        ImGuiFileDialog::Instance()->Close();
-    }
 
     const char* filter_label = "Chunk ID Filter";
     const ImGuiInputTextFlags flags = chunk_filter.has_value() ? 0 : ImGuiInputTextFlags_DisplayEmptyRefVal | ImGuiInputTextFlags_AutoSelectAll;

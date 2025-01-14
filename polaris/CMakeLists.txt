@@ -19,7 +19,6 @@ add_library(imgui STATIC
     ../ext/imgui/imgui_widgets.cpp
     ../ext/imgui/backends/imgui_impl_opengl3.cpp
     ../ext/imgui/backends/imgui_impl_glfw.cpp
-    ../ext/ImGuiFileDialog/ImGuiFileDialog.cpp
 )
 
 # Internal build tool to generate headers for GLSL shaders
@@ -50,6 +49,7 @@ add_executable(polaris
     src/gui_loop.cxx
     src/alr_texture.cxx
     src/polaris.cxx
+    src/file_pickers.cxx
 
     src/viewer/render_image.c
     src/viewer/viewer.c
@@ -60,4 +60,4 @@ add_executable(polaris
     ${glsl_headers}
 )
 
-target_link_libraries(polaris PRIVATE glfw glad imgui bobtail)
+target_link_libraries(polaris PRIVATE glfw glad imgui bobtail nfd)

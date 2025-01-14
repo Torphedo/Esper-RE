@@ -1,6 +1,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <nfd.h>
 
 extern "C" {
     #include <glad/glad.h>
@@ -17,6 +18,11 @@ bool gui_main() {
     GLFWwindow* window = setup_opengl(1280, 720, "Polaris", ENABLE_DEBUG, GLFW_CURSOR_NORMAL, true);
     if (window == nullptr) {
         LOG_MSG(error, "Failed to setup GLFW\n");
+        return false;
+    }
+
+    if (NFD_Init() != NFD_OKAY) {
+        LOG_MSG(error, "Failed to setup native file dialog library.\n");
         return false;
     }
 
@@ -92,6 +98,7 @@ bool gui_main() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    NFD_Quit();
     glfwTerminate();
 
     return true;
