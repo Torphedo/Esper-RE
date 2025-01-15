@@ -50,6 +50,7 @@ add_executable(polaris
     src/alr_texture.cxx
     src/polaris.cxx
     src/file_pickers.cxx
+    src/imgui_utils.cxx
 
     src/viewer/render_image.c
     src/viewer/viewer.c

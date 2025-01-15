@@ -27,6 +27,8 @@ deck_reader/deck_reader
 *.bin
 *.png
 *.dds
+*.obj
+*.dae
 
 # Binary input files
 *.alr

@@ -14,6 +14,7 @@
 #include <formats/alr.h>
 
 #include "alr_texture.hxx"
+#include "imgui_utils.hxx"
 #include "polaris.hxx"
 
 enum {
@@ -21,13 +22,6 @@ enum {
     // e.g. 2^12 = 4096
     ALR_TEX_POWER_LIMIT = 12,
 };
-
-// Minor helper functions for ImGui
-namespace ImGui {
-    void BeginChildFitContent(const char* id, float width_percent) {
-        ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
-    }
-}
 
 // Normally I'd make this a method, but by using a macro we can have LOG_MSG()
 // automatically log the name of the method that shouldn't have been called.
@@ -503,7 +497,8 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
 
     texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, *entry);
     ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
-    ImGui::Text("\"%s\" is %dx%d pixels @ resbuf+0x%X\n", name, cur_tex.height, cur_tex.width, entry->data_ptr);
+    ImGui::InputPDString("Texture Name", &entry->text1, &entry->text2);
+    ImGui::Text("%dx%d pixels @ resbuf+0x%X\n", cur_tex.height, cur_tex.width, entry->data_ptr);
 
     const char* format = texformat_str((alr_pixel_format)entry->pixel_format);
     ImGui::Text("Suspected format: %s (code 0x%X)", format, entry->pixel_format);
