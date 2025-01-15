@@ -325,6 +325,106 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
     }
 }
 
+static bool edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const char* label_extra) {
+    bool edited = false;
+
+    for (u16 i = 0; i < key_count; i++) {
+        ImGuiDataType type = ImGuiDataType_COUNT;
+        u16 num_components = 0;
+        void* components = nullptr;
+
+        if (key_size < 8) {
+            // This format has an 8-bit frame value and 16-bit components
+            components = (void*)((uintptr_t)keyframes + 1);
+            type = ImGuiDataType_U16;
+        } else if (key_size <= 16) {
+            // This format has a floating-point frame value and components
+            components = &((float*)keyframes)[1];
+            type = ImGuiDataType_Float;
+        }
+
+        switch (key_size) {
+        // Single-component integer keyframe
+        case 3:
+            num_components = 1;
+            break;
+        case 5:
+            num_components = 2;
+            break;
+        // 3-component integer keyframe
+        case 7:
+            num_components = 3;
+            break;
+
+        // Single-component floating point keyframe
+        case 8:
+            num_components = 1;
+            break;
+        // 2-component floating point keyframe
+        case 12:
+            num_components = 2;
+            break;
+        // 3-component floating point keyframe
+        case 16:
+            num_components = 3;
+            break;
+        }
+
+        if (components == nullptr || num_components == 0 || type == ImGuiDataType_COUNT) {
+            // Size is probably an unknown format
+            ImGui::Text("Unknown keyframe format (0x%X bytes)", key_size);
+            break;
+        }
+
+        char frame_label[0x20] = {0};
+        snprintf(frame_label, sizeof(frame_label), "Frame # ##%d##%8s", i, label_extra);
+
+        char component_label[0x20] = {0};
+        snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
+
+        if (type == ImGuiDataType_U16) {
+            // The frame data type is different from that of the components for
+            // the integer formats
+            ImGui::InputScalar(frame_label, ImGuiDataType_U8, keyframes);
+        } else {
+            ImGui::InputScalar(frame_label, type, keyframes);
+        }
+        ImGui::InputScalarN(component_label, type, components, num_components);
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        // Move on to the next key
+        // Casting is needed because we can't do math on void*
+        keyframes = (u8*)keyframes + key_size;
+    }
+
+    return edited;
+}
+
+void polaris::chunk::chunk_0x5(const polaris *pol) noexcept {
+    vfile vf = vfile_open(pol->alr_data + offset, size);
+    anim_header* header = (anim_header*)vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*header));
+
+    // TODO: Add an animation graph to add to the more manual editor
+    ImGui::Text("Length: %.3f frames", header->length);
+    ImGui::Text("%d translation keys, 0x%X bytes each", header->translation_key_count, header->translation_key_size);
+    ImGui::Text("%d rotation keys, 0x%X bytes each", header->rotation_key_count, header->rotation_key_size);
+    ImGui::Text("%d scale keys", header->scale_key_count);
+
+    // Edit and skip to the next set of keys
+    if (header->translation_key_count > 0 && ImGui::CollapsingHeader("Translation Keys")) {
+        edit_keyframes(header->translation_key_size, header->translation_key_count, vfile_cur(vf), "trans");
+        vfile_seek(&vf, header->translation_key_size * header->translation_key_count);
+    }
+
+    if (header->rotation_key_count > 0 && ImGui::CollapsingHeader("Rotation Keys")) {
+        edit_keyframes(header->rotation_key_size, header->rotation_key_count, vfile_cur(vf), "rot");
+        vfile_seek(&vf, header->rotation_key_size * header->rotation_key_count);
+    }
+}
+
 static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept {
     ImGui::Text("\nRendering settings (doesn't affect ALR data):");
 
@@ -696,6 +796,9 @@ void polaris::chunk::draw(polaris *pol) noexcept {
                 case 0x3:
                     this->chunk_0x3(pol);
                     break;
+                case 0x5:
+                    this->chunk_0x5(pol);
+                    break;
                 case 0x10:
                     this->chunk_0x10(pol);
                     break;
@@ -729,6 +832,7 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     this->size = size;
     this->offset = offset;
     hex_edit.OptShowDataPreview = true;
+    hex_chunk.OptShowDataPreview = true;
 
     // Because this is a union, we're not sure which constructors might be run
     // when, and other union members might set non-zero values to some fields.
@@ -741,6 +845,11 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
         case 0x3:
             window_0x3 = {};
             hex_edit.PreviewDataType = ImGuiDataType_Float;
+            break;
+        case 0x5:
+            window_0x5 = {};
+            hex_edit.PreviewDataType = ImGuiDataType_Float;
+            hex_chunk.PreviewDataType = ImGuiDataType_Float;
             break;
         case 0x10:
             window_0x10 = {};
@@ -997,6 +1106,12 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
             break;
         case 0x3:
             known_name = "[Armature]";
+            break;
+        case 0x5:
+            known_name = "[Animation]";
+            break;
+        case 0x7:
+            known_name = "[Camera Path]";
             break;
         case 0x10:
             known_name = "[Texture Atlas]";

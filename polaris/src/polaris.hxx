@@ -23,6 +23,10 @@ struct window_state_0x3 {
     bool slider = false;
 };
 
+// State for 0x5 (animation) window
+struct window_state_0x5 {
+};
+
 // State for 0x10 chunk window
 struct window_state_0x10 {
     u32 selected_atlas = 0;
@@ -68,6 +72,7 @@ struct polaris {
         union {
             window_state_0x2 window_0x2;
             window_state_0x3 window_0x3;
+            window_state_0x5 window_0x5;
             window_state_0x10 window_0x10;
             window_state_0x15 window_0x15;
             window_state_0x16 window_0x16;
@@ -99,6 +104,7 @@ struct polaris {
         // Dedicated editing windows for each chunk type
         void chunk_0x2(const polaris *pol) noexcept;
         void chunk_0x3(const polaris *pol) noexcept;
+        void chunk_0x5(const polaris *pol) noexcept;
         void chunk_0x10(const polaris *pol) noexcept;
         void chunk_0x11(const polaris *pol) const noexcept;
 

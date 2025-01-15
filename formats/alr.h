@@ -138,7 +138,7 @@ typedef struct {
     u32 size;
     float length; // How many frames the animation lasts
     u16 unknown_settings1;
-    u16 array_width_1; // # of bytes in each element of the second array
+    u16 rotation_key_size;
     u32 translation_key_count; // Name from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
     u32 rotation_key_count;    // Name from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)
     u32 scale_key_count; // Hasn't been tested yet
@@ -173,15 +173,20 @@ typedef struct {
 }anim_key3;
 static_assert(sizeof(anim_key3) == 0x10, "Wrong 3-component keyframe size!");
 
+// Force struct packing off just for this struct, otherwise we can't read the
+// data in the ALR file
+#pragma pack(push, r1, 1)
+
 // Animation key for rotation.
 // This comes from decompiling the 2003 build, but I don't remember seeing this in a real file.
 typedef struct {
-    u16 frame;
+    u8 frame;
     u16 unk1;
     u16 unk2;
     u16 unk3;
 }anim_rotation_key;
-static_assert(sizeof(anim_rotation_key) == 0x8, "Wrong rotation key size!");
+#pragma pack(pop, r1)
+static_assert(sizeof(anim_rotation_key) == 0x7, "Wrong rotation key size!");
 
 // 0x3 chunk
 // =====================================================================================================================
