@@ -28,7 +28,7 @@ namespace ImGui {
 
         // TODO: Look into using a character filter callback to only allow the
         // characters that can be encoded.
-        const bool edited = ImGui::InputText(label, buf, size);
+        const bool edited = ImGui::InputText(label, buf, size + 1);
 
         if (edited) {
             char* text = buf;

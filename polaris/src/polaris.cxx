@@ -209,12 +209,7 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
     window_0x3.selected_joint = CLAMP(min, window_0x3.selected_joint, max);
 
     joint_t* joint = &joints[window_0x3.selected_joint];
-    char name[8] = "[empty]";
-    if (joint->name != -1) {
-        memset(name, 0, sizeof(name));
-        decode_single32(name, joint->name);
-    }
-    ImGui::Text("Joint name: %s", name);
+    ImGui::InputPDString("Joint Name", &joint->name);
     ImGui::Text("Parent index: %d", joint->parent_idx);
 
     if (ImGui::BeginTabBar("editors")) {
