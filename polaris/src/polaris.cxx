@@ -33,14 +33,14 @@ do {                                 \
     }                                \
 } while(0)
 
-void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<resource_entry_0x16> vert_entry) const noexcept {
+void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     vfile vf = vfile_open(pol->alr_data + offset, size);
 
     // Skip over chunk header
     const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
-    const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
+    const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
     s32 num_tris = MAX(0, (size - sizeof(chunk_generic) - sizeof(header)) / (3 * sizeof(u16)));
     // If we trust the file for the number of triangles, the ends of some limbs
@@ -86,7 +86,7 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<r
 
 }
 
-void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, resource_entry_0x16 entry) const noexcept {
+void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, vertbuf_entry entry) const noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // Dump to OBJ
@@ -140,7 +140,7 @@ void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, resou
             // Skip to idx_chunk and skip header
             vf.pos = idx_chunk.offset;
             vfile_seek(&vf, sizeof(chunk_generic));
-            const idx_buf_header header = VFILE_READ(idx_buf_header, &vf);
+            const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
             // We only want index buffers meant for this vertex buffer
             if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
@@ -181,17 +181,17 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     vfile vf = vfile_open(pol->alr_data + this->offset, this->size);
     chunk_generic chunk = VFILE_READ(chunk_generic, &vf);
     // We get the header pointer so we can modify it in-place
-    idx_buf_header* header = (idx_buf_header*)vfile_cur(vf);
+    idxbuf_header* header = (idxbuf_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header)); // Skip past the header
 
     // Sanity check some of our assumptions & show warning messages if they fail
-    idx_buf_header temp = {0};
+    idxbuf_header temp = {0};
     const char* pad_warning = "WARNING: What I thought was padding @ chunk offset 0x%x had real data!\nPlease report this so I can research it.";
     if (memcmp(header->pad, temp.pad, sizeof(temp.pad)) != 0) {
-        ImGui::Text(pad_warning, offsetof(idx_buf_header, pad));
+        ImGui::Text(pad_warning, offsetof(idxbuf_header, pad));
     }
     if (memcmp(header->pad2, temp.pad2, sizeof(temp.pad)) != 0) {
-        ImGui::Text(pad_warning, offsetof(idx_buf_header, pad2));
+        ImGui::Text(pad_warning, offsetof(idxbuf_header, pad2));
     }
 
     if (header->vertex_buf != header->vertex_buf2) {
@@ -366,7 +366,7 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
     // We use pointers instead of reading into stack copies, so we can edit the
     // data directly. I'm not usually a big fan of using auto, but it doesn't
     // hide the real data type so I think it's fine here.
-    auto* header = (texture_metadata_header*) vfile_cur(vf);
+    auto* header = (atlas_header*) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
     // Read surface names
@@ -374,15 +374,15 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
     vfile_seek(&vf, sizeof(*atlas_names) * header->atlas_count);
 
     // Read surface metadata
-    auto* atlases = (atlas_info*) vfile_cur(vf);
+    auto* atlases = (atlas_entry*) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*atlases) * header->atlas_count);
 
     // Read texture metadata
-    auto* textures = (tex_info *) vfile_cur(vf);
+    auto* textures = (atlas_tex_entry *) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*textures) * header->texture_count);
 
     // We have to look up texture entries to find out where each texture is
-    resource_entry* entries = nullptr;
+    texture_entry* entries = nullptr;
     for (chunk c : pol->chunks) {
         if (c.id == 0x15) {
             // Skip to the chunk
@@ -390,7 +390,7 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
             vfile_seek(&tmp, sizeof(chunk_generic));
 
             const u32 num_entries = VFILE_READ(u32, &tmp);
-            entries = (resource_entry*)vfile_cur(tmp);
+            entries = (texture_entry*)vfile_cur(tmp);
             break;
         }
     }
@@ -427,7 +427,7 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
     // Display textures in the selected atlases
     ImGui::BeginChildFitContent("Textures", 0.3f);
     for (u32 i = 0; i < header->texture_count; i++) {
-        const tex_info tex = textures[i];
+        const atlas_tex_entry tex = textures[i];
         // Only list textures belonging to the selected atlases
         if (tex.index != window_0x10.selected_atlas) {
             continue;
@@ -447,8 +447,8 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
     // ImGui::SameLine();
 
     const atlas_name aName = atlas_names[window_0x10.selected_atlas];
-    const atlas_info atlas = atlases[window_0x10.selected_atlas];
-    const tex_info tex = textures[window_0x10.selected_atlas_texture];
+    const atlas_entry atlas = atlases[window_0x10.selected_atlas];
+    const atlas_tex_entry tex = textures[window_0x10.selected_atlas_texture];
 
     texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, entries[tex.index]);
     // Override dimensions, we only want format info from the other chunk
@@ -505,11 +505,11 @@ void polaris::chunk::chunk_0x11(const polaris *pol) const noexcept {
     }
 }
 
-void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, resource_entry* entries) {
+void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, texture_entry* entries) {
     CHUNK_ID_ASSERT(0x15);
 
-    const resource_entry cur = entries[window_0x15.selected_texture];
-    const resource_entry next = entries[window_0x15.selected_texture + 1];
+    const texture_entry cur = entries[window_0x15.selected_texture];
+    const texture_entry next = entries[window_0x15.selected_texture + 1];
     s64 tex_size = 0;
     if (window_0x15.selected_texture >= num_entries) {
         // This is the last entry, so the best guess is that it takes up the
@@ -549,7 +549,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     vfile_seek(&vf, sizeof(chunk_generic));
 
     const u32 num_entries = VFILE_READ(u32, &vf);
-    auto* entries = (resource_entry*)vfile_cur(vf);
+    auto* entries = (texture_entry*)vfile_cur(vf);
 
     ImGui::BeginChildFitContent("Textures", 0.3f);
     for (u32 i = 0; i < num_entries; i++) {
@@ -568,7 +568,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     ImGui::SameLine();
 
     ImGui::BeginGroup();
-    resource_entry* entry = &entries[window_0x15.selected_texture];
+    texture_entry* entry = &entries[window_0x15.selected_texture];
     decoded_text name = {0};
     decode_single32(name.data, entry->text1);
     decode_single32(&name.data[ENCODED_CHAR_COUNT], entry->text2);
@@ -640,7 +640,7 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
     vfile_seek(&vf, sizeof(chunk_generic));
 
     const u32 num_entries = VFILE_READ(u32, &vf);
-    auto* entries = (resource_entry_0x16*)vfile_cur(vf);
+    auto* entries = (vertbuf_entry*)vfile_cur(vf);
 
     ImGui::BeginChild("Vertex Buffers", ImVec2(300, 0));
     for (u32 i = 0; i < num_entries; i++) {
@@ -656,7 +656,7 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
     ImGui::EndChild();
     ImGui::SameLine();
 
-    const resource_entry_0x16* entry = &entries[window_0x16.selected_vertex_buf];
+    const vertbuf_entry* entry = &entries[window_0x16.selected_vertex_buf];
     ImGui::BeginChild("Vertex Buffer Settings", ImVec2(600, 0));
     if (ImGui::Button("Dump to OBJ")) {
         // Display the file picker

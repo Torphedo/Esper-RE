@@ -9,7 +9,7 @@ extern "C" {
 const char* texformat_str(alr_pixel_format format);
 
 /// @brief Convert an ALR texture entry into our standard structure
-texture convert_tex(u8* resbuf, resource_entry entry);
+texture convert_tex(u8* resbuf, texture_entry entry);
 
 gl_obj init_gl_tex(texture img);
 

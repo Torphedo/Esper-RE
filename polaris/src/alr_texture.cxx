@@ -33,7 +33,7 @@ const char* texformat_str(alr_pixel_format format) {
     return out;
 }
 
-texture convert_tex(u8* resbuf, resource_entry entry) {
+texture convert_tex(u8* resbuf, texture_entry entry) {
     // We default to uncompressed RGBA8 here
     texture out = {};
     out.data = resbuf + entry.data_ptr;

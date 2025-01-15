@@ -58,18 +58,18 @@ bool alr_edit(flags options, alr_interface handlers) {
     fix_alr_name(options.input_path);
 
     // Read texture header
-    resource_layout_header resheader = {0};
+    texture_header resheader = {0};
     fread(&resheader, sizeof(resheader), 1, alr);
     if (resheader.chunk_size <= sizeof(chunk_generic) || resheader.id != 0x15) {
         return false;
     }
     if (resheader.array_size == 0 && resheader.chunk_size > sizeof(resheader)) {
-        resheader.array_size = (resheader.chunk_size - sizeof(resheader)) / sizeof(resource_entry);
+        resheader.array_size = (resheader.chunk_size - sizeof(resheader)) / sizeof(texture_entry);
     }
-    const u32 entries_size = resheader.array_size * sizeof(resource_entry);
+    const u32 entries_size = resheader.array_size * sizeof(texture_entry);
 
     // Read texture metadata entries
-    resource_entry* entries = calloc(1, entries_size);
+    texture_entry* entries = calloc(1, entries_size);
     if (entries == NULL) {
         LOG_MSG(error, "Failed to alloc %d bytes for texture entries\n", entries_size);
         return false;

@@ -8,7 +8,7 @@
 // Chunk size & ID, then the chunk data, then the offset array index this chunk
 // is located in. (idx is used for split function)
 typedef void (*chunk_handler)(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx);
-typedef void (*res_handler)(resource_layout_header chunk, resource_entry* entries);
+typedef void (*res_handler)(texture_header chunk, texture_entry* entries);
 typedef void (*buffer_handler)(void* ctx, u8* buf, u32 size, char* name, u32 idx);
 
 typedef enum {

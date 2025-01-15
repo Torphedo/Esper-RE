@@ -18,7 +18,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx);
 
 // 0x15 (Resource/texture buffer layout) chunk handling. Saves information to
 // dump.c's internal state.
-void res_layout(resource_layout_header chunk, resource_entry* entries_ptr);
+void res_layout(texture_header chunk, texture_entry* entries_ptr);
 
 // This is run for each resource/texture buffer and dumps it to a DDS file as
 // best it can. Metadata from 0x10 chunks will be used if available, and

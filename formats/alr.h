@@ -2,6 +2,8 @@
 #include <common/int.h>
 #include <assert.h>
 
+// 0x11 chunk
+// =====================================================================================================================
 // All ALR files begin with this structure.
 // Followed by a u32 array whose size is listed in the header. The u32s are
 // offsets to chunks of data throughout the file, and aren't always in order.
@@ -20,17 +22,17 @@ typedef struct {
 static_assert(sizeof(chunk_layout) == 0x20, "Wrong layout chunk header size!");
 
 
-// This structure follows the offset array. It has offsets into the resource
-// buffer which is always at the end of the file. It also has some metadata
-// about textures in the file, which aren't fully understood.
+// 0x15 chunk
+// =====================================================================================================================
+// This describes the format/dimensions/etc. of textures, and always comes after the 0x11 chunk.
+// At the end of the file is a large buffer with vertex and texture data (the resource buffer).
+// Together with 0x16 chunks, it maps out the resource buffer.
 typedef struct {
     u32 id;         // 0x15
     u32 chunk_size; // Size of this entire chunk
     u32 array_size;
-}resource_layout_header;
-static_assert(sizeof(resource_layout_header) == 0xC, "Wrong texture metadata chunk header size!");
-
-// Next, there are [array_size] instances of this structure:
+}texture_header;
+static_assert(sizeof(texture_header) == 0xC, "Wrong texture metadata chunk header size!");
 
 typedef enum {
     FORMAT_RGBA8 = 0b00000110,
@@ -49,6 +51,7 @@ typedef enum {
     TEXTURE_CUBEMAP = 0x2D
 }alr_texture_style;
 
+// After the header, there are [array_size] instances of this structure:
 typedef struct {
     u32 flags;    // Unknown, always 01 00 04 00 so far
     u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.texbuf_offset)
@@ -62,10 +65,13 @@ typedef struct {
     u32 unknown3; // Often 0
     u32 text1;
     u32 text2;
-}resource_entry;
-static_assert(sizeof(resource_entry) == 0x1C, "Wrong texture metadata size!");
+}texture_entry;
+static_assert(sizeof(texture_entry) == 0x1C, "Wrong texture metadata size!");
 
-// This is like the 0x15 structure, but for meshes instead of textures
+// 0x16 chunk
+// =====================================================================================================================
+// This describes the format, size, etc. of vertex buffers.
+// Together with 0x15 chunks, it maps out the resource buffer.
 typedef struct {
     u8 unknown_flag;
     u8 vertex_size; // These are always the same (so far?)
@@ -77,19 +83,20 @@ typedef struct {
     u32 unknown2;
     u32 data_ptr; // This is speculation
     u32 pad2;
-}resource_entry_0x16;
-static_assert(sizeof(resource_entry_0x16) == 0x1C, "Wrong vertex metadata size!");
+}vertbuf_entry;
+static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
 
-// The header of an 0x10 ALR chunk, which stores information about texture
-// atlases in the file.
+// 0x10 chunk
+// =====================================================================================================================
+// This chunk is for texture atlases and their sub-textures.
 typedef struct {
     u32 atlas_count; // The number of texture atlases
     u32 texture_count; // The total number of textures in all atlases
-    unsigned char alr_name[0x10]; // Usually the name of the ALR with no extension
-}texture_metadata_header;
-static_assert(sizeof(texture_metadata_header) == 0x18, "Wrong atlas chunk header size!");
+    unsigned char alr_name[0x10]; // Usually the name of the ALR without the ".alr" part
+}atlas_header;
+static_assert(sizeof(atlas_header) == 0x18, "Wrong atlas chunk header size!");
 
-// The header is followed by [atlas_count] instances of this structure:
+// After the header are [atlas_count] instances of this structure:
 typedef struct {
     unsigned char name[0x10];
     u32 unk1;
@@ -99,7 +106,8 @@ typedef struct {
 }atlas_name;
 static_assert(sizeof(atlas_name) == 0x20, "Wrong texture atlas name size!");
 
-// The above structure is followed by [atlas_count] instances of this structure:
+// After that are [atlas_count] instances of this structure:
+// Represents a single texture atlas
 typedef struct {
     u16 width;
     u16 height;
@@ -107,10 +115,11 @@ typedef struct {
     u32 mipmap_count;
     u32 unknown; // Often 4 or 8, sometimes counts up from 13?
     u32 pad;
-}atlas_info;
-static_assert(sizeof(atlas_info) == 0x14, "Wrong texture atlas metadata size!");
+}atlas_entry;
+static_assert(sizeof(atlas_entry) == 0x14, "Wrong texture atlas metadata size!");
 
-// The above structure is followed by [texture_count] instances of this structure:
+// After that are [texture_count] instances of this structure:
+// Represents a texture in an atlas
 typedef struct {
     u32 index; // The atlas index this texture belongs to
     unsigned char filename[32];
@@ -118,14 +127,16 @@ typedef struct {
     float atlas_texcoords[2]; // This is often 1.0f
     u32 width;
     u32 height;
-}tex_info;
-static_assert(sizeof(tex_info) == 0x3C, "Wrong texture metadata size!");
+}atlas_tex_entry;
+static_assert(sizeof(atlas_tex_entry) == 0x3C, "Wrong texture metadata size!");
 
-// Animation data
+// 0x5 chunk
+// =====================================================================================================================
+// This stores keyframes for a single animation.
 typedef struct {
     u32 id; // 0x5
     u32 size;
-    float total_time; // This often matches the number of frames(?)
+    float length; // How many frames the animation lasts
     u16 unknown_settings1;
     u16 array_width_1; // # of bytes in each element of the second array
     u32 translation_key_count; // Name from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
@@ -136,39 +147,45 @@ typedef struct {
 }anim_header;
 static_assert(sizeof(anim_header) == 0x20, "Wrong animation header size!");
 
-// The floating-point values at first looked like indices, but are actually
-// keyframe values (which would be terrible and unprecise as integers).
+// Animation key with 1 component
 typedef struct {
     float frame;
     float x;
-}keyframe_1;
-static_assert(sizeof(keyframe_1) == 0x8, "Wrong 1-component keyframe size!");
+}anim_key_1;
+static_assert(sizeof(anim_key_1) == 0x8, "Wrong 1-component keyframe size!");
 
+// Animation key with 2 components
 typedef struct {
     float frame;
     float x;
     float y;
-}keyframe_2;
-static_assert(sizeof(keyframe_2) == 0xC, "Wrong 2-component keyframe size!");
+}anim_key2;
+static_assert(sizeof(anim_key2) == 0xC, "Wrong 2-component keyframe size!");
 
+// Animation key with 3 components
 // X, Y, and Z may be labelled in the wrong order, depending on which axis the
-// game uses for "up" (but this is an arbitrary naming decision).
+// game uses as "up" (but this is an arbitrary naming decision).
 typedef struct {
     float frame;
     float x;
     float y;
     float z;
-}keyframe_3;
-static_assert(sizeof(keyframe_3) == 0x10, "Wrong 3-component keyframe size!");
+}anim_key3;
+static_assert(sizeof(anim_key3) == 0x10, "Wrong 3-component keyframe size!");
 
+// Animation key for rotation.
+// This comes from decompiling the 2003 build, but I don't remember seeing this in a real file.
 typedef struct {
     u16 frame;
     u16 unk1;
     u16 unk2;
     u16 unk3;
-}anim_rotation_keys;
-static_assert(sizeof(anim_rotation_keys) == 0x8, "Wrong rotation key size!");
+}anim_rotation_key;
+static_assert(sizeof(anim_rotation_key) == 0x8, "Wrong rotation key size!");
 
+// 0x3 chunk
+// =====================================================================================================================
+// This stores all the joints in the skeleton/armature and their relationships to each other.
 typedef struct {
     u16 joint_count;
     u16 unknown; // Usually 1
@@ -176,6 +193,7 @@ typedef struct {
 }chunk_armature;
 static_assert(sizeof(chunk_armature) == 0x8, "Wrong armature chunk header size!");
 
+// After the header are [joint_count] instances of this structure, holding information about each joint/bone.
 typedef struct {
     float mat[3][3];
     u16 unk1;
@@ -187,15 +205,9 @@ typedef struct {
 }joint_t;
 static_assert(sizeof(joint_t) == 0x40, "Wrong joint size!");
 
-typedef struct {
-    u32 id;
-    u32 chunk_size;
-    u16 sub_chunk_count; // Each sub-chunk is 0x4C large
-    u16 unknown;
-}chunk_0x1_header;
-static_assert(sizeof(chunk_0x1_header) == 0xC, "Wrong 0x1 chunk header size!");
-
-// For 0x2 chunks
+// 0x2 chunk
+// =====================================================================================================================
+// Information about an index buffer.
 typedef struct {
     float unk_float[10];
     u32 pad[3]; // Always 0, so far
@@ -209,9 +221,21 @@ typedef struct {
     u32 num_tris;
     u32 unk4;
     u32 pad2[5];
-}idx_buf_header;
-static_assert(sizeof(idx_buf_header) == 0x60, "Wrong index buffer header size!");
+}idxbuf_header;
+static_assert(sizeof(idxbuf_header) == 0x60, "Wrong index buffer header size!");
 
+// 0x1 chunk
+// =====================================================================================================================
+// Not researched yet.
+typedef struct {
+    u32 id;
+    u32 chunk_size;
+    u16 sub_chunk_count; // Each sub-chunk is 0x4C large
+    u16 unknown;
+}chunk_0x1_header;
+static_assert(sizeof(chunk_0x1_header) == 0xC, "Wrong 0x1 chunk header size!");
+
+// The common ID and size that come at the start of any chunk.
 typedef struct {
     u32 id;
     s32 size;

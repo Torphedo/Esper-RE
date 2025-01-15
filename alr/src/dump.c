@@ -14,7 +14,7 @@ bool found_texture_meta = false;
 texture_info texture_meta[128] = {0};
 u32 texture_meta_count = 0;
 
-resource_entry* entries = NULL;
+texture_entry* entries = NULL;
 u32 res_entry_count = 0;
 typedef float mat4[4][4]; // 4x4 transformation matrix
 
@@ -48,7 +48,7 @@ void chunk_0xD(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx) {
 
 // Reads 0x10 chunks and uses their metadata to write texture data to disk
 void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
-    texture_metadata_header* tex_header = (texture_metadata_header*)chunk_buf;
+    atlas_header* tex_header = (atlas_header*)chunk_buf;
     found_texture_meta = true;
     texture_meta_count = tex_header->atlas_count;
     if (abs((s32)tex_header->texture_count - (s32)header.size) < 100) {
@@ -58,9 +58,9 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
         // other data we have.
 
         // Size minus space used for surfaces
-        const u32 texentries_size = header.size - 0x10 - (tex_header->atlas_count * (sizeof(atlas_info) + sizeof(atlas_name)));
-        tex_header->texture_count = texentries_size / sizeof(tex_info);
-        // tex_header->texture_count /= sizeof(tex_info);
+        const u32 texentries_size = header.size - 0x10 - (tex_header->atlas_count * (sizeof(atlas_entry) + sizeof(atlas_name)));
+        tex_header->texture_count = texentries_size / sizeof(atlas_tex_entry);
+        // tex_header->texture_count /= sizeof(atlas_tex_entry);
     }
 
     LOG_MSG(info, "Surface count: %d Image count: %d\n\n", tex_header->atlas_count, tex_header->texture_count);
@@ -68,8 +68,8 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
     // &tex_header[1] = the address after the header.
     atlas_name* names = (atlas_name*)&tex_header[1];
 
-    atlas_info* surfaces = (atlas_info*)&names[tex_header->atlas_count];
-    tex_info* textures = (tex_info*)&surfaces[tex_header->atlas_count];
+    atlas_entry* surfaces = (atlas_entry*)&names[tex_header->atlas_count];
+    atlas_tex_entry* textures = (atlas_tex_entry*)&surfaces[tex_header->atlas_count];
 
     for (u32 i = 0; i < tex_header->atlas_count; i++) {
         u32 pixel_count = surfaces[i].width * surfaces[i].height;
@@ -108,7 +108,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08X\n", total_image_pixels);
 }
 
-void res_layout(resource_layout_header chunk, resource_entry* entries_ptr) {
+void res_layout(texture_header chunk, texture_entry* entries_ptr) {
     entries = entries_ptr;
     res_entry_count = chunk.array_size;
 }
