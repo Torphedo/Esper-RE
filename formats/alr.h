@@ -191,9 +191,9 @@ typedef struct {
     u32 first_idx;
     u32 num_tris;
     u32 unk4;
-    u32 unk5;
-    u32 pad2[4];
+    u32 pad2[5];
 }idx_buf_header;
+static_assert(sizeof(idx_buf_header) == 0x60, "Index buffer header size is wrong!");
 
 typedef struct {
     u32 id;

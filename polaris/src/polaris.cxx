@@ -33,7 +33,7 @@ do {                                 \
     }                                \
 } while(0)
 
-void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<resource_entry_0x16> vert_entry) const {
+void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<resource_entry_0x16> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     vfile vf = vfile_open(pol->alr_data + offset, size);
@@ -159,10 +159,9 @@ void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, resou
 void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     CHUNK_ID_ASSERT(0x2);
 
-    if (ImGui::Button("Append indices to OBJ")) {
-        // All we can do this frame is open the dialog
-        nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
+    if (ImGui::Button("Export to OBJ")) {
         // Display the file picker
+        nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
         char* path = NULL;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (NFD_OKAY && path != nullptr) {
@@ -178,9 +177,93 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
         free(path);
     }
 
-    // Index buffer hex editor
-    u8* ptr = pol->alr_data + offset + sizeof(chunk_generic);
-    hex_edit.DrawContents(ptr, size - sizeof(chunk_generic));
+    // Index buffer editing
+    vfile vf = vfile_open(pol->alr_data + this->offset, this->size);
+    chunk_generic chunk = VFILE_READ(chunk_generic, &vf);
+    // We get the header pointer so we can modify it in-place
+    idx_buf_header* header = (idx_buf_header*)vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*header)); // Skip past the header
+
+    // Sanity check some of our assumptions & show warning messages if they fail
+    idx_buf_header temp = {0};
+    const char* pad_warning = "WARNING: What I thought was padding @ chunk offset 0x%x had real data!\nPlease report this so I can research it.";
+    if (memcmp(header->pad, temp.pad, sizeof(temp.pad)) != 0) {
+        ImGui::Text(pad_warning, offsetof(idx_buf_header, pad));
+    }
+    if (memcmp(header->pad2, temp.pad2, sizeof(temp.pad)) != 0) {
+        ImGui::Text(pad_warning, offsetof(idx_buf_header, pad2));
+    }
+
+    if (header->vertex_buf != header->vertex_buf2) {
+        ImGui::Text("WARNING: What I thought was duplicate data actually isn't!\n Please report this so I can research it.");
+    }
+
+    const u16 first_idx = VFILE_READ(u16, &vf);
+    vf.pos -= sizeof(first_idx);
+    if (first_idx != header->first_idx) {
+        if (first_idx > header->first_idx) {
+            ImGui::Text("WARNING: What I thought was the first index value isn't that OR the smallest index!\n Please report this so I can research it more.");
+        } else {
+            ImGui::Text("WARNING: What I thought was the first index value seems to actually be the smallest index.\n Please report this so I can fix it.");
+        }
+    }
+
+
+    if (ImGui::InputScalar("Vertex Buffer", ImGuiDataType_U16, &header->vertex_buf)) {
+        // There are always 2 copies of this data for some reason, so update
+        // the other when this one is updated.
+        header->vertex_buf2 = header->vertex_buf;
+    }
+
+    // If we trust the file about the number of triangles, many indices will be
+    // missing.
+    const u16 lower_bound = header->first_idx;
+    const u32 idx_buf_size = size - sizeof(chunk_generic) - sizeof(*header);
+    s32 num_tris = MAX(0, idx_buf_size / (3 * sizeof(u16)));
+    // Percentage of how close the predicted count is to the size reported by
+    // the ALR
+    const float capacity_diff = ((float)header->num_tris / num_tris) * 100.0f;
+    ImGui::Text("ALR says there's %d triangles, buffer can hold %d\n(Using %.1f%% of capacity)", header->num_tris, num_tris, capacity_diff);
+
+    ImGui::Checkbox("Use ALR's triangle count", &window_0x2.trust_alr_tri_count);
+    if (window_0x2.trust_alr_tri_count) {
+        num_tris = header->num_tris;
+    }
+
+    if (ImGui::CollapsingHeader("Unknown Fields")) {
+        ImGui::InputFloat3("Unknown floats 1-3", &header->unk_float[0]);
+        ImGui::InputFloat3("Unknown floats 4-6", &header->unk_float[3]);
+        ImGui::InputFloat3("Unknown floats 7-9", &header->unk_float[6]);
+        ImGui::InputFloat("Unknown float 10", &header->unk_float[9]);
+
+        ImGui::InputScalar("Unknown integer 1", ImGuiDataType_U32, &header->unk1);
+        ImGui::InputScalar("Unknown integer 2", ImGuiDataType_U16, &header->unk2);
+        ImGui::InputScalar("Unknown integer 3", ImGuiDataType_U16, &header->unk3);
+        ImGui::InputScalar("Unknown integer 4", ImGuiDataType_U32, &header->unk4);
+    }
+    for (u32 i = 0; i < 5; i++) {
+        ImGui::Spacing();
+    }
+
+    for (s32 i = 0; i < num_tris; i++) {
+        // User inputs for this triangle
+        char label[0x20] = {0};
+        snprintf(label, sizeof(label), "Triangle %d", i + 1);
+        ImGui::InputScalarN(label, ImGuiDataType_U16, vfile_cur(vf), 3);
+
+        const u16 idx1 = VFILE_READ(u16, &vf);
+        const u16 idx2 = VFILE_READ(u16, &vf);
+        const u16 idx3 = VFILE_READ(u16, &vf);
+        const bool idx_too_small = idx1 < lower_bound || idx2 < lower_bound || idx3 < lower_bound;
+
+        // If the ALR has a bad count we *will* go out of bounds here.
+        // Since we have the whole file loaded this won't cause any crashes,
+        // and may help illustrate where the end of the real data is.
+        if (idx_too_small && !window_0x2.trust_alr_tri_count) {
+            // We're hitting some invalid data, give up.
+            break;
+        }
+    }
 }
 
 void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
@@ -657,6 +740,9 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     // To make sure the intended union member is correctly initialized, we use
     // this switch statement.
     switch (id) {
+        case 0x2:
+            window_0x2 = {};
+            break;
         case 0x3:
             window_0x3 = {};
             hex_edit.PreviewDataType = ImGuiDataType_Float;

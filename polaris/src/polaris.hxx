@@ -12,7 +12,12 @@ extern "C" {
     #include "viewer/render_image.h"
 }
 
-// State for 0x3 (transform matrix) window
+// State for 0x2 (index buffer) window
+struct window_state_0x2 {
+    bool trust_alr_tri_count = false;
+};
+
+// State for 0x3 (armature) window
 struct window_state_0x3 {
     s32 selected_joint = 0;
     bool slider = false;
@@ -61,6 +66,7 @@ struct polaris {
         // zero-initialized. Otherwise it's kind of a pain.
         // TODO: See if we can use std::variant or inheritance to make it harder to call functions on the wrong chunk type
         union {
+            window_state_0x2 window_0x2;
             window_state_0x3 window_0x3;
             window_state_0x10 window_0x10;
             window_state_0x15 window_0x15;
@@ -113,7 +119,7 @@ struct polaris {
         /// present, extra checks occur to avoid saving invalid indices, and
         /// indices are formatted to use UVs if present. Otherwise, the indices
         /// are saved as-is.
-        void dump_idx_buf(const polaris *pol, FILE* out, std::optional<resource_entry_0x16> vert_entry = std::optional<resource_entry_0x16>()) const;
+        void dump_idx_buf(const polaris *pol, FILE* out, std::optional<resource_entry_0x16> vert_entry = std::optional<resource_entry_0x16>()) const noexcept;
 
         void dump_vertex_buf(const polaris *pol, const char* path, resource_entry_0x16 entry) const noexcept;
         void chunk_0x16(polaris *pol) noexcept;
