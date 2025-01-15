@@ -1,8 +1,8 @@
 #include "pd_common.h"
 #include <ctype.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
 
 // The first character is NUL, so that an index of 0 or sizeof(char_lookup) - 1
 // gives a NUL. This lets us clamp the value instead of doing a bounds check.
@@ -10,80 +10,75 @@
 // In the game, alphabetic characters are sometimes interpreted as uppercase
 // and sometimes lowercase. Similarly, the underscore is sometimes interpreted
 // as a space.
+// Lookup table extracted from PDUWP.exe by Vu314
 const char char_lookup[] = "\0000123456789abcdefghijklmnopqrstuvwxyz_";
 
 enum {
+    // Index of the first number character
+    LOOKUP_IDX_NUMBER = 1,
+
     // Index of the first alphabetic character
     LOOKUP_IDX_ALPHABETIC = 11,
 
     // The space is always at the end of the lookup table
     LOOKUP_IDX_SPACE = sizeof(char_lookup) - 2,
+
+    ENCODING_BASE = 40,
 };
 
-void decode_single32(char* output, u32 val) {
-    // We use a signed loop counter so we can check for underflows.
+void decode_single32(char* output, u32 encoded_val) {
+    if (output == NULL) {
+        return; // Not much we can do here.
+    }
+
     // The loop counter represents the position of the character being decoded.
-    for (s32 i = (PD_ENCODED_CHAR_COUNT / 2) - 1; i >= 0; i--) {
-        // Each character code is multiplied by 40 and added to the encoded
-        // value to store 6 characters in 4 bytes. To decode, we find the
-        // remainder at each power of 40, and that's our character code.
-        const u8 remainder = val % 40;
-        val -= remainder;
-        val /= 40;
+    for (s32 i = 0; i < ENCODED_CHAR_COUNT; i++) {
+        // Each character is added to the final value, which is then multiplied
+        // by the encoding base. To decode, we find the remainder at each power
+        // of the base, and use that as an index into a lookup table. In the
+        // end this stores 6 characters in 4 bytes.
+        const u8 remainder = encoded_val % ENCODING_BASE;
+        encoded_val /= ENCODING_BASE;
 
-        // The value stored per character is actually an index into a lookup
-        // table. (This is how the game does it so we're copying them)
+        // Out-of-bounds values are clamped to the index of the null terminator
+        const u8 idx = MIN(remainder, sizeof(char_lookup) - 1);
 
-        // Clamping to sizeof() - 1 instead of strlen() - 1 is intentional. This
-        // means that an out-of-bounds remainder will get a NUL character.
-        const u8 idx = CLAMP(0, remainder, sizeof(char_lookup) - 1);
-        output[i] = char_lookup[idx]; // Store decoded character
+        // Characters are decoded in reverse order, so we write them back-to-front
+        output[ENCODED_CHAR_COUNT - i - 1] = char_lookup[idx];
     }
 }
 
-u32 encode_single32(char* string) {
-    if (string == NULL) {
+u32 encode_single32(char* input) {
+    if (input == NULL) {
         return 0;
     }
 
-    // Encoding a character essentially fills the last position with a character
-    // and moves the rest back. If we don't encode exactly 6 characters, we
-    // won't push the first character back to the first position, and it can
-    // end up as a null terminator (breaking the decoding). To solve this, we
-    // use a temporary buffer so there's always 6 characters.
-    char text[6] = {0};
-    strncpy(text, string, sizeof(text));
+    // If we don't encode exactly 6 characters, the decoder will leave the
+    // remaining bytes (in the front!) uninitialized/zero.
+    char buffer[ENCODED_CHAR_COUNT] = {0};
+    strncpy(buffer, input, sizeof(buffer));
 
-    u32 val = 0;
-    for (u32 i = 0; i < 6; i++) {
-        const char c = text[i];
-        // Move on to the next power of 40
-        val *= 40;
+    u32 encoded_val = 0;
+    for (u32 i = 0; i < ENCODED_CHAR_COUNT; i++) {
+        const char c = buffer[i];
 
+        u8 mapped_char = 0;
+        // Numbers and letters are in a convienient order we can use to easily
+        // compute the index.
         if (isdigit(c)) {
-            char buf[2] = {c}; // Use temp buffer to ensure it's null-terminated
-            const u64 char_val = atoi(buf);
-            // Numbers are at the start of the lookup table, we can use this to
-            // our advantage by using the value to compute the index. The game
-            // probably uses the value directly, we only need to add 1 because
-            // we added a NUL as the first entry for convenient decoding.
-            val += char_val + 1;
+            mapped_char = LOOKUP_IDX_NUMBER + (c - '0');
         }
         else if (isalpha(c)) {
-            // ASCII characters start at a known index, so our index is the
-            // distance from 'a' plus that.
-            val += LOOKUP_IDX_ALPHABETIC + (tolower(c) - 'a');
+            mapped_char = LOOKUP_IDX_ALPHABETIC + (tolower(c) - 'a');
         }
-        else if (c == ' ' || c == '_' || c == '-' || c == '.') {
-            // The last entry in the lookup table can be interpreted as a space
-            // or underscore. For convenience, we'll turn characters that
-            // aren't in the table but might get used as spacing to a space.
-            val += LOOKUP_IDX_SPACE;
-        } else {
-            // This character isn't in the lookup table, skip it.
-            continue;
+        else if (c == ' ' || c == '_' || c == '-') {
+            // These 3 characters are encoded to the same value
+            mapped_char = LOOKUP_IDX_SPACE;
         }
+        // Anything not covered here is encoded as 0
+
+        encoded_val = (encoded_val * ENCODING_BASE) + mapped_char;
     }
 
-    return val; // All done encoding!
+    return encoded_val; // All done encoding!
 }

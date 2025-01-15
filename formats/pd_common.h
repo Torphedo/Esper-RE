@@ -6,8 +6,16 @@ extern "C" {
 #include <common/int.h>
 
 enum {
-    PD_ENCODED_CHAR_COUNT = 12,
+    // Number of characters encoded in a u32
+    ENCODED_CHAR_COUNT = 6,
 };
+
+// Useful when decoding larger pieces of text
+typedef struct {
+    char data[ENCODED_CHAR_COUNT * 2];
+    char null_terminator;
+}decoded_text;
+
 
 /// @brief Decode 6 characters from a 32-bit integer.
 /// @param output buffer to store decoded characters in

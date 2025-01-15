@@ -166,13 +166,13 @@ void texture_from_meta(u8* buf, u32 size, u32 idx) {
 // Try to deduce texture metadata by brute force using the limited data in the
 // resource header (0x15 chunk)
 void texture_brute(char* path, const u8* buf, u32 size, u32 idx) {
-    char text[PD_ENCODED_CHAR_COUNT + 1] = {0};
-    decode_single32(text, entries[idx].text1);
-    decode_single32(&text[6], entries[idx].text2);
-    LOG_MSG(debug, "Texture name: %s\n", text);
+    decoded_text text = {0};
+    decode_single32(text.data, entries[idx].text1);
+    decode_single32(&text.data[6], entries[idx].text2);
+    LOG_MSG(debug, "Texture name: %s\n", text.data);
 
     char filename[256] = { 0 };
-    snprintf(filename, sizeof(filename), "textures/%s/%s.dds", path, text);
+    snprintf(filename, sizeof(filename), "textures/%s/%s.dds", path, text.data);
 
     const u32 resolution = 1 << entries[idx].resolution_pwr;
     const u8 format = entries[idx].pixel_format;

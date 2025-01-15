@@ -39,11 +39,6 @@ typedef enum {
 }ssb_opcode;
 
 typedef struct {
-    char data[PD_ENCODED_CHAR_COUNT];
-    char null_terminator;
-}decoded_text;
-
-typedef struct {
     u32 text1;
     u32 text2;
     u32 func_offset;
