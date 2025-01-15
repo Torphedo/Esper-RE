@@ -168,13 +168,13 @@ bool alr_edit(flags options, alr_interface handlers) {
         }
         u8* cur_tex = tex_buf + entries[i].data_ptr;
 
-        char text[PD_ENCODED_CHAR_COUNT + 1] = {0};
-        decode_single32(text, entries[i].text1);
-        decode_single32(&text[6], entries[i].text2);
+        decoded_text text = {0};
+        decode_single32(text.data, entries[i].text1);
+        decode_single32(&text.data[6], entries[i].text2);
 
         // Call handler to maybe modify this texture
         if (handlers.tex_handler != NULL) {
-            (handlers.tex_handler)(options.input_path, cur_tex, tex_size, text, i);
+            (handlers.tex_handler)(options.input_path, cur_tex, tex_size, text.data, i);
         }
 
         // Write (maybe modified) texture to ouptut file

@@ -15,12 +15,12 @@ namespace ImGui {
             return false;
         }
 
-        u8 size = PD_ENCODED_CHAR_COUNT / 2;
-        char buf[PD_ENCODED_CHAR_COUNT + 1] = {0};
-        decode_single32(buf, *text1);
+        u8 size = ENCODED_CHAR_COUNT;
+        decoded_text buf = {0};
+        decode_single32(buf.data, *text1);
         if (text2 != nullptr) {
             // Also decode the next value
-            decode_single32(&buf[size], *text2);
+            decode_single32(&buf.data[ENCODED_CHAR_COUNT], *text2);
 
             // With a second value, we can store twice as many characters.
             size *= 2;
@@ -28,14 +28,13 @@ namespace ImGui {
 
         // TODO: Look into using a character filter callback to only allow the
         // characters that can be encoded.
-        const bool edited = ImGui::InputText(label, buf, size + 1);
+        const bool edited = ImGui::InputText(label, buf.data, size + 1);
 
         if (edited) {
-            char* text = buf;
             // We need to re-encode the text
-            *text1 = encode_single32(text);
+            *text1 = encode_single32(buf.data);
             if (text2 != nullptr) {
-                *text2 = encode_single32(&text[6]);
+                *text2 = encode_single32(&buf.data[ENCODED_CHAR_COUNT]);
             }
         }
 

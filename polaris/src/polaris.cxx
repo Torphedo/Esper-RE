@@ -471,11 +471,11 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     ImGui::BeginChildFitContent("Textures", 0.3f);
     for (u32 i = 0; i < num_entries; i++) {
         char buf[0x30] = {0};
-        char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
-        decode_single32(name, entries[i].text1);
-        decode_single32(&name[6], entries[i].text2);
+        decoded_text name = {0};
+        decode_single32(name.data, entries[i].text1);
+        decode_single32(&name.data[ENCODED_CHAR_COUNT], entries[i].text2);
 
-        snprintf(buf, sizeof(buf) - 1, "#%d \"%s\" @ resbuf+0x%X", i, name, entries[i].data_ptr);
+        snprintf(buf, sizeof(buf) - 1, "#%d \"%s\" @ resbuf+0x%X", i, name.data, entries[i].data_ptr);
 
         if (ImGui::Selectable(buf, window_0x15.selected_texture == i)) {
             window_0x15.selected_texture = i;
@@ -486,9 +486,9 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
 
     ImGui::BeginGroup();
     resource_entry* entry = &entries[window_0x15.selected_texture];
-    char name[PD_ENCODED_CHAR_COUNT + 1] = {0};
-    decode_single32(name, entry->text1);
-    decode_single32(&name[6], entry->text2);
+    decoded_text name = {0};
+    decode_single32(name.data, entry->text1);
+    decode_single32(&name.data[ENCODED_CHAR_COUNT], entry->text2);
 
     texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, *entry);
     ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
@@ -537,7 +537,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
         char* path = NULL;
-        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, name);
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, name.data);
         if (NFD_OKAY && path != nullptr) {
             img_write(window_0x15.tex, path);
         }
