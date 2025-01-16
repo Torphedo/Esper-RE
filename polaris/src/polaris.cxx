@@ -186,27 +186,15 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
 
     // Sanity check some of our assumptions & show warning messages if they fail
     idxbuf_header temp = {0};
-    const char* pad_warning = "WARNING: What I thought was padding @ chunk offset 0x%x had real data!\nPlease report this so I can research it.";
-    if (memcmp(header->pad, temp.pad, sizeof(temp.pad)) != 0) {
-        ImGui::Text(pad_warning, offsetof(idxbuf_header, pad));
-    }
-    if (memcmp(header->pad2, temp.pad2, sizeof(temp.pad)) != 0) {
-        ImGui::Text(pad_warning, offsetof(idxbuf_header, pad2));
-    }
-
-    if (header->vertex_buf != header->vertex_buf2) {
-        ImGui::Text("WARNING: What I thought was duplicate data actually isn't!\n Please report this so I can research it.");
-    }
+    const char* pad_warning = "WARNING: What I thought was padding @ chunk offset 0x%x had real data!";
+    ImGui::PlsReportIf(memcmp(header->pad, temp.pad, sizeof(temp.pad)) != 0, pad_warning, offsetof(idxbuf_header, pad));
+    ImGui::PlsReportIf(memcmp(header->pad2, temp.pad2, sizeof(temp.pad2)) != 0, pad_warning, offsetof(idxbuf_header, pad));
+    ImGui::PlsReportIf(header->vertex_buf != header->vertex_buf2, "What I thought was duplicate data actually isn't!");
 
     const u16 first_idx = VFILE_READ(u16, &vf);
     vf.pos -= sizeof(first_idx);
-    if (first_idx != header->first_idx) {
-        if (first_idx > header->first_idx) {
-            ImGui::Text("WARNING: What I thought was the first index value isn't that OR the smallest index!\n Please report this so I can research it more.");
-        } else {
-            ImGui::Text("WARNING: What I thought was the first index value seems to actually be the smallest index.\n Please report this so I can fix it.");
-        }
-    }
+    ImGui::PlsReportIf(first_idx > header->first_idx, "What I thought was the first index value isn't that OR the smallest index!");
+    ImGui::PlsReportIf(first_idx < header->first_idx && first_idx != header->first_idx, "What I thought was the first index value seems to actually be the smallest index.");
 
 
     if (ImGui::InputScalar("Vertex Buffer", ImGuiDataType_U16, &header->vertex_buf)) {
