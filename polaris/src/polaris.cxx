@@ -334,6 +334,11 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
 /// nullptr). This won't be displayed, only used to give the input boxes a
 /// unique ID in ImGui.
 static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const char* label_extra) {
+    if (keyframes == nullptr || label_extra == nullptr) {
+        ImGui::Text("Programmer error: %s() was passed a null value", __func__);
+        return;
+    }
+
     // Each keyframe has a frame value (when it happens) and components (for 3D
     // translation/rotation/scale, or weird stuff like brightness values).
     for (u16 i = 0; i < key_count; i++) {
