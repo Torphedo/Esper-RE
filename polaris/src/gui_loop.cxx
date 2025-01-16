@@ -56,7 +56,7 @@ bool gui_main() {
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != nullptr);
-    io.FontGlobalScale = 1.0f;
+    io.FontGlobalScale = 1.5f;
 
     // Main loop
     polaris pol;

@@ -1002,6 +1002,8 @@ void polaris::do_menu_bar() noexcept {
 
             if (ImGui::BeginMenu("Extra")) {
                 ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
+                ImGuiIO& io = ImGui::GetIO();
+                ImGui::InputFloat("Font Size", &io.FontGlobalScale, 0.1f);
                 ImGui::EndMenu();
             }
 
