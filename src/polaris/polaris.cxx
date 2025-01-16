@@ -1034,7 +1034,7 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
         ImGui::ShowDemoWindow(&this->show_demo);
     }
 
-    ImGui::Begin("ALR Select");
+    ImGui::Begin("ALR Chunks");
 
     const char* filter_label = "Chunk ID Filter";
     ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll;
@@ -1057,11 +1057,19 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
         this->chunk_filter = std::optional<u32>();
     }
 
-    if (ImGui::BeginListBox(" ", ImVec2(0, -FLT_MIN))) {
+    if (ImGui::BeginTable("alr chunks", 3, ImGuiTableFlags_ScrollY)) {
+        // Make header row that never scrolls away
+        ImGui::TableSetupScrollFreeze(0, 1);
+
+        // Setup table header
+        ImGui::TableSetupColumn("ID");
+        ImGui::TableSetupColumn("Offset");
+        ImGui::TableSetupColumn("Size");
+        ImGui::TableHeadersRow();
+
+        // Draw a row for each chunk
         for (size_t n = 0; n < chunks.size(); n++) {
             polaris::chunk& chunk = chunks.at(n);
-            char buf[128] = {0};
-            snprintf(buf, sizeof(buf), "0x%02X chunk @ 0x%02lX [%d bytes] ##%lu", chunk.id, chunk.offset, chunk.size, n);
             if (this->chunk_filter.has_value()) {
                 if (this->chunk_filter.value() != chunk.id) {
                     // Only show chunks that match the ID filter
@@ -1069,14 +1077,26 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
                 }
             }
 
-            if (ImGui::Selectable(buf, chunk.active)) {
-                // Add chunk to the list
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("0x%X", chunk.id);
+
+            // Selectable needs a unique ID, so we use the offset as the
+            // selectable column because no 2 chunks have the same offset.
+            ImGui::TableSetColumnIndex(1);
+            char buf[0x10] = {0};
+            snprintf(buf, sizeof(buf), "0x%02lX", chunk.offset);
+            // The extra flag makes the selection highlight go across the whole table
+            if (ImGui::Selectable(buf, chunk.active, ImGuiSelectableFlags_SpanAllColumns)) {
+                // Display chunk window
                 chunk.active = !chunk.active;
             }
-        }
-        ImGui::EndListBox();
-    }
 
+            ImGui::TableSetColumnIndex(2);
+            ImGui::Text("0x%X", chunk.size);
+        }
+        ImGui::EndTable();
+    }
     ImGui::End();
 
     // Draw window for all chunks being displayed right now
