@@ -325,72 +325,63 @@ void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
     }
 }
 
-static bool edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const char* label_extra) {
-    bool edited = false;
-
+/// @brief Create input boxes for ALR animation keys of any type or size
+///
+/// @param key_size The size of each animation key
+/// @param key_count The number of animation keys
+/// @param keyframes The address of the first key
+/// @param label_extra A unique name of this set of keyframes (must not be
+/// nullptr). This won't be displayed, only used to give the input boxes a
+/// unique ID in ImGui.
+static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const char* label_extra) {
+    // Each keyframe has a frame value (when it happens) and components (for 3D
+    // translation/rotation/scale, or weird stuff like brightness values).
     for (u16 i = 0; i < key_count; i++) {
-        ImGuiDataType type = ImGuiDataType_COUNT;
-        u16 num_components = 0;
+        ImGuiDataType frame_type = ImGuiDataType_COUNT;
+        ImGuiDataType component_type = ImGuiDataType_COUNT;
         void* components = nullptr;
-
-        if (key_size < 8) {
-            // This format has an 8-bit frame value and 16-bit components
-            components = (void*)((uintptr_t)keyframes + 1);
-            type = ImGuiDataType_U16;
-        } else if (key_size <= 16) {
-            // This format has a floating-point frame value and components
-            components = &((float*)keyframes)[1];
-            type = ImGuiDataType_Float;
-        }
+        u16 num_components = 0;
 
         switch (key_size) {
-        // Single-component integer keyframe
+        // Integer keys
         case 3:
-            num_components = 1;
-            break;
         case 5:
-            num_components = 2;
-            break;
-        // 3-component integer keyframe
         case 7:
-            num_components = 3;
+            frame_type = ImGuiDataType_U8;
+            component_type = ImGuiDataType_U16;
+            components = (void*)((uintptr_t)keyframes + 1); // Skip past frame value
+            // We know component and frame value size, so we can find out the # of components
+            num_components = (key_size - sizeof(u8)) / sizeof(u16);
             break;
 
-        // Single-component floating point keyframe
+        // Floating point keys
         case 8:
-            num_components = 1;
-            break;
-        // 2-component floating point keyframe
         case 12:
-            num_components = 2;
-            break;
-        // 3-component floating point keyframe
         case 16:
-            num_components = 3;
-            break;
+            frame_type = component_type = ImGuiDataType_Float;
+            components = &((float*)keyframes)[1]; // Skip past frame value
+            // Same deal as above
+            num_components = (key_size - sizeof(float)) / sizeof(float);
         }
 
-        if (components == nullptr || num_components == 0 || type == ImGuiDataType_COUNT) {
-            // Size is probably an unknown format
+        if (components == nullptr || num_components == 0 || component_type == ImGuiDataType_COUNT) {
+            // Something wasn't filled out, probably unknown format
             ImGui::Text("Unknown keyframe format (0x%X bytes)", key_size);
             break;
         }
 
+        // Each input needs a unique label
         char frame_label[0x20] = {0};
         snprintf(frame_label, sizeof(frame_label), "Frame # ##%d##%8s", i, label_extra);
 
         char component_label[0x20] = {0};
         snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
 
-        if (type == ImGuiDataType_U16) {
-            // The frame data type is different from that of the components for
-            // the integer formats
-            ImGui::InputScalar(frame_label, ImGuiDataType_U8, keyframes);
-        } else {
-            ImGui::InputScalar(frame_label, type, keyframes);
-        }
-        ImGui::InputScalarN(component_label, type, components, num_components);
+        // Display the input fields
+        ImGui::InputScalar(frame_label, frame_type, keyframes);
+        ImGui::InputScalarN(component_label, component_type, components, num_components);
 
+        // Space between keys keeps things readable
         ImGui::Spacing();
         ImGui::Spacing();
 
@@ -398,8 +389,6 @@ static bool edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         // Casting is needed because we can't do math on void*
         keyframes = (u8*)keyframes + key_size;
     }
-
-    return edited;
 }
 
 void polaris::chunk::chunk_0x5(const polaris *pol) noexcept {
