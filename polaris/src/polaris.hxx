@@ -3,13 +3,12 @@
 #include <optional>
 #include <imgui.h>
 #include <imgui_hex_editor.h>
+#include <common/int.h>
+#include <common/image.h>
 
 extern "C" {
-    #include <common/int.h>
-    #include <common/image.h>
     #include <common/gl/input.h>
     #include <formats/alr.h>
-    #include "viewer/render_image.h"
 }
 
 // State for 0x2 (index buffer) window
@@ -151,8 +150,6 @@ struct polaris {
 
     // Input state from the previous frame
     input_internal prev_input = {};
-    // The texture currently being rendered in the background (buffpeep integration)
-    img_state img_ctx = {0};
 
     /// @brief Hide input from the rest of the program when ImGui is using it.
     void handle_input_suppression() noexcept;

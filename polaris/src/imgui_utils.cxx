@@ -19,7 +19,7 @@ namespace ImGui {
 
         // We use helpers from stdarg to handle the variadic (...) arguments.
         char msg[8192] = {0};
-        va_list arg_list = {0};
+        va_list arg_list = {};
         va_start(arg_list, format);
         const int return_code = vsnprintf(msg, sizeof(msg) - 1, format, arg_list);
         va_end(arg_list);

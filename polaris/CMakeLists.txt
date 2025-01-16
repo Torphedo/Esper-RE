@@ -5,11 +5,6 @@ project(polaris
 )
 set(CMAKE_CXX_STANDARD 17)
 
-# Even though its 1 file, this keeps the main source file list shorter
-add_library(glad STATIC
-    ../ext/glad/src/glad.c
-)
-
 # Add ImGui as a library
 add_library(imgui STATIC
     ../ext/imgui/imgui.cpp
@@ -23,11 +18,6 @@ add_library(imgui STATIC
 
 # Internal build tool to generate headers for GLSL shaders
 add_executable(txt2h "../ext/txt2h.c")
-
-set(GLSL_SOURCES
-    src/viewer/shader/tex_viewer.vert
-    src/viewer/shader/tex_viewer.frag
-)
 
 # Autogenerate string constant headers for each GLSL source file using txt2h.c
 set(glsl_headers)
@@ -52,13 +42,11 @@ add_executable(polaris
     src/file_pickers.cxx
     src/imgui_utils.cxx
 
-    src/viewer/render_image.c
-    src/viewer/viewer.c
-    src/viewer/camera.c
     ../formats/pd_common.c
+    ../ext/glad/src/glad.c
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
 )
 
-target_link_libraries(polaris PRIVATE glfw glad imgui bobtail nfd)
+target_link_libraries(polaris PRIVATE glfw imgui bobtail nfd)
