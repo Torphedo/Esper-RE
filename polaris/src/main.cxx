@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -20,6 +21,7 @@ void print_usage() {
 int dump_all_textures(polaris pol, const char* path) {
     polaris::chunk texture_chunk = polaris::chunk(0, 0, 0);
     polaris::chunk atlas_chunk = polaris::chunk(0, 0, 0);
+    system("mkdir textures"); // We need this folder for later
 
     // Try to find texture and texture atlas metadata, we need both to make a
     // good guess about dimensions.
@@ -43,15 +45,19 @@ int dump_all_textures(polaris pol, const char* path) {
 
     // Read atlas chunk data
     atlas_entry* atlas_entries = nullptr;
+    atlas_name* atlas_names = nullptr;
+    atlas_header header_atlas = {0};
     if (atlas_chunk.size > 0) {
         vf = vfile_open(pol.alr_data + atlas_chunk.offset, atlas_chunk.size);
 
         // Skip over the ID and size fields we already have
         vfile_seek(&vf, sizeof(chunk_generic));
-        atlas_header header = VFILE_READ(atlas_header, &vf);
+        header_atlas = VFILE_READ(atlas_header, &vf);
 
-        // Skip over names that we don't need right now
-        vfile_seek(&vf, sizeof(atlas_name) * header.atlas_count);
+        // Skip over names
+        atlas_names = (atlas_name*)vfile_cur(vf);
+        vfile_seek(&vf, sizeof(atlas_name) * header_atlas.atlas_count);
+
         atlas_entries = (atlas_entry*)vfile_cur(vf);
     }
 
@@ -59,14 +65,21 @@ int dump_all_textures(polaris pol, const char* path) {
         // Convert the ALR texture data to our standard texture struct
         texture cur_tex = convert_tex(pol.alr_data + pol.resbuf_offset, tex_entries[i]);
 
-        if (atlas_entries != nullptr) {
+        // Decode the texture filename
+        char decoded_name[0x20] = {0};
+        decode_single32(decoded_name, tex_entries[i].text1);
+        decode_single32(&decoded_name[ENCODED_CHAR_COUNT], tex_entries[i].text2);
+        strncat(decoded_name, ".dds", sizeof(decoded_name) - 1);
+        char* name = decoded_name;
+
+        if (atlas_entries != nullptr && header_atlas.atlas_count > i) {
             atlas_entry entry = atlas_entries[i];
             // We get better dimension info from the atlas headers, use it!
             // Dimensions from the atlas headers are almost always more
             // accurate, so we always use them unless they're obviously wrong.
 
             const u32 too_small = 0;
-            const u32 too_big = 2048;
+            const u32 too_big = 8192;
             if (entry.width > too_small && entry.width < too_big) {
                 cur_tex.width = entry.width;
             }
@@ -74,17 +87,16 @@ int dump_all_textures(polaris pol, const char* path) {
                 cur_tex.height = entry.height;
             }
 
+            // Also use the name from the atlas for the filename, because it'll
+            // have correct capitalization
+            name = (char*)atlas_names[i].name;
         }
 
-        // Decode the texture filename
-        char name[0x20] = {0};
-        decode_single32(name, tex_entries[i].text1);
-        decode_single32(&name[ENCODED_CHAR_COUNT], tex_entries[i].text2);
-        strncat(name, ".dds", sizeof(name) - 1);
-
+        char path[0x30] = {0};
+        snprintf(path, sizeof(path) - 1, "textures/%s", name);
 
         // Save the texture
-        img_write(cur_tex, name);
+        img_write(cur_tex, path);
         LOG_MSG(info, "Dumped %s\n", name);
         textures_dumped++;
     }
