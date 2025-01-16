@@ -39,6 +39,9 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
     out.data = resbuf + entry.data_ptr;
     out.channels = 4;
     out.height = out.width = 1 << entry.resolution_pwr;
+    if (entry.unknown == TEXTURE_CUBEMAP) {
+        // TODO: Add cubemap support in our standard texture struct
+    }
 
     switch (entry.pixel_format) {
         case FORMAT_MONO_16:

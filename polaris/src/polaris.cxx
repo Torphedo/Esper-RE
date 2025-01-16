@@ -639,7 +639,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
 
     // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(pol->alr_data + offset, size);
-    // Skip over the ID and tex_size fields we already have (both 32-bit)
+    // Skip over the ID and size fields we already have
     vfile_seek(&vf, sizeof(chunk_generic));
 
     const u32 num_entries = VFILE_READ(u32, &vf);
@@ -945,7 +945,7 @@ void polaris::handle_input_suppression() noexcept {
 
 bool polaris::load_alr(const char* path) noexcept {
     const s64 size = file_size(path);
-    if (file_exists(path) && size > 8) {
+    if (size > 8) {
         // Expand reservation if needed
         if (size > reserve_size) {
             // If our reservation needs resizing, we're dealing with a
@@ -955,7 +955,10 @@ bool polaris::load_alr(const char* path) noexcept {
         }
 
         // Load the file into the buffer.
-        file_load_existing(path, alr_data, size);
+        if (!file_load_existing(path, alr_data, size)) {
+            // Some loading failure, an error message should've been printed
+            return false;
+        }
         alr_size = size;
         chunks = shatter_alr(alr_data, alr_size);
         return true;
