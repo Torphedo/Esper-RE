@@ -17,7 +17,7 @@ include_directories(
     ext/imgui
     ext/ImGuiFileDialog
     ext/bobtail
-    ${Esper-RE_SOURCE_DIR}
+    ${Esper-RE_SOURCE_DIR}/src
 )
 
 set(BOBTAIL_OPENGL ON)
@@ -26,28 +26,28 @@ add_subdirectory(ext/glfw)
 add_subdirectory(ext/nfde)
 
 # Build Polaris
-add_subdirectory(polaris)
+include(polaris.cmake)
 
 # Build CLI ALR program
 add_executable(alr
-    alr/src/main.c
-    alr/src/alr.c
-    alr/src/dump.c
-    alr/src/split.c
-    alr/src/replace.c
-    alr/src/images.c
+    src/alr/main.c
+    src/alr/alr.c
+    src/alr/dump.c
+    src/alr/split.c
+    src/alr/replace.c
+    src/alr/images.c
 
-    formats/pd_common.c
+    src/formats/pd_common.c
 )
 
 add_executable(deck_reader
-    deck_reader/src/main.c
+    src/deck_reader/main.c
 )
 
 add_executable(ssb
-    ssb/src/main.c
-    ssb/src/ssb.c
-    formats/pd_common.c
+    src/ssb/main.c
+    src/ssb/ssb.c
+    src/formats/pd_common.c
 )
 
 # Link everything to the common library
@@ -56,5 +56,5 @@ target_link_libraries(deck_reader PRIVATE bobtail)
 target_link_libraries(ssb PRIVATE bobtail)
 # Polaris handles its own linking
 
-# Copy ALR files to [build]/src/bin/ so they can be accessed while debugging. 
-file(COPY "alr/bin/" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+# Copy test files to [build]/src/bin/ so they can be accessed while debugging
+file(COPY "bin" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
