@@ -2,6 +2,11 @@
 
 #include <common/vfile.h>
 
+bool has_uvs(u8 vert_size) {
+    // Known formats with UVs
+    return vert_size == 24 || vert_size == 32 || vert_size == 20;
+}
+
 std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
     std_vertex output = {};
     // Get a virtual file for the buffer
