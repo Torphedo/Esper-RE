@@ -125,7 +125,7 @@ struct polaris {
         /// present, extra checks occur to avoid saving invalid indices, and
         /// indices are formatted to use UVs if present. Otherwise, the indices
         /// are saved as-is.
-        void dump_idx_buf(const polaris *pol, FILE* out, std::optional<vertbuf_entry> vert_entry = std::optional<vertbuf_entry>()) const noexcept;
+        void dump_idx_buf(const polaris *pol, FILE* out, std::optional<u32> vert_count = std::optional<u32>(), bool has_uvs = false) const noexcept;
 
         void dump_vertex_buf(const polaris *pol, const char* path, vertbuf_entry entry) const noexcept;
         void chunk_0x16(polaris *pol) noexcept;

@@ -14,6 +14,7 @@
 #include <formats/alr.h>
 
 #include "alr_texture.hxx"
+#include "pd_mesh.hxx"
 #include "imgui_utils.hxx"
 #include "polaris.hxx"
 
@@ -33,7 +34,7 @@ do {                                 \
     }                                \
 } while(0)
 
-void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
+void polaris::chunk::dump_idx_buf(const polaris *pol, FILE* out, std::optional<u32> vert_count, bool has_uvs) const noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     vfile vf = vfile_open(pol->alr_data + offset, size);
@@ -53,8 +54,8 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<v
 
         const u16 lower_bound = header.first_idx;
         u16 upper_bound = UINT16_MAX;
-        if (vert_entry.has_value()) {
-            upper_bound = vert_entry.value().vertex_count;
+        if (vert_count.has_value()) {
+            upper_bound = vert_count.value();
         }
 
         const bool idx_too_small = idx1 > upper_bound || idx2 > upper_bound || idx3 > upper_bound;
@@ -68,14 +69,6 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<v
         idx1++;
         idx2++;
         idx3++;
-
-        bool has_uvs = false;
-        if (vert_entry.has_value()) {
-            if (vert_entry.value().vertex_size == 24) {
-                // This format has a known UV format, reflect it in the indices
-                has_uvs = true;
-            }
-        }
 
         if (has_uvs) {
             fprintf(out, "f %hu/%hu %hu/%hu %hu/%hu\n", idx1, idx1, idx2, idx2, idx3, idx3);
@@ -98,23 +91,25 @@ void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, vertb
         // Jump to the appropriate data
         vfile_seek(&vf, pol->resbuf_offset);
         vfile_seek(&vf, entry.data_ptr);
+        bool has_uvs = false;
         for (u32 i = 0; i < entry.vertex_count; i++) {
             const s64 next_pos = vf.pos + entry.vertex_size;
-            // Read our vertex positions, which always come first
-            const vec3s vert = VFILE_READ(vec3s, &vf);
+            // Read the vertex (this abstracts away the many different formats)
+            const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.vertex_size);
 
-            fprintf(out, "v %f %f %f\n", vert.x, vert.y, vert.z);
-
-            if (entry.vertex_size == 24) {
-                // The vertex format with this size has a known UV
-                // format, using 16-bit values
-                const u16 uv1 = VFILE_READ(u16, &vf);
-                const u16 uv2 = VFILE_READ(u16, &vf);
-                fprintf(out, "vt %f %f\n", (float)uv1 / INT16_MAX, (float)uv2 / INT16_MAX);
+            // Save whatever vertex data we got
+            if (vert.pos.has_value()) {
+                const vec3s pos = vert.pos.value();
+                fprintf(out, "v %f %f %f\n", pos.x, pos.y, pos.z);
             }
 
-            // There might be some data left over, for now we just skip
-            // over it.
+            if (vert.texcoord.has_value()) {
+                has_uvs = true;
+                const vec2s uv = vert.texcoord.value();
+                fprintf(out, "vt %f %f\n", uv.x, uv.y);
+            }
+
+            // Skip to the next vertex
             vf.pos = next_pos;
         }
 
@@ -148,7 +143,7 @@ void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, vertb
             }
 
             fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-            idx_chunk.dump_idx_buf(pol, out, entry);
+            idx_chunk.dump_idx_buf(pol, out, entry.vertex_count, has_uvs);
         }
 
         // Cleanup

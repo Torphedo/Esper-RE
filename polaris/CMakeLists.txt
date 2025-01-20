@@ -51,6 +51,7 @@ add_executable(polaris
     src/polaris.cxx
     src/file_pickers.cxx
     src/imgui_utils.cxx
+    src/pd_mesh.cxx
 
     src/viewer/render_image.c
     src/viewer/viewer.c
