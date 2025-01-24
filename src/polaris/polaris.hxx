@@ -122,8 +122,8 @@ struct polaris {
         /// @param out The output file to write to
         /// @param vert_entry Optional metadata about the vertex format. If
         /// present, extra checks occur to avoid saving invalid indices, and
-        /// indices are formatted to use UVs if present. Otherwise, the indices
-        /// are saved as-is.
+        /// indices are formatted to use UVs or triangle strips if present.
+        /// Otherwise, the indices are saved as-is.
         void dump_idx_buf(const polaris *pol, FILE* out, std::optional<vertbuf_entry> vert_entry = std::optional<vertbuf_entry>()) const noexcept;
 
         void dump_vertex_buf(const polaris *pol, const char* path, vertbuf_entry entry) const noexcept;

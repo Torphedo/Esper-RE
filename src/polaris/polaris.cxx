@@ -14,6 +14,7 @@
 #include <formats/alr.h>
 
 #include "alr_texture.hxx"
+#include "pd_mesh.hxx"
 #include "imgui_utils.hxx"
 #include "polaris.hxx"
 
@@ -33,7 +34,7 @@ do {                                 \
     }                                \
 } while(0)
 
-void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
+void polaris::chunk::dump_idx_buf(const polaris *pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     vfile vf = vfile_open(pol->alr_data + offset, size);
@@ -42,19 +43,29 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<v
     const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
     const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
-    s32 num_tris = MAX(0, (size - sizeof(chunk_generic) - sizeof(header)) / (3 * sizeof(u16)));
+    s32 num_indices = MAX(0, (size - sizeof(chunk_generic) - sizeof(header)) / (sizeof(u16)));
+
     // If we trust the file for the number of triangles, the ends of some limbs
     // will often be missing on player models...
     // num_tris = header.num_tris;
-    for (s32 i = 0; i < num_tris - 1; i++) {
-        u16 idx1 = VFILE_READ(u16, &vf);
-        u16 idx2 = VFILE_READ(u16, &vf);
-        u16 idx3 = VFILE_READ(u16, &vf);
+    const u16* indices = (u16*)vfile_cur(vf);
+    for (s32 i = 0; i < num_indices - 1; i++) {
+        u16 idx1 = indices[i];
+        u16 idx2 = indices[i + 1];
+        u16 idx3 = indices[i + 2];
+
+        if (idx1 == idx2 || idx1 == idx3 || idx2 == idx3) {
+            // One of the indices is a duplicate, so this triangle will have
+            // zero area. This happens sometimes in triangle strips, telling us
+            // where one strip ends and another begins. We can safely skip it,
+            // because it's not really part of the geometry.
+            continue;
+        }
 
         const u16 lower_bound = header.first_idx;
         u16 upper_bound = UINT16_MAX;
         if (vert_entry.has_value()) {
-            upper_bound = vert_entry.value().vertex_count;
+            upper_bound = vert_entry->vertex_count;
         }
 
         const bool idx_too_small = idx1 > upper_bound || idx2 > upper_bound || idx3 > upper_bound;
@@ -69,18 +80,27 @@ void polaris::chunk::dump_idx_buf(const polaris* pol, FILE* out, std::optional<v
         idx2++;
         idx3++;
 
-        bool has_uvs = false;
+        bool use_uvs = false;
         if (vert_entry.has_value()) {
-            if (vert_entry.value().vertex_size == 24) {
-                // This format has a known UV format, reflect it in the indices
-                has_uvs = true;
-            }
+            use_uvs = has_uvs(vert_entry->vertex_size);
         }
 
-        if (has_uvs) {
+        if (use_uvs) {
             fprintf(out, "f %hu/%hu %hu/%hu %hu/%hu\n", idx1, idx1, idx2, idx2, idx3, idx3);
         } else {
             fprintf(out, "f %hu %hu %hu\n", idx1, idx2, idx3);
+        }
+
+        if (vert_entry.has_value()) {
+            // The indicator for triangle strips seems to be in the index buffer
+            // header
+            if (header.unk3 != IDX_TYPE_STRIP) {
+                // For triangle strips, we advance by 1 index but still read 3
+                // indices per iteration. For normal index buffers, we read and
+                // advance 3 at a time. Our loop counts up by 1, so we have to
+                // add an extra 2.
+                i += 2;
+            }
         }
     }
 
@@ -98,23 +118,25 @@ void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, vertb
         // Jump to the appropriate data
         vfile_seek(&vf, pol->resbuf_offset);
         vfile_seek(&vf, entry.data_ptr);
+        bool has_uvs = false;
         for (u32 i = 0; i < entry.vertex_count; i++) {
             const s64 next_pos = vf.pos + entry.vertex_size;
-            // Read our vertex positions, which always come first
-            const vec3s vert = VFILE_READ(vec3s, &vf);
+            // Read the vertex (this abstracts away the many different formats)
+            const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.vertex_size);
 
-            fprintf(out, "v %f %f %f\n", vert.x, vert.y, vert.z);
-
-            if (entry.vertex_size == 24) {
-                // The vertex format with this size has a known UV
-                // format, using 16-bit values
-                const u16 uv1 = VFILE_READ(u16, &vf);
-                const u16 uv2 = VFILE_READ(u16, &vf);
-                fprintf(out, "vt %f %f\n", (float)uv1 / INT16_MAX, (float)uv2 / INT16_MAX);
+            // Save whatever vertex data we got
+            if (vert.pos.has_value()) {
+                const vec3s pos = vert.pos.value();
+                fprintf(out, "v %f %f %f\n", pos.x, pos.y, pos.z);
             }
 
-            // There might be some data left over, for now we just skip
-            // over it.
+            if (vert.texcoord.has_value()) {
+                has_uvs = true;
+                const vec2s uv = vert.texcoord.value();
+                fprintf(out, "vt %f %f\n", uv.x, uv.y);
+            }
+
+            // Skip to the next vertex
             vf.pos = next_pos;
         }
 
