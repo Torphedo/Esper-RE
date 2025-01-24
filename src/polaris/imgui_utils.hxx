@@ -1,3 +1,4 @@
+#include <imgui.h>
 #include <common/int.h>
 
 namespace ImGui {
@@ -21,4 +22,25 @@ namespace ImGui {
     /// @param text2 Optional encoded integer, allowing up to 12 characters total
     /// @return Whether the text was edited
     bool InputPDString(const char* label, u32* text1, u32* text2 = nullptr);
+
+    // These are just less verbose wrappers around ImGui::InputScalar.
+    // I don't want to duplicate all the ImGui docs here, so just check
+    // ImGui::InputScalar for docs.
+    // Sorry for the extremely long function signatures :( - Torph
+
+    bool InputU8(const char* label, u8* data, u8 step = 1, u8 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    bool InputS8(const char* label, s8* data, s8 step = 1, s8 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    bool InputU16(const char* label, u16* data, u16 step = 1, u16 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    bool InputS16(const char* label, s16* data, s16 step = 1, s16 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    bool InputU32(const char* label, u32* data, u32 step = 1, u32 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    bool InputS32(const char* label, s32* data, s32 step = 1, s32 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    bool InputU64(const char* label, u64* data, u64 step = 1, u64 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    bool InputS64(const char* label, s64* data, s64 step = 1, s64 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
 }

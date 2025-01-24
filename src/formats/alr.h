@@ -86,6 +86,14 @@ typedef struct {
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
 
+// There are lots of different vertex formats used for different purposes. The
+// known vertex sizes (in bytes) are:
+// - 0xC (st06.alr)
+// - 0x10 (pc00a.alr for low LOD character)
+// - 0x14 (st06.alr)
+// - 0x18 (st06.alr, pc00a.alr for high LOD character)
+// - 0x20 (st06.alr)
+
 // 0x10 chunk
 // =====================================================================================================================
 // This chunk is for texture atlases and their sub-textures.

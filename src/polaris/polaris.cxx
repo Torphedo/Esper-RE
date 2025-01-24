@@ -197,7 +197,7 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     ImGui::PlsReportIf(first_idx < header->first_idx && first_idx != header->first_idx, "What I thought was the first index value seems to actually be the smallest index.");
 
 
-    if (ImGui::InputScalar("Vertex Buffer", ImGuiDataType_U16, &header->vertex_buf)) {
+    if (ImGui::InputU16("Vertex Buffer", &header->vertex_buf)) {
         // There are always 2 copies of this data for some reason, so update
         // the other when this one is updated.
         header->vertex_buf2 = header->vertex_buf;
@@ -224,10 +224,10 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
         ImGui::InputFloat3("Unknown floats 7-9", &header->unk_float[6]);
         ImGui::InputFloat("Unknown float 10", &header->unk_float[9]);
 
-        ImGui::InputScalar("Unknown integer 1", ImGuiDataType_U32, &header->unk1);
-        ImGui::InputScalar("Unknown integer 2", ImGuiDataType_U16, &header->unk2);
-        ImGui::InputScalar("Unknown integer 3", ImGuiDataType_U16, &header->unk3);
-        ImGui::InputScalar("Unknown integer 4", ImGuiDataType_U32, &header->unk4);
+        ImGui::InputU32("Unknown integer 1", &header->unk1);
+        ImGui::InputU16("Unknown integer 2", &header->unk2);
+        ImGui::InputU16("Unknown integer 3", &header->unk3);
+        ImGui::InputU32("Unknown integer 4", &header->unk4);
     }
     for (u32 i = 0; i < 5; i++) {
         ImGui::Spacing();
@@ -682,7 +682,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
 
     ImGui::Text("2^(resolution power) = width = height");
     const u8 step_pwr = 1; // Step for the resolution power input
-    ImGui::InputScalar("Resolution power", ImGuiDataType_U8, &entry->resolution_pwr, &step_pwr);
+    ImGui::InputU8("Resolution power", &entry->resolution_pwr, step_pwr);
     // This limits resolution to 4096^2, which is plenty for our use case
     entry->resolution_pwr = MIN(entry->resolution_pwr, ALR_TEX_POWER_LIMIT);
 
@@ -1036,7 +1036,7 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
 
     ImGui::Begin("ALR Chunks");
 
-    const char* filter_label = "Chunk ID Filter";
+    const char* filter_label = "ID Filter";
     ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll;
     if (!chunk_filter.has_value()) {
         // Make the filter look empty
@@ -1057,7 +1057,7 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
         this->chunk_filter = std::optional<u32>();
     }
 
-    if (ImGui::BeginTable("alr chunks", 3, ImGuiTableFlags_ScrollY)) {
+    if (ImGui::BeginTable("alr chunks", 3, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Reorderable)) {
         // Make header row that never scrolls away
         ImGui::TableSetupScrollFreeze(0, 1);
 
