@@ -11,10 +11,10 @@ namespace ImGui {
         ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
     }
 
-    bool PlsReportIf(bool condition, const char* format, ...) {
-        if (condition) {
-            // Everything's fine.
-            return true;
+    void PlsReportIf(bool condition, const char* format, ...) {
+        if (!condition) {
+            // Failure condition wasn't hit, everything's fine.
+            return;
         }
 
         // We use helpers from stdarg to handle the variadic (...) arguments.
@@ -31,7 +31,7 @@ namespace ImGui {
         ImGui::Text("WARNING: %s", msg);
         ImGui::Text("Please report this so I can research it.");
 
-        return false;
+        return;
     }
 
     bool InputPDString(const char* label, u32* text1, u32* text2 = nullptr) {
