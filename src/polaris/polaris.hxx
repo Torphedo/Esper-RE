@@ -104,6 +104,7 @@ struct polaris {
         void chunk_0x2(const polaris *pol) noexcept;
         void chunk_0x3(const polaris *pol) noexcept;
         void chunk_0x5(const polaris *pol) noexcept;
+        void chunk_0x7(const polaris *pol) noexcept;
         void chunk_0x10(const polaris *pol) noexcept;
         void chunk_0x11(const polaris *pol) const noexcept;
 

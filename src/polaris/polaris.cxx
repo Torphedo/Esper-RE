@@ -429,6 +429,31 @@ void polaris::chunk::chunk_0x5(const polaris *pol) noexcept {
     }
 }
 
+void polaris::chunk::chunk_0x7(const polaris *pol) noexcept {
+    // This is the same as normal animation frames, but seems to ignore the
+    // existing keyframe size fields.
+    vfile vf = vfile_open(pol->alr_data + offset, size);
+    anim_header* header = (anim_header*)vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*header));
+
+    ImGui::Text("Length: %.3f frames", header->length);
+    ImGui::Text("%d translation keys", header->translation_key_count);
+    ImGui::Text("%d rotation keys", header->rotation_key_count);
+    ImGui::Text("%d scale keys", header->scale_key_count);
+
+    // Edit and skip to the next set of keys
+    const u32 key_size = 0x10; // Camera path keys seem to always be this size.
+    if (header->translation_key_count > 0 && ImGui::CollapsingHeader("Translation Keys")) {
+        edit_keyframes(key_size, header->translation_key_count, vfile_cur(vf), "trans");
+        vfile_seek(&vf, key_size * header->translation_key_count);
+    }
+
+    if (header->rotation_key_count > 0 && ImGui::CollapsingHeader("Rotation Keys")) {
+        edit_keyframes(key_size, header->rotation_key_count, vfile_cur(vf), "rot");
+        vfile_seek(&vf, key_size * header->rotation_key_count);
+    }
+}
+
 static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept {
     ImGui::Text("\nRendering settings (doesn't affect ALR data):");
 
@@ -802,6 +827,9 @@ void polaris::chunk::draw(polaris *pol) noexcept {
                     break;
                 case 0x5:
                     this->chunk_0x5(pol);
+                    break;
+                case 0x7:
+                    this->chunk_0x7(pol);
                     break;
                 case 0x10:
                     this->chunk_0x10(pol);
