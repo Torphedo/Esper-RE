@@ -1,4 +1,7 @@
+#include <cmath>
+#include <cstdio>
 #include <glad/glad.h>
+#include <imgui_curve.hpp>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <cglm/struct.h>
@@ -349,42 +352,41 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         return;
     }
 
+    ImGuiDataType frame_type = ImGuiDataType_COUNT;
+    ImGuiDataType component_type = ImGuiDataType_COUNT;
+    u16 num_components = 0;
+
+    switch (key_size) {
+    // Integer keys
+    case 3:
+    case 5:
+    case 7:
+        frame_type = ImGuiDataType_U8;
+        component_type = ImGuiDataType_U16;
+        // We know component and frame value size, so we can find out the # of components
+        num_components = (key_size - sizeof(u8)) / sizeof(u16);
+        break;
+
+    // Floating point keys
+    case 8:
+    case 12:
+    case 16:
+        frame_type = component_type = ImGuiDataType_Float;
+        // Same deal as above
+        num_components = (key_size - sizeof(float)) / sizeof(float);
+    }
+
+    if (num_components == 0 || component_type == ImGuiDataType_COUNT) {
+        // Something wasn't filled out, probably unknown format
+        ImGui::Text("Unknown keyframe format (0x%X bytes)", key_size);
+        return;
+    }
+
     // Each keyframe has a frame value (when it happens) and components (for 3D
     // translation/rotation/scale, or weird stuff like brightness values).
+    vfile vf = vfile_open(keyframes, key_count * key_size);
     for (u16 i = 0; i < key_count; i++) {
-        ImGuiDataType frame_type = ImGuiDataType_COUNT;
-        ImGuiDataType component_type = ImGuiDataType_COUNT;
-        void* components = nullptr;
-        u16 num_components = 0;
-
-        switch (key_size) {
-        // Integer keys
-        case 3:
-        case 5:
-        case 7:
-            frame_type = ImGuiDataType_U8;
-            component_type = ImGuiDataType_U16;
-            components = (void*)((uintptr_t)keyframes + 1); // Skip past frame value
-            // We know component and frame value size, so we can find out the # of components
-            num_components = (key_size - sizeof(u8)) / sizeof(u16);
-            break;
-
-        // Floating point keys
-        case 8:
-        case 12:
-        case 16:
-            frame_type = component_type = ImGuiDataType_Float;
-            components = &((float*)keyframes)[1]; // Skip past frame value
-            // Same deal as above
-            num_components = (key_size - sizeof(float)) / sizeof(float);
-        }
-
-        if (components == nullptr || num_components == 0 || component_type == ImGuiDataType_COUNT) {
-            // Something wasn't filled out, probably unknown format
-            ImGui::Text("Unknown keyframe format (0x%X bytes)", key_size);
-            break;
-        }
-
+        const u64 next_pos = vf.pos + key_size;
         // Each input needs a unique label
         char frame_label[0x20] = {0};
         snprintf(frame_label, sizeof(frame_label), "Frame # ##%d##%8s", i, label_extra);
@@ -393,17 +395,107 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
 
         // Display the input fields
-        ImGui::InputScalar(frame_label, frame_type, keyframes);
-        ImGui::InputScalarN(component_label, component_type, components, num_components);
+        ImGui::InputScalar(frame_label, frame_type, vfile_cur(vf));
+
+        // Skip over frame value
+        if (frame_type == ImGuiDataType_Float) {
+            vfile_seek(&vf, sizeof(float));
+        }
+        else if (frame_type == ImGuiDataType_U8) {
+            vfile_seek(&vf, sizeof(u8));
+        }
+
+        ImGui::InputScalarN(component_label, component_type, vfile_cur(vf), num_components);
 
         // Space between keys keeps things readable
         ImGui::Spacing();
         ImGui::Spacing();
 
-        // Move on to the next key
-        // Casting is needed because we can't do math on void*
-        keyframes = (u8*)keyframes + key_size;
+        // Skip to next key
+        vf.pos = next_pos;
     }
+
+    ImVec2* graph_points = (ImVec2*)calloc(key_count, sizeof(*graph_points));
+    if (graph_points == nullptr) {
+        return;
+    }
+
+    for (u32 cur_component = 0; cur_component < num_components; cur_component++) {
+        ImVec2 min = ImVec2(0, INFINITY);
+        ImVec2 max = ImVec2(key_count, -INFINITY);
+
+        // Reset seek position
+        vf.pos = 0;
+        for (u32 cur_key = 0; cur_key < key_count; cur_key++) {
+            const u64 next_pos = vf.pos + key_size;
+            float frame = 0.0f;
+            switch (frame_type) {
+            case ImGuiDataType_Float:
+                frame = VFILE_READ(float, &vf);
+                break;
+            case ImGuiDataType_U8:
+                frame = VFILE_READ(u8, &vf);
+                break;
+            default:
+                break;
+            }
+
+            float val = 0.0f;
+            switch (component_type) {
+            case ImGuiDataType_Float:
+                // Skip to the component we want and read it
+                vfile_seek(&vf, sizeof(float) * cur_component);
+                val = VFILE_READ(float, &vf);
+                break;
+            case ImGuiDataType_U16:
+                // Skip to the component we want and read it
+                vfile_seek(&vf, sizeof(u16) * cur_component);
+                val = (VFILE_READ(u16, &vf)) / (float)INT16_MAX;
+                break;
+            default:
+                break;
+            }
+
+            // Update our min and max positions (determines graph bounds)
+            min.y = MIN(min.y, val);
+            max.y = MAX(max.y, val);
+
+            graph_points[cur_key].x = frame;
+            graph_points[cur_key].y = val;
+
+            // Skip to next key
+            vf.pos = next_pos;
+        }
+
+        char buf[128] = {0};
+        snprintf(buf, sizeof(buf) - 1, "Curve editor %d", cur_component);
+        bool modified = ImGui::Curve(buf, ImVec2(500, 500), key_count, graph_points, nullptr, min, max);
+
+        // Because the library doesn't support custom step or any other way to
+        // graph strangely spaced data, we have to copy all the data back to
+        // the original buffer if something changes. At some point we should
+        // probably modify it to modify our buffer directly and handle more
+        // data types.
+
+        // if (modified)
+        {
+            for (u32 cur_key = 0; cur_key < key_count; cur_key++) {
+                void* key = ((u8*)keyframes + (cur_key * key_size));
+                switch (component_type) {
+                case ImGuiDataType_Float:
+                    ((float*)key)[1 + cur_component] = graph_points[cur_key].y;
+                    break;
+                case ImGuiDataType_U16:
+                    ((u16*)key)[1 + cur_component] = graph_points[cur_key].y;
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+
+    free(graph_points);
 }
 
 void polaris::chunk::chunk_0x5(const polaris *pol) noexcept {
