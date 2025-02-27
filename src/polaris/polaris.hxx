@@ -3,7 +3,6 @@
 #include <optional>
 #include <imgui.h>
 #include <imgui_hex_editor.h>
-#include <common/int.h>
 #include <common/image.h>
 
 extern "C" {
@@ -172,7 +171,7 @@ struct polaris {
     void do_menu_bar() noexcept;
 
     /// @brief Render and update all the UI
-    bool do_gui(GLFWwindow *window) noexcept;
+    void do_gui(GLFWwindow *window) noexcept;
 
     /// @brief Increase the amount of address space reserved for the ALR data
     void expand_reservation(s64 new_size) noexcept;

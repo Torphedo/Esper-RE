@@ -18,7 +18,7 @@ void print_usage() {
     printf("Usage: polaris [ALR filename] [%s]\n", dump_textures_flag);
 }
 
-int dump_all_textures(polaris pol, const char* path) {
+int dump_all_textures(const polaris& pol) {
     polaris::chunk texture_chunk = polaris::chunk(0, 0, 0);
     polaris::chunk atlas_chunk = polaris::chunk(0, 0, 0);
     system("mkdir textures"); // We need this folder for later
@@ -104,7 +104,7 @@ int dump_all_textures(polaris pol, const char* path) {
     if (textures_dumped == 0) {
         // This isn't a *failure*, but might be confusing if we don't say
         // anything and someone expects a texture file to appear.
-        LOG_MSG(warning, "Just so you know, I couldn't find any textures in \"%s\".\n", path);
+        LOG_MSG(warning, "Couldn't find any textures to dump.\n");
     }
     return EXIT_SUCCESS;
 }
@@ -117,11 +117,20 @@ int main(int argc, char** argv) {
     // Enable ANSI escape codes (for printing in color) on Windows
     enable_win_ansi();
 
-    if (argc == 1) {
-        // No arguments, run in normal graphical mode.
+    polaris pol;
+    if (argc >= 2) {
+        // We have an argument, it should be a filepath.
+        if (!pol.load_alr(argv[1])) {
+            // An error message will be printed for us down the chain, just exit
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (argc < 3) {
+        // No special arguments, run in normal graphical mode.
         // polaris::do_gui() has the real UI code, and is basically the real entry
         // point. Sorry for the kind of unintuitive structure.
-        if (!gui_main()) {
+        if (!gui_main(pol)) {
             // Actual error message is reported at the failure point
             LOG_MSG(error, "Failed to start up!\n");
             return EXIT_FAILURE;
@@ -129,24 +138,14 @@ int main(int argc, char** argv) {
             return EXIT_SUCCESS;
         }
     }
-    
-    if (argc < 3) {
-        // We need at least a filepath and a flag to tell us what to do with
-        // the file in headless mode.
-    }
 
     // Parse arguments
     const char* path = argv[1];
     const char* flag = argv[2];
 
-    polaris pol;
-    if (!pol.load_alr(path)) {
-        // An error message will be printed for us down the chain, so just exit
-        return EXIT_FAILURE;
-    }
-
     if (strcmp(flag, dump_textures_flag) == 0) {
-        return dump_all_textures(pol, path);
+        LOG_MSG(info, "Dumping textures for %s\n", path);
+        return dump_all_textures(pol);
     } else if (strcmp(flag, "--help") == 0) {
         print_usage();
     } else if (strcmp(flag, "--version") == 0) {

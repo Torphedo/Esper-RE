@@ -1165,7 +1165,7 @@ void polaris::do_menu_bar() noexcept {
     }
 }
 
-bool polaris::do_gui(GLFWwindow* window) noexcept {
+void polaris::do_gui(GLFWwindow* window) noexcept {
     this->handle_input_suppression();
 
     // Make the entire window a giant docking space
@@ -1288,7 +1288,6 @@ bool polaris::do_gui(GLFWwindow* window) noexcept {
 
     // It's the end of the frame for us, save the current input
     prev_input = input;
-    return true;
 }
 
 std::vector<polaris::chunk> polaris::shatter_alr(const u8* buf, s64 size) noexcept {

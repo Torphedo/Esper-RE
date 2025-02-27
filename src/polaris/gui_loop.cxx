@@ -2,18 +2,19 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <nfd.h>
+#include <glad/glad.h>
+
+#include <common/logging.h>
+#include <common/gl/gl_setup.h>
+#include <GLFW/glfw3.h>
 
 extern "C" {
-    #include <glad/glad.h>
-    #include <GLFW/glfw3.h>
-    #include <common/logging.h>
-    #include <common/gl/gl_setup.h>
     #include <common/gl/input.h>
 }
 
-#include "polaris.hxx"
+#include "gui_loop.hxx"
 
-bool gui_main() {
+bool gui_main(polaris& pol) {
     // Create window with graphics context
     GLFWwindow* window = setup_opengl(1280, 720, "Polaris", ENABLE_DEBUG, GLFW_CURSOR_NORMAL, true);
     if (window == nullptr) {
@@ -59,7 +60,6 @@ bool gui_main() {
     io.FontGlobalScale = 1.5f;
 
     // Main loop
-    polaris pol;
     while (!glfwWindowShouldClose(window)) {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -81,10 +81,8 @@ bool gui_main() {
         ImGui::NewFrame();
 
         // The input's do_gui() callback renders the actual UI and "drives" the
-        // program. It can return false to close the program.
-        if (!pol.do_gui(window)) {
-            break;
-        }
+        // program.
+        pol.do_gui(window);
 
         // Rendering
         ImGui::Render();
