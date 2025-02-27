@@ -187,9 +187,9 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     if (ImGui::Button("Export to OBJ")) {
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
-        char* path = NULL;
+        char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
-        if (NFD_OKAY && path != nullptr) {
+        if (result == NFD_OKAY && path != nullptr) {
             // Dump to OBJ
             FILE* out = fopen(path, "ab");
             if (out == nullptr) {
@@ -726,7 +726,7 @@ void polaris::chunk::chunk_0x11(const polaris *pol) const noexcept {
     }
 }
 
-void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, texture_entry* entries) {
+void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, texture_entry* entries) noexcept {
     CHUNK_ID_ASSERT(0x15);
 
     const texture_entry cur = entries[window_0x15.selected_texture];
@@ -828,9 +828,9 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     if (ImGui::Button("Import DDS")) {
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
-        char* path = NULL;
+        char* path = nullptr;
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
-        if (NFD_OKAY && path != nullptr) {
+        if (result == NFD_OKAY && path != nullptr) {
             this->import_dds_0x15(pol, path, num_entries, entries);
         }
         free(path);
@@ -840,9 +840,9 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     if (ImGui::Button("Export DDS")) {
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
-        char* path = NULL;
+        char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, name.data);
-        if (NFD_OKAY && path != nullptr) {
+        if (result == NFD_OKAY && path != nullptr) {
             img_write(window_0x15.tex, path);
         }
         free(path);
@@ -882,9 +882,9 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
     if (ImGui::Button("Dump to OBJ")) {
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
-        char* path = NULL;
+        char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
-        if (NFD_OKAY && path != nullptr) {
+        if (result == NFD_OKAY && path != nullptr) {
             this->dump_vertex_buf(pol, path, *entry);
         }
         free(path);
@@ -1144,10 +1144,10 @@ void polaris::do_menu_bar() noexcept {
 
     if (load_alr) {
         // Display the file picker and load the ALR if a file is picked
-        char* path = NULL;
+        char* path = nullptr;
         const nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
-        if (NFD_OKAY && path != nullptr) {
+        if (result == NFD_OKAY && path != nullptr) {
             this->load_alr(path);
         }
         free(path);
@@ -1156,9 +1156,9 @@ void polaris::do_menu_bar() noexcept {
     if (save_alr) {
         // Display the file picker and save the ALR if a file is picked
         nfdu8filteritem_t filters[] = { { "AL Resource", "alr"} };
-        char* path = NULL;
+        char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
-        if (NFD_OKAY && path != nullptr) {
+        if (result == NFD_OKAY && path != nullptr) {
             this->save_alr(path);
         }
         free(path);

@@ -113,7 +113,7 @@ struct polaris {
         /// @param path The filepath of the DDS to load
         /// @param num_entries The number of texture entries in the 0x15 chunk
         /// @param entries Texture entries to be modified
-        void import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, texture_entry* entries);
+        void import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, texture_entry* entries) noexcept;
         void chunk_0x15(polaris *pol) noexcept;
 
         /// @brief Save index buffer data from an 0x2 chunk into an OBJ file.
