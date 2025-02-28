@@ -42,6 +42,7 @@ add_executable(polaris
     src/polaris/file_pickers.cxx
     src/polaris/imgui_utils.cxx
     src/polaris/pd_mesh.cxx
+    src/polaris/viewport.cxx
 
     src/formats/pd_common.c
     ext/glad/src/glad.c

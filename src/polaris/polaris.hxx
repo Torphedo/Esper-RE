@@ -4,6 +4,8 @@
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 #include <common/image.h>
+#include <common/vmem.h>
+#include "viewport.hxx"
 
 extern "C" {
     #include <common/gl/input.h>
@@ -151,6 +153,8 @@ struct polaris {
     // Input state from the previous frame
     input_internal prev_input = {};
 
+    viewport_t viewport;
+
     /// @brief Hide input from the rest of the program when ImGui is using it.
     void handle_input_suppression() noexcept;
 
@@ -177,4 +181,8 @@ struct polaris {
     void expand_reservation(s64 new_size) noexcept;
 
     polaris() noexcept;
+    ~polaris() noexcept {
+        viewport.destroy();
+        vmem_free(alr_data, reserve_size);
+    }
 };

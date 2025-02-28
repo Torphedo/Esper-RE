@@ -1131,6 +1131,7 @@ void polaris::do_menu_bar() noexcept {
             }
 
             if (ImGui::BeginMenu("Extra")) {
+                ImGui::MenuItem("Viewport", nullptr, &this->viewport.enabled);
                 ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
                 ImGuiIO& io = ImGui::GetIO();
                 ImGui::InputFloat("Font Size", &io.FontGlobalScale, 0.1f);
@@ -1166,6 +1167,19 @@ void polaris::do_menu_bar() noexcept {
 }
 
 void polaris::do_gui(GLFWwindow* window) noexcept {
+    // We have to wait until we know the graphics context has been created to do
+    // graphics-related initialization (since the program may run in headless
+    // mode with no graphics context).
+    if (!viewport.initialized) {
+        // Have the viewport render in full resolution, it'll be downscale when
+        // rendered as a texture by ImGui::Image
+        int width = 0;
+        int height = 0;
+        glfwGetFramebufferSize(window, &width, &height);
+        viewport.setup(width, height);
+    } else {
+        viewport.render_imgui();
+    }
     this->handle_input_suppression();
 
     // Make the entire window a giant docking space
