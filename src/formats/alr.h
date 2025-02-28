@@ -1,6 +1,9 @@
 #pragma once
 #include <common/int.h>
 #include <assert.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // 0x11 chunk
 // =====================================================================================================================
@@ -260,3 +263,7 @@ typedef struct {
     s32 size;
 }chunk_generic;
 static_assert(sizeof(chunk_generic) == 0x8, "Wrong generic chunk header size!");
+
+#ifdef __cplusplus
+}
+#endif

@@ -30,8 +30,6 @@ namespace ImGui {
 
         ImGui::Text("WARNING: %s", msg);
         ImGui::Text("Please report this so I can research it.");
-
-        return;
     }
 
     bool InputPDString(const char* label, u32* text1, u32* text2 = nullptr) {
@@ -100,4 +98,3 @@ namespace ImGui {
         return ImGui::InputScalar(label, ImGuiDataType_S64, data, &step, &step_fast, format, flags);
     }
 }
-

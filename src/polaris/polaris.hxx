@@ -3,13 +3,14 @@
 #include <optional>
 #include <imgui.h>
 #include <imgui_hex_editor.h>
+
+#include <formats/alr.h>
 #include <common/image.h>
 #include <common/vmem.h>
 #include "viewport.hxx"
 
 extern "C" {
     #include <common/gl/input.h>
-    #include <formats/alr.h>
 }
 
 // State for 0x2 (index buffer) window

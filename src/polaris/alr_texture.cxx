@@ -1,9 +1,5 @@
 #include <glad/glad.h>
 
-extern "C" {
-    #include <common/logging.h>
-}
-
 #include "alr_texture.hxx"
 
 const char* texformat_str(alr_pixel_format format) {
