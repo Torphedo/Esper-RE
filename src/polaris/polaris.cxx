@@ -32,15 +32,15 @@ enum {
 #define CHUNK_ID_ASSERT(expected_id) \
 do {                                 \
     if (id != expected_id) {         \
-        LOG_MSG(warning, "Method called on 0x%x chunk @ 0x%x, when it only makes sense for 0x%x chunks!\n", id, offset, expected_id);\
+        LOG_MSG(warning, "called on 0x%x chunk @ 0x%x, when it only makes sense for 0x%x chunks!\n", id, offset, expected_id);\
         return;                      \
     }                                \
 } while(0)
 
-void polaris::chunk::dump_idx_buf(const polaris *pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
+void polaris::chunk::dump_idx_buf(const polaris& pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
 
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+    vfile vf = vfile_open(pol.alr_data + offset, size);
 
     // Skip over chunk header
     const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
@@ -109,17 +109,17 @@ void polaris::chunk::dump_idx_buf(const polaris *pol, FILE* out, std::optional<v
 
 }
 
-void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, vertbuf_entry entry) const noexcept {
+void polaris::chunk::dump_vertex_buf(const polaris& pol, const char* path, vertbuf_entry entry) const noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // Dump to OBJ
     FILE *out = fopen(path, "wb");
     if (out != nullptr) {
         // Open resource buffer
-        vfile vf = vfile_open(pol->alr_data, pol->alr_size);
+        vfile vf = vfile_open(pol.alr_data, pol.alr_size);
 
         // Jump to the appropriate data
-        vfile_seek(&vf, pol->resbuf_offset);
+        vfile_seek(&vf, pol.resbuf_offset);
         vfile_seek(&vf, entry.data_ptr);
         bool has_uvs = false;
         for (u32 i = 0; i < entry.vertex_count; i++) {
@@ -144,7 +144,7 @@ void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, vertb
         }
 
         // Vertices are dumped, now for indices
-        for (chunk idx_chunk : pol->chunks) {
+        for (chunk idx_chunk : pol.chunks) {
             if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
                 // We've hit a mesh metadata chunk past our own, so any
                 // further index buffers will be garbage data to us. Quit.
@@ -181,7 +181,7 @@ void polaris::chunk::dump_vertex_buf(const polaris* pol, const char* path, vertb
     }
 }
 
-void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
+void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     if (ImGui::Button("Export to OBJ")) {
@@ -203,7 +203,7 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     }
 
     // Index buffer editing
-    vfile vf = vfile_open(pol->alr_data + this->offset, this->size);
+    vfile vf = vfile_open(pol.alr_data + this->offset, this->size);
     chunk_generic chunk = VFILE_READ(chunk_generic, &vf);
     // We get the header pointer so we can modify it in-place
     idxbuf_header* header = (idxbuf_header*)vfile_cur(vf);
@@ -279,11 +279,11 @@ void polaris::chunk::chunk_0x2(const polaris *pol) noexcept {
     }
 }
 
-void polaris::chunk::chunk_0x3(const polaris *pol) noexcept {
+void polaris::chunk::chunk_0x3(const polaris& pol) noexcept {
     CHUNK_ID_ASSERT(0x3);
 
     // TODO: add a 3D viewport here so we can see all the matrix positions
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+    vfile vf = vfile_open(pol.alr_data + offset, size);
     vfile_seek(&vf, sizeof(chunk_generic)); // Skip ID & size
 
     const u32 num_joints = (size - sizeof(chunk_generic) - sizeof(chunk_armature)) / sizeof(joint_t);
@@ -498,8 +498,8 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
     free(graph_points);
 }
 
-void polaris::chunk::chunk_0x5(const polaris *pol) noexcept {
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+void polaris::chunk::chunk_0x5(const polaris& pol) noexcept {
+    vfile vf = vfile_open(pol.alr_data + offset, size);
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
@@ -521,10 +521,10 @@ void polaris::chunk::chunk_0x5(const polaris *pol) noexcept {
     }
 }
 
-void polaris::chunk::chunk_0x7(const polaris *pol) noexcept {
+void polaris::chunk::chunk_0x7(const polaris& pol) noexcept {
     // This is the same as normal animation frames, but seems to ignore the
     // existing keyframe size fields.
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+    vfile vf = vfile_open(pol.alr_data + offset, size);
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
@@ -576,11 +576,11 @@ static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wind
     ImGui::Image(tex_id, view_size, uv0, uv1);
 }
 
-void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
+void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
     CHUNK_ID_ASSERT(0x10);
 
     // We use the vfile API to handle the chunk data
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+    vfile vf = vfile_open(pol.alr_data + offset, size);
     // Skip over the ID and size fields we already have
     vfile_seek(&vf, sizeof(chunk_generic));
 
@@ -604,10 +604,10 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
 
     // We have to look up texture entries to find out where each texture is
     texture_entry* entries = nullptr;
-    for (chunk c : pol->chunks) {
+    for (chunk c : pol.chunks) {
         if (c.id == 0x15) {
             // Skip to the chunk
-            vfile tmp = vfile_open(pol->alr_data + c.offset, c.size);
+            vfile tmp = vfile_open(pol.alr_data + c.offset, c.size);
             vfile_seek(&tmp, sizeof(chunk_generic));
 
             const u32 num_entries = VFILE_READ(u32, &tmp);
@@ -671,7 +671,7 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
     const atlas_entry atlas = atlases[window_0x10.selected_atlas];
     const atlas_tex_entry tex = textures[window_0x10.selected_atlas_texture];
 
-    texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, entries[tex.index]);
+    texture cur_tex = convert_tex(pol.alr_data + pol.resbuf_offset, entries[tex.index]);
     // Override dimensions, we only want format info from the other chunk
     cur_tex.height = atlas.height;
     cur_tex.width = atlas.width;
@@ -707,10 +707,10 @@ void polaris::chunk::chunk_0x10(const polaris *pol) noexcept {
     draw_image(window_0x10.gl_tex_id, tex.width, tex.height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
-void polaris::chunk::chunk_0x11(const polaris *pol) const noexcept {
+void polaris::chunk::chunk_0x11(const polaris& pol) const noexcept {
     CHUNK_ID_ASSERT(0x11);
 
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+    vfile vf = vfile_open(pol.alr_data + offset, size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*layout));
     auto* offsets = (u32*)vfile_cur(vf);
@@ -726,7 +726,7 @@ void polaris::chunk::chunk_0x11(const polaris *pol) const noexcept {
     }
 }
 
-void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, texture_entry* entries) noexcept {
+void polaris::chunk::import_dds_0x15(const polaris& pol, const char* path, u32 num_entries, texture_entry* entries) noexcept {
     CHUNK_ID_ASSERT(0x15);
 
     const texture_entry cur = entries[window_0x15.selected_texture];
@@ -735,7 +735,7 @@ void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 n
     if (window_0x15.selected_texture >= num_entries) {
         // This is the last entry, so the best guess is that it takes up the
         // rest of the file
-        tex_size = pol->alr_size - cur.data_ptr;
+        tex_size = pol.alr_size - cur.data_ptr;
     } else {
         // The most likely texture size is the distance betwen this texture and
         // the next
@@ -761,11 +761,11 @@ void polaris::chunk::import_dds_0x15(const polaris* pol, const char* path, u32 n
     window_0x15.tex.height = window_0x15.tex.width = exponent(2, power);
 }
 
-void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
+void polaris::chunk::chunk_0x15(polaris& pol) noexcept {
     CHUNK_ID_ASSERT(0x15);
 
     // We use the vfile API to handle the chunk data
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+    vfile vf = vfile_open(pol.alr_data + offset, size);
     // Skip over the ID and size fields we already have
     vfile_seek(&vf, sizeof(chunk_generic));
 
@@ -794,7 +794,7 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     decode_single32(name.data, entry->text1);
     decode_single32(&name.data[ENCODED_CHAR_COUNT], entry->text2);
 
-    texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, *entry);
+    texture cur_tex = convert_tex(pol.alr_data + pol.resbuf_offset, *entry);
     ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
     ImGui::InputPDString("Texture Name", &entry->text1, &entry->text2);
     ImGui::Text("%dx%d pixels @ resbuf+0x%X\n", cur_tex.height, cur_tex.width, entry->data_ptr);
@@ -852,11 +852,11 @@ void polaris::chunk::chunk_0x15(polaris *pol) noexcept {
     ImGui::EndGroup();
 }
 
-void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
+void polaris::chunk::chunk_0x16(polaris& pol) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // We use the vfile API to handle the chunk data
-    vfile vf = vfile_open(pol->alr_data + offset, size);
+    vfile vf = vfile_open(pol.alr_data + offset, size);
     // Skip over the ID and size fields we already have (both 32-bit)
     vfile_seek(&vf, sizeof(chunk_generic));
 
@@ -897,13 +897,13 @@ void polaris::chunk::chunk_0x16(polaris *pol) noexcept {
     ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));
 
     // Hex editor for vertex buffer data
-    u8* vertbuf = pol->alr_data + pol->resbuf_offset + entry->data_ptr;
+    u8* vertbuf = pol.alr_data + pol.resbuf_offset + entry->data_ptr;
     window_0x16.hex_vertbuf.DrawContents(vertbuf, entry->vertex_count * entry->vertex_size);
     ImGui::EndChild();
 }
 
-void polaris::chunk::draw(polaris *pol) noexcept {
-    if (pol->alr_data == nullptr || pol->alr_size == 0) {
+void polaris::chunk::draw(polaris& pol) noexcept {
+    if (pol.alr_data == nullptr || pol.alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
         return;
     }
@@ -944,7 +944,7 @@ void polaris::chunk::draw(polaris *pol) noexcept {
 
         if (ImGui::BeginTabItem("Raw Chunk Data")) {
             // Hex editor for the entire chunk, displayed with correct file offsets
-            hex_chunk.DrawContents(pol->alr_data + this->offset, this->size, this->offset);
+            hex_chunk.DrawContents(pol.alr_data + this->offset, this->size, this->offset);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -1294,7 +1294,7 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
         snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%lX ##%u", chunk.id, known_name, chunk.offset, i);
 
         if (ImGui::Begin(buf, &chunk.active)) {
-            chunk.draw(this);
+            chunk.draw(*this);
         }
 
         ImGui::End();

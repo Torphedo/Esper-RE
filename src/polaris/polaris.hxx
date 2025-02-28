@@ -99,15 +99,15 @@ struct polaris {
 
         /// Render and update the chunk's editing window.
         /// This always draws, and doesn't check the @ref active flag
-        void draw(polaris *pol) noexcept;
+        void draw(polaris& pol) noexcept;
 
         // Dedicated editing windows for each chunk type
-        void chunk_0x2(const polaris *pol) noexcept;
-        void chunk_0x3(const polaris *pol) noexcept;
-        void chunk_0x5(const polaris *pol) noexcept;
-        void chunk_0x7(const polaris *pol) noexcept;
-        void chunk_0x10(const polaris *pol) noexcept;
-        void chunk_0x11(const polaris *pol) const noexcept;
+        void chunk_0x2(const polaris& pol) noexcept;
+        void chunk_0x3(const polaris& pol) noexcept;
+        void chunk_0x5(const polaris& pol) noexcept;
+        void chunk_0x7(const polaris& pol) noexcept;
+        void chunk_0x10(const polaris& pol) noexcept;
+        void chunk_0x11(const polaris& pol) const noexcept;
 
         /// Replace the selected texture with a DDS file from disk, updating the
         /// metadata in the 0x15 chunk. Does nothing if not called on an 0x15 chunk.
@@ -115,8 +115,8 @@ struct polaris {
         /// @param path The filepath of the DDS to load
         /// @param num_entries The number of texture entries in the 0x15 chunk
         /// @param entries Texture entries to be modified
-        void import_dds_0x15(const polaris* pol, const char* path, u32 num_entries, texture_entry* entries) noexcept;
-        void chunk_0x15(polaris *pol) noexcept;
+        void import_dds_0x15(const polaris& pol, const char* path, u32 num_entries, texture_entry* entries) noexcept;
+        void chunk_0x15(polaris& pol) noexcept;
 
         /// @brief Save index buffer data from an 0x2 chunk into an OBJ file.
         ///
@@ -126,10 +126,10 @@ struct polaris {
         /// present, extra checks occur to avoid saving invalid indices, and
         /// indices are formatted to use UVs or triangle strips if present.
         /// Otherwise, the indices are saved as-is.
-        void dump_idx_buf(const polaris *pol, FILE* out, std::optional<vertbuf_entry> vert_entry = std::optional<vertbuf_entry>()) const noexcept;
+        void dump_idx_buf(const polaris& pol, FILE* out, std::optional<vertbuf_entry> vert_entry = std::optional<vertbuf_entry>()) const noexcept;
 
-        void dump_vertex_buf(const polaris *pol, const char* path, vertbuf_entry entry) const noexcept;
-        void chunk_0x16(polaris *pol) noexcept;
+        void dump_vertex_buf(const polaris& pol, const char* path, vertbuf_entry entry) const noexcept;
+        void chunk_0x16(polaris& pol) noexcept;
     };
 
     // State for the overall editor
