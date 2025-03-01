@@ -39,7 +39,6 @@ add_executable(polaris
     src/polaris/gui_loop.cxx
     src/polaris/alr_texture.cxx
     src/polaris/polaris.cxx
-    src/polaris/file_pickers.cxx
     src/polaris/imgui_utils.cxx
     src/polaris/pd_mesh.cxx
     src/polaris/viewport.cxx
