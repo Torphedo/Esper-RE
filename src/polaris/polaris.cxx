@@ -1221,6 +1221,9 @@ void polaris::do_menu_bar() noexcept {
 }
 
 void polaris::do_gui(GLFWwindow* window) noexcept {
+    // Make the entire window a giant docking space
+    ImGui::DockSpaceOverViewport();
+
     // We have to wait until we know the graphics context has been created to do
     // graphics-related initialization (since the program may run in headless
     // mode with no graphics context).
@@ -1232,12 +1235,12 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
         glfwGetFramebufferSize(window, &width, &height);
         viewport.setup(width, height);
     } else {
-        viewport.render_imgui();
+        if (!viewport.render_imgui(window)) {
+            // We don't want to supress input if the viewport needs it
+            this->handle_input_suppression();
+        }
     }
-    this->handle_input_suppression();
 
-    // Make the entire window a giant docking space
-    ImGui::DockSpaceOverViewport();
     this->do_menu_bar();
 
     if (this->show_demo) {

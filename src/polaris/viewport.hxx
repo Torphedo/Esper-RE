@@ -1,8 +1,10 @@
 #pragma once
-#include "polaris/renderlist.hxx"
+#include <imgui.h>
+#include "renderlist.hxx"
+#include <GLFW/glfw3.h>
 #include <common/int.h>
-#include <glad/glad.h>
 #include <vector>
+#include "camera.hxx"
 
 /// @brief Wrapper class for a custom viewport renderable in ImGui
 /// 
@@ -31,6 +33,11 @@ struct viewport_t {
     // Shader program
     gl_obj shader = 0;
 
+    // Transformation matrix uniform for moving the view around.
+    gl_obj uniform_pvm = 0;
+    camera cam;
+    bool cursor_lock = false;
+
     std::vector<mesh_view> meshes;
 
     // Set up a custom framebuffer. Returns whether it succeeded, you can also
@@ -42,7 +49,7 @@ struct viewport_t {
     void destroy() noexcept;
 
     // Render a Dear ImGui window showing the viewport contents
-    void render_imgui() noexcept;
+    bool render_imgui(GLFWwindow* window) noexcept;
 
     // Simple wrapper methods for those who like them
     void bind() const noexcept {

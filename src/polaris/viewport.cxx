@@ -1,19 +1,22 @@
 #include "viewport.hxx"
+#include "polaris/renderlist.hxx"
 #include <imgui.h>
 
 #include <common/logging.h>
 
 extern "C" {
     #include <common/gl/shader.h>
+    #include <common/gl/input.h>
 }
 
 const char* vertex_shader = R"(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
-// layout (location = 1) in vec4 a_color;
+
+uniform mat4 pvm;
 
 void main() {
-    gl_Position = vec4(a_pos, 1.0);
+    gl_Position = pvm * vec4(a_pos, 1.0);
 }
 )";
 
@@ -57,6 +60,7 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
         LOG_MSG(error, "Shader compilation error!\n");
         return false;
     }
+    uniform_pvm = glGetUniformLocation(shader, "pvm");
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         // uh oh...
@@ -83,32 +87,73 @@ void viewport_t::destroy() noexcept {
     }
 }
 
-void viewport_t::render_imgui() noexcept {
+bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
     if (!enabled || !initialized) {
-        return;
+        return false;
     }
+    // Calculate delta time every time we render
+    static double prev_time = glfwGetTime();
+    const double cur_time = glfwGetTime();
+    const double delta_time = cur_time - prev_time;
+    prev_time = cur_time;
 
-    if (ImGui::Begin("Viewport", &this->enabled)) {
+    bool is_hovered = false;
+    ImGui::Begin("Viewport");
+    {
+        // Get camera transform
+        mat4 pvm = {0};
+        cam.proj_view(pvm);
+
+        // Start rendering to the viewport
         bind();
-        glUseProgram(shader);
-        // Clear as a test
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Bind shader & upload camera transform
+        glUseProgram(shader);
+        glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
+
+        // Render all index buffers of all known meshes
         for (mesh_view mesh : meshes) {
             glBindVertexArray(mesh.vao);
             for (index_buffer idx_buf : mesh.idx_buffers) {
-                LOG_MSG(debug, "Drawing %d elements\n", idx_buf.num);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
                 glDrawElements(mesh.draw_mode, idx_buf.num, idx_buf.indices_type, 0);
             }
+            // VAO keeps index buffer binding, so clear it after draw.
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             glBindVertexArray(0);
         }
 
         ImGui::Image(color_tex, ImGui::GetContentRegionAvail());
+        const bool mouse_click = ImGui::IsMouseDown(0);
+        is_hovered = ImGui::IsItemHovered();
+        if (is_hovered && mouse_click) {
+            if (!cursor_lock) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-        ImGui::End();
+                // Get non-accelerated input if possible
+                if (glfwRawMouseMotionSupported()) {
+                    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+                }
+                cursor_lock = true;
+            }
+        }
+        else if (!mouse_click && cursor_lock) {
+            // Disable when left click is released
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+            cursor_lock = false;
+        }
+
+        if (is_hovered) {
+            // Update the camera state
+            cam.update(delta_time);
+        }
+
         glUseProgram(0);
-        unbind();
+        unbind(); // Reset state
     }
+    ImGui::End();
+
+    return is_hovered;
 }
