@@ -21,7 +21,7 @@ typedef struct {
 
 // TODO: This isn't tightly packed, maybe put 2 entries per struct to fix that?
 struct index_buffer {
-    u8* data = nullptr;
+    const u8* data = nullptr;
     u32 num = 0; // Number of indices
     // Integer type of index buffer (GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, or GL_UNSIGNED_INT)
     u16 indices_type = GL_UNSIGNED_SHORT;
@@ -68,7 +68,7 @@ struct mesh_view {
         }
     }
 
-    bool update_vertex_buf(u8* buf, u32 size, u16 mode) {
+    bool update_vertex_buf(const u8* buf, u32 size, u16 mode) {
         if (!initialized) {
             return false;
         }

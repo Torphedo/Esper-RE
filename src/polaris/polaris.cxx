@@ -38,6 +38,18 @@ do {                                 \
     }                                \
 } while(0)
 
+u32 polaris::chunk::num_indices(const polaris& pol) const noexcept {
+    if (id != 0x2) {
+        return 0; // Can't use the assert macro because we return a value
+    }
+
+    // Buffer space available for indices
+    const s32 buf_size = size - sizeof(chunk_generic) - sizeof(idxbuf_header);
+
+    // Indices are always u16 (so far)
+    return MAX(0, buf_size / (sizeof(u16)));
+}
+
 void polaris::chunk::dump_idx_buf(const polaris& pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
 
@@ -47,7 +59,7 @@ void polaris::chunk::dump_idx_buf(const polaris& pol, FILE* out, std::optional<v
     const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
     const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
-    s32 num_indices = MAX(0, (size - sizeof(chunk_generic) - sizeof(header)) / (sizeof(u16)));
+    u32 num_indices = this->num_indices(pol);
 
     // If we trust the file for the number of triangles, the ends of some limbs
     // will often be missing on player models...
@@ -853,6 +865,67 @@ void polaris::chunk::chunk_0x15(polaris& pol) noexcept {
     ImGui::EndGroup();
 }
 
+void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
+    CHUNK_ID_ASSERT(0x16);
+
+    // We use the vfile API to handle the chunk data
+    vfile vf = vfile_open(pol.alr_data + offset, size);
+
+    // Skip to entries
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    auto* entries = (vertbuf_entry*)vfile_cur(vf);
+
+    const vertbuf_entry entry = entries[window_0x16.selected_vertex_buf];
+
+    // Open ALR buffer
+    vf = vfile_open(pol.alr_data, pol.alr_size);
+
+    // Jump to the appropriate data in the resource buffer
+    vfile_seek(&vf, pol.resbuf_offset + entry.data_ptr);
+    const u8* vertex_buf = (u8*)vfile_cur(vf);
+    mesh_view mesh;
+    mesh.setup();
+    u16 draw_mode = GL_TRIANGLES;
+    if (entry.vertex_size >= 0x20) {
+        draw_mode = GL_TRIANGLE_STRIP;
+    }
+    mesh.update_vertex_buf(vertex_buf, entry.vertex_size * entry.vertex_count, draw_mode);
+    vertex_attribute pos_attribute = {
+        3, true, GL_FLOAT, entry.vertex_size, 0,
+    };
+    mesh.set_attribute(pos_attribute, ATTRIBUTE_POSITION);
+
+    // Vertices are dumped, now for indices
+    for (chunk idx_chunk : pol.chunks) {
+        if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
+            // We've hit a mesh metadata chunk past our own, so any
+            // further index buffers will be garbage data to us. Quit.
+            break;
+        }
+
+        if (idx_chunk.id != 0x2 || idx_chunk.offset < offset) {
+            // We only want index buffer chunks for the current mesh
+            continue;
+        }
+
+        // Skip to idx_chunk and skip header
+        vf.pos = idx_chunk.offset + sizeof(chunk_generic);
+        const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+
+        // We only want index buffers meant for this vertex buffer
+        if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+            continue;
+        }
+
+        const index_buffer idx_buf = {
+            (u8*)vfile_cur(vf), idx_chunk.num_indices(pol), GL_UNSIGNED_SHORT, 0,
+        };
+        mesh.add_index_buf(idx_buf);
+    }
+    pol.viewport.meshes.push_back(mesh);
+}
+
 void polaris::chunk::chunk_0x16(polaris& pol) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
@@ -892,60 +965,7 @@ void polaris::chunk::chunk_0x16(polaris& pol) noexcept {
     }
 
     if (ImGui::Button("Send to Viewport")) {
-        // Open resource buffer
-        vfile vf = vfile_open(pol.alr_data, pol.alr_size);
-
-        // Jump to the appropriate data
-        vfile_seek(&vf, pol.resbuf_offset);
-        vfile_seek(&vf, entry->data_ptr);
-        bool has_uvs = false;
-        u8* vertex_buf = (u8*)vfile_cur(vf);
-        mesh_view mesh;
-        mesh.setup();
-        u16 draw_mode = GL_TRIANGLES;
-        if (entry->vertex_size >= 0x20) {
-            draw_mode = GL_TRIANGLE_STRIP;
-        }
-        mesh.update_vertex_buf(vertex_buf, entry->vertex_size * entry->vertex_count, draw_mode);
-        vertex_attribute pos_attribute = {
-            3, true, GL_FLOAT, entry->vertex_size, 0,
-        };
-        mesh.set_attribute(pos_attribute, ATTRIBUTE_POSITION);
-
-        // Vertices are dumped, now for indices
-        for (chunk idx_chunk : pol.chunks) {
-            if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
-                // We've hit a mesh metadata chunk past our own, so any
-                // further index buffers will be garbage data to us. Quit.
-                break;
-            }
-
-            if (idx_chunk.id != 0x2 || idx_chunk.offset < offset) {
-                // We only want index buffer chunks for the current mesh
-                continue;
-            }
-
-            // Skip to idx_chunk and skip header
-            vf.pos = idx_chunk.offset + sizeof(chunk_generic);
-            const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
-
-            // We only want index buffers meant for this vertex buffer
-            if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
-                continue;
-            }
-
-            // TODO: Make this a method
-            u32 num_indices = MAX(0, (s32)(idx_chunk.size - sizeof(chunk_generic) - sizeof(header)) / (sizeof(u16)));
-            u8* idx_data = (u8*)vfile_cur(vf);
-            if (num_indices == 0) {
-                continue;
-            }
-            index_buffer idx_buf = {
-                idx_data, num_indices, GL_UNSIGNED_SHORT, 0,
-            };
-            mesh.add_index_buf(idx_buf);
-        }
-        pol.viewport.meshes.push_back(mesh);
+        this->send_vertbuf_to_viewport(pol);
     }
 
     // Hex editor for vertex buffer entry

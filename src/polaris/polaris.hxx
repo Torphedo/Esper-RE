@@ -119,6 +119,8 @@ struct polaris {
         void import_dds_0x15(const polaris& pol, const char* path, u32 num_entries, texture_entry* entries) noexcept;
         void chunk_0x15(polaris& pol) noexcept;
 
+        u32 num_indices(const polaris& pol) const noexcept;
+
         /// @brief Save index buffer data from an 0x2 chunk into an OBJ file.
         ///
         /// @param pol The rest of the program's state
@@ -130,6 +132,7 @@ struct polaris {
         void dump_idx_buf(const polaris& pol, FILE* out, std::optional<vertbuf_entry> vert_entry = std::optional<vertbuf_entry>()) const noexcept;
 
         void dump_vertex_buf(const polaris& pol, const char* path, vertbuf_entry entry) const noexcept;
+        void send_vertbuf_to_viewport(polaris& pol) noexcept;
         void chunk_0x16(polaris& pol) noexcept;
     };
 
