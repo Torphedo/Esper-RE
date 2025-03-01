@@ -1,5 +1,6 @@
 #include "camera.hxx"
 #include <cglm/struct.h>
+#include <common/int.h>
 
 extern "C" {
     #include <common/gl/input.h>
@@ -103,7 +104,7 @@ void camera::update(double delta_time) noexcept {
     // Update angles & zoom from mouse input
     orbit_angles = glms_vec2_add(orbit_angles, cursor_delta);
     radius -= scroll_delta.y;
-    radius = clampf(radius, 0.05f, 256.0f); // Don't allow <= 0 or really high zoom
+    radius = MAX(0.05f, radius); // Don't allow <= 0 zoom
 
     // Update target pos using delta from user input
     target = glms_vec3_add(target, pos_delta);
@@ -169,7 +170,7 @@ void camera::proj_view(mat4 out) const noexcept {
     mat4 projection = {0};
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     const float aspect = (float)mode->width / (float)mode->height;
-    glm_perspective_rh_no(glm_rad(45), aspect, 0.1f, 1000.0f, projection);
+    glm_perspective_rh_no(glm_rad(45), aspect, 0.001f, 5000.0f, projection);
 
     // Camera matrix
     mat4 view = {0};

@@ -71,6 +71,12 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
         initialized = true;
     }
 
+    if (wireframe) {
+        bind();
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        unbind();
+    }
+
     // This defaults to false
     return initialized;
 }
@@ -104,9 +110,30 @@ bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
         mat4 pvm = {0};
         cam.proj_view(pvm);
 
+        // Wireframe toggle
+        bool wireframe_changed = ImGui::Checkbox("Wireframe", &wireframe);
+        const char* labels[] = {"Orbit", "Minecraft", "Fly"};
+        camera_mode cur_mode = cam.mode;
+        ImGui::SameLine();
+        ImGui::Combo("Camera Mode", (int*)&cur_mode, labels, CAMERA_MODE_ENUM_MAX);
+        if (cur_mode != cam.mode) {
+            // We need to use the setter instead of overwriting directly to get
+            // correct behaviour.
+            cam.set_mode(cur_mode);
+        }
+
         // Start rendering to the viewport
         bind();
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Actually apply wireframe toggle now that the framebuffer is bound
+        if (wireframe_changed) {
+            if (wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            } else {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+        }
 
         // Bind shader & upload camera transform
         glUseProgram(shader);

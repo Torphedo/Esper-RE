@@ -37,6 +37,7 @@ struct viewport_t {
     gl_obj uniform_pvm = 0;
     camera cam;
     bool cursor_lock = false;
+    bool wireframe = true;
 
     std::vector<mesh_view> meshes;
 
