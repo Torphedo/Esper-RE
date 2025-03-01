@@ -19,6 +19,7 @@
 #include "alr_texture.hxx"
 #include "pd_mesh.hxx"
 #include "imgui_utils.hxx"
+#include "polaris/renderlist.hxx"
 #include "polaris.hxx"
 
 enum {
@@ -888,6 +889,59 @@ void polaris::chunk::chunk_0x16(polaris& pol) noexcept {
             this->dump_vertex_buf(pol, path, *entry);
         }
         free(path);
+    }
+
+    if (ImGui::Button("Send to Viewport")) {
+        // Open resource buffer
+        vfile vf = vfile_open(pol.alr_data, pol.alr_size);
+
+        // Jump to the appropriate data
+        vfile_seek(&vf, pol.resbuf_offset);
+        vfile_seek(&vf, entry->data_ptr);
+        bool has_uvs = false;
+        u8* vertex_buf = (u8*)vfile_cur(vf);
+        mesh_view mesh;
+        mesh.setup();
+        mesh.update_vertex_buf(vertex_buf, entry->vertex_size * entry->vertex_count, GL_TRIANGLES);
+        vertex_attribute pos_attribute = {
+            3, true, GL_FLOAT, entry->vertex_size, 0,
+        };
+        mesh.set_attribute(pos_attribute, ATTRIBUTE_POSITION);
+
+        // Vertices are dumped, now for indices
+        for (chunk idx_chunk : pol.chunks) {
+            if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
+                // We've hit a mesh metadata chunk past our own, so any
+                // further index buffers will be garbage data to us. Quit.
+                break;
+            }
+
+            if (idx_chunk.id != 0x2 || idx_chunk.offset < offset) {
+                // We only want index buffer chunks for the current mesh
+                continue;
+            }
+
+            // Skip to idx_chunk and skip header
+            vf.pos = idx_chunk.offset + sizeof(chunk_generic);
+            const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+
+            // We only want index buffers meant for this vertex buffer
+            if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+                continue;
+            }
+
+            // TODO: Make this a method
+            u32 num_indices = MAX(0, (s32)(idx_chunk.size - sizeof(chunk_generic) - sizeof(header)) / (sizeof(u16)));
+            u8* idx_data = (u8*)vfile_cur(vf);
+            if (num_indices == 0) {
+                continue;
+            }
+            index_buffer idx_buf = {
+                idx_data, num_indices, GL_UNSIGNED_SHORT, 0,
+            };
+            mesh.add_index_buf(idx_buf);
+        }
+        pol.viewport.meshes.push_back(mesh);
     }
 
     // Hex editor for vertex buffer entry

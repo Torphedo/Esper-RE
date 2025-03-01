@@ -1,7 +1,13 @@
 #pragma once
+#include "polaris/renderlist.hxx"
 #include <common/int.h>
 #include <glad/glad.h>
+#include <vector>
 
+/// @brief Wrapper class for a custom viewport renderable in ImGui
+/// 
+/// The basic viewport functionality is pretty simple, mostly coming from here:
+/// https://learnopengl.com/Advanced-OpenGL/Framebuffers
 struct viewport_t {
     // To avoid accidentally destroying OpenGL objects by creating & copying an
     // instance inline, the "real" ctor/dtor are .setup() and .destroy().
@@ -21,6 +27,11 @@ struct viewport_t {
     // Color texture that backs the framebuffer. Render this to see the current
     // contents of the framebuffer
     gl_obj color_tex = 0;
+
+    // Shader program
+    gl_obj shader = 0;
+
+    std::vector<mesh_view> meshes;
 
     // Set up a custom framebuffer. Returns whether it succeeded, you can also
     // check the [initialized] member.

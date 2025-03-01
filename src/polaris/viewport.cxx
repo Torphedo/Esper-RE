@@ -3,19 +3,41 @@
 
 #include <common/logging.h>
 
-bool viewport_t::setup(u16 width, u16 height) noexcept {
-    // The initialization flag defaults to failure, so we just early return on
-    // failure and explicitly set success.
+extern "C" {
+    #include <common/gl/shader.h>
+}
 
+const char* vertex_shader = R"(
+#version 330 core
+layout (location = 0) in vec3 a_pos;
+// layout (location = 1) in vec4 a_color;
+
+void main() {
+    gl_Position = vec4(a_pos, 1.0);
+}
+)";
+
+const char* fragment_shader = R"(
+#version 330 core
+out vec4 fragment_rgba;
+
+void main() {
+    fragment_rgba = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+}
+)";
+
+bool viewport_t::setup(u16 width, u16 height) noexcept {
     // Setup the OpenGL objects we'll need
     glGenFramebuffers(1, &fbo);
     if (fbo == 0) {
-        return false; // Maybe we should print an error here
+        LOG_MSG(error, "Failed to setup framebuffer object for viewport!\n");
+        return false;
     }
     glGenTextures(1, &this->color_tex);
     if (color_tex == 0) {
         glDeleteFramebuffers(1, &fbo); // Clean up
-        return false; // Maybe we should print an error here
+        LOG_MSG(error, "Failed to setup framebuffer backing texture for viewport!\n");
+        return false;
     }
 
     // Setup backing texture for framebuffer
@@ -30,28 +52,35 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    shader = program_compile_src(vertex_shader, fragment_shader);
+    if (!shader_link_check(shader)) {
+        LOG_MSG(error, "Shader compilation error!\n");
+        return false;
+    }
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         // uh oh...
         LOG_MSG(warning, "Failed to setup a complete framebuffer!\n");
-        initialized = false;
     } else {
         // execute victory dance
-        // https://learnopengl.com/Advanced-OpenGL/Framebuffers
-        LOG_MSG(info, "Successfully set up framebuffer!\n");
+        // This should always succeed, we don't bother printing
         initialized = true;
     }
 
+    // This defaults to false
     return initialized;
 }
 
 void viewport_t::destroy() noexcept {
-    if (!initialized) {
-        return;
+    if (initialized) {
+        glDeleteFramebuffers(1, &fbo);
+        glDeleteTextures(1, &color_tex);
+        for (mesh_view mesh : meshes) {
+            mesh.destroy();
+        }
+
+        initialized = false;
     }
-    glDeleteFramebuffers(1, &fbo);
-    glDeleteTextures(1, &color_tex);
-    initialized = false;
 }
 
 void viewport_t::render_imgui() noexcept {
@@ -61,12 +90,25 @@ void viewport_t::render_imgui() noexcept {
 
     if (ImGui::Begin("Viewport", &this->enabled)) {
         bind();
-        // Clear the screen as a test
-        glClearColor(1.0f, 0, 0, 1.0f); // Set clear color
+        glUseProgram(shader);
+        // Clear as a test
         glClear(GL_COLOR_BUFFER_BIT);
+
+        for (mesh_view mesh : meshes) {
+            glBindVertexArray(mesh.vao);
+            for (index_buffer idx_buf : mesh.idx_buffers) {
+                LOG_MSG(debug, "Drawing %d elements\n", idx_buf.num);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
+                glDrawElements(mesh.draw_mode, idx_buf.num, idx_buf.indices_type, 0);
+            }
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+        }
+
         ImGui::Image(color_tex, ImGui::GetContentRegionAvail());
 
         ImGui::End();
+        glUseProgram(0);
         unbind();
     }
 }
