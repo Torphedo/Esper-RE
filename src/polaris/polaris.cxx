@@ -902,7 +902,11 @@ void polaris::chunk::chunk_0x16(polaris& pol) noexcept {
         u8* vertex_buf = (u8*)vfile_cur(vf);
         mesh_view mesh;
         mesh.setup();
-        mesh.update_vertex_buf(vertex_buf, entry->vertex_size * entry->vertex_count, GL_TRIANGLES);
+        u16 draw_mode = GL_TRIANGLES;
+        if (entry->vertex_size >= 0x20) {
+            draw_mode = GL_TRIANGLE_STRIP;
+        }
+        mesh.update_vertex_buf(vertex_buf, entry->vertex_size * entry->vertex_count, draw_mode);
         vertex_attribute pos_attribute = {
             3, true, GL_FLOAT, entry->vertex_size, 0,
         };
