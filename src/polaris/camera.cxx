@@ -21,7 +21,7 @@ float clampf(float x, float min, float max) {
 
 // Get the camera position relative to an orbit center-point based on the
 // rotation angles
-vec3s orbit_pos_by_angles(camera cam) {
+vec3s orbit_pos_by_angles(camera& cam) {
     // Get combined quaternion of rotation about Y & Z axes
     const versors xrot = glms_quatv(cam.orbit_angles.x, (vec3s){0, 1, 0});
     const versors yrot = glms_quatv(cam.orbit_angles.y, (vec3s){0, 0, 1});
@@ -83,8 +83,8 @@ void camera::update(double delta_time) noexcept {
     const float LS_x = input.LS.x * (fabsf(input.LS.x) > deadzone);
     const float LS_y = input.LS.y * (fabsf(input.LS.y) > deadzone);
 
-    const float forward  = multiplier * ((input.s - input.w) + LS_y);
-    const float side     = multiplier * ((input.d - input.a) + LS_x);
+    const float forward  = multiplier * ((input.w - input.s) - LS_y);
+    const float side     = multiplier * ((input.a - input.d) - LS_x);
     float vertical = multiplier * ((input.space - input.shift) + (input.RT - input.LT));
 
     // Exclude vertical view component so it doesn't affect horizontal movement
@@ -119,8 +119,8 @@ void camera::update(double delta_time) noexcept {
 
 vec3s camera::facing() const noexcept {
     // In fly mode, the target & camera are swapped
-    const vec3s target = (mode == CAMERA_ORBIT) ? target : pos;
-    const vec3s pos = (mode == CAMERA_ORBIT) ? pos : target;
+    const vec3s target = (mode == CAMERA_ORBIT) ? this->target : this->pos;
+    const vec3s pos = (mode == CAMERA_ORBIT) ? this->pos : this->target;
     return glms_normalize(glms_vec3_sub(target, pos));
 }
 
