@@ -892,9 +892,10 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
     }
     mesh.update_vertex_buf(vertex_buf, entry.vertex_size * entry.vertex_count, draw_mode);
     vertex_attribute pos_attribute = {
-        3, true, GL_FLOAT, entry.vertex_size, 0,
+        GL_FLOAT, entry.vertex_size, 0, 3,
     };
-    mesh.set_attribute(pos_attribute, ATTRIBUTE_POSITION);
+    mesh.attributes[ATTRIBUTE_POSITION] = pos_attribute;
+    mesh.apply_attributes();
 
     // Vertices are dumped, now for indices
     for (chunk idx_chunk : pol.chunks) {
@@ -919,7 +920,7 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
         }
 
         const index_buffer idx_buf = {
-            (u8*)vfile_cur(vf), idx_chunk.num_indices(pol), GL_UNSIGNED_SHORT, 0,
+            (u8*)vfile_cur(vf), idx_chunk.num_indices(pol), 0,
         };
         mesh.add_index_buf(idx_buf);
     }

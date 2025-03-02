@@ -9,6 +9,8 @@ extern "C" {
     #include <common/gl/input.h>
 }
 
+// We ought to split these shaders into other files, but the GLSL code is so
+// trivial that it's not really worth it.
 const char* vertex_shader = R"(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
@@ -158,7 +160,7 @@ bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
             glBindVertexArray(mesh.vao);
             for (index_buffer idx_buf : mesh.idx_buffers) {
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
-                glDrawElements(mesh.draw_mode, idx_buf.num, idx_buf.indices_type, 0);
+                glDrawElements(mesh.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);
             }
             // VAO keeps index buffer binding, so clear it after draw.
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
