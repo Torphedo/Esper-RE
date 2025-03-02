@@ -83,8 +83,8 @@ void camera::update(double delta_time) noexcept {
     const float LS_x = input.LS.x * (fabsf(input.LS.x) > deadzone);
     const float LS_y = input.LS.y * (fabsf(input.LS.y) > deadzone);
 
-    const float forward  = multiplier * ((input.w - input.s) - LS_y);
-    const float side     = multiplier * ((input.a - input.d) - LS_x);
+    const float forward  = multiplier * ((input.s - input.w) + LS_y);
+    const float side     = multiplier * ((input.d - input.a) + LS_x);
     float vertical = multiplier * ((input.space - input.shift) + (input.RT - input.LT));
 
     // Exclude vertical view component so it doesn't affect horizontal movement
@@ -170,7 +170,7 @@ void camera::proj_view(mat4 out) const noexcept {
     mat4 projection = {0};
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     const float aspect = (float)mode->width / (float)mode->height;
-    glm_perspective_rh_no(glm_rad(45), aspect, 0.001f, 5000.0f, projection);
+    glm_perspective_rh_no(glm_rad(45), aspect, 0.001f, 50000.0f, projection);
 
     // Camera matrix
     mat4 view = {0};

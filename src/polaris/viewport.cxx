@@ -25,7 +25,7 @@ const char* fragment_shader = R"(
 out vec4 fragment_rgba;
 
 void main() {
-    fragment_rgba = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    fragment_rgba = vec4(1.0f, 0.906f, 0.258f, 1.0f);
 }
 )";
 
@@ -71,6 +71,7 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
         initialized = true;
     }
 
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     if (wireframe) {
         bind();
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -111,16 +112,29 @@ bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
         cam.proj_view(pvm);
 
         // Wireframe toggle
+        const float padding = ImGui::GetStyle().FramePadding.x * 2;
         bool wireframe_changed = ImGui::Checkbox("Wireframe", &wireframe);
-        const char* labels[] = {"Orbit", "Minecraft", "Fly"};
-        camera_mode cur_mode = cam.mode;
+
+        // Need to do this ridiculous workaround to manually ensure options
+        // don't take up like half the horizontal screen space
+        const char* options[] = {"Orbit", "Minecraft", "Fly"};
+        const char* label = "Camera Mode";
+        const float combo_width = ImGui::CalcTextSize(options[1]).x * 1.5f + padding;
+        ImGui::SetNextItemWidth(combo_width);
         ImGui::SameLine();
-        ImGui::Combo("Camera Mode", (int*)&cur_mode, labels, CAMERA_MODE_ENUM_MAX);
+
+        camera_mode cur_mode = cam.mode;
+        ImGui::Combo(label, (int*)&cur_mode, options, CAMERA_MODE_ENUM_MAX);
         if (cur_mode != cam.mode) {
             // We need to use the setter instead of overwriting directly to get
             // correct behaviour.
             cam.set_mode(cur_mode);
         }
+
+        ImGui::SameLine();
+        const char* move_speed_label = "Move Speed";
+        ImGui::SetNextItemWidth(ImGui::CalcTextSize(move_speed_label).x + 20.0f + padding);
+        ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 100.0f);
 
         // Start rendering to the viewport
         bind();
