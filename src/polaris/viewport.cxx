@@ -1,6 +1,7 @@
 #include "viewport.hxx"
 #include "polaris/renderlist.hxx"
 #include <imgui.h>
+#include "imgui_utils.hxx"
 
 #include <common/logging.h>
 
@@ -96,10 +97,33 @@ void viewport_t::destroy() noexcept {
     }
 }
 
-bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
+void viewport_t::render_editor() noexcept {
+    if (!editor_enabled) {
+        return;
+    }
+    ImGui::Begin("Viewport Editor", &editor_enabled);
+
+    static u16 selected_mesh = 0;
+    ImGui::InputU16("Selected Mesh", &selected_mesh);
+    selected_mesh %= meshes.size();
+
+    // If you make this loop over all meshes in the future, make sure not to
+    // use the for loop style with a colon (or make sure you get a reference),
+    // otherwise it'll run the menu on a copy and not modify the data
+    mesh_view& mesh = meshes.at(selected_mesh);
+    mesh.edit_menu();
+
+    ImGui::End();
+}
+
+bool viewport_t::render_contents(GLFWwindow* window) noexcept {
     if (!enabled || !initialized) {
         return false;
     }
+
+    // Editor window
+    this->render_editor();
+
     // Calculate delta time every time we render
     static double prev_time = glfwGetTime();
     const double cur_time = glfwGetTime();
@@ -116,6 +140,8 @@ bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
         // Wireframe toggle
         const float padding = ImGui::GetStyle().FramePadding.x * 2;
         bool wireframe_changed = ImGui::Checkbox("Wireframe", &wireframe);
+        ImGui::SameLine();
+        bool cull_changed = ImGui::Checkbox("Back-face culling", &cull_back_faces);
 
         // Need to do this ridiculous workaround to manually ensure options
         // don't take up like half the horizontal screen space
@@ -150,6 +176,13 @@ bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
         }
+        if (cull_changed) {
+            if (cull_back_faces) {
+                glEnable(GL_CULL_FACE);
+            } else {
+                glDisable(GL_CULL_FACE);
+            }
+        }
 
         // Bind shader & upload camera transform
         glUseProgram(shader);
@@ -157,6 +190,10 @@ bool viewport_t::render_imgui(GLFWwindow* window) noexcept {
 
         // Render all index buffers of all known meshes
         for (mesh_view mesh : meshes) {
+            if (!mesh.active) {
+                continue; // This mesh is hidden
+            }
+
             glBindVertexArray(mesh.vao);
             for (index_buffer idx_buf : mesh.idx_buffers) {
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);

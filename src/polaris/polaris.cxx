@@ -883,21 +883,22 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
 
     // Jump to the appropriate data in the resource buffer
     vfile_seek(&vf, pol.resbuf_offset + entry.data_ptr);
-    const u8* vertex_buf = (u8*)vfile_cur(vf);
+
+    // Setup mesh data
     mesh_view mesh;
     mesh.setup();
-    u16 draw_mode = GL_TRIANGLES;
-    if (entry.vertex_size >= 0x20) {
-        draw_mode = GL_TRIANGLE_STRIP;
-    }
-    mesh.update_vertex_buf(vertex_buf, entry.vertex_size * entry.vertex_count, draw_mode);
-    vertex_attribute pos_attribute = {
+
+    // Upload vertex buffer
+    const u8* vertex_buf = (u8*)vfile_cur(vf);
+    mesh.update_vertex_buf(vertex_buf, entry.vertex_size * entry.vertex_count);
+
+    // Set vertex attributes
+    mesh.attributes[ATTRIBUTE_POSITION] = {
         GL_FLOAT, entry.vertex_size, 0, 3,
     };
-    mesh.attributes[ATTRIBUTE_POSITION] = pos_attribute;
     mesh.apply_attributes();
 
-    // Vertices are dumped, now for indices
+    // Upload the index buffers
     for (chunk idx_chunk : pol.chunks) {
         if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
             // We've hit a mesh metadata chunk past our own, so any
@@ -917,6 +918,11 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
         // We only want index buffers meant for this vertex buffer
         if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
             continue;
+        }
+
+        // This seems to be a reliable indicator of triangle strip meshes
+        if (header.unk3 == IDX_TYPE_STRIP) {
+            mesh.draw_mode = GL_TRIANGLE_STRIP;
         }
 
         const index_buffer idx_buf = {
@@ -1209,11 +1215,16 @@ void polaris::do_menu_bar() noexcept {
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu("Extra")) {
-                ImGui::MenuItem("Viewport", nullptr, &this->viewport.enabled);
-                ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
+            if (ImGui::BeginMenu("View")) {
                 ImGuiIO& io = ImGui::GetIO();
                 ImGui::InputFloat("Font Size", &io.FontGlobalScale, 0.1f);
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Windows")) {
+                ImGui::MenuItem("Viewport", nullptr, &this->viewport.enabled);
+                ImGui::MenuItem("Viewport Editor", nullptr, &this->viewport.editor_enabled);
+                ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
                 ImGui::EndMenu();
             }
 
@@ -1260,7 +1271,7 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
         glfwGetFramebufferSize(window, &width, &height);
         viewport.setup(width, height);
     } else {
-        if (!viewport.render_imgui(window)) {
+        if (!viewport.render_contents(window)) {
             // We don't want to supress input if the viewport needs it
             this->handle_input_suppression();
         }

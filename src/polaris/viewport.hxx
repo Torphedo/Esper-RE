@@ -23,6 +23,10 @@ struct viewport_t {
     // Whether the Dear ImGui window is enabled
     bool enabled = false;
 
+    // Whether the viewport editor window is enabled. This lets the user edit
+    // the rendering settings of meshes in the viewport
+    bool editor_enabled = false;
+
     // Custom framebuffer that can be rendered to
     gl_obj fbo = 0;
 
@@ -38,6 +42,7 @@ struct viewport_t {
     camera cam;
     bool cursor_lock = false;
     bool wireframe = true;
+    bool cull_back_faces = true;
 
     std::vector<mesh_view> meshes;
 
@@ -49,8 +54,11 @@ struct viewport_t {
     // underlying OpenGL resources and invalidate all copies of this instance.
     void destroy() noexcept;
 
+    // Render an ImGui
+    void render_editor() noexcept;
+
     // Render a Dear ImGui window showing the viewport contents
-    bool render_imgui(GLFWwindow* window) noexcept;
+    bool render_contents(GLFWwindow* window) noexcept;
 
     // Simple wrapper methods for those who like them
     void bind() const noexcept {

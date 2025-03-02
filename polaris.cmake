@@ -42,6 +42,7 @@ add_executable(polaris
     src/polaris/imgui_utils.cxx
     src/polaris/pd_mesh.cxx
     src/polaris/viewport.cxx
+    src/polaris/renderlist.cxx
     src/polaris/camera.cxx
 
     src/formats/pd_common.c

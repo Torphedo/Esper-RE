@@ -2,23 +2,33 @@
 #include <common/int.h>
 #include <glad/glad.h>
 #include <vector>
-
 // Structures for rendering arbitrary format vertices
+
+// All supported vertex attribute slots
 typedef enum : u8 {
     ATTRIBUTE_POSITION,
     ATTRIBUTE_TEXCOORD,
     ATTRIBUTE_ENUM_MAX,
 }attribute_idx;
 
+static const char* attribute_names[] = {
+    "Position",
+    "Texture Coordinates",
+    "[Invalid]",
+};
+
 // Vertex attribute data for glVertexAttribPointer()
 struct vertex_attribute {
-    u16 type; // Data type like GL_FLOAT, GL_UNSIGNED_BYTE, etc.
-    u16 stride;
-    u16 offset;
-    u8 components; // This can only be between 1 and 4
+    u16 type = GL_FLOAT; // Data type like GL_FLOAT, GL_UNSIGNED_BYTE, etc.
+    u16 stride = 0;
+    u16 offset = 0;
+    u8 components = 1; // This can only be between 1 and 4
     // Whether this is an unused entry (the poor man's reverse std::optional).
     // Please don't manually overwrite, I put it last so you can leave it blank
     bool empty = false;
+
+    /// @brief Dear ImGui menu to edit the attribute (for an existing window)
+    void edit_menu();
 };
 
 struct index_buffer {
@@ -38,105 +48,38 @@ struct mesh_view {
     // handle every attribute as we discover them. We could make the shader
     // user-editable and make a whole complex dynamic uniform system, or just
     // keep it simple with a static array and update the shader when needed.
-    vertex_attribute attributes[ATTRIBUTE_ENUM_MAX];
+    vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {0};
     gl_obj vbo = 0;
     gl_obj vao = 0;
     u16 draw_mode = GL_TRIANGLES;
     bool initialized = false;
 
-    bool setup() {
-        if (initialized) {
-            return true; // Don't setup twice and leak OpenGL objects
-        }
+    // Whether to render this mesh
+    bool active = true;
 
-        // Set all the attributes empty, so that when the caller places things
-        // in the array they automatically get marked non-empty. This lets us
-        // use it instead of a dynamic array
-        for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
-            attributes[i].empty = true;
-        }
+    // Constructor, made manual to avoid accidental resource deletion when copying
+    // Check the [initialized] field to see if it failed
+    bool setup();
+    // Destructor, made manual to avoid accidental resource deletion when copying
+    void destroy();
 
-        glGenVertexArrays(1, &vao);
-        if (vao == 0) {
-            return false;
-        }
+    /// @brief Upload/update the GPU-side vertex buffer.
+    ///
+    /// @param buf The vertex buffer to upload
+    /// @param size The size of the vertex buffer
+    /// @param mode The triangle drawing mode (e.g. GL_TRIANGLES)
+    bool update_vertex_buf(const u8* buf, u32 size);
 
-        glGenBuffers(1, &vbo);
-        if (vbo == 0) {
-            return false;
-        }
-
-        initialized = true;
-        return true;
-    }
-
-    void destroy() {
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glDeleteVertexArrays(1, &vao);
-        glDeleteBuffers(1, &vbo);
-
-        for (index_buffer buf : idx_buffers) {
-            glDeleteBuffers(1, &buf.obj);
-        }
-    }
-
-    bool update_vertex_buf(const u8* buf, u32 size, u16 mode) {
-        if (!initialized) {
-            return false;
-        }
-        this->draw_mode = mode;
-
-        // TODO: Use glBufferSubData() when the size hasn't increased
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, size, buf, GL_DYNAMIC_DRAW); 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        return true;
-    }
-
-    bool add_index_buf(index_buffer buf) {
-        if (!initialized) {
-            return false;
-        }
-
-        glBindVertexArray(vao);
-        gl_obj idx_buf_obj = 0;
-        glGenBuffers(1, &idx_buf_obj);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf_obj);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf.num * sizeof(u16), buf.data, GL_DYNAMIC_DRAW);
-        buf.obj = idx_buf_obj;
-        this->idx_buffers.push_back(buf);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-        
-        return true;
-    }
+    /// @brief Upload an index buffer to the GPU for this mesh
+    ///
+    /// @param buf Index buffer structure to upload
+    bool add_index_buf(index_buffer buf);
 
     /// @brief Upload the new vertex format settings to the GPU
-    bool apply_attributes() {
-        if (!initialized) {
-            return false;
-        }
+    ///
+    /// Takes whatever's in the current attribute array and sends it to OpenGL.
+    bool apply_attributes();
 
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-        for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
-            const vertex_attribute attr = attributes[i];
-            if (attr.empty) {
-                continue;
-            }
-
-            // Update vertex format w/ OpenGL
-            glEnableVertexAttribArray(i);
-            glVertexAttribPointer(i, attr.components, attr.type, GL_FALSE, attr.stride, (void*)(u64)attr.offset);
-        }
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-        
-        return true;
-    }
+    /// @brief ImGui menu to edit the mesh properties
+    void edit_menu();
 };
