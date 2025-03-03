@@ -204,4 +204,12 @@ void mesh_view::edit_menu() {
     if (ImGui::Button("Apply attribute changes")) {
         this->apply_attributes();
     }
+
+    ImGui::Text("Index buffers");
+    for (u32 i = 0; i < idx_buffers.size(); i++) {
+        index_buffer& buf = idx_buffers.at(i);
+        char label[32] = {0};
+        snprintf(label, sizeof(label) - 1, "Buffer %d", i);
+        ImGui::Checkbox(label, &buf.enabled);
+    }
 }

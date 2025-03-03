@@ -196,6 +196,9 @@ bool viewport_t::render_contents(GLFWwindow* window) noexcept {
 
             glBindVertexArray(mesh.vao);
             for (index_buffer idx_buf : mesh.idx_buffers) {
+                if (!idx_buf.enabled) {
+                    continue; // This index buffer is hidden
+                }
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
                 glDrawElements(mesh.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);
             }

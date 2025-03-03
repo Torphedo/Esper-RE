@@ -37,6 +37,7 @@ struct index_buffer {
     u32 num = 0; // Number of indices
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
+    bool enabled = true; // Whether to render this index buffer
 };
 
 struct mesh_view {
