@@ -246,8 +246,10 @@ typedef struct {
     u16 unk3; // Usually IDX_TYPE_NORMAL. When it's IDX_TYPE_STRIP, the indices are for a triangle strip. Maybe a bitfield?
     // Seems to be the first index of the first triangle. Maybe used to help order index buffers in optimal order
     u32 first_idx;
+    // The number of triangles formed by the indices
     u32 num_tris;
-    u32 unk4;
+    // The number of indices stored in the buffer (might not match the available space)
+    u32 num_indices;
     u32 pad2[5];
 }idxbuf_header;
 static_assert(sizeof(idxbuf_header) == 0x60, "Wrong index buffer header size!");

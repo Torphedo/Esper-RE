@@ -162,7 +162,7 @@ bool viewport_t::render_contents(GLFWwindow* window) noexcept {
         ImGui::SameLine();
         const char* move_speed_label = "Move Speed";
         ImGui::SetNextItemWidth(ImGui::CalcTextSize(move_speed_label).x + 20.0f + padding);
-        ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 100.0f);
+        ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 1000.0f);
 
         // Start rendering to the viewport
         bind();

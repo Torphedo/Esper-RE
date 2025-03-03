@@ -43,6 +43,17 @@ u32 polaris::chunk::num_indices(const polaris& pol) const noexcept {
         return 0; // Can't use the assert macro because we return a value
     }
 
+    // Open ALR data and skip to header
+    vfile vf = vfile_open(pol.alr_data, pol.alr_size);
+    vf.pos = this->offset + sizeof(chunk_generic);
+    const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+
+    if (header.unk3 == IDX_TYPE_STRIP) {
+        return header.num_indices;
+    } else {
+        return header.num_indices;
+    }
+
     // Buffer space available for indices
     const s32 buf_size = size - sizeof(chunk_generic) - sizeof(idxbuf_header);
 
@@ -52,23 +63,17 @@ u32 polaris::chunk::num_indices(const polaris& pol) const noexcept {
 
 void polaris::chunk::dump_idx_buf(const polaris& pol, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
-
     vfile vf = vfile_open(pol.alr_data + offset, size);
 
     // Skip over chunk header
     const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
     const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
-    u32 num_indices = this->num_indices(pol);
-
-    // If we trust the file for the number of triangles, the ends of some limbs
-    // will often be missing on player models...
-    // num_tris = header.num_tris;
     const u16* indices = (u16*)vfile_cur(vf);
-    for (s32 i = 0; i < num_indices - 1; i++) {
-        u16 idx1 = indices[i];
-        u16 idx2 = indices[i + 1];
-        u16 idx3 = indices[i + 2];
+    for (s32 i = 2; i < header.num_indices; i++) {
+        u16 idx1 = indices[i - 2];
+        u16 idx2 = indices[i - 1];
+        u16 idx3 = indices[i];
 
         if (idx1 == idx2 || idx1 == idx3 || idx2 == idx3) {
             // One of the indices is a duplicate, so this triangle will have
@@ -76,19 +81,6 @@ void polaris::chunk::dump_idx_buf(const polaris& pol, FILE* out, std::optional<v
             // where one strip ends and another begins. We can safely skip it,
             // because it's not really part of the geometry.
             continue;
-        }
-
-        const u16 lower_bound = header.first_idx;
-        u16 upper_bound = UINT16_MAX;
-        if (vert_entry.has_value()) {
-            upper_bound = vert_entry->vertex_count;
-        }
-
-        const bool idx_too_small = idx1 > upper_bound || idx2 > upper_bound || idx3 > upper_bound;
-        const bool idx_too_large = idx1 < lower_bound || idx2 < lower_bound || idx3 < lower_bound;
-        if (idx_too_small || idx_too_large) {
-            // We're hitting some invalid data, give up.
-            break;
         }
 
         // OBJ indices start at 1 :(
@@ -257,6 +249,9 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
         num_tris = header->num_tris;
     }
 
+    ImGui::InputU32("# of triangles", &header->num_tris);
+    ImGui::InputU32("# of indices", &header->num_indices);
+    ImGui::InputU32("Smallest index", &header->first_idx);
     ImGui::InputFloat3("Center point", header->center);
     ImGui::InputFloat3("AABB Min", header->aabb_min);
     ImGui::InputFloat3("AABB Max", header->aabb_max);
@@ -267,7 +262,6 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
         ImGui::InputU32("Unknown integer 1", &header->unk1);
         ImGui::InputU16("Unknown integer 2", &header->unk2);
         ImGui::InputU16("Unknown integer 3", &header->unk3);
-        ImGui::InputU32("Unknown integer 4", &header->unk4);
     }
     for (u32 i = 0; i < 5; i++) {
         ImGui::Spacing();
@@ -928,7 +922,7 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
         }
 
         const index_buffer idx_buf = {
-            (u8*)vfile_cur(vf), idx_chunk.num_indices(pol), 0,
+            ((u8*)vfile_cur(vf)), idx_chunk.num_indices(pol), 0,
         };
         mesh.add_index_buf(idx_buf);
     }
