@@ -231,7 +231,13 @@ enum {
 };
 
 typedef struct {
-    float unk_float[10];
+    // Centerpoint of the object represented by the index buffer
+    float center[3];
+    float unk_float;
+    // AABB min of the object represented by the index buffer
+    float aabb_min[3];
+    // AABB max of the object represented by the index buffer
+    float aabb_max[3];
     u32 pad[3]; // Always 0, so far
     u32 unk1; // Definitely a u32, unknown purpose
     u16 vertex_buf; // Index of vertex buffer in the 0x16 chunk

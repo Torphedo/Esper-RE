@@ -240,6 +240,7 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
         // the other when this one is updated.
         header->vertex_buf2 = header->vertex_buf;
     }
+    ImGui::InputU16("Vertex Buffer 2", &header->vertex_buf2);
 
     // If we trust the file about the number of triangles, many indices will be
     // missing.
@@ -256,11 +257,12 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
         num_tris = header->num_tris;
     }
 
+    ImGui::InputFloat3("Center point", header->center);
+    ImGui::InputFloat3("AABB Min", header->aabb_min);
+    ImGui::InputFloat3("AABB Max", header->aabb_max);
+
     if (ImGui::CollapsingHeader("Unknown Fields")) {
-        ImGui::InputFloat3("Unknown floats 1-3", &header->unk_float[0]);
-        ImGui::InputFloat3("Unknown floats 4-6", &header->unk_float[3]);
-        ImGui::InputFloat3("Unknown floats 7-9", &header->unk_float[6]);
-        ImGui::InputFloat("Unknown float 10", &header->unk_float[9]);
+        ImGui::InputFloat("Unknown float 1", &header->unk_float);
 
         ImGui::InputU32("Unknown integer 1", &header->unk1);
         ImGui::InputU16("Unknown integer 2", &header->unk2);
