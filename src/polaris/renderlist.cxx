@@ -235,8 +235,10 @@ void mesh_view::edit_menu(const std::vector<gl_obj>& tex_array) {
     ImGui::Spacing();
 
     ImGui::Text("Index buffers");
+    ImGui::NewLine();
+
     for (u32 i = 0; i < idx_buffers.size(); i++) {
-        ImGui::Text("Buffer %d", i);
+        ImGui::Text("Index buffer %d", i);
         index_buffer& buf = idx_buffers.at(i);
         char label[32] = {0};
 
@@ -246,19 +248,16 @@ void mesh_view::edit_menu(const std::vector<gl_obj>& tex_array) {
         snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
         ImGui::InputU16(label, &buf.albedo_tex_idx);
 
-        snprintf(label, sizeof(label) - 1, "Show albedo texture ##%d", i);
-        buf.albedo_tex_idx %= tex_array.size();
-        if (ImGui::CollapsingHeader(label)) {
-            ImGui::Image(tex_array.at(buf.albedo_tex_idx), ImVec2(512, 512));
-        }
-
         snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
         ImGui::InputU16(label, &buf.normal_tex_idx);
         buf.normal_tex_idx %= tex_array.size();
 
-        snprintf(label, sizeof(label) - 1, "Show normal texture ##%d", i);
+        snprintf(label, sizeof(label) - 1, "Show textures ##%d", i);
         if (ImGui::CollapsingHeader(label)) {
+            ImGui::Image(tex_array.at(buf.albedo_tex_idx), ImVec2(512, 512));
             ImGui::Image(tex_array.at(buf.normal_tex_idx), ImVec2(512, 512));
         }
+
+        ImGui::NewLine();
     }
 }
