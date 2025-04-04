@@ -32,8 +32,8 @@ struct window_state_0x5 {
 struct window_state_0x10 {
     u32 selected_atlas = 0;
     u32 selected_atlas_texture = 0;
-    texture tex = {};
     gl_obj gl_tex_id = 0;
+    texture tex;
 
     // User can choose to render the texture at its real size, or scaled up
     // Render settings for entire atlas
@@ -48,7 +48,7 @@ struct window_state_0x10 {
 // State for 0x15 texture window
 struct window_state_0x15 {
     u32 selected_texture = 0;
-    texture tex = {};
+    texture tex;
     gl_obj gl_tex_id = 0;
 
     // User can choose to render the texture at its real size, or scaled up
@@ -138,7 +138,7 @@ struct polaris {
 
     // State for the overall editor
     // Currently loaded ALR & metadata for all its chunks
-    u8 *alr_data = nullptr;
+    u8* alr_data = nullptr;
     s64 alr_size = 0;
     ptrdiff_t resbuf_offset = 0;
 
@@ -148,11 +148,17 @@ struct polaris {
     s64 reserve_size = 1024 * 1024 * 32;
     std::vector<chunk> chunks;
 
+    bool textures_need_reload = false; 
+    std::vector<gl_obj> gl_textures;
+
     // If present, only display chunks with this ID
     std::optional<u32> chunk_filter;
 
     // Whether to show the ImGui Demo Window
     bool show_demo = false;
+
+    // Whether we're running without graphics.
+    bool headless = false;
 
     // Input state from the previous frame
     input_internal prev_input = {};
@@ -173,6 +179,8 @@ struct polaris {
     /// @brief Overwrite the loaded ALR with a new one
     bool load_alr(const char* path) noexcept;
 
+    void unload_gl_textures() noexcept;
+
     /// @brief Save the ALR data in-memory to the specified path.
     bool save_alr(const char *path) const noexcept;
 
@@ -184,9 +192,10 @@ struct polaris {
     /// @brief Increase the amount of address space reserved for the ALR data
     void expand_reservation(s64 new_size) noexcept;
 
-    polaris() noexcept;
+    polaris(bool headless = false) noexcept;
     ~polaris() noexcept {
         viewport.destroy();
+        this->unload_gl_textures();
         vmem_free(alr_data, reserve_size);
     }
 };

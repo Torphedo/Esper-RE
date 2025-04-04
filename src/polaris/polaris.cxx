@@ -685,10 +685,11 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
     cur_tex.height = atlas.height;
     cur_tex.width = atlas.width;
 
-    if (window_0x15.gl_tex_id == 0) {
+
+    if (window_0x10.gl_tex_id == 0) {
         // Create & upload initial texture state
-        glGenTextures(1, &window_0x15.gl_tex_id);
-        if (window_0x15.gl_tex_id == 0) {
+        glGenTextures(1, &window_0x10.gl_tex_id);
+        if (window_0x10.gl_tex_id == 0) {
             const char* name = (char*)&textures[window_0x10.selected_atlas_texture].filename;
             LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
         }
@@ -702,6 +703,7 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
         update_gl_tex(cur_tex, window_0x10.gl_tex_id);
         window_0x10.tex = cur_tex;
     }
+
 
     // Draw both textures
     ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
@@ -827,6 +829,7 @@ void polaris::chunk::chunk_0x15(polaris& pol) noexcept {
         update_gl_tex(cur_tex, window_0x15.gl_tex_id);
         window_0x15.tex = cur_tex;
     }
+
 
     ImGui::Text("2^(resolution power) = width = height");
     const u8 step_pwr = 1; // Step for the resolution power input
@@ -1074,7 +1077,9 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
 // =============================================================================
 // The rest of this file is for the main Polaris class
 
-polaris::polaris() noexcept {
+polaris::polaris(bool headless) noexcept {
+    this->headless = headless;
+
     // TODO: Add an option to commit on reserve in bobtail
     // TODO: Look into MEM_RESET to reduce impact on page file?
 
@@ -1172,10 +1177,16 @@ bool polaris::load_alr(const char* path) noexcept {
         }
         alr_size = size;
         chunks = shatter_alr(alr_data, alr_size);
+        this->textures_need_reload = true;
         return true;
     } else {
         return false;
     }
+}
+
+void polaris::unload_gl_textures() noexcept {
+    glDeleteTextures(gl_textures.size(), gl_textures.data());
+    gl_textures.clear();
 }
 
 bool polaris::save_alr(const char* path) const noexcept {
@@ -1252,9 +1263,92 @@ void polaris::do_menu_bar() noexcept {
     }
 }
 
+bool load_gl_textures(polaris* pol) {
+    assert(!pol->headless && "Can't load textures in headless mode!");
+    assert(pol->resbuf_offset != 0 && "Can't load textures without resbuf offset!");
+
+    polaris::chunk texture_chunk = polaris::chunk(0, 0, 0);
+    polaris::chunk atlas_chunk = polaris::chunk(0, 0, 0);
+
+    // Try to find texture and texture atlas metadata, we need both to make a
+    // good guess about dimensions.
+    for (polaris::chunk chunk : pol->chunks) {
+        if (chunk.id == 0x15) {
+            texture_chunk = chunk;
+        }
+        if (chunk.id == 0x10) {
+            atlas_chunk = chunk;
+        }
+    }
+
+    // Read texture chunk data
+    vfile vf = vfile_open(pol->alr_data + texture_chunk.offset, texture_chunk.size);
+    // Skip over the ID and size fields we already have
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    texture_entry* tex_entries = (texture_entry*)vfile_cur(vf);
+
+    pol->unload_gl_textures();
+    pol->gl_textures.reserve(num_entries);
+
+    // Read atlas chunk data
+    atlas_entry* atlas_entries = nullptr;
+    atlas_name* atlas_names = nullptr;
+    atlas_header header_atlas = {0};
+    if (atlas_chunk.size > 0) {
+        vf = vfile_open(pol->alr_data + atlas_chunk.offset, atlas_chunk.size);
+
+        // Skip over the ID and size fields we already have
+        vfile_seek(&vf, sizeof(chunk_generic));
+        header_atlas = VFILE_READ(atlas_header, &vf);
+
+        // Skip over names
+        atlas_names = (atlas_name*)vfile_cur(vf);
+        vfile_seek(&vf, sizeof(atlas_name) * header_atlas.atlas_count);
+
+        atlas_entries = (atlas_entry*)vfile_cur(vf);
+    }
+
+    bool result = true;
+    for (u32 i = 0; i < num_entries; i++) {
+        // Convert the ALR texture data to our standard texture struct
+        texture cur_tex = convert_tex(pol->alr_data + pol->resbuf_offset, tex_entries[i]);
+
+        if (atlas_entries != nullptr && header_atlas.atlas_count > i) {
+            atlas_entry entry = atlas_entries[i];
+            // We get better dimension info from the atlas headers, use it!
+            // Dimensions from the atlas headers are almost always more
+            // accurate, so we always use them unless they're obviously wrong.
+
+            const u32 too_small = 0;
+            const u32 too_big = 8192;
+            if (entry.width > too_small && entry.width < too_big) {
+                cur_tex.width = entry.width;
+            }
+            if (entry.height > too_small && entry.height < too_big) {
+                cur_tex.height = entry.height;
+            }
+        }
+
+        gl_obj gl_tex_id = 0;
+        glGenTextures(1, &gl_tex_id);
+        update_gl_tex(cur_tex, gl_tex_id);
+
+        result &= (gl_tex_id != 0);
+        pol->gl_textures.push_back(gl_tex_id);
+    }
+
+    return result;
+}
+
 void polaris::do_gui(GLFWwindow* window) noexcept {
     // Make the entire window a giant docking space
     ImGui::DockSpaceOverViewport();
+
+    if (!headless && textures_need_reload) {
+        load_gl_textures(this);
+        textures_need_reload = false;
+    }
 
     // We have to wait until we know the graphics context has been created to do
     // graphics-related initialization (since the program may run in headless
