@@ -225,16 +225,19 @@ bool viewport_t::render_contents(GLFWwindow* window, const std::vector<gl_obj>& 
 
             glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, tex_array.at(mesh.albedo_tex_idx));
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
             glBindVertexArray(mesh.vao);
             for (index_buffer idx_buf : mesh.idx_buffers) {
                 if (!idx_buf.enabled) {
                     continue; // This index buffer is hidden
                 }
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, tex_array.at(idx_buf.albedo_tex_idx));
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
                 glDrawElements(mesh.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);
             }

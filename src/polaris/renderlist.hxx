@@ -37,6 +37,8 @@ struct index_buffer {
     u32 num = 0; // Number of indices
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
+    u16 albedo_tex_idx = 0;
+    u16 normal_tex_idx = 0;
     bool enabled = true; // Whether to render this index buffer
 };
 
@@ -52,9 +54,6 @@ struct mesh_view {
     vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {0};
     gl_obj vbo = 0;
     gl_obj vao = 0;
-
-    u16 albedo_tex_idx = 0;
-    u16 normal_tex_idx = 0;
 
     // Texture coordinates are divided by this value in the shader before use.
     u32 uv_divisor = 1;
