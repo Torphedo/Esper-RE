@@ -52,6 +52,10 @@ struct mesh_view {
     vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {0};
     gl_obj vbo = 0;
     gl_obj vao = 0;
+
+    u16 albedo_tex_idx = 0;
+    u16 normal_tex_idx = 0;
+
     u16 draw_mode = GL_TRIANGLES;
     bool initialized = false;
 
@@ -82,5 +86,5 @@ struct mesh_view {
     bool apply_attributes();
 
     /// @brief ImGui menu to edit the mesh properties
-    void edit_menu();
+    void edit_menu(const std::vector<gl_obj>& tex_array);
 };

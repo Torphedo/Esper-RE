@@ -1361,7 +1361,7 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
         glfwGetFramebufferSize(window, &width, &height);
         viewport.setup(width, height);
     } else {
-        if (!viewport.render_contents(window)) {
+        if (!viewport.render_contents(window, this->gl_textures)) {
             // We don't want to supress input if the viewport needs it
             this->handle_input_suppression();
         }

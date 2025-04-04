@@ -15,11 +15,16 @@ extern "C" {
 const char* vertex_shader = R"(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
+layout (location = 1) in vec2 a_texcoord;
 
 uniform mat4 pvm;
+out vec2 texcoord;
 
 void main() {
     gl_Position = pvm * vec4(a_pos, 1.0);
+
+    // We map the large integer value into the [0, 1] range for texture lookups
+    texcoord = a_texcoord / 0x7FFF;
 }
 )";
 
@@ -27,8 +32,15 @@ const char* fragment_shader = R"(
 #version 330 core
 out vec4 fragment_rgba;
 
+in vec2 texcoord;
+uniform sampler2D albedo_texture;
+
 void main() {
-    fragment_rgba = vec4(1.0f, 0.906f, 0.258f, 1.0f);
+    // fragment_rgba = vec4(texcoord, 0.0f, 1.0f);
+    fragment_rgba = texture(albedo_texture, texcoord);
+
+    // Solid yellow
+    // fragment_rgba = vec4(1.0f, 0.906f, 0.258f, 1.0f);
 }
 )";
 
@@ -40,23 +52,35 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
         return false;
     }
     glGenTextures(1, &this->color_tex);
-    if (color_tex == 0) {
+    glGenTextures(1, &this->depth_tex);
+    if (color_tex == 0 || depth_tex == 0) {
+        if (color_tex != 0) {
+            glDeleteTextures(1, &this->color_tex);
+        }
+        if (depth_tex != 0) {
+            glDeleteTextures(1, &this->depth_tex);
+        }
         glDeleteFramebuffers(1, &fbo); // Clean up
         LOG_MSG(error, "Failed to setup framebuffer backing texture for viewport!\n");
         return false;
     }
 
-    // Setup backing texture for framebuffer
+    // Setup backing color texture for framebuffer
     glBindTexture(GL_TEXTURE_2D, color_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     // We only really care about the downscale filter
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Setup backing depth texture for framebuffer
+    glBindTexture(GL_TEXTURE_2D, depth_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
 
     // Actually attach texture to the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
+    // Enable depth testing for this framebuffer since we set up a depth buffer
+    glEnable(GL_DEPTH_TEST);
 
     shader = program_compile_src(vertex_shader, fragment_shader);
     if (!shader_link_check(shader)) {
@@ -75,11 +99,14 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
     }
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
     if (wireframe) {
-        bind();
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        unbind();
     }
+
+    // Clean up our state
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // This defaults to false
     return initialized;
@@ -97,7 +124,7 @@ void viewport_t::destroy() noexcept {
     }
 }
 
-void viewport_t::render_editor() noexcept {
+void viewport_t::render_editor(const std::vector<gl_obj>& tex_array) noexcept {
     if (!editor_enabled) {
         return;
     }
@@ -111,18 +138,18 @@ void viewport_t::render_editor() noexcept {
     // use the for loop style with a colon (or make sure you get a reference),
     // otherwise it'll run the menu on a copy and not modify the data
     mesh_view& mesh = meshes.at(selected_mesh);
-    mesh.edit_menu();
+    mesh.edit_menu(tex_array);
 
     ImGui::End();
 }
 
-bool viewport_t::render_contents(GLFWwindow* window) noexcept {
+bool viewport_t::render_contents(GLFWwindow* window, const std::vector<gl_obj>& tex_array) noexcept {
     if (!enabled || !initialized) {
         return false;
     }
 
     // Editor window
-    this->render_editor();
+    this->render_editor(tex_array);
 
     // Calculate delta time every time we render
     static double prev_time = glfwGetTime();
@@ -166,7 +193,7 @@ bool viewport_t::render_contents(GLFWwindow* window) noexcept {
 
         // Start rendering to the viewport
         bind();
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Actually apply wireframe toggle now that the framebuffer is bound
         if (wireframe_changed) {
@@ -194,6 +221,11 @@ bool viewport_t::render_contents(GLFWwindow* window) noexcept {
                 continue; // This mesh is hidden
             }
 
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, tex_array.at(mesh.albedo_tex_idx));
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
             glBindVertexArray(mesh.vao);
             for (index_buffer idx_buf : mesh.idx_buffers) {
                 if (!idx_buf.enabled) {
@@ -204,6 +236,7 @@ bool viewport_t::render_contents(GLFWwindow* window) noexcept {
             }
             // VAO keeps index buffer binding, so clear it after draw.
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            glBindTexture(GL_TEXTURE_2D, 0);
             glBindVertexArray(0);
         }
 

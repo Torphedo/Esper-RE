@@ -33,6 +33,7 @@ struct viewport_t {
     // Color texture that backs the framebuffer. Render this to see the current
     // contents of the framebuffer
     gl_obj color_tex = 0;
+    gl_obj depth_tex = 0;
 
     // Shader program
     gl_obj shader = 0;
@@ -55,10 +56,10 @@ struct viewport_t {
     void destroy() noexcept;
 
     // Render an ImGui
-    void render_editor() noexcept;
+    void render_editor(const std::vector<gl_obj>& tex_array) noexcept;
 
     // Render a Dear ImGui window showing the viewport contents
-    bool render_contents(GLFWwindow* window) noexcept;
+    bool render_contents(GLFWwindow* window, const std::vector<gl_obj>& tex_array) noexcept;
 
     // Simple wrapper methods for those who like them
     void bind() const noexcept {

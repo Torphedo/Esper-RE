@@ -1,7 +1,6 @@
 #include "renderlist.hxx"
 #include <cstdio>
 #include <imgui.h>
-#include "imgui_internal.h"
 #include "imgui_utils.hxx"
 
 typedef struct {
@@ -150,7 +149,7 @@ bool mesh_view::apply_attributes() {
     return true;
 }
 
-void mesh_view::edit_menu() {
+void mesh_view::edit_menu(const std::vector<gl_obj>& tex_array) {
     // Edit triangle mode
     const char* gl_type_strings[] = {
         "GL_TRIANGLES", "GL_TRIANGLE_STRIP", "GL_TRIANGLE_FAN", "GL_POINTS", "GL_LINES", "GL_LINE_STRIP",
@@ -203,6 +202,18 @@ void mesh_view::edit_menu() {
 
     if (ImGui::Button("Apply attribute changes")) {
         this->apply_attributes();
+    }
+    ImGui::Spacing();
+
+    ImGui::InputU16("Albedo Texture Index", &albedo_tex_idx);
+    albedo_tex_idx %= tex_array.size();
+    if (ImGui::CollapsingHeader("Show albedo texture")) {
+        ImGui::Image(tex_array.at(albedo_tex_idx), ImVec2(512, 512));
+    }
+    ImGui::InputU16("Normal Texture Index", &normal_tex_idx);
+    normal_tex_idx %= tex_array.size();
+    if (ImGui::CollapsingHeader("Show normal texture")) {
+        ImGui::Image(tex_array.at(normal_tex_idx), ImVec2(512, 512));
     }
 
     ImGui::Text("Index buffers");
