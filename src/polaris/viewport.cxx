@@ -18,13 +18,14 @@ layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_texcoord;
 
 uniform mat4 pvm;
+uniform uint uv_divisor;
 out vec2 texcoord;
 
 void main() {
     gl_Position = pvm * vec4(a_pos, 1.0);
 
     // We map the large integer value into the [0, 1] range for texture lookups
-    texcoord = a_texcoord / 0x7FFF;
+    texcoord = a_texcoord / uv_divisor;
 }
 )";
 
@@ -88,6 +89,7 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
         return false;
     }
     uniform_pvm = glGetUniformLocation(shader, "pvm");
+    uniform_uv_divisor = glGetUniformLocation(shader, "uv_divisor");
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         // uh oh...
@@ -195,7 +197,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const std::vector<gl_obj>& 
         bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Actually apply wireframe toggle now that the framebuffer is bound
+        // Actually apply state toggles now that the framebuffer is bound
         if (wireframe_changed) {
             if (wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -220,6 +222,8 @@ bool viewport_t::render_contents(GLFWwindow* window, const std::vector<gl_obj>& 
             if (!mesh.active) {
                 continue; // This mesh is hidden
             }
+
+            glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, tex_array.at(mesh.albedo_tex_idx));

@@ -56,6 +56,14 @@ struct mesh_view {
     u16 albedo_tex_idx = 0;
     u16 normal_tex_idx = 0;
 
+    // Texture coordinates are divided by this value in the shader before use.
+    u32 uv_divisor = 1;
+
+    // Divide by the maximum value of the current integer type instead of using
+    // the divisor value. This maps an integer value into the range [0, 1]
+    // based on its type, and is usually what you want.
+    bool use_type_divisor = true;
+
     u16 draw_mode = GL_TRIANGLES;
     bool initialized = false;
 

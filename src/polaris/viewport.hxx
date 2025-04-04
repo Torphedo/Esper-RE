@@ -38,8 +38,11 @@ struct viewport_t {
     // Shader program
     gl_obj shader = 0;
 
-    // Transformation matrix uniform for moving the view around.
+    // Uniform locations
     gl_obj uniform_pvm = 0;
+    gl_obj uniform_uv_divisor = 0;
+
+    // Camera, misc. rendering state
     camera cam;
     bool cursor_lock = false;
     bool wireframe = true;

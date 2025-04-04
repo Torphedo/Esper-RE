@@ -139,6 +139,27 @@ bool mesh_view::apply_attributes() {
             continue;
         }
 
+        if (use_type_divisor) {
+            switch (attr.type) {
+            case GL_BYTE:
+                uv_divisor = INT8_MAX;
+                break;
+            case GL_UNSIGNED_BYTE:
+                uv_divisor = UINT8_MAX;
+                break;
+            case GL_SHORT:
+                uv_divisor = INT16_MAX;
+                break;
+            case GL_UNSIGNED_SHORT:
+                uv_divisor = UINT16_MAX;
+                break;
+            case GL_FLOAT:
+                // This doesn't really apply
+                uv_divisor = 1;
+                break;
+            }
+        }
+
         // Update vertex format w/ OpenGL
         glEnableVertexAttribArray(i);
         glVertexAttribPointer(i, attr.components, attr.type, GL_FALSE, attr.stride, (void*)(u64)attr.offset);
@@ -193,6 +214,14 @@ void mesh_view::edit_menu(const std::vector<gl_obj>& tex_array) {
         snprintf(label, sizeof(label) - 1, "##%d", i);
         ImGui::Text("%s:", attribute_names[i]);
         ImGui::BeginChild(label, ImVec2(0, 0), ImGuiChildFlags_AutoResizeY);
+
+        if (i == ATTRIBUTE_TEXCOORD) {
+            ImGui::Checkbox("Auto-scale integer UVs", &use_type_divisor);
+        }
+
+        if (i == ATTRIBUTE_TEXCOORD && !this->use_type_divisor) {
+            ImGui::InputU32("Custom UV Divisor", &this->uv_divisor);
+        }
 
         attributes[i].edit_menu(); 
         ImGui::NewLine();
