@@ -644,7 +644,7 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
     ImGui::Text("%d Atlases for %.*s:", header->atlas_count, (int)sizeof(header->alr_name), header->alr_name);
     for (u32 i = 0; i < header->atlas_count; i++) {
         char buf[sizeof(atlas_names[i].name) + 0x20] = {0};
-        snprintf(buf, sizeof(buf) - 1, "%s", atlas_names[i].name);
+        snprintf(buf, sizeof(buf) - 1, "%s##%d", atlas_names[i].name, i);
 
         if (ImGui::Selectable(buf, window_0x10.selected_atlas == i)) {
             window_0x10.selected_atlas = i;
@@ -678,7 +678,7 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
         }
 
         char buf[sizeof(textures[i].filename) + 0x20] = {0};
-        snprintf(buf, sizeof(buf) - 1, "%s", tex.filename);
+        snprintf(buf, sizeof(buf) - 1, "%s##%d", tex.filename, i);
 
         if (ImGui::Selectable(buf, window_0x10.selected_atlas_texture == i)) {
             window_0x10.selected_atlas_texture = i;
@@ -688,16 +688,15 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
         }
     }
     ImGui::EndChild();
-    // ImGui::SameLine();
 
-    const atlas_name aName = atlas_names[window_0x10.selected_atlas];
-    const atlas_entry atlas = atlases[window_0x10.selected_atlas];
-    const atlas_tex_entry tex = textures[window_0x10.selected_atlas_texture];
+    atlas_name* aName = &atlas_names[window_0x10.selected_atlas];
+    atlas_entry* atlas = &atlases[window_0x10.selected_atlas];
+    atlas_tex_entry* tex = &textures[window_0x10.selected_atlas_texture];
 
-    texture cur_tex = convert_tex(pol.alr_data + pol.resbuf_offset, entries[tex.index]);
+    texture cur_tex = convert_tex(pol.alr_data + pol.resbuf_offset, entries[tex->index]);
     // Override dimensions, we only want format info from the other chunk
-    cur_tex.height = atlas.height;
-    cur_tex.width = atlas.width;
+    cur_tex.height = atlas->height;
+    cur_tex.width = atlas->width;
 
 
     if (window_0x10.gl_tex_id == 0) {
@@ -719,17 +718,39 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
     }
 
 
-    // Draw both textures
-    ImGui::Text("\nAtlas info for \"%.*s\":", (int)sizeof(aName.name), aName.name);
-    ImGui::Text("%dx%d pixels, contains %d texture(s)", atlas.height, atlas.width, atlas.mipmap_count);
-    ImGui::Text("Texture index %d (see 0x15 chunk for offset)", window_0x10.selected_atlas);
-    draw_image(window_0x10.gl_tex_id, atlas.width, atlas.height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
+    // User input for atlas properties
+    const float char_width = ImGui::CalcTextSize("1").x;
+    ImGui::SetNextItemWidth(char_width * (sizeof(aName->name) - 1 + 5));
+    ImGui::InputText("Atlas Name", &aName->name[0], sizeof(aName->name) - 1);
 
-    ImGui::Text("\nTexture info for \"%.*s\":", (int)sizeof(tex.filename), tex.filename);
-    ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex.height, tex.width, tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
-    const ImVec2 uv1 = ImVec2(tex.atlas_texcoords[0], tex.atlas_texcoords[1]);
-    const ImVec2 uv0 = ImVec2(uv1.x - ((float)tex.width / atlas.width), uv1.y - ((float)tex.height / atlas.height));
-    draw_image(window_0x10.gl_tex_id, tex.width, tex.height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
+    ImGui::Text("Atlas uses texture index %d, see 0x15 chunk for offset & format", window_0x10.selected_atlas);
+
+    ImGui::SetNextItemWidth(char_width * 15);
+    ImGui::InputU16("Atlas Height", &atlas->height);
+    ImGui::SetNextItemWidth(char_width * 15);
+    ImGui::InputU16("Atlas Width", &atlas->width);
+    ImGui::SetNextItemWidth(char_width * 15);
+    ImGui::InputU32("Atlas Texture Count", &atlas->tex_count);
+
+    // Draw the whole atlas
+    ImVec2 image_pos = draw_image(window_0x10.gl_tex_id, atlas->width, atlas->height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
+
+    // Calculate UVs of the selected texture in the atlas
+    const ImVec2 uv1 = ImVec2(tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
+    const ImVec2 uv0 = ImVec2(uv1.x - ((float)tex->width / atlas->width), uv1.y - ((float)tex->height / atlas->height));
+
+    // Draw a bounding box over a single texture in the atlas
+    const ImVec2 atlas_drawn_size = ImVec2(atlas->width, atlas->height) * window_0x10.scale_atlas;
+    const ImVec2 start = image_pos + (atlas_drawn_size * uv0);
+    const ImVec2 end = image_pos + (atlas_drawn_size * uv1);
+    ImGui::GetWindowDrawList()->AddRect(start, end, 0xFF00FF00);
+
+    ImGui::SetNextItemWidth(char_width * (sizeof(tex->filename) - 1 + 5));
+    ImGui::InputText("Texture Name", &tex->filename[0], sizeof(tex->filename) - 1);
+
+    ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex->height, tex->width, tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
+
+    draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
 void polaris::chunk::chunk_0x11(const polaris& pol) const noexcept {

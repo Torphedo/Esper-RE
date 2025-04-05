@@ -136,7 +136,7 @@ static_assert(sizeof(atlas_entry) == 0x14, "Wrong texture atlas metadata size!")
 // Represents a texture in an atlas
 typedef struct {
     u32 index; // The atlas index this texture belongs to
-    unsigned char filename[32];
+    char filename[32];
     u32 padding[2]; // Can't be a u64 because of struct padding
     float atlas_texcoords[2]; // This is often 1.0f
     u32 width;
