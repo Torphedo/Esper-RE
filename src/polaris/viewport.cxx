@@ -1,5 +1,6 @@
 #include "viewport.hxx"
-#include "polaris/renderlist.hxx"
+#include "renderlist.hxx"
+#include "polaris.hxx"
 #include <imgui.h>
 #include "imgui_utils.hxx"
 
@@ -10,7 +11,7 @@ extern "C" {
     #include <common/gl/input.h>
 }
 
-// We ought to split these shaders into other files, but the GLSL code is so
+// We ought to split these shaders into other files, but the code is so
 // trivial that it's not really worth it.
 const char* vertex_shader = R"(
 #version 330 core
@@ -126,7 +127,7 @@ void viewport_t::destroy() noexcept {
     }
 }
 
-void viewport_t::render_editor(const std::vector<gl_obj>& tex_array) noexcept {
+void viewport_t::render_editor(const polaris* pol) noexcept {
     if (!editor_enabled) {
         return;
     }
@@ -140,18 +141,18 @@ void viewport_t::render_editor(const std::vector<gl_obj>& tex_array) noexcept {
     // use the for loop style with a colon (or make sure you get a reference),
     // otherwise it'll run the menu on a copy and not modify the data
     mesh_view& mesh = meshes.at(selected_mesh);
-    mesh.edit_menu(tex_array);
+    mesh.edit_menu(pol);
 
     ImGui::End();
 }
 
-bool viewport_t::render_contents(GLFWwindow* window, const std::vector<gl_obj>& tex_array) noexcept {
+bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcept {
     if (!enabled || !initialized) {
         return false;
     }
 
     // Editor window
-    this->render_editor(tex_array);
+    this->render_editor(pol);
 
     // Calculate delta time every time we render
     static double prev_time = glfwGetTime();
@@ -233,7 +234,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const std::vector<gl_obj>& 
                 }
 
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, tex_array.at(idx_buf.albedo_tex_idx));
+                glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.albedo_tex_idx));
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 

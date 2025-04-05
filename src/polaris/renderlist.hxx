@@ -35,12 +35,17 @@ struct index_buffer {
     // TODO: Remove this remaining data pointer, since it's never used after construction
     const u8* data = nullptr;
     u32 num = 0; // Number of indices
+    u32 vertex_group = 0;
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
     u16 albedo_tex_idx = 0;
     u16 normal_tex_idx = 0;
     bool enabled = true; // Whether to render this index buffer
 };
+
+// We need a forward declaration instead of a header include, since a class
+// in this file is a member of polaris.
+class polaris;
 
 struct mesh_view {
     // Meshes tend to have 1 vertex buffer and many index buffers, so we store
@@ -93,5 +98,5 @@ struct mesh_view {
     bool apply_attributes();
 
     /// @brief ImGui menu to edit the mesh properties
-    void edit_menu(const std::vector<gl_obj>& tex_array);
+    void edit_menu(const polaris* pol);
 };

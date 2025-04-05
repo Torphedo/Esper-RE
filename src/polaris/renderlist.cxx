@@ -1,4 +1,6 @@
 #include "renderlist.hxx"
+#include "polaris.hxx"
+
 #include <cstdio>
 #include <imgui.h>
 #include "imgui_utils.hxx"
@@ -170,7 +172,7 @@ bool mesh_view::apply_attributes() {
     return true;
 }
 
-void mesh_view::edit_menu(const std::vector<gl_obj>& tex_array) {
+void mesh_view::edit_menu(const polaris* pol) {
     // Edit triangle mode
     const char* gl_type_strings[] = {
         "GL_TRIANGLES", "GL_TRIANGLE_STRIP", "GL_TRIANGLE_FAN", "GL_POINTS", "GL_LINES", "GL_LINE_STRIP",
@@ -237,6 +239,10 @@ void mesh_view::edit_menu(const std::vector<gl_obj>& tex_array) {
     ImGui::Text("Index buffers");
     ImGui::NewLine();
 
+    std::optional<gl_obj> copy_albedo;
+    std::optional<gl_obj> copy_normal;
+    std::optional<u32> prev_vertex_group;
+
     for (u32 i = 0; i < idx_buffers.size(); i++) {
         ImGui::Text("Index buffer %d", i);
         index_buffer& buf = idx_buffers.at(i);
@@ -246,16 +252,34 @@ void mesh_view::edit_menu(const std::vector<gl_obj>& tex_array) {
         ImGui::Checkbox(label, &buf.enabled);
 
         snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
-        ImGui::InputU16(label, &buf.albedo_tex_idx);
+        bool albedo_changed = ImGui::InputU16(label, &buf.albedo_tex_idx);
 
         snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
-        ImGui::InputU16(label, &buf.normal_tex_idx);
-        buf.normal_tex_idx %= tex_array.size();
+        bool normal_changed = ImGui::InputU16(label, &buf.normal_tex_idx);
+        buf.albedo_tex_idx %= pol->gl_textures.size();
+        buf.normal_tex_idx %= pol->gl_textures.size();
 
         snprintf(label, sizeof(label) - 1, "Show textures ##%d", i);
         if (ImGui::CollapsingHeader(label)) {
-            ImGui::Image(tex_array.at(buf.albedo_tex_idx), ImVec2(512, 512));
-            ImGui::Image(tex_array.at(buf.normal_tex_idx), ImVec2(512, 512));
+            ImGui::Image(pol->gl_textures.at(buf.albedo_tex_idx), ImVec2(512, 512));
+            ImGui::Image(pol->gl_textures.at(buf.normal_tex_idx), ImVec2(512, 512));
+        }
+
+        if (albedo_changed) {
+            copy_albedo = buf.albedo_tex_idx;
+            prev_vertex_group = buf.vertex_group;
+        }
+        if (normal_changed) {
+            copy_normal = buf.normal_tex_idx;
+            prev_vertex_group = buf.vertex_group;
+        }
+
+        // Copy texture indices if they were edited within this vertex group
+        if (copy_albedo.has_value() && buf.vertex_group == prev_vertex_group.value()) {
+            buf.albedo_tex_idx = copy_albedo.value();
+        }
+        if (copy_normal.has_value() && buf.vertex_group == prev_vertex_group.value()) {
+            buf.normal_tex_idx = copy_normal.value();
         }
 
         ImGui::NewLine();

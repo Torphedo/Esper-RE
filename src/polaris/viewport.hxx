@@ -6,6 +6,10 @@
 #include <vector>
 #include "camera.hxx"
 
+// We need a forward declaration instead of a header include, since a class
+// in this file is a member of polaris.
+class polaris;
+
 /// @brief Wrapper class for a custom viewport renderable in ImGui
 /// 
 /// The basic viewport functionality is pretty simple, mostly coming from here:
@@ -59,10 +63,10 @@ struct viewport_t {
     void destroy() noexcept;
 
     // Render an ImGui
-    void render_editor(const std::vector<gl_obj>& tex_array) noexcept;
+    void render_editor(const polaris* pol) noexcept;
 
     // Render a Dear ImGui window showing the viewport contents
-    bool render_contents(GLFWwindow* window, const std::vector<gl_obj>& tex_array) noexcept;
+    bool render_contents(GLFWwindow* window, const polaris* pol) noexcept;
 
     // Simple wrapper methods for those who like them
     void bind() const noexcept {

@@ -925,7 +925,7 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
         }
 
         const index_buffer idx_buf = {
-            ((u8*)vfile_cur(vf)), idx_chunk.num_indices(pol), 0,
+            ((u8*)vfile_cur(vf)), idx_chunk.num_indices(pol), header.vertex_buf,
         };
         mesh.add_index_buf(idx_buf);
     }
@@ -1361,7 +1361,8 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
         glfwGetFramebufferSize(window, &width, &height);
         viewport.setup(width, height);
     } else {
-        if (!viewport.render_contents(window, this->gl_textures)) {
+        // TODO: Is there a good way to get a const& to ourselves?
+        if (!viewport.render_contents(window, this)) {
             // We don't want to supress input if the viewport needs it
             this->handle_input_suppression();
         }
