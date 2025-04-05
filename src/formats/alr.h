@@ -112,7 +112,7 @@ static_assert(sizeof(atlas_header) == 0x18, "Wrong atlas chunk header size!");
 
 // After the header are [atlas_count] instances of this structure:
 typedef struct {
-    unsigned char name[0x10];
+    char name[0x10];
     u32 unk1;
     u32 unk2;
     u32 unk3;
@@ -126,7 +126,7 @@ typedef struct {
     u16 width;
     u16 height;
     u32 flags; // Unknown
-    u32 mipmap_count;
+    u32 tex_count;
     u32 unknown; // Often 4 or 8, sometimes counts up from 13?
     u32 pad;
 }atlas_entry;

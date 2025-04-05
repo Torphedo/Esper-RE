@@ -57,7 +57,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
         // understand why, but we can try to guess the correct number using the
         // other data we have.
 
-        // Size minus space used for surfaces
+        // Size minus space used for atlases
         const u32 texentries_size = header.size - 0x10 - (tex_header->atlas_count * (sizeof(atlas_entry) + sizeof(atlas_name)));
         tex_header->texture_count = texentries_size / sizeof(atlas_tex_entry);
         // tex_header->texture_count /= sizeof(atlas_tex_entry);
@@ -68,26 +68,26 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
     // &tex_header[1] = the address after the header.
     atlas_name* names = (atlas_name*)&tex_header[1];
 
-    atlas_entry* surfaces = (atlas_entry*)&names[tex_header->atlas_count];
-    atlas_tex_entry* textures = (atlas_tex_entry*)&surfaces[tex_header->atlas_count];
+    atlas_entry* atlases = (atlas_entry*)&names[tex_header->atlas_count];
+    atlas_tex_entry* textures = (atlas_tex_entry*)&atlases[tex_header->atlas_count];
 
     for (u32 i = 0; i < tex_header->atlas_count; i++) {
-        u32 pixel_count = surfaces[i].width * surfaces[i].height;
+        u32 pixel_count = atlases[i].width * atlases[i].height;
 
-        texture_meta[i].width = surfaces[i].width;
-        texture_meta[i].height = surfaces[i].height;
+        texture_meta[i].width = atlases[i].width;
+        texture_meta[i].height = atlases[i].height;
 
         // Mip count here includes base texture.
-        texture_meta[i].mipmap_count = surfaces[i].mipmap_count - 1;
+        // texture_meta[i].mipmap_count = atlases[i].tex_count - 1;
 
         // TODO: Make this also go into the textures folder. This would require
         // another allocation.
         texture_meta[i].filename = (char*)&names[i].name;
 
-        u32 total_pixel_count = full_pixel_count(surfaces[i].width, surfaces[i].height, surfaces[i].mipmap_count, false);
+        u32 total_pixel_count = full_pixel_count(atlases[i].width, atlases[i].height, 0, false);
 
-        LOG_MSG(info, "Surface %2d %-16s: %2d mip(s),", i, &names[i].name, surfaces[i].mipmap_count - 1);
-        printf(" 0x%05X pixels, %4dx%-4d (", total_pixel_count, surfaces[i].width, surfaces[i].height);
+        LOG_MSG(info, "Atlas %2d %-16s: %2d texture(s),", i, &names[i].name, atlases[i].tex_count);
+        printf(" 0x%05X pixels, %4dx%-4d (", total_pixel_count, atlases[i].width, atlases[i].height);
 
         printf("@ buf + 0x%X)\n", entries[i].data_ptr);
 
