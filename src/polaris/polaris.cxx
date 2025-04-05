@@ -555,9 +555,7 @@ void polaris::chunk::chunk_0x7(const polaris& pol) noexcept {
     }
 }
 
-static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept {
-    ImGui::Text("\nRendering settings (doesn't affect ALR data):");
-
+static ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept {
     // We need unique labels every time, so just combine some values that are
     // usually different. Texture ID is the same in a texture atlas and its
     // contents. This isn't foolproof but it works.
@@ -565,8 +563,13 @@ static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wind
     snprintf(label, sizeof(label), "Scale to window##%d%lf%s", tex_id, uv1.x, id);
     ImGui::Checkbox(label, scale_to_window);
 
-    snprintf(label, sizeof(label), "Render Scale ##%d%lf%s", tex_id, uv1.x, id);
-    ImGui::SliderFloat(label, scale_factor, 0.001f, 10.0f);
+    if (*scale_to_window) {
+        // Force view size == texture size to make auto-scaling work
+        *scale_factor = 1.0f;
+    } else {
+        snprintf(label, sizeof(label), "Render Scale ##%d%lf%s", tex_id, uv1.x, id);
+        ImGui::SliderFloat(label, scale_factor, 0.001f, 10.0f);
+    }
 
     // Scale the texture depending on the current settings.
     ImVec2 view_size = ImVec2((float)width * (*scale_factor), (float)height * (*scale_factor));
@@ -574,15 +577,26 @@ static void draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wind
         // We try to fill the space available to us
         const ImVec2 avail = ImGui::GetContentRegionAvail();
 
-        // Use the square resolution that fits within the available space
-        view_size.x = view_size.y = MIN(avail.x, avail.y);
+        // This is the scale on each axis that'll make the image fill the whole window
+        const ImVec2 scale_temp = avail / view_size;
 
-        // Scale by the aspect ratio to fix rectangular images
-        const float aspect = (float)width / (float)height;
-        view_size.y /= aspect;
+        // We scale by a uniform factor to preserve aspect ratio, so pick the
+        // closer axis (to keep the entire image in frame)
+
+        // Sometimes the scale ends up negative and I'm not sure why, so I just threw an fabsf() on it.
+        // - torph
+        const float new_scale = fabsf(MIN(scale_temp.x, scale_temp.y));
+
+        view_size *= new_scale;
+        // Some callers rely on accurate scale info, so pass it along
+        *scale_factor = new_scale;
     }
+
+    const ImVec2 image_pos = ImGui::GetCursorScreenPos();
     // TODO: Look into showing mipmap contents
     ImGui::Image(tex_id, view_size, uv0, uv1);
+
+    return image_pos;
 }
 
 void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
