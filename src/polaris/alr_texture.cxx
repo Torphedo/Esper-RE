@@ -12,7 +12,8 @@ const char* texformat_str(alr_pixel_format format) {
             out = "1-channel 8-bit raw";
             break;
         case FORMAT_RGBA8:
-        case FORMAT_RGBA8_ALT:
+        case FORMAT_RGBA8_2:
+        case FORMAT_RGBA8_3:
             out = "4-channel 8-bit raw [RGBA8]";
             break;
         case FORMAT_DXT1:
@@ -48,7 +49,8 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
             out.channels = 1;
             break;
         case FORMAT_RGBA8:
-        case FORMAT_RGBA8_ALT:
+        case FORMAT_RGBA8_2:
+        case FORMAT_RGBA8_3:
             out.channels = 4;
             break;
         case FORMAT_DXT1:
@@ -111,10 +113,10 @@ void update_gl_tex(texture img, gl_obj texture_id) {
                 format = GL_RG;
                 break;
             case 3:
-                format = GL_RGB;
+                format = GL_BGR;
                 break;
             default:
-                format = GL_RGBA;
+                format = GL_BGRA;
                 break;
         }
 

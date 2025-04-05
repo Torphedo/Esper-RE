@@ -38,8 +38,11 @@ typedef struct {
 static_assert(sizeof(texture_header) == 0xC, "Wrong texture metadata chunk header size!");
 
 typedef enum {
-    FORMAT_RGBA8 = 0b00000110,
-    FORMAT_RGBA8_ALT = 0b10010010, // These are both the same(?)
+    // These are all the same(?)
+    // TODO: Why are so many images BRGA?
+    FORMAT_RGBA8 =   0b00000110,
+    FORMAT_RGBA8_2 = 0b10010010,
+    FORMAT_RGBA8_3 = 0b10000110,
     FORMAT_DXT1 = 0b00001100,
     FORMAT_DXT3 = 0b00001110,
     FORMAT_DXT5 = 0b00001111,
