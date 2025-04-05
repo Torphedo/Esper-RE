@@ -158,7 +158,7 @@ struct polaris {
     bool show_demo = false;
 
     // Whether we're running without graphics.
-    bool headless = false;
+    bool headless = true;
 
     // Input state from the previous frame
     input_internal prev_input = {};
@@ -192,7 +192,7 @@ struct polaris {
     /// @brief Increase the amount of address space reserved for the ALR data
     void expand_reservation(s64 new_size) noexcept;
 
-    polaris(bool headless = false) noexcept;
+    polaris() noexcept;
     ~polaris() noexcept {
         viewport.destroy();
         this->unload_gl_textures();

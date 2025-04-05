@@ -127,6 +127,7 @@ int main(int argc, char** argv) {
     }
 
     if (argc < 3) {
+        pol.headless = false;
         // No special arguments, run in normal graphical mode.
         // polaris::do_gui() has the real UI code, and is basically the real entry
         // point. Sorry for the kind of unintuitive structure.

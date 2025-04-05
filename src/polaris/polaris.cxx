@@ -1077,9 +1077,7 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
 // =============================================================================
 // The rest of this file is for the main Polaris class
 
-polaris::polaris(bool headless) noexcept {
-    this->headless = headless;
-
+polaris::polaris() noexcept {
     // TODO: Add an option to commit on reserve in bobtail
     // TODO: Look into MEM_RESET to reduce impact on page file?
 
@@ -1160,31 +1158,41 @@ void polaris::handle_input_suppression() noexcept {
 }
 
 bool polaris::load_alr(const char* path) noexcept {
-    const s64 size = file_size(path);
-    if (size > 8) {
-        // Expand reservation if needed
-        if (size > reserve_size) {
-            // If our reservation needs resizing, we're dealing with a
-            // truly massive file. Just add its size to the old size,
-            // more space can never hurt.
-            this->expand_reservation(reserve_size + size);
-        }
-
-        // Load the file into the buffer.
-        if (!file_load_existing(path, alr_data, size)) {
-            // Some loading failure, an error message should've been printed
-            return false;
-        }
-        alr_size = size;
-        chunks = shatter_alr(alr_data, alr_size);
-        this->textures_need_reload = true;
-        return true;
-    } else {
+    if (!file_exists(path)) {
+        LOG_MSG(error, "I couldn't find an ALR file named \"%s\".\n", path);
         return false;
     }
+
+    const s64 size = file_size(path);
+    if (size < 8) {
+        // Smallest possible ALR chunk is 8 bytes
+        LOG_MSG(error, "\"%s\" is only %d bytes, but an ALR must be at least 8 bytes.\n", path, size);
+        return false;
+    }
+
+    // Expand reservation if needed
+    if (size > reserve_size) {
+        // If our reservation needs resizing, we're dealing with a
+        // truly massive file. Just add its size to the old size,
+        // more space can never hurt.
+        this->expand_reservation(reserve_size + size);
+    }
+
+    // Load the file into the buffer.
+    if (!file_load_existing(path, alr_data, size)) {
+        // Some loading failure, an error message should've been printed
+        return false;
+    }
+    alr_size = size;
+    chunks = shatter_alr(alr_data, alr_size);
+    this->textures_need_reload = true;
+    return true;
 }
 
 void polaris::unload_gl_textures() noexcept {
+    if (headless) {
+        return;
+    }
     glDeleteTextures(gl_textures.size(), gl_textures.data());
     gl_textures.clear();
 }
