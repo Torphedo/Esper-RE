@@ -1,11 +1,12 @@
 #include <cmath>
 #include <cstdio>
+
 #include <glad/glad.h>
+#include <nfd.h>
+#include <cglm/struct.h>
 #include <imgui_curve.hpp>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <cglm/struct.h>
-#include <nfd.h>
 
 #include <common/int.h>
 #include <common/vfile.h>
@@ -19,7 +20,6 @@
 #include "alr_texture.hxx"
 #include "pd_mesh.hxx"
 #include "imgui_utils.hxx"
-#include "polaris/renderlist.hxx"
 #include "polaris.hxx"
 
 enum {
