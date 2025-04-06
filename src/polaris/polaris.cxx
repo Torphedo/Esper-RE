@@ -391,6 +391,9 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         return;
     }
 
+    const float char_width = ImGui::CalcTextSize("1").x;
+    const float editing_width = char_width * num_components * 12;
+
     // Each keyframe has a frame value (when it happens) and components (for 3D
     // translation/rotation/scale, or weird stuff like brightness values).
     vfile vf = vfile_open(keyframes, key_count * key_size);
@@ -404,6 +407,7 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
 
         // Display the input fields
+        ImGui::SetNextItemWidth(editing_width);
         ImGui::InputScalar(frame_label, frame_type, vfile_cur(vf));
 
         // Skip over frame value
@@ -414,6 +418,7 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
             vfile_seek(&vf, sizeof(u8));
         }
 
+        ImGui::SetNextItemWidth(editing_width);
         ImGui::InputScalarN(component_label, component_type, vfile_cur(vf), num_components);
 
         // Space between keys keeps things readable
@@ -568,6 +573,7 @@ static ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wi
         *scale_factor = 1.0f;
     } else {
         snprintf(label, sizeof(label), "Render Scale ##%d%lf%s", tex_id, uv1.x, id);
+        ImGui::SetNextItemWidth(ImGui::CalcTextSize("1").x * 16);
         ImGui::SliderFloat(label, scale_factor, 0.001f, 10.0f);
     }
 
@@ -867,6 +873,9 @@ void polaris::chunk::chunk_0x15(polaris& pol) noexcept {
 
 
     ImGui::Text("2^(resolution power) = width = height");
+
+    const float char_width = ImGui::CalcTextSize("1").x;
+    ImGui::SetNextItemWidth(char_width * 16);
     const u8 step_pwr = 1; // Step for the resolution power input
     ImGui::InputU8("Resolution power", &entry->resolution_pwr, step_pwr);
     // This limits resolution to 4096^2, which is plenty for our use case

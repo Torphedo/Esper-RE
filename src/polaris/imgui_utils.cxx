@@ -49,6 +49,8 @@ namespace ImGui {
             size *= 2;
         }
 
+        ImGui::SetNextItemWidth(ImGui::CalcTextSize("1").x * (size + 2));
+
         // TODO: Look into using a character filter callback to only allow the
         // characters that can be encoded.
         const bool edited = ImGui::InputText(label, buf.data, size + 1);
