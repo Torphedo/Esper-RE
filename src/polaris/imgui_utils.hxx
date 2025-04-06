@@ -43,4 +43,18 @@ namespace ImGui {
     bool InputU64(const char* label, u64* data, u64 step = 1, u64 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
 
     bool InputS64(const char* label, s64* data, s64 step = 1, s64 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+
+    struct graph_info {
+        void* data;
+        u16 count;
+        u16 stride;
+        u16 offset_x;
+        u16 offset_y;
+        ImGuiDataType type_x;
+        ImGuiDataType type_y;
+        ImVec2 translation;
+        float scale;
+    };
+
+    void GraphData(const graph_info& info);
 }

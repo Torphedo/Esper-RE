@@ -106,8 +106,62 @@ bool InputS64(const char* label, s64* data, s64 step, s64 step_fast, const char*
     return ImGui::InputScalar(label, ImGuiDataType_S64, data, &step, &step_fast, format, flags);
 }
 
+void GraphData(const graph_info& info) {
+    const float scale = 10.0f;
 
+    const ImVec2 canvas_size(300, 300);
+    const ImVec2 canvas_start = ImGui::GetCursorScreenPos();
+    const ImVec2 canvas_end = canvas_start + canvas_size;
+    const ImVec2 canvas_center = canvas_start + (ImVec2(0, canvas_size.y / 2));
+    ImGui::InvisibleButton("canvas", canvas_size, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
 
+    // Draw graph background
+    ImDrawList* drawlist = ImGui::GetWindowDrawList();
+    drawlist->AddRectFilled(canvas_start, canvas_end, IM_COL32(50, 50, 50, 255));
+    drawlist->AddRect(canvas_start, canvas_end, IM_COL32(255, 255, 255, 255));
+
+    vfile vf = vfile_open(info.data, info.count * info.stride);
+
+    ImVec2 prev_coord(0, 0);
+    for (u32 i = 0; i < info.count; i++) {
+        const u64 next_pos = vf.pos + info.stride;
+        float frame = 0.0f;
+        switch (info.type_x) {
+        case ImGuiDataType_Float:
+            frame = VFILE_READ(float, &vf);
+            break;
+        case ImGuiDataType_U8:
+            frame = VFILE_READ(u8, &vf);
+            break;
+        default:
+            break;
+        }
+
+        // Skip to the component we want and read it
+        vfile_seek(&vf, info.offset_y);
+        float val = 0.0f;
+        switch (info.type_y) {
+        case ImGuiDataType_Float:
+            val = VFILE_READ(float, &vf);
+            break;
+        case ImGuiDataType_U16:
+            val = (VFILE_READ(u16, &vf)) / (float)INT16_MAX;
+            break;
+        default:
+            break;
+        }
+
+        const ImVec2 cur_coord = canvas_center + ImVec2(frame, -val) * scale;
+        if (i == 0) {
+            prev_coord = cur_coord;
+        } else {
+            drawlist->AddLine(prev_coord, cur_coord, 0xFF0000FF);
+        }
+        prev_coord = cur_coord;
+
+        // Skip to next key
+        vf.pos = next_pos;
     }
+}
 
 } // namespace ImGui
