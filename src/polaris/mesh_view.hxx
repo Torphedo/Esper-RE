@@ -20,7 +20,6 @@ static const char* attribute_names[] = {
 // Vertex attribute data for glVertexAttribPointer()
 struct vertex_attribute {
     u16 type = GL_FLOAT; // Data type like GL_FLOAT, GL_UNSIGNED_BYTE, etc.
-    u16 stride = 0;
     u16 offset = 0;
     u8 components = 1; // This can only be between 1 and 4
     // Whether this is an unused entry (the poor man's reverse std::optional).
@@ -57,6 +56,7 @@ struct mesh_view {
     // user-editable and make a whole complex dynamic uniform system, or just
     // keep it simple with a static array and update the shader when needed.
     vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {0};
+    u16 vertex_size = 0;
     gl_obj vbo = 0;
     gl_obj vao = 0;
 

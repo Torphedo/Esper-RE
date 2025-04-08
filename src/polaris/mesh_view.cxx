@@ -1,4 +1,5 @@
 #include "mesh_view.hxx"
+#include "pd_mesh.hxx"
 #include "polaris.hxx"
 
 #include <cstdio>
@@ -25,7 +26,6 @@ void vertex_attribute::edit_menu() {
     const u8 max_components = 4;
     ImGui::SliderScalar("# Components", ImGuiDataType_U8, &components, &min_components, &max_components);
 
-    ImGui::InputU16("Stride (vertex size)", &stride);
     ImGui::InputU16("Offset", &offset);
     ImGui::Checkbox("Disable attribute", &empty);
 
@@ -142,29 +142,12 @@ bool mesh_view::apply_attributes() {
         }
 
         if (use_type_divisor) {
-            switch (attr.type) {
-            case GL_BYTE:
-                uv_divisor = INT8_MAX;
-                break;
-            case GL_UNSIGNED_BYTE:
-                uv_divisor = UINT8_MAX;
-                break;
-            case GL_SHORT:
-                uv_divisor = INT16_MAX;
-                break;
-            case GL_UNSIGNED_SHORT:
-                uv_divisor = UINT16_MAX;
-                break;
-            case GL_FLOAT:
-                // This doesn't really apply
-                uv_divisor = 1;
-                break;
-            }
+            uv_divisor = gl_type_max(attr.type);
         }
 
         // Update vertex format w/ OpenGL
         glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i, attr.components, attr.type, GL_FALSE, attr.stride, (void*)(u64)attr.offset);
+        glVertexAttribPointer(i, attr.components, attr.type, GL_FALSE, this->vertex_size, (void*)(u64)attr.offset);
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -204,6 +187,7 @@ void mesh_view::edit_menu(const polaris* pol) {
         }
         ImGui::EndCombo();
     }
+    ImGui::InputU16("Vertex size", &this->vertex_size);
 
     // Save new primitive type if needed
     draw_mode = gl_types[current_type];

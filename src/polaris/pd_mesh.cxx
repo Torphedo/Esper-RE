@@ -2,50 +2,85 @@
 
 #include <common/vfile.h>
 
-// Table of known vertex formats we can look up by size
+u16 gl_type_size(u16 type) {
+    switch (type) {
+    case GL_FLOAT:
+    case GL_UNSIGNED_INT:
+    case GL_INT:
+        return 4;
+    case GL_UNSIGNED_SHORT:
+    case GL_SHORT:
+        return 2;
+    case GL_UNSIGNED_BYTE:
+    case GL_BYTE:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+u32 gl_type_max(u16 type) {
+    switch (type) {
+    case GL_UNSIGNED_INT:
+        return UINT32_MAX;
+    case GL_INT:
+        return INT32_MAX;
+    case GL_UNSIGNED_SHORT:
+        return UINT16_MAX;
+    case GL_SHORT:
+        return INT16_MAX;
+    case GL_UNSIGNED_BYTE:
+        return UINT8_MAX;
+    case GL_BYTE:
+        return INT8_MAX;
+    default:
+        return 1;
+    }
+}
+
+// Table of known vertex formats we can look up by size. If an attribute
+// doesn't have an offset listed, that means it comes immediately after the
+// last attribute. This can be overidden by setting an explicit offset.
 mesh_view known_formats[] = {
     {
         .attributes = {
             [ATTRIBUTE_POSITION] = {
                 .type = GL_FLOAT,
-                .stride = 12,
                 .components = 3,
             },
             [ATTRIBUTE_TEXCOORD] = {
                 .empty = true,
             },
         },
+        .vertex_size = 12,
     },
     {
         .attributes = {
             [ATTRIBUTE_POSITION] = {
                 .type = GL_FLOAT,
-                .stride = 24,
                 .components = 3,
             },
             [ATTRIBUTE_TEXCOORD] = {
                 .type = GL_SHORT,
-                .stride = 24,
-                .offset = 12,
                 .components = 2,
             },
         },
+        .vertex_size = 24,
         .use_type_divisor = true,
     },
     {
         .attributes = {
             [ATTRIBUTE_POSITION] = {
                 .type = GL_FLOAT,
-                .stride = 32,
                 .components = 3,
             },
             [ATTRIBUTE_TEXCOORD] = {
-                .type = GL_UNSIGNED_SHORT,
-                .stride = 32,
+                .type = GL_SHORT,
                 .offset = 16,
                 .components = 2,
             },
         },
+        .vertex_size = 32,
         .uv_divisor = 4096,
         .use_type_divisor = false,
     },
@@ -53,7 +88,7 @@ mesh_view known_formats[] = {
 
 std::optional<mesh_view> find_format_by_size(u8 size) {
     for (u32 i = 0; i < ARRAY_SIZE(known_formats); i++) {
-        if (known_formats[i].attributes[0].stride == size) {
+        if (known_formats[i].vertex_size == size) {
             // This format is a match!
             return known_formats[i];
         }
@@ -111,18 +146,26 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
 }
 
 void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header) {
+
     // Search our table of known formats
     std::optional<mesh_view> format = find_format_by_size(vert_header.vertex_size);
 
     if (!format.has_value()) {
-        // Couldn't find a matching format...
-        return;
+        // Couldn't find a matching format... try our best guess.
+        format = known_formats[0];
     }
 
     // Copy format data to the output
-    out->use_type_divisor = format.value().use_type_divisor;
-    out->uv_divisor = format.value().uv_divisor;
+    out->vertex_size = vert_header.vertex_size;
+    out->use_type_divisor = format->use_type_divisor;
+    out->uv_divisor = format->uv_divisor;
     for (u32 i = 0; i < ARRAY_SIZE(out->attributes); i++) {
-        out->attributes[i] = format.value().attributes[i];
+        out->attributes[i] = format->attributes[i];
+        if (i > 0 && out->attributes[i].offset == 0) {
+            // Guess the correct offset based on the last one
+            const vertex_attribute prev_attr = format->attributes[i - 1];
+            vertex_attribute& cur_attr = out->attributes[i];
+            cur_attr.offset = prev_attr.offset + (prev_attr.components * gl_type_size(prev_attr.type));
+        }
     }
 }
