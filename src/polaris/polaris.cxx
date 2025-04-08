@@ -186,6 +186,32 @@ void polaris::chunk::dump_vertex_buf(const polaris& pol, const char* path, vertb
     }
 }
 
+void polaris::chunk::chunk_0x1(const polaris& pol) noexcept {
+    CHUNK_ID_ASSERT(0x1);
+
+    vfile vf = vfile_open(pol.alr_data, pol.alr_size);
+    vf.pos = this->offset;
+    const chunk_0x1_header header = VFILE_READ(chunk_0x1_header, &vf);
+    auto entries = (chunk_0x1_entry*) vfile_cur(vf);
+
+    ImGui::BeginChild("Entries", ImVec2(300, 0));
+    for (u32 i = 0; i < header.num_entries; i++) {
+        char buf[0x30] = {0};
+        snprintf(buf, sizeof(buf) - 1, "Entry #%d", i);
+
+        const bool is_selected = window_0x1.selected_entry == i;
+        if (ImGui::Selectable(buf, is_selected)) {
+            window_0x1.selected_entry = i;
+        }
+    }
+
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    chunk_0x1_entry* entry = &entries[window_0x1.selected_entry];
+    hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)pol.alr_data);
+}
+
 void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
     CHUNK_ID_ASSERT(0x2);
 
@@ -973,6 +999,9 @@ void polaris::chunk::draw(polaris& pol) noexcept {
     if (ImGui::BeginTabBar("Chunk Tabs")) {
         if (ImGui::BeginTabItem("Specialized Chunk Editor")) {
             switch (id) {
+                case 0x1:
+                    this->chunk_0x1(pol);
+                    break;
                 case 0x2:
                     this->chunk_0x2(pol);
                     break;

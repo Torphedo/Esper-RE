@@ -13,6 +13,11 @@ extern "C" {
     #include <common/gl/input.h>
 }
 
+// State for 0x1 (index buffer) window
+struct window_state_0x1 {
+    u32 selected_entry = 0;
+};
+
 // State for 0x2 (index buffer) window
 struct window_state_0x2 {
     bool trust_alr_tri_count = false;
@@ -71,6 +76,7 @@ struct polaris {
         // zero-initialized. Otherwise it's kind of a pain.
         // TODO: See if we can use std::variant or inheritance to make it harder to call functions on the wrong chunk type
         union {
+            window_state_0x1 window_0x1;
             window_state_0x2 window_0x2;
             window_state_0x3 window_0x3;
             window_state_0x5 window_0x5;
@@ -103,6 +109,7 @@ struct polaris {
         void draw(polaris& pol) noexcept;
 
         // Dedicated editing windows for each chunk type
+        void chunk_0x1(const polaris& pol) noexcept;
         void chunk_0x2(const polaris& pol) noexcept;
         void chunk_0x3(const polaris& pol) noexcept;
         void chunk_0x5(const polaris& pol) noexcept;

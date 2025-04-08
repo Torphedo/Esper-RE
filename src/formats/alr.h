@@ -263,10 +263,33 @@ static_assert(sizeof(idxbuf_header) == 0x60, "Wrong index buffer header size!");
 typedef struct {
     u32 id;
     u32 chunk_size;
-    u16 sub_chunk_count; // Each sub-chunk is 0x4C large
+    u16 num_entries; // Each entry is 0x4C bytes
     u16 unknown;
 }chunk_0x1_header;
 static_assert(sizeof(chunk_0x1_header) == 0xC, "Wrong 0x1 chunk header size!");
+
+typedef struct {
+    u8 unk1[4]; // 4
+    u32 unk2; // 8
+    u32 unk3; // Usually 0? // C
+    u16 unk4; // E
+    u16 unk5; // 10
+    u16 unk6; // 12
+    u16 unk7; // 14
+    u16 unk8; // 16
+    u16 unk9; // 18
+    u32 texture_idx; // 1C
+    u16 normal_idx;
+    u16 reflect_idx;
+    u32 pad[4];
+    u8 unk10[4];
+    u8 unk11[4];
+    u32 pad2;
+    u32 unk12;
+    u16 unk13[2];
+    u32 pad3[2];
+}chunk_0x1_entry;
+static_assert(sizeof(chunk_0x1_entry) == 0x4C, "Wrong 0x1 chunk entry size!");
 
 // The common ID and size that come at the start of any chunk.
 typedef struct {
