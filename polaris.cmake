@@ -3,7 +3,8 @@ project(polaris
     VERSION 1.0.0
     LANGUAGES CXX C
 )
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 
 # Add ImGui as a library
 add_library(imgui STATIC

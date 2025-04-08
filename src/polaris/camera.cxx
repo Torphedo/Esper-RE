@@ -23,11 +23,11 @@ float clampf(float x, float min, float max) {
 // rotation angles
 vec3s orbit_pos_by_angles(camera& cam) {
     // Get combined quaternion of rotation about Y & Z axes
-    const versors xrot = glms_quatv(cam.orbit_angles.x, (vec3s){0, 1, 0});
-    const versors yrot = glms_quatv(cam.orbit_angles.y, (vec3s){0, 0, 1});
+    const versors xrot = glms_quatv(cam.orbit_angles.x, {0, 1, 0});
+    const versors yrot = glms_quatv(cam.orbit_angles.y, {0, 0, 1});
     const versors total_rot = glms_quat_mul(xrot, yrot);
 
-    vec3s pos_difference = glms_quat_rotatev(total_rot, (vec3s){cam.radius,0,0});
+    vec3s pos_difference = glms_quat_rotatev(total_rot, {cam.radius,0,0});
     return pos_difference;
 }
 
@@ -40,8 +40,8 @@ vec2s get_cursor_delta(camera& cam, vec2s cursor_pos) {
     }
 
     vec2s cursor_delta = {
-        .x = (cursor_pos.x - last_cursor.x) * cam.mouse_sens,
-        .y = (cursor_pos.y - last_cursor.y) * cam.mouse_sens
+        (cursor_pos.x - last_cursor.x) * cam.mouse_sens,
+        (cursor_pos.y - last_cursor.y) * cam.mouse_sens
     };
 
     // Save state so we can find the delta next time we're called
@@ -69,15 +69,15 @@ void camera::update(double delta_time) noexcept {
     const vec2s cursor_delta = get_cursor_delta(*this, input.cursor);
 
     const vec2s scroll_delta = {
-        .x = input.scroll.x - last_scroll.x,
-        .y = input.scroll.y - last_scroll.y
+        input.scroll.x - last_scroll.x,
+        input.scroll.y - last_scroll.y
     };
     // Save state so we can find the delta next time we're called
     last_scroll = input.scroll;
 
 
     const vec3s cam_dir = this->facing();
-    const float multiplier = delta_time * move_speed;
+    const float multiplier = (float)delta_time * move_speed;
 
     // This just sets each axis to zero if it's below the deadzone threshold
     const float LS_x = input.LS.x * (fabsf(input.LS.x) > deadzone);
@@ -88,7 +88,7 @@ void camera::update(double delta_time) noexcept {
     float vertical = multiplier * ((input.space - input.shift) + (input.RT - input.LT));
 
     // Exclude vertical view component so it doesn't affect horizontal movement
-    vec3s horizontal = glms_normalize((vec3s){cam_dir.x, 0, cam_dir.z});
+    vec3s horizontal = glms_normalize({cam_dir.x, 0, cam_dir.z});
     const vec3s cam_side = glms_vec3_rotate(horizontal, glm_rad(90), camera_up);
     // Make forward/back move along camera vector in fly mode
     if (mode == CAMERA_FLY) {

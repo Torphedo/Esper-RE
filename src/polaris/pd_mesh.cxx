@@ -44,11 +44,11 @@ u32 gl_type_max(u16 type) {
 mesh_view known_formats[] = {
     {
         .attributes = {
-            [ATTRIBUTE_POSITION] = {
+            { // Position
                 .type = GL_FLOAT,
                 .components = 3,
             },
-            [ATTRIBUTE_TEXCOORD] = {
+            { // Texcoord
                 .empty = true,
             },
         },
@@ -56,11 +56,11 @@ mesh_view known_formats[] = {
     },
     {
         .attributes = {
-            [ATTRIBUTE_POSITION] = {
+            { // Position
                 .type = GL_FLOAT,
                 .components = 3,
             },
-            [ATTRIBUTE_TEXCOORD] = {
+            { // Texcoord
                 .type = GL_SHORT,
                 .components = 2,
             },
@@ -70,11 +70,11 @@ mesh_view known_formats[] = {
     },
     {
         .attributes = {
-            [ATTRIBUTE_POSITION] = {
+            { // Position
                 .type = GL_FLOAT,
                 .components = 3,
             },
-            [ATTRIBUTE_TEXCOORD] = {
+            { // Texcoord
                 .type = GL_SHORT,
                 .offset = 16,
                 .components = 2,
