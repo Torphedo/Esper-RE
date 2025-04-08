@@ -43,6 +43,9 @@ u32 gl_type_max(u16 type) {
 // last attribute. This can be overidden by setting an explicit offset.
 mesh_view known_formats[] = {
     {
+        // Sorry I have to use a comment to say what the attributes are. I was
+        // using array designators with enum indices, but C++ doesn't support
+        // that :( - torph
         .attributes = {
             { // Position
                 .type = GL_FLOAT,
@@ -62,11 +65,11 @@ mesh_view known_formats[] = {
             },
             { // Texcoord
                 .type = GL_SHORT,
+                .offset = 12,
                 .components = 2,
             },
         },
         .vertex_size = 24,
-        .use_type_divisor = true,
     },
     {
         .attributes = {
@@ -76,13 +79,25 @@ mesh_view known_formats[] = {
             },
             { // Texcoord
                 .type = GL_SHORT,
-                .offset = 16,
+                .offset = 12,
+                .components = 2,
+            },
+        },
+        .vertex_size = 28,
+    },
+    {
+        .attributes = {
+            { // Position
+                .type = GL_FLOAT,
+                .components = 3,
+            },
+            { // Texcoord
+                .type = GL_SHORT,
+                .offset = 12,
                 .components = 2,
             },
         },
         .vertex_size = 32,
-        .uv_divisor = 4096,
-        .use_type_divisor = false,
     },
 };
 

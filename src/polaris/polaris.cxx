@@ -901,37 +901,60 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
     get_vert_attribute(&mesh, entry);
     mesh.apply_attributes();
 
+    const chunk_0x1_entry* texinfo_entries = nullptr;
     // Upload the index buffers
-    for (chunk idx_chunk : pol.chunks) {
-        if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
+    for (chunk chunk : pol.chunks) {
+        if (chunk.id == 0x1 && chunk.offset < this->offset) {
+            // Skip to chunk and get header
+            vf.pos = chunk.offset;
+            const chunk_0x1_header header = VFILE_READ(chunk_0x1_header, &vf);
+            texinfo_entries = (chunk_0x1_entry*) vfile_cur(vf);
+        }
+
+        if (chunk.id == this->id && chunk.offset > this->offset) {
             // We've hit a mesh metadata chunk past our own, so any
             // further index buffers will be garbage data to us. Quit.
             break;
         }
 
-        if (idx_chunk.id != 0x2 || idx_chunk.offset < offset) {
-            // We only want index buffer chunks for the current mesh
-            continue;
+        // We only want index buffer chunks for the current mesh
+        if (chunk.id == 0x2 && chunk.offset >= offset) {
+            // Skip to chunk and get header
+            vf.pos = chunk.offset + sizeof(chunk_generic);
+            const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
+            // We only want index buffers meant for this vertex buffer
+            if (idx_header.vertex_buf != window_0x16.selected_vertex_buf && idx_header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+                continue;
+            }
+
+            // This seems to be a reliable indicator of triangle strip meshes
+            if (idx_header.unk3 == IDX_TYPE_STRIP) {
+                mesh.draw_mode = GL_TRIANGLE_STRIP;
+            }
+
+            u16 albedo_texture_idx = 0;
+            u16 normal_texture_idx = 0;
+            if (texinfo_entries != nullptr) {
+                albedo_texture_idx = texinfo_entries[idx_header.vertex_buf].texture_idx; 
+                normal_texture_idx = texinfo_entries[idx_header.vertex_buf].normal_idx; 
+            }
+
+            const index_buffer idx_buf = {
+                .data = ((u8*)vfile_cur(vf)),
+                .num = chunk.num_indices(pol),
+                .albedo_tex_idx = albedo_texture_idx,
+                .normal_tex_idx = normal_texture_idx,
+            };
+            mesh.add_index_buf(idx_buf);
         }
+    }
 
-        // Skip to idx_chunk and skip header
-        vf.pos = idx_chunk.offset + sizeof(chunk_generic);
-        const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
-
-        // We only want index buffers meant for this vertex buffer
-        if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
-            continue;
-        }
-
-        // This seems to be a reliable indicator of triangle strip meshes
-        if (header.unk3 == IDX_TYPE_STRIP) {
-            mesh.draw_mode = GL_TRIANGLE_STRIP;
-        }
-
-        const index_buffer idx_buf = {
-            ((u8*)vfile_cur(vf)), idx_chunk.num_indices(pol), header.vertex_buf,
-        };
-        mesh.add_index_buf(idx_buf);
+    // This is a dirty hack but seems to work... - torph
+    if (mesh.draw_mode == GL_TRIANGLE_STRIP) {
+        mesh.attributes[ATTRIBUTE_TEXCOORD].offset += 4;
+        mesh.use_type_divisor = false;
+        mesh.uv_divisor = 4096;
+        mesh.apply_attributes();
     }
     pol.viewport.meshes.push_back(mesh);
 }
