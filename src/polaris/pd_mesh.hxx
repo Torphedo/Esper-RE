@@ -3,6 +3,8 @@
 
 #include <cglm/struct.h>
 #include <common/int.h>
+#include <formats/alr.h>
+#include "mesh_view.hxx"
 
 // Standardized vertex format that can express all known Phantom Dust vertex
 // formats. Will change often as new information is found.
@@ -25,3 +27,5 @@ bool has_uvs(u8 vert_size);
 /// @param vert_size The expected size of the vertex
 /// @return A vertex in standard format
 std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size);
+
+void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header);

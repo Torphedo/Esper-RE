@@ -2,11 +2,74 @@
 
 #include <common/vfile.h>
 
+// Table of known vertex formats we can look up by size
+mesh_view known_formats[] = {
+    {
+        .attributes = {
+            [ATTRIBUTE_POSITION] = {
+                .type = GL_FLOAT,
+                .stride = 12,
+                .components = 3,
+            },
+            [ATTRIBUTE_TEXCOORD] = {
+                .empty = true,
+            },
+        },
+    },
+    {
+        .attributes = {
+            [ATTRIBUTE_POSITION] = {
+                .type = GL_FLOAT,
+                .stride = 24,
+                .components = 3,
+            },
+            [ATTRIBUTE_TEXCOORD] = {
+                .type = GL_SHORT,
+                .stride = 24,
+                .offset = 12,
+                .components = 2,
+            },
+        },
+        .use_type_divisor = true,
+    },
+    {
+        .attributes = {
+            [ATTRIBUTE_POSITION] = {
+                .type = GL_FLOAT,
+                .stride = 32,
+                .components = 3,
+            },
+            [ATTRIBUTE_TEXCOORD] = {
+                .type = GL_UNSIGNED_SHORT,
+                .stride = 32,
+                .offset = 16,
+                .components = 2,
+            },
+        },
+        .uv_divisor = 4096,
+        .use_type_divisor = false,
+    },
+};
+
+std::optional<mesh_view> find_format_by_size(u8 size) {
+    for (u32 i = 0; i < ARRAY_SIZE(known_formats); i++) {
+        if (known_formats[i].attributes[0].stride == size) {
+            // This format is a match!
+            return known_formats[i];
+        }
+    }
+
+    // Return blank optional
+    const std::optional<mesh_view> result;
+    return result;
+}
+
 bool has_uvs(u8 vert_size) {
     // Known formats with UVs
     return vert_size == 24 || vert_size == 32 || vert_size == 20;
 }
 
+// TODO: Make this also use the format table.
 std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
     std_vertex output = {};
     // Get a virtual file for the buffer
@@ -45,4 +108,21 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
     }
 
     return output;
+}
+
+void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header) {
+    // Search our table of known formats
+    std::optional<mesh_view> format = find_format_by_size(vert_header.vertex_size);
+
+    if (!format.has_value()) {
+        // Couldn't find a matching format...
+        return;
+    }
+
+    // Copy format data to the output
+    out->use_type_divisor = format.value().use_type_divisor;
+    out->uv_divisor = format.value().uv_divisor;
+    for (u32 i = 0; i < ARRAY_SIZE(out->attributes); i++) {
+        out->attributes[i] = format.value().attributes[i];
+    }
 }

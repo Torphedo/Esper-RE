@@ -872,10 +872,7 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
     const u8* vertex_buf = (u8*)vfile_cur(vf);
     mesh.update_vertex_buf(vertex_buf, entry.vertex_size * entry.vertex_count);
 
-    // Set vertex attributes
-    mesh.attributes[ATTRIBUTE_POSITION] = {
-        GL_FLOAT, entry.vertex_size, 0, 3,
-    };
+    get_vert_attribute(&mesh, entry);
     mesh.apply_attributes();
 
     // Upload the index buffers
