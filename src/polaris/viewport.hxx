@@ -49,7 +49,7 @@ struct viewport_t {
     // Camera, misc. rendering state
     camera cam;
     bool cursor_lock = false;
-    bool wireframe = true;
+    bool wireframe = false;
     bool cull_back_faces = true;
 
     std::vector<mesh_view> meshes;
