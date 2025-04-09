@@ -38,11 +38,11 @@ in vec2 texcoord;
 uniform sampler2D albedo_texture;
 
 void main() {
-    // fragment_rgba = vec4(texcoord, 0.0f, 1.0f);
     fragment_rgba = texture(albedo_texture, texcoord);
-
-    // Solid yellow
-    // fragment_rgba = vec4(1.0f, 0.906f, 0.258f, 1.0f);
+    // TODO: Do alpha blending here. This is low-priority since most textures have BC1 1-bit alpha (except for a few normal maps).
+    if (fragment_rgba.a < 0.1) {
+        discard;
+    }
 }
 )";
 
