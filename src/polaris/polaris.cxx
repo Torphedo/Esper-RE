@@ -349,6 +349,35 @@ void polaris::chunk::chunk_0x3(const polaris& pol) noexcept {
     joint_t* joint = &joints[window_0x3.selected_joint];
     ImGui::InputPDString("Joint Name", &joint->name);
     ImGui::Text("Parent index: %d", joint->parent_idx);
+    ImGui::InputU16("Unknown 1", &joint->unk1);
+    ImGui::InputU16("Unknown 2", &joint->unk2);
+    ImGui::InputU16("Unknown 3", &joint->unk3);
+    if (ImGui::Button("Dump to file")) {
+        FILE* f = fopen("bones.txt", "wb");
+        if (f != nullptr) {
+            for (u32 i = 0; i < header.joint_count; i++) {
+                if (joints[i].name == UINT32_MAX) {
+                    continue; // Skip bones with no name
+                }
+
+                joint_t cur_joint = joints[i];
+                decoded_text name = {0};
+                decode_single32(name.data, cur_joint.name);
+
+                vec3s pos = *(vec3s*)cur_joint.mat;
+                while (cur_joint.parent_idx > 0) {
+                    cur_joint = joints[cur_joint.parent_idx];
+                    const vec3s parent_pos = *(vec3s*)cur_joint.mat;
+                    pos = {parent_pos.x + pos.x, parent_pos.y + pos.y, parent_pos.z + pos.z};
+
+                }
+
+                fprintf(f, "# %6s\n", name.data);
+                fprintf(f, "v %f %f %f\n", pos.x, pos.y, pos.z);
+            }
+            fclose(f);
+        }
+    }
 
     if (ImGui::BeginTabBar("editors")) {
         if (ImGui::BeginTabItem("Float editor")) {
