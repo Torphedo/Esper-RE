@@ -15,6 +15,8 @@ struct std_vertex {
     // 2D texture coordinates. Should often be present.
     std::optional<vec2s> texcoord;
 
+    std::optional<vec3s> normal;
+
     // This is incomplete, more will be added here as research progresses
 };
 

@@ -45,12 +45,24 @@ struct viewport_t {
     // Uniform locations
     gl_obj uniform_pvm = 0;
     gl_obj uniform_uv_divisor = 0;
+    gl_obj uniform_flags = 0;
+    gl_obj uniform_cam_pos = 0;
+
+    gl_obj uniform_sampler_albedo = 0;
+    gl_obj uniform_sampler_normal = 0;
 
     // Camera, misc. rendering state
     camera cam;
     bool cursor_lock = false;
     bool wireframe = false;
     bool cull_back_faces = true;
+
+    struct shader_flags_t {
+        bool render_texcoords: 1;
+        bool render_normals: 1;
+        bool has_normal: 1; 
+        u32: 0; // This pads the bitfield to 32 bits
+    }shader_flags = {0};
 
     std::vector<mesh_view> meshes;
 

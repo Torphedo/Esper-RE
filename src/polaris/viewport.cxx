@@ -36,12 +36,39 @@ out vec4 fragment_rgba;
 
 in vec2 texcoord;
 uniform sampler2D albedo_texture;
+uniform sampler2D normal_texture;
+uniform vec3 cam_pos;
+uniform int flags = 0;
 
 void main() {
-    fragment_rgba = texture(albedo_texture, texcoord);
+    bool render_uv_colors = (flags & 1) != 0;
+    bool render_normal_colors = (flags & 2) != 0;
+    bool has_normal = (flags & 4) != 0;
+
+    vec4 color = vec4(texcoord, 0.0, 1.0);
+    // I figure avoiding a texture sample is worth an if statement. - torph
+    if (!render_uv_colors) {
+        color = texture(albedo_texture, texcoord);
+    }
+
     // TODO: Do alpha blending here. This is low-priority since most textures have BC1 1-bit alpha (except for a few normal maps).
-    if (fragment_rgba.a < 0.1) {
+    if (color.a < 0.1) {
         discard;
+    }
+
+    vec3 normal_vec = cam_pos;
+    if (has_normal) {
+        normal_vec = texture(normal_texture, texcoord).rgb;
+        normal_vec = (normal_vec * 2.0) - 1.0;
+    }
+    const float ambient = 0.3f;
+    float diffuse_factor = abs(dot(cam_pos, normal_vec)) + ambient;
+
+    fragment_rgba = color * diffuse_factor;
+    fragment_rgba.a = 1.0;
+
+    if (render_normal_colors) {
+        fragment_rgba = vec4(normal_vec, 1.0);
     }
 }
 )";
@@ -91,6 +118,11 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
     }
     uniform_pvm = glGetUniformLocation(shader, "pvm");
     uniform_uv_divisor = glGetUniformLocation(shader, "uv_divisor");
+    uniform_flags = glGetUniformLocation(shader, "flags");
+    uniform_cam_pos = glGetUniformLocation(shader, "cam_pos");
+
+    uniform_sampler_albedo = glGetUniformLocation(shader, "albedo_texture");
+    uniform_sampler_normal = glGetUniformLocation(shader, "normal_texture");
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         // uh oh...
@@ -173,8 +205,23 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         ImGui::SameLine();
         bool cull_changed = ImGui::Checkbox("Back-face culling", &cull_back_faces);
 
-        // Need to do this ridiculous workaround to manually ensure options
-        // don't take up like half the horizontal screen space
+        ImGui::SameLine();
+        bool temp_render_texcoords = shader_flags.render_texcoords;
+        ImGui::Checkbox("Visualize UVs", &temp_render_texcoords);
+        shader_flags.render_texcoords = temp_render_texcoords;
+
+        ImGui::SameLine();
+        bool temp_render_normals = shader_flags.render_normals;
+        ImGui::Checkbox("Visualize normals", &temp_render_normals);
+        shader_flags.render_normals = temp_render_normals;
+
+        ImGui::SameLine();
+        bool temp_force_disable_normals = shader_flags.has_normal;
+        ImGui::Checkbox("Use normals", &temp_force_disable_normals);
+        shader_flags.has_normal = temp_force_disable_normals;
+
+        // Need this ridiculous workaround to make sure options don't take up
+        // like half the horizontal screen space
         const char* options[] = {"Orbit", "Minecraft", "Fly"};
         const char* label = "Camera Mode";
         const float combo_width = ImGui::CalcTextSize(options[1]).x * 1.5f + padding;
@@ -217,6 +264,11 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         // Bind shader & upload camera transform
         glUseProgram(shader);
         glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
+        glUniform3fv(uniform_cam_pos, 1, cam.facing().raw);
+        glUniform1i(uniform_flags, *((u32*)&shader_flags));
+
+        glUniform1i(uniform_sampler_albedo, 0);
+        glUniform1i(uniform_sampler_normal, 1);
 
         // Render all index buffers of all known meshes
         for (mesh_view mesh : meshes) {
@@ -238,6 +290,16 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+                shader_flags_t flags = this->shader_flags;
+                if (flags.has_normal) {
+                    flags.has_normal = (idx_buf.normal_tex_idx != 0);
+                }
+                glUniform1i(uniform_flags, *((u32*)&flags));
+
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.normal_tex_idx));
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
                 glDrawElements(mesh.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);

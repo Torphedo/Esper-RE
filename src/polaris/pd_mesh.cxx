@@ -146,6 +146,13 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
             VFILE_READ(u16, &vf) / 4096.0f,
             VFILE_READ(u16, &vf) / 4096.0f,
         };
+
+        vfile_seek(&vf, 6);
+        output.normal = {
+            VFILE_READ(u16, &vf) / 4096.0f,
+            VFILE_READ(u16, &vf) / 4096.0f,
+            VFILE_READ(u16, &vf) / 4096.0f,
+        };
         break;
     case 12: // This format is only position
     default:

@@ -127,6 +127,7 @@ void polaris::chunk::dump_vertex_buf(const polaris& pol, const char* path, vertb
         vfile_seek(&vf, pol.resbuf_offset);
         vfile_seek(&vf, entry.data_ptr);
         bool has_uvs = false;
+        bool has_normals = false;
         for (u32 i = 0; i < entry.vertex_count; i++) {
             const s64 next_pos = vf.pos + entry.vertex_size;
             // Read the vertex (this abstracts away the many different formats)
@@ -142,6 +143,12 @@ void polaris::chunk::dump_vertex_buf(const polaris& pol, const char* path, vertb
                 has_uvs = true;
                 const vec2s uv = vert.texcoord.value();
                 fprintf(out, "vt %f %f\n", uv.x, uv.y);
+            }
+
+            if (vert.normal.has_value()) {
+                has_normals = true;
+                const vec3s normal = vert.normal.value();
+                fprintf(out, "vn %f %f %f\n", normal.x, normal.y, normal.z);
             }
 
             // Skip to the next vertex
