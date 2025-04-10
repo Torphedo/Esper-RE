@@ -942,8 +942,12 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
             u16 albedo_texture_idx = 0;
             u16 normal_texture_idx = 0;
             if (texinfo_entries != nullptr) {
-                albedo_texture_idx = texinfo_entries[idx_header.vertex_buf].texture_idx; 
+                albedo_texture_idx = texinfo_entries[idx_header.vertex_buf].texture_idx;
                 normal_texture_idx = texinfo_entries[idx_header.vertex_buf].normal_idx; 
+
+                // Account for multiple ALRs being loaded.
+                albedo_texture_idx += pol.cur_alr_texture_0;
+                normal_texture_idx += pol.cur_alr_texture_0;
             }
 
             const index_buffer idx_buf = {
@@ -1333,8 +1337,8 @@ bool load_gl_textures(polaris* pol) {
     const u32 num_entries = VFILE_READ(u32, &vf);
     texture_entry* tex_entries = (texture_entry*)vfile_cur(vf);
 
-    pol->unload_gl_textures();
-    pol->gl_textures.reserve(num_entries);
+    // Save the offset of the newly loaded ALR's "texture #0".
+    pol->cur_alr_texture_0 = MAX((s32)pol->gl_textures.size(), 0);
 
     // Read atlas chunk data
     atlas_entry* atlas_entries = nullptr;

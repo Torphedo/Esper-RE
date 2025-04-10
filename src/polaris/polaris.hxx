@@ -155,7 +155,15 @@ struct polaris {
     s64 reserve_size = 1024 * 1024 * 32;
     std::vector<chunk> chunks;
 
+    // TODO: Invoke texture load directly instead of using this extra state
     bool textures_need_reload = false; 
+
+    // When multiple ALRs are loaded and sent to the viewport, the current
+    // ALR's "texture 0" won't be at index 0, so we need to keep track of that
+    // offset.
+    u16 cur_alr_texture_0 = 0;
+
+    // TODO: Unload textures if they aren't being used in the viewport when loading another ALR, to save on memory.
     std::vector<gl_obj> gl_textures;
 
     // If present, only display chunks with this ID
