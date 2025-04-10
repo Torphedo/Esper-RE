@@ -278,7 +278,7 @@ typedef struct {
     u16 unk7; // 14
     u16 unk8; // 16
     u16 unk9; // 18
-    u32 texture_idx; // 1C
+    u16 texture_idx; // 1C
     u16 normal_idx;
     u16 reflect_idx;
     u32 pad[4];
