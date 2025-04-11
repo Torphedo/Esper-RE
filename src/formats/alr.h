@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+typedef struct {
+    float x;
+    float y;
+    float z;
+}vec3f;
+
 // 0x11 chunk
 // =====================================================================================================================
 // All ALR files begin with this structure.
@@ -214,7 +220,10 @@ static_assert(sizeof(chunk_armature) == 0x8, "Wrong armature chunk header size!"
 
 // After the header are [joint_count] instances of this structure, holding information about each joint/bone.
 typedef struct {
-    float mat[3][3];
+    vec3f position;
+    // X/Y/Z Euler rotation
+    vec3f rotation;
+    vec3f scale;
     u16 unk1;
     u16 unk2;
     u16 unk3;

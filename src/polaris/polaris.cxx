@@ -364,12 +364,11 @@ void polaris::chunk::chunk_0x3(const polaris& pol) noexcept {
                 decoded_text name = {0};
                 decode_single32(name.data, cur_joint.name);
 
-                vec3s pos = *(vec3s*)cur_joint.mat;
+                vec3s pos = *(vec3s*)&cur_joint.position;
                 while (cur_joint.parent_idx > 0) {
                     cur_joint = joints[cur_joint.parent_idx];
-                    const vec3s parent_pos = *(vec3s*)cur_joint.mat;
-                    pos = {parent_pos.x + pos.x, parent_pos.y + pos.y, parent_pos.z + pos.z};
-
+                    const vec3s parent_pos = *(vec3s*)&cur_joint.position;
+                    pos = glms_vec3_add(pos, parent_pos);
                 }
 
                 fprintf(f, "# %6s\n", name.data);
@@ -383,17 +382,11 @@ void polaris::chunk::chunk_0x3(const polaris& pol) noexcept {
         if (ImGui::BeginTabItem("Float editor")) {
 
             // Matrix inputs
-            ImGui::PushItemWidth(200.0f); // Make inputs narrower
-            for (u32 j = 0; j < 3; j++) {
-                for (u32 k = 0; k < 3; k++) {
-                    char buf[0x20] = {0};
-                    snprintf(buf, sizeof(buf), "##%d%d", j, k);
-                    mat3* mat = &joint->mat;
-                    ImGui::InputFloat(buf, &(*mat)[j][k]);
-                    ImGui::SameLine();
-                }
-                ImGui::Text(" "); // Cause a new line
-            }
+            ImGui::PushItemWidth(400.0f); // Make inputs narrower
+            ImGui::InputFloat3("Position", &joint->position.x);
+            ImGui::InputFloat3("Euler Rotation", &joint->rotation.x);
+            ImGui::InputFloat3("Scale", &joint->scale.x);
+
             ImGui::PopItemWidth();
             ImGui::EndTabItem();
         }
