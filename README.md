@@ -13,10 +13,10 @@ Support status:
 | ----------------- | --------------------------------- | --------------- | --------------------------------------- |
 | Textures (square) | Supported                         | Supported       | Supported (at same resolution & format) |
 | Textures (atlas)  | Supported                         | Unsupported     | Unsupported                             |
-| Character meshes  | Unsupported                       | Supported       | Unsupported                             |
-| Stage meshes      | Unsupported                       | Supported (WIP) | Unsupported                             |
+| Character meshes  | Supported                         | Supported       | Unsupported                             |
+| Stage meshes      | Supported                         | Supported (WIP) | Unsupported                             |
 | Animations        | Supported (translate/rotation)    | Unsupported     | Unsupported                             |
-| Skeleton          | Early WIP                         | Unsupported     | Unsupported                             |
+| Skeleton          | Early WIP                         | Supported (WIP) | Unsupported                             |
 
 You can export all textures from a file on the command-line:
 `polaris [alr filename] --dump-textures`
