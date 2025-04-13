@@ -8,6 +8,7 @@
 #include <common/image.h>
 #include <common/vmem.h>
 #include "viewport.hxx"
+#include "layout.hxx"
 
 extern "C" {
     #include <common/gl/input.h>
@@ -178,6 +179,10 @@ struct polaris {
     // Input state from the previous frame
     input_internal prev_input = {};
 
+    // State for accompanying .dat file for a stage ALR.
+    layout_t layout;
+
+    // 3D viewport
     viewport_t viewport;
 
     /// @brief Hide input from the rest of the program when ImGui is using it.
@@ -210,6 +215,7 @@ struct polaris {
     polaris() noexcept;
     ~polaris() noexcept {
         viewport.destroy();
+        layout.destroy();
         this->unload_gl_textures();
         vmem_free(alr_data, reserve_size);
     }

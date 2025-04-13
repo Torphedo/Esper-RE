@@ -216,6 +216,7 @@ void polaris::chunk::chunk_0x1(const polaris& pol) noexcept {
     ImGui::SameLine();
 
     chunk_0x1_entry* entry = &entries[window_0x1.selected_entry];
+    // Explicit constructor
     hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)pol.alr_data);
 }
 
@@ -1292,11 +1293,14 @@ void polaris::do_menu_bar() noexcept {
     bool load_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_L, false);
     bool save_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_S, false);
 
+    bool load_layout = false;
+
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 load_alr |= ImGui::MenuItem("Load ALR", "Ctrl-L");
                 save_alr |= ImGui::MenuItem("Save ALR", "Ctrl-S");
+                load_layout |= ImGui::MenuItem("Load .dat");
                 ImGui::EndMenu();
             }
 
@@ -1336,6 +1340,18 @@ void polaris::do_menu_bar() noexcept {
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (result == NFD_OKAY && path != nullptr) {
             this->save_alr(path);
+        }
+        free(path);
+    }
+
+    if (load_layout) {
+        // Display the file picker and load if a file is picked
+        nfdu8filteritem_t filters[] = { { "AL Layout", "dat"} };
+        char* path = nullptr;
+        nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        if (result == NFD_OKAY && path != nullptr) {
+            layout.destroy(); // Destroy old instance
+            this->layout = layout_t::setup(path);
         }
         free(path);
     }
@@ -1561,6 +1577,8 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
 
         ImGui::End();
     }
+
+    this->layout.do_gui();
 
     // It's the end of the frame for us, save the current input
     prev_input = input;
