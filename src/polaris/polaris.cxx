@@ -892,6 +892,7 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
     get_vert_attribute(&mesh, entry);
     mesh.apply_attributes();
 
+    bool has_strips = false;
     const chunk_0x1_entry* texinfo_entries = nullptr;
     // Upload the index buffers
     for (chunk chunk : pol.chunks) {
@@ -918,11 +919,6 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
                 continue;
             }
 
-            // This seems to be a reliable indicator of triangle strip meshes
-            if (idx_header.unk3 == IDX_TYPE_STRIP) {
-                mesh.draw_mode = GL_TRIANGLE_STRIP;
-            }
-
             u16 albedo_texture_idx = 0;
             u16 normal_texture_idx = 0;
             if (texinfo_entries != nullptr) {
@@ -934,18 +930,22 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
                 normal_texture_idx += pol.cur_alr_texture_0;
             }
 
+            const bool tri_strip = (idx_header.unk3 == IDX_TYPE_STRIP);
+            has_strips |= tri_strip;
             const index_buffer idx_buf = {
                 .data = ((u8*)vfile_cur(vf)),
                 .num = chunk.num_indices(pol),
                 .albedo_tex_idx = albedo_texture_idx,
                 .normal_tex_idx = normal_texture_idx,
+                .draw_mode = (u16)(tri_strip ? GL_TRIANGLE_STRIP : GL_TRIANGLES),
             };
+
             mesh.add_index_buf(idx_buf);
         }
     }
 
     // This is a dirty hack but seems to work... - torph
-    if (mesh.draw_mode == GL_TRIANGLE_STRIP) {
+    if (has_strips) {
         mesh.attributes[ATTRIBUTE_TEXCOORD].offset += 4;
         mesh.use_type_divisor = false;
         mesh.uv_divisor = 4096;

@@ -302,7 +302,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
-                glDrawElements(mesh.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);
+                glDrawElements(idx_buf.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);
             }
             // VAO keeps index buffer binding, so clear it after draw.
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

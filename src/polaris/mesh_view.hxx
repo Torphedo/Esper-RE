@@ -39,6 +39,7 @@ struct index_buffer {
     gl_obj obj = 0;
     u16 albedo_tex_idx = 0;
     u16 normal_tex_idx = 0;
+    u16 draw_mode = GL_TRIANGLES;
     bool enabled = true; // Whether to render this index buffer
 };
 
@@ -68,7 +69,6 @@ struct mesh_view {
     // based on its type, and is usually what you want.
     bool use_type_divisor = true;
 
-    u16 draw_mode = GL_TRIANGLES;
     bool initialized = false;
 
     // Whether to render this mesh
