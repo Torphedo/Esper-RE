@@ -1350,8 +1350,7 @@ void polaris::do_menu_bar() noexcept {
         char* path = nullptr;
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            layout.destroy(); // Destroy old instance
-            this->layout = layout_t::setup(path);
+            this->layout = layout_t(path);
         }
         free(path);
     }

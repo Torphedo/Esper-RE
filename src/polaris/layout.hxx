@@ -15,9 +15,11 @@ public:
     bool initialized = false;
 
     // Explicit constructor
-    static layout_t setup(const char* filepath);
+    layout_t(const char* filepath);
     layout_t() = default;
-    void destroy();
+
+    layout_t& operator=(layout_t&& other);
+    ~layout_t();
 
     /// @brief Render and update all the UI
     void do_gui() noexcept;

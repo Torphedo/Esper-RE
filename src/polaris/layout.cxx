@@ -8,24 +8,33 @@
 #include "formats/st00.h"
 #include "imgui_utils.hxx"
 
-layout_t layout_t::setup(const char* filepath) {
-    layout_t output = {};
+layout_t::layout_t(const char* filepath) {
     if (!file_exists(filepath)) {
-        return output;
+        return;
     }
 
-    output.size = file_size(filepath);
-    output.data = file_load(filepath);
+    size = file_size(filepath);
+    data = file_load(filepath);
 
-    if (output.data == nullptr) {
+    if (data == nullptr) {
         LOG_MSG(error, "Failed to load layout file \"%s\"\n", filepath);
     }
 
-    output.initialized = true;
-    return output;
+    initialized = true;
 }
 
-void layout_t::destroy() {
+layout_t& layout_t::operator=(layout_t&& other) {
+    if (this != &other) {
+        free(data);
+        memcpy(this, &other, sizeof(other)); // Copy state from temporary
+        // Wipe temporary so it doesn't free our pointer on destroy
+        memset(&other, 0, sizeof(other));
+    }
+
+    return *this;
+}
+
+layout_t::~layout_t() {
     free(data);
     initialized = false;
 }

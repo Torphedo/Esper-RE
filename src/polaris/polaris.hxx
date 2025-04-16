@@ -215,7 +215,6 @@ struct polaris {
     polaris() noexcept;
     ~polaris() noexcept {
         viewport.destroy();
-        layout.destroy();
         this->unload_gl_textures();
         vmem_free(alr_data, reserve_size);
     }
