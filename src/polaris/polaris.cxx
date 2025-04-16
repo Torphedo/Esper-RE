@@ -431,8 +431,8 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         return;
     }
 
-    const float char_width = ImGui::CalcTextSize("1").x;
-    const float editing_width = char_width * num_components * 12;
+    // Give our float inputs 12 characters width per component
+    ImGui::PushItemWidth(ImGui::CharWidth() * num_components * 12);
 
     // Each keyframe has a frame value (when it happens) and components (for 3D
     // translation/rotation/scale, or weird stuff like brightness values).
@@ -447,7 +447,6 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
 
         // Display the input fields
-        ImGui::SetNextItemWidth(editing_width);
         ImGui::InputScalar(frame_label, frame_type, vfile_cur(vf));
 
         // Skip over frame value
@@ -458,7 +457,6 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
             vfile_seek(&vf, sizeof(u8));
         }
 
-        ImGui::SetNextItemWidth(editing_width);
         ImGui::InputScalarN(component_label, component_type, vfile_cur(vf), num_components);
 
         // Space between keys keeps things readable
@@ -468,6 +466,7 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         // Skip to next key
         vf.pos = next_pos;
     }
+    ImGui::PopItemWidth();
 
     for (u32 cur_component = 0; cur_component < num_components; cur_component++) {
         // Reset seek position
@@ -549,7 +548,7 @@ static ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wi
         *scale_factor = 1.0f;
     } else {
         snprintf(label, sizeof(label), "Render Scale ##%d%lf%s", tex_id, uv1.x, id);
-        ImGui::SetNextItemWidth(ImGui::CalcTextSize("1").x * 16);
+        ImGui::SetNextItemWidth(ImGui::CharWidth() * 16);
         ImGui::SliderFloat(label, scale_factor, 0.001f, 10.0f);
     }
 
@@ -701,18 +700,16 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
 
 
     // User input for atlas properties
-    const float char_width = ImGui::CalcTextSize("1").x;
-    ImGui::SetNextItemWidth(char_width * (sizeof(aName->name) - 1 + 5));
+    ImGui::PushItemWidth(ImGui::CharWidth() * (sizeof(aName->name) - 1 + 5));
     ImGui::InputText("Atlas Name", &aName->name[0], sizeof(aName->name) - 1);
 
     ImGui::Text("Atlas uses texture index %d, see 0x15 chunk for offset & format", window_0x10.selected_atlas);
 
-    ImGui::SetNextItemWidth(char_width * 15);
     ImGui::InputU16("Atlas Height", &atlas->height);
-    ImGui::SetNextItemWidth(char_width * 15);
     ImGui::InputU16("Atlas Width", &atlas->width);
-    ImGui::SetNextItemWidth(char_width * 15);
     ImGui::InputU32("Atlas Texture Count", &atlas->tex_count);
+
+    ImGui::PopItemWidth();
 
     // Draw the whole atlas
     ImVec2 image_pos = draw_image(window_0x10.gl_tex_id, atlas->width, atlas->height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
@@ -727,7 +724,7 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
     const ImVec2 end = image_pos + (atlas_drawn_size * uv1);
     ImGui::GetWindowDrawList()->AddRect(start, end, 0xFF00FF00);
 
-    ImGui::SetNextItemWidth(char_width * (sizeof(tex->filename) - 1 + 5));
+    ImGui::SetNextItemWidth(ImGui::CharWidth() * (sizeof(tex->filename) - 1 + 5));
     ImGui::InputText("Texture Name", &tex->filename[0], sizeof(tex->filename) - 1);
 
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex->height, tex->width, tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
@@ -850,8 +847,7 @@ void polaris::chunk::chunk_0x15(polaris& pol) noexcept {
 
     ImGui::Text("2^(resolution power) = width = height");
 
-    const float char_width = ImGui::CalcTextSize("1").x;
-    ImGui::SetNextItemWidth(char_width * 16);
+    ImGui::SetNextItemWidth(ImGui::CharWidth() * 16);
     const u8 step_pwr = 1; // Step for the resolution power input
     ImGui::InputU8("Resolution power", &entry->resolution_pwr, step_pwr);
     // This limits resolution to 4096^2, which is plenty for our use case
