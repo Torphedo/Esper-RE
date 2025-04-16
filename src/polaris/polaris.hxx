@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include <optional>
 #include <imgui.h>
 #include <imgui_hex_editor.h>
@@ -8,6 +9,7 @@
 #include <common/image.h>
 #include <common/vmem.h>
 #include "viewport.hxx"
+#include "mapdata.hxx"
 
 extern "C" {
     #include <common/gl/input.h>
@@ -108,6 +110,12 @@ struct polaris {
         /// This always draws, and doesn't check the @ref active flag
         void draw(polaris& pol) noexcept;
 
+        /// @brief Check if this chunk meets all of our expectations
+        /// @param pol A reference to the polaris instance with the relevant ALR data
+        /// @param output A text buffer for messages to be communicated to the user. A message might be added here even if the function succeeds.
+        /// @return Whether the chunk passed validation
+        bool validate(const polaris& pol, std::string& msg) const noexcept;
+
         // Dedicated editing windows for each chunk type
         void chunk_0x1(const polaris& pol) noexcept;
         void chunk_0x2(const polaris& pol) noexcept;
@@ -178,6 +186,10 @@ struct polaris {
     // Input state from the previous frame
     input_internal prev_input = {};
 
+    // State for accompanying .dat file for a stage ALR.
+    mapdata map;
+
+    // 3D viewport
     viewport_t viewport;
 
     /// @brief Hide input from the rest of the program when ImGui is using it.
@@ -190,6 +202,11 @@ struct polaris {
     /// @param size The size of the ALR buffer
     /// @return List of chunks
     std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
+
+    /// @brief Check if this ALR meets all of our expectations
+    /// @param output A text buffer for messages to be communicated to the user. A message might be added here even if the function succeeds.
+    /// @return Whether the ALR data passed validation
+    bool validate(std::string& output) const noexcept;
 
     /// @brief Overwrite the loaded ALR with a new one
     bool load_alr(const char* path) noexcept;

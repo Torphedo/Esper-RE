@@ -1,8 +1,14 @@
 #include <imgui.h>
 #include <common/int.h>
+#include <string>
+
+/// std::string::append(), but with printf() formatting syntax.
+void str_format_append(std::string& output, const char* format_str, ...);
 
 namespace ImGui {
     void BeginChildFitContent(const char* id, float width_percent);
+
+    float CharWidth();
 
     /// @brief A sort of backwards assert that displays a message in the GUI
     ///

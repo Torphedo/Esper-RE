@@ -11,10 +11,26 @@
 #include <common/int.h>
 #include <formats/pd_common.h>
 
+void str_format_append(std::string& output, const char* format_str, ...) {
+    char buf[2048] = {0};
+
+    // We use helpers from stdarg.h to handle the variadic (...) arguments.
+    va_list arg_list = {};
+    va_start(arg_list, format_str);
+    const int return_code = vsnprintf(buf, sizeof(buf) - 1, format_str, arg_list);
+    va_end(arg_list);
+
+    output.append(buf);
+}
+
 // Minor helper functions for ImGui
 namespace ImGui {
 void BeginChildFitContent(const char* id, float width_percent) {
     ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
+}
+
+float CharWidth() {
+    return ImGui::CalcTextSize("1").x;
 }
 
 void PlsReportIf(bool condition, const char* format, ...) {

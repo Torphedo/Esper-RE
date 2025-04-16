@@ -13,6 +13,7 @@
 static const char* version_string = "1.0.0";
 static const char* url = "https://github.com/Torphedo/Esper-RE";
 const char* dump_textures_flag = "--dump-textures";
+const char* validate_flag = "--validate";
 
 void print_usage() {
     printf("Usage: polaris [ALR filename] [%s]\n", dump_textures_flag);
@@ -147,6 +148,13 @@ int main(int argc, char** argv) {
     if (strcmp(flag, dump_textures_flag) == 0) {
         LOG_MSG(info, "Dumping textures for %s\n", path);
         return dump_all_textures(pol);
+    } else if (strcmp(flag, validate_flag) == 0) {
+        LOG_MSG(info, "Validating \"%s\"...\n", path);
+        std::string message = "";
+        const bool result = pol.validate(message);
+        printf("%s\n", message.c_str());
+
+        return !result;
     } else if (strcmp(flag, "--help") == 0) {
         print_usage();
     } else if (strcmp(flag, "--version") == 0) {

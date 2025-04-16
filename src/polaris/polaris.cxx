@@ -1,4 +1,3 @@
-#include <cmath>
 #include <cstdio>
 
 #include <glad/glad.h>
@@ -180,7 +179,7 @@ void polaris::chunk::dump_vertex_buf(const polaris& pol, const char* path, vertb
             const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
             // We only want index buffers meant for this vertex buffer
-            if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+            if (header.vertex_buf != window_0x16.selected_vertex_buf) {
                 continue;
             }
 
@@ -216,6 +215,7 @@ void polaris::chunk::chunk_0x1(const polaris& pol) noexcept {
     ImGui::SameLine();
 
     chunk_0x1_entry* entry = &entries[window_0x1.selected_entry];
+    // Explicit constructor
     hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)pol.alr_data);
 }
 
@@ -247,40 +247,10 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
     idxbuf_header* header = (idxbuf_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header)); // Skip past the header
 
-    // Sanity check some of our assumptions & show warning messages if they fail
-    idxbuf_header temp = {0};
-    const char* pad_warning = "WARNING: What I thought was padding @ chunk offset 0x%x had real data!";
-    ImGui::PlsReportIf(memcmp(header->pad, temp.pad, sizeof(temp.pad)) != 0, pad_warning, offsetof(idxbuf_header, pad));
-    ImGui::PlsReportIf(memcmp(header->pad2, temp.pad2, sizeof(temp.pad2)) != 0, pad_warning, offsetof(idxbuf_header, pad));
-    ImGui::PlsReportIf(header->vertex_buf != header->vertex_buf2, "What I thought was duplicate data actually isn't!");
+    ImGui::PushItemWidth(ImGui::CharWidth() * 32);
 
-    const u16 first_idx = VFILE_READ(u16, &vf);
-    vf.pos -= sizeof(first_idx);
-    ImGui::PlsReportIf(first_idx > header->first_idx, "What I thought was the first index value isn't that OR the smallest index!");
-    ImGui::PlsReportIf(first_idx < header->first_idx && first_idx != header->first_idx, "What I thought was the first index value seems to actually be the smallest index.");
-
-
-    if (ImGui::InputU16("Vertex Buffer", &header->vertex_buf)) {
-        // There are always 2 copies of this data for some reason, so update
-        // the other when this one is updated.
-        header->vertex_buf2 = header->vertex_buf;
-    }
-    ImGui::InputU16("Vertex Buffer 2", &header->vertex_buf2);
-
-    // If we trust the file about the number of triangles, many indices will be
-    // missing.
-    const u16 lower_bound = header->first_idx;
-    const u32 idx_buf_size = size - sizeof(chunk_generic) - sizeof(*header);
-    s32 num_tris = MAX(0, idx_buf_size / (3 * sizeof(u16)));
-    // Percentage of how close the predicted count is to the size reported by
-    // the ALR
-    const float capacity_diff = ((float)header->num_tris / num_tris) * 100.0f;
-    ImGui::Text("ALR says there's %d triangles, buffer can hold %d\n(Using %.1f%% of capacity)", header->num_tris, num_tris, capacity_diff);
-
-    ImGui::Checkbox("Use ALR's triangle count", &window_0x2.trust_alr_tri_count);
-    if (window_0x2.trust_alr_tri_count) {
-        num_tris = header->num_tris;
-    }
+    ImGui::InputU16("Texture ID", &header->texture_idx);
+    ImGui::InputU16("Vertex Buffer", &header->vertex_buf);
 
     ImGui::InputU32("# of triangles", &header->num_tris);
     ImGui::InputU32("# of indices", &header->num_indices);
@@ -289,36 +259,32 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
     ImGui::InputFloat3("AABB Min", header->aabb_min);
     ImGui::InputFloat3("AABB Max", header->aabb_max);
 
+    for (u32 i = 0; i < 5; i++) {
+        ImGui::Spacing();
+    }
+
     if (ImGui::CollapsingHeader("Unknown Fields")) {
         ImGui::InputFloat("Unknown float 1", &header->unk_float);
 
         ImGui::InputU32("Unknown integer 1", &header->unk1);
         ImGui::InputU16("Unknown integer 2", &header->unk2);
         ImGui::InputU16("Unknown integer 3", &header->unk3);
+        ImGui::SetNextItemWidth(ImGui::CharWidth() * 12 * 6);
+        ImGui::InputScalarN("Unknown integer 4", ImGuiDataType_U16, header->unk4, 6);
     }
-    for (u32 i = 0; i < 5; i++) {
-        ImGui::Spacing();
-    }
 
-    for (s32 i = 0; i < num_tris; i++) {
-        // User inputs for this triangle
-        char label[0x20] = {0};
-        snprintf(label, sizeof(label), "Triangle %d", i + 1);
-        ImGui::InputScalarN(label, ImGuiDataType_U16, vfile_cur(vf), 3);
-
-        const u16 idx1 = VFILE_READ(u16, &vf);
-        const u16 idx2 = VFILE_READ(u16, &vf);
-        const u16 idx3 = VFILE_READ(u16, &vf);
-        const bool idx_too_small = idx1 < lower_bound || idx2 < lower_bound || idx3 < lower_bound;
-
-        // If the ALR has a bad count we *will* go out of bounds here.
-        // Since we have the whole file loaded this won't cause any crashes,
-        // and may help illustrate where the end of the real data is.
-        if (idx_too_small && !window_0x2.trust_alr_tri_count) {
-            // We're hitting some invalid data, give up.
-            break;
+    if (ImGui::CollapsingHeader("Edit indices")) {
+        for (s32 i = 0; i < header->num_indices; i++) {
+            // User inputs for this triangle
+            char label[0x20] = {0};
+            snprintf(label, sizeof(label), "Index %d", i + 1);
+            u16* idx = (u16*)vfile_cur(vf);
+            vfile_seek(&vf, sizeof(*idx));
+            ImGui::InputU16(label, idx);
         }
     }
+
+    ImGui::PopItemWidth();
 }
 
 void polaris::chunk::chunk_0x3(const polaris& pol) noexcept {
@@ -447,8 +413,8 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         return;
     }
 
-    const float char_width = ImGui::CalcTextSize("1").x;
-    const float editing_width = char_width * num_components * 12;
+    // Give our float inputs 12 characters width per component
+    ImGui::PushItemWidth(ImGui::CharWidth() * num_components * 12);
 
     // Each keyframe has a frame value (when it happens) and components (for 3D
     // translation/rotation/scale, or weird stuff like brightness values).
@@ -463,7 +429,6 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
 
         // Display the input fields
-        ImGui::SetNextItemWidth(editing_width);
         ImGui::InputScalar(frame_label, frame_type, vfile_cur(vf));
 
         // Skip over frame value
@@ -474,7 +439,6 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
             vfile_seek(&vf, sizeof(u8));
         }
 
-        ImGui::SetNextItemWidth(editing_width);
         ImGui::InputScalarN(component_label, component_type, vfile_cur(vf), num_components);
 
         // Space between keys keeps things readable
@@ -484,6 +448,7 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         // Skip to next key
         vf.pos = next_pos;
     }
+    ImGui::PopItemWidth();
 
     for (u32 cur_component = 0; cur_component < num_components; cur_component++) {
         // Reset seek position
@@ -565,7 +530,7 @@ static ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wi
         *scale_factor = 1.0f;
     } else {
         snprintf(label, sizeof(label), "Render Scale ##%d%lf%s", tex_id, uv1.x, id);
-        ImGui::SetNextItemWidth(ImGui::CalcTextSize("1").x * 16);
+        ImGui::SetNextItemWidth(ImGui::CharWidth() * 16);
         ImGui::SliderFloat(label, scale_factor, 0.001f, 10.0f);
     }
 
@@ -717,18 +682,16 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
 
 
     // User input for atlas properties
-    const float char_width = ImGui::CalcTextSize("1").x;
-    ImGui::SetNextItemWidth(char_width * (sizeof(aName->name) - 1 + 5));
+    ImGui::PushItemWidth(ImGui::CharWidth() * (sizeof(aName->name) - 1 + 5));
     ImGui::InputText("Atlas Name", &aName->name[0], sizeof(aName->name) - 1);
 
     ImGui::Text("Atlas uses texture index %d, see 0x15 chunk for offset & format", window_0x10.selected_atlas);
 
-    ImGui::SetNextItemWidth(char_width * 15);
     ImGui::InputU16("Atlas Height", &atlas->height);
-    ImGui::SetNextItemWidth(char_width * 15);
     ImGui::InputU16("Atlas Width", &atlas->width);
-    ImGui::SetNextItemWidth(char_width * 15);
     ImGui::InputU32("Atlas Texture Count", &atlas->tex_count);
+
+    ImGui::PopItemWidth();
 
     // Draw the whole atlas
     ImVec2 image_pos = draw_image(window_0x10.gl_tex_id, atlas->width, atlas->height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
@@ -743,7 +706,7 @@ void polaris::chunk::chunk_0x10(const polaris& pol) noexcept {
     const ImVec2 end = image_pos + (atlas_drawn_size * uv1);
     ImGui::GetWindowDrawList()->AddRect(start, end, 0xFF00FF00);
 
-    ImGui::SetNextItemWidth(char_width * (sizeof(tex->filename) - 1 + 5));
+    ImGui::SetNextItemWidth(ImGui::CharWidth() * (sizeof(tex->filename) - 1 + 5));
     ImGui::InputText("Texture Name", &tex->filename[0], sizeof(tex->filename) - 1);
 
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex->height, tex->width, tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
@@ -866,8 +829,7 @@ void polaris::chunk::chunk_0x15(polaris& pol) noexcept {
 
     ImGui::Text("2^(resolution power) = width = height");
 
-    const float char_width = ImGui::CalcTextSize("1").x;
-    ImGui::SetNextItemWidth(char_width * 16);
+    ImGui::SetNextItemWidth(ImGui::CharWidth() * 16);
     const u8 step_pwr = 1; // Step for the resolution power input
     ImGui::InputU8("Resolution power", &entry->resolution_pwr, step_pwr);
     // This limits resolution to 4096^2, which is plenty for our use case
@@ -952,7 +914,7 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
             vf.pos = chunk.offset + sizeof(chunk_generic);
             const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
             // We only want index buffers meant for this vertex buffer
-            if (idx_header.vertex_buf != window_0x16.selected_vertex_buf && idx_header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+            if (idx_header.vertex_buf != window_0x16.selected_vertex_buf) {
                 continue;
             }
 
@@ -964,8 +926,8 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
             u16 albedo_texture_idx = 0;
             u16 normal_texture_idx = 0;
             if (texinfo_entries != nullptr) {
-                albedo_texture_idx = texinfo_entries[idx_header.vertex_buf].texture_idx;
-                normal_texture_idx = texinfo_entries[idx_header.vertex_buf].normal_idx; 
+                albedo_texture_idx = texinfo_entries[idx_header.texture_idx].texture_idx;
+                normal_texture_idx = texinfo_entries[idx_header.texture_idx].normal_idx; 
 
                 // Account for multiple ALRs being loaded.
                 albedo_texture_idx += pol.cur_alr_texture_0;
@@ -1052,6 +1014,11 @@ void polaris::chunk::draw(polaris& pol) noexcept {
         return;
     }
 
+    // Sanity check some of our assumptions & show warning messages if they fail
+    std::string msg;
+    bool valid = this->validate(pol, msg);
+    ImGui::PlsReportIf(!valid, msg.c_str());
+
     if (ImGui::BeginTabBar("Chunk Tabs")) {
         if (ImGui::BeginTabItem("Specialized Chunk Editor")) {
             switch (id) {
@@ -1098,6 +1065,109 @@ void polaris::chunk::draw(polaris& pol) noexcept {
     }
 }
 
+bool polaris::chunk::validate(const polaris& pol, std::string& msg) const noexcept {
+    if (pol.alr_data == nullptr || pol.alr_size == 0) {
+        return false; // Something is already wrong...
+    }
+    bool result = true;
+
+    // We might want access to ALR and/or chunk data during validation
+    vfile alr = vfile_open(pol.alr_data, pol.alr_size);
+    vfile chunk = vfile_open(pol.alr_data + this->offset, this->size);
+    chunk.pos += sizeof(chunk_generic);
+
+    switch (id) {
+    case 0x0:
+        if (size != 8) {
+            str_format_append(msg, "0x0 chunk had %d bytes of data (expected 8)!", size);
+            result = false;
+        }
+        break;
+    case 0x1:
+        break;
+    case 0x2: {
+        const auto header = VFILE_READ(idxbuf_header, &chunk);
+        const auto indices = (u16*)vfile_cur(chunk);
+        if (header.num_indices > 0 && header.first_idx != indices[0]) {
+            str_format_append(msg, "The listed first index (%d) didn't match the real first index (%d)!", offset, header.first_idx, indices[0]);
+            result = false;
+        }
+        const idxbuf_header empty = {0};
+        if (memcmp(header.pad, empty.pad, sizeof(header.pad)) != 0) {
+            str_format_append(msg, "What I thought was padding had data!");
+            result = false;
+        }
+        break;
+    }
+    case 0x3:
+        break;
+    case 0x5:
+        break;
+    case 0x7:
+        break;
+    case 0xD:
+        if (size != 12) {
+            str_format_append(msg, "0xD chunk had %d bytes of data (expected 12)!", size);
+            result = false;
+        }
+        break;
+    case 0x10:
+        break;
+    case 0x11: {
+        chunk.pos -= sizeof(chunk_generic);
+        const auto header = VFILE_READ(chunk_layout, &chunk);
+        if (header.texbuf_offset + header.texbuf_size > pol.alr_size) {
+            str_format_append(msg, "0x%x-byte resource buffer @ 0x%x can't fit in this 0x%x-byte ALR!", header.texbuf_size, header.texbuf_offset, pol.alr_size);
+            result = false;
+        }
+        if (header.pad != 0) {
+            str_format_append(msg, "What I thought was padding had data!");
+            result = false;
+        }
+        const u32 guessed_offset_count = (header.chunk_size - sizeof(header)) / sizeof(u32);
+        if (guessed_offset_count != header.offset_array_size) {
+            str_format_append(msg, "Offset array size seems wrong (found %d, should be %d)!", header.offset_array_size, guessed_offset_count);
+            result = false;
+        }
+        break;
+    }
+    case 0x13:
+        break;
+    case 0x15: {
+        const u32 num_entries = VFILE_READ(u32, &chunk);
+        const auto entries = (texture_entry*)vfile_cur(chunk);
+
+        for (u32 i = 0; i < num_entries; i++) {
+            if (entries[i].pad != 0) {
+                str_format_append(msg, "What I thought was padding in entry %d had data!", i);
+                result = false;
+            }
+            const s64 resbuf_size = pol.alr_size - pol.resbuf_offset;
+            if (entries[i].data_ptr > resbuf_size) {
+                str_format_append(msg, "Entry %d is well outside the resource buffer!", i);
+                result = false;
+            }
+        }
+        break;
+    }
+    case 0x16:
+        break;
+    default:
+        // Unimplemented chunk, skip
+        str_format_append(msg, "Unknown chunk type 0x%X @ offset 0x%lx", id, offset);
+        break;
+    }
+
+    if (!result) {
+        // In CLI mode, we don't have the context that's on-screen in the GUI.
+        if (pol.headless) {
+            str_format_append(msg, " [0x%X chunk @ 0x%x]", id, offset);
+        }
+        msg.append("\n");
+    }
+    return result;
+}
+
 polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     this->id = id;
     this->size = size;
@@ -1139,6 +1209,15 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
 
 // =============================================================================
 // The rest of this file is for the main Polaris class
+
+bool polaris::validate(std::string& output) const noexcept {
+    bool result = true;
+    for (polaris::chunk chunk : this->chunks) {
+        result &= chunk.validate(*this, output);
+    }
+
+    return result;
+}
 
 polaris::polaris() noexcept {
     // TODO: Add an option to commit on reserve in bobtail
@@ -1285,11 +1364,14 @@ void polaris::do_menu_bar() noexcept {
     bool load_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_L, false);
     bool save_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_S, false);
 
+    bool load_layout = false;
+
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 load_alr |= ImGui::MenuItem("Load ALR", "Ctrl-L");
                 save_alr |= ImGui::MenuItem("Save ALR", "Ctrl-S");
+                load_layout |= ImGui::MenuItem("Load .dat");
                 ImGui::EndMenu();
             }
 
@@ -1329,6 +1411,17 @@ void polaris::do_menu_bar() noexcept {
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (result == NFD_OKAY && path != nullptr) {
             this->save_alr(path);
+        }
+        free(path);
+    }
+
+    if (load_layout) {
+        // Display the file picker and load if a file is picked
+        nfdu8filteritem_t filters[] = { { "AL Layout", "dat"} };
+        char* path = nullptr;
+        nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        if (result == NFD_OKAY && path != nullptr) {
+            this->map = mapdata(path);
         }
         free(path);
     }
@@ -1554,6 +1647,8 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
 
         ImGui::End();
     }
+
+    this->map.do_gui();
 
     // It's the end of the frame for us, save the current input
     prev_input = input;

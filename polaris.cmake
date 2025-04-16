@@ -38,15 +38,18 @@ endforeach()
 add_executable(polaris
     src/polaris/main.cxx
     src/polaris/gui_loop.cxx
-    src/polaris/alr_texture.cxx
+
     src/polaris/polaris.cxx
-    src/polaris/imgui_utils.cxx
+    src/polaris/alr_texture.cxx
+    src/polaris/mapdata.cxx
     src/polaris/pd_mesh.cxx
+    src/formats/pd_common.c
+
     src/polaris/viewport.cxx
     src/polaris/mesh_view.cxx
     src/polaris/camera.cxx
+    src/polaris/imgui_utils.cxx
 
-    src/formats/pd_common.c
     ext/glad/src/glad.c
 
     # Adding the GLSL headers here auto-generates them during the build
