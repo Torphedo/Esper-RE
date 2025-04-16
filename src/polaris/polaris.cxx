@@ -1,4 +1,3 @@
-#include <cmath>
 #include <cstdio>
 
 #include <glad/glad.h>
@@ -248,19 +247,7 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
     idxbuf_header* header = (idxbuf_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header)); // Skip past the header
 
-    // Sanity check some of our assumptions & show warning messages if they fail
-    idxbuf_header temp = {0};
-    const char* pad_warning = "What I thought was padding @ chunk offset 0x%x had real data!";
-    ImGui::PlsReportIf(memcmp(header->pad, temp.pad, sizeof(temp.pad)) != 0, pad_warning, offsetof(idxbuf_header, pad));
-    ImGui::PlsReportIf(memcmp(header->pad2, temp.pad2, sizeof(temp.pad2)) != 0, pad_warning, offsetof(idxbuf_header, pad));
-
     ImGui::PushItemWidth(ImGui::CharWidth() * 32);
-
-    const u16 first_idx = VFILE_READ(u16, &vf);
-    vf.pos -= sizeof(first_idx);
-    ImGui::PlsReportIf(first_idx > header->first_idx, "What I thought was the first index value isn't that OR the smallest index!");
-    ImGui::PlsReportIf(first_idx < header->first_idx && first_idx != header->first_idx, "What I thought was the first index value seems to actually be the smallest index.");
-
 
     ImGui::InputU16("Texture ID", &header->texture_idx);
     ImGui::InputU16("Vertex Buffer", &header->vertex_buf);
@@ -282,6 +269,8 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
         ImGui::InputU32("Unknown integer 1", &header->unk1);
         ImGui::InputU16("Unknown integer 2", &header->unk2);
         ImGui::InputU16("Unknown integer 3", &header->unk3);
+        ImGui::SetNextItemWidth(ImGui::CharWidth() * 12 * 6);
+        ImGui::InputScalarN("Unknown integer 4", ImGuiDataType_U16, header->unk4, 6);
     }
 
     if (ImGui::CollapsingHeader("Edit indices")) {
@@ -1032,6 +1021,11 @@ void polaris::chunk::draw(polaris& pol) noexcept {
         return;
     }
 
+    // Sanity check some of our assumptions & show warning messages if they fail
+    std::string msg;
+    bool valid = this->validate(pol, msg);
+    ImGui::PlsReportIf(!valid, msg.c_str());
+
     if (ImGui::BeginTabBar("Chunk Tabs")) {
         if (ImGui::BeginTabItem("Specialized Chunk Editor")) {
             switch (id) {
@@ -1078,6 +1072,109 @@ void polaris::chunk::draw(polaris& pol) noexcept {
     }
 }
 
+bool polaris::chunk::validate(const polaris& pol, std::string& msg) const noexcept {
+    if (pol.alr_data == nullptr || pol.alr_size == 0) {
+        return false; // Something is already wrong...
+    }
+    bool result = true;
+
+    // We might want access to ALR and/or chunk data during validation
+    vfile alr = vfile_open(pol.alr_data, pol.alr_size);
+    vfile chunk = vfile_open(pol.alr_data + this->offset, this->size);
+    chunk.pos += sizeof(chunk_generic);
+
+    switch (id) {
+    case 0x0:
+        if (size != 8) {
+            str_format_append(msg, "0x0 chunk had %d bytes of data (expected 8)!", size);
+            result = false;
+        }
+        break;
+    case 0x1:
+        break;
+    case 0x2: {
+        const auto header = VFILE_READ(idxbuf_header, &chunk);
+        const auto indices = (u16*)vfile_cur(chunk);
+        if (header.num_indices > 0 && header.first_idx != indices[0]) {
+            str_format_append(msg, "The listed first index (%d) didn't match the real first index (%d)!", offset, header.first_idx, indices[0]);
+            result = false;
+        }
+        const idxbuf_header empty = {0};
+        if (memcmp(header.pad, empty.pad, sizeof(header.pad)) != 0) {
+            str_format_append(msg, "What I thought was padding had data!");
+            result = false;
+        }
+        break;
+    }
+    case 0x3:
+        break;
+    case 0x5:
+        break;
+    case 0x7:
+        break;
+    case 0xD:
+        if (size != 12) {
+            str_format_append(msg, "0xD chunk had %d bytes of data (expected 12)!", size);
+            result = false;
+        }
+        break;
+    case 0x10:
+        break;
+    case 0x11: {
+        chunk.pos -= sizeof(chunk_generic);
+        const auto header = VFILE_READ(chunk_layout, &chunk);
+        if (header.texbuf_offset + header.texbuf_size > pol.alr_size) {
+            str_format_append(msg, "0x%x-byte resource buffer @ 0x%x can't fit in this 0x%x-byte ALR!", header.texbuf_size, header.texbuf_offset, pol.alr_size);
+            result = false;
+        }
+        if (header.pad != 0) {
+            str_format_append(msg, "What I thought was padding had data!");
+            result = false;
+        }
+        const u32 guessed_offset_count = (header.chunk_size - sizeof(header)) / sizeof(u32);
+        if (guessed_offset_count != header.offset_array_size) {
+            str_format_append(msg, "Offset array size seems wrong (found %d, should be %d)!", header.offset_array_size, guessed_offset_count);
+            result = false;
+        }
+        break;
+    }
+    case 0x13:
+        break;
+    case 0x15: {
+        const u32 num_entries = VFILE_READ(u32, &chunk);
+        const auto entries = (texture_entry*)vfile_cur(chunk);
+
+        for (u32 i = 0; i < num_entries; i++) {
+            if (entries[i].pad != 0) {
+                str_format_append(msg, "What I thought was padding in entry %d had data!", i);
+                result = false;
+            }
+            const s64 resbuf_size = pol.alr_size - pol.resbuf_offset;
+            if (entries[i].data_ptr > resbuf_size) {
+                str_format_append(msg, "Entry %d is well outside the resource buffer!", i);
+                result = false;
+            }
+        }
+        break;
+    }
+    case 0x16:
+        break;
+    default:
+        // Unimplemented chunk, skip
+        str_format_append(msg, "Unknown chunk type 0x%X @ offset 0x%lx", id, offset);
+        break;
+    }
+
+    if (!result) {
+        // In CLI mode, we don't have the context that's on-screen in the GUI.
+        if (pol.headless) {
+            str_format_append(msg, " [0x%X chunk @ 0x%x]", id, offset);
+        }
+        msg.append("\n");
+    }
+    return result;
+}
+
 polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     this->id = id;
     this->size = size;
@@ -1119,6 +1216,15 @@ polaris::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
 
 // =============================================================================
 // The rest of this file is for the main Polaris class
+
+bool polaris::validate(std::string& output) const noexcept {
+    bool result = true;
+    for (polaris::chunk chunk : this->chunks) {
+        result &= chunk.validate(*this, output);
+    }
+
+    return result;
+}
 
 polaris::polaris() noexcept {
     // TODO: Add an option to commit on reserve in bobtail

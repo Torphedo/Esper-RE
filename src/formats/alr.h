@@ -241,7 +241,7 @@ typedef struct {
     float aabb_min[3];
     // AABB max of the object represented by the index buffer
     float aabb_max[3];
-    u32 pad[3]; // Always 0, so far
+    u16 unk4[6];
     u32 unk1; // Definitely a u32, unknown purpose
     u16 texture_idx; // Index of vertex buffer in the 0x16 chunk
     u16 unk2;
@@ -253,7 +253,7 @@ typedef struct {
     u32 num_tris;
     // The number of indices stored in the buffer (might not match the available space)
     u32 num_indices;
-    u32 pad2[5];
+    u32 pad[5];
 }idxbuf_header;
 static_assert(sizeof(idxbuf_header) == 0x60, "Wrong index buffer header size!");
 
