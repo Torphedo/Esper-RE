@@ -5,11 +5,15 @@
 const char* texformat_str(alr_pixel_format format) {
     const char* out = "[UNKNOWN]";
     switch (format) {
+        case FORMAT_MONO_16_2:
         case FORMAT_MONO_16:
             out = "1-channel 16-bit raw";
             break;
         case FORMAT_A8:
             out = "1-channel 8-bit raw";
+            break;
+        case FORMAT_RG8:
+            out = "2-channel 8-bit raw";
             break;
         case FORMAT_RGBA8:
         case FORMAT_RGBA8_2:
@@ -41,12 +45,16 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
     }
 
     switch (entry.pixel_format) {
+        case FORMAT_MONO_16_2:
         case FORMAT_MONO_16:
             out.unit_size = 1; // See documentation, this means 16-bit channels
             out.channels = 1;
             break;
         case FORMAT_A8:
             out.channels = 1;
+            break;
+        case FORMAT_RG8:
+            out.channels = 2;
             break;
         case FORMAT_RGBA8:
         case FORMAT_RGBA8_2:
