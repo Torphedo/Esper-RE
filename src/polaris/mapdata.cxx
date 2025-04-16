@@ -1,4 +1,4 @@
-#include "layout.hxx"
+#include "mapdata.hxx"
 #include <cstdlib>
 
 #include <common/file.h>
@@ -8,7 +8,7 @@
 #include "formats/st00.h"
 #include "imgui_utils.hxx"
 
-layout_t::layout_t(const char* filepath) {
+mapdata::mapdata(const char* filepath) {
     if (!file_exists(filepath)) {
         return;
     }
@@ -23,7 +23,7 @@ layout_t::layout_t(const char* filepath) {
     initialized = true;
 }
 
-layout_t& layout_t::operator=(layout_t&& other) {
+mapdata& mapdata::operator=(mapdata&& other) {
     if (this != &other) {
         free(data);
         memcpy(this, &other, sizeof(other)); // Copy state from temporary
@@ -34,12 +34,12 @@ layout_t& layout_t::operator=(layout_t&& other) {
     return *this;
 }
 
-layout_t::~layout_t() {
+mapdata::~mapdata() {
     free(data);
     initialized = false;
 }
 
-void layout_t::do_gui() noexcept {
+void mapdata::do_gui() noexcept {
     if (!this->initialized) {
         return; // Ignore if not initialized
     }

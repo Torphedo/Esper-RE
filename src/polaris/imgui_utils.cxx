@@ -17,6 +17,10 @@ void BeginChildFitContent(const char* id, float width_percent) {
     ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
 }
 
+float CharWidth() {
+    return ImGui::CalcTextSize("1").x;
+}
+
 void PlsReportIf(bool condition, const char* format, ...) {
     if (!condition) {
         // Failure condition wasn't hit, everything's fine.

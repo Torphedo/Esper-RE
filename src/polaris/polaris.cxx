@@ -180,7 +180,7 @@ void polaris::chunk::dump_vertex_buf(const polaris& pol, const char* path, vertb
             const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
             // We only want index buffers meant for this vertex buffer
-            if (header.vertex_buf != window_0x16.selected_vertex_buf && header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+            if (header.vertex_buf != window_0x16.selected_vertex_buf) {
                 continue;
             }
 
@@ -250,10 +250,11 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
 
     // Sanity check some of our assumptions & show warning messages if they fail
     idxbuf_header temp = {0};
-    const char* pad_warning = "WARNING: What I thought was padding @ chunk offset 0x%x had real data!";
+    const char* pad_warning = "What I thought was padding @ chunk offset 0x%x had real data!";
     ImGui::PlsReportIf(memcmp(header->pad, temp.pad, sizeof(temp.pad)) != 0, pad_warning, offsetof(idxbuf_header, pad));
     ImGui::PlsReportIf(memcmp(header->pad2, temp.pad2, sizeof(temp.pad2)) != 0, pad_warning, offsetof(idxbuf_header, pad));
-    ImGui::PlsReportIf(header->vertex_buf != header->vertex_buf2, "What I thought was duplicate data actually isn't!");
+
+    ImGui::PushItemWidth(ImGui::CharWidth() * 32);
 
     const u16 first_idx = VFILE_READ(u16, &vf);
     vf.pos -= sizeof(first_idx);
@@ -261,27 +262,8 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
     ImGui::PlsReportIf(first_idx < header->first_idx && first_idx != header->first_idx, "What I thought was the first index value seems to actually be the smallest index.");
 
 
-    if (ImGui::InputU16("Vertex Buffer", &header->vertex_buf)) {
-        // There are always 2 copies of this data for some reason, so update
-        // the other when this one is updated.
-        header->vertex_buf2 = header->vertex_buf;
-    }
-    ImGui::InputU16("Vertex Buffer 2", &header->vertex_buf2);
-
-    // If we trust the file about the number of triangles, many indices will be
-    // missing.
-    const u16 lower_bound = header->first_idx;
-    const u32 idx_buf_size = size - sizeof(chunk_generic) - sizeof(*header);
-    s32 num_tris = MAX(0, idx_buf_size / (3 * sizeof(u16)));
-    // Percentage of how close the predicted count is to the size reported by
-    // the ALR
-    const float capacity_diff = ((float)header->num_tris / num_tris) * 100.0f;
-    ImGui::Text("ALR says there's %d triangles, buffer can hold %d\n(Using %.1f%% of capacity)", header->num_tris, num_tris, capacity_diff);
-
-    ImGui::Checkbox("Use ALR's triangle count", &window_0x2.trust_alr_tri_count);
-    if (window_0x2.trust_alr_tri_count) {
-        num_tris = header->num_tris;
-    }
+    ImGui::InputU16("Texture ID", &header->texture_idx);
+    ImGui::InputU16("Vertex Buffer", &header->vertex_buf);
 
     ImGui::InputU32("# of triangles", &header->num_tris);
     ImGui::InputU32("# of indices", &header->num_indices);
@@ -290,6 +272,10 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
     ImGui::InputFloat3("AABB Min", header->aabb_min);
     ImGui::InputFloat3("AABB Max", header->aabb_max);
 
+    for (u32 i = 0; i < 5; i++) {
+        ImGui::Spacing();
+    }
+
     if (ImGui::CollapsingHeader("Unknown Fields")) {
         ImGui::InputFloat("Unknown float 1", &header->unk_float);
 
@@ -297,29 +283,19 @@ void polaris::chunk::chunk_0x2(const polaris& pol) noexcept {
         ImGui::InputU16("Unknown integer 2", &header->unk2);
         ImGui::InputU16("Unknown integer 3", &header->unk3);
     }
-    for (u32 i = 0; i < 5; i++) {
-        ImGui::Spacing();
-    }
 
-    for (s32 i = 0; i < num_tris; i++) {
-        // User inputs for this triangle
-        char label[0x20] = {0};
-        snprintf(label, sizeof(label), "Triangle %d", i + 1);
-        ImGui::InputScalarN(label, ImGuiDataType_U16, vfile_cur(vf), 3);
-
-        const u16 idx1 = VFILE_READ(u16, &vf);
-        const u16 idx2 = VFILE_READ(u16, &vf);
-        const u16 idx3 = VFILE_READ(u16, &vf);
-        const bool idx_too_small = idx1 < lower_bound || idx2 < lower_bound || idx3 < lower_bound;
-
-        // If the ALR has a bad count we *will* go out of bounds here.
-        // Since we have the whole file loaded this won't cause any crashes,
-        // and may help illustrate where the end of the real data is.
-        if (idx_too_small && !window_0x2.trust_alr_tri_count) {
-            // We're hitting some invalid data, give up.
-            break;
+    if (ImGui::CollapsingHeader("Edit indices")) {
+        for (s32 i = 0; i < header->num_indices; i++) {
+            // User inputs for this triangle
+            char label[0x20] = {0};
+            snprintf(label, sizeof(label), "Index %d", i + 1);
+            u16* idx = (u16*)vfile_cur(vf);
+            vfile_seek(&vf, sizeof(*idx));
+            ImGui::InputU16(label, idx);
         }
     }
+
+    ImGui::PopItemWidth();
 }
 
 void polaris::chunk::chunk_0x3(const polaris& pol) noexcept {
@@ -960,7 +936,7 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
             vf.pos = chunk.offset + sizeof(chunk_generic);
             const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
             // We only want index buffers meant for this vertex buffer
-            if (idx_header.vertex_buf != window_0x16.selected_vertex_buf && idx_header.vertex_buf2 != window_0x16.selected_vertex_buf) {
+            if (idx_header.vertex_buf != window_0x16.selected_vertex_buf) {
                 continue;
             }
 
@@ -972,8 +948,8 @@ void polaris::chunk::send_vertbuf_to_viewport(polaris& pol) noexcept {
             u16 albedo_texture_idx = 0;
             u16 normal_texture_idx = 0;
             if (texinfo_entries != nullptr) {
-                albedo_texture_idx = texinfo_entries[idx_header.vertex_buf].texture_idx;
-                normal_texture_idx = texinfo_entries[idx_header.vertex_buf].normal_idx; 
+                albedo_texture_idx = texinfo_entries[idx_header.texture_idx].texture_idx;
+                normal_texture_idx = texinfo_entries[idx_header.texture_idx].normal_idx; 
 
                 // Account for multiple ALRs being loaded.
                 albedo_texture_idx += pol.cur_alr_texture_0;
@@ -1350,7 +1326,7 @@ void polaris::do_menu_bar() noexcept {
         char* path = nullptr;
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            this->layout = layout_t(path);
+            this->map = mapdata(path);
         }
         free(path);
     }
@@ -1577,7 +1553,7 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
         ImGui::End();
     }
 
-    this->layout.do_gui();
+    this->map.do_gui();
 
     // It's the end of the frame for us, save the current input
     prev_input = input;

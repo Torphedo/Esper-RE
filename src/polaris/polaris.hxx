@@ -8,7 +8,7 @@
 #include <common/image.h>
 #include <common/vmem.h>
 #include "viewport.hxx"
-#include "layout.hxx"
+#include "mapdata.hxx"
 
 extern "C" {
     #include <common/gl/input.h>
@@ -180,7 +180,7 @@ struct polaris {
     input_internal prev_input = {};
 
     // State for accompanying .dat file for a stage ALR.
-    layout_t layout;
+    mapdata map;
 
     // 3D viewport
     viewport_t viewport;
