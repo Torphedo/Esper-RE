@@ -504,13 +504,13 @@ void al::resource::chunk::chunk_0x7(const al::resource& alr, viewport_t& viewpor
     const u32 key_size = 0x10; // Camera path keys seem to always be this size.
     if (header->translation_key_count > 0 && ImGui::CollapsingHeader("Translation Keys")) {
         edit_keyframes(key_size, header->translation_key_count, vfile_cur(vf), "trans");
-        vfile_seek(&vf, key_size * header->translation_key_count);
     }
+    vfile_seek(&vf, key_size * header->translation_key_count);
 
     if (header->rotation_key_count > 0 && ImGui::CollapsingHeader("Rotation Keys")) {
         edit_keyframes(key_size, header->rotation_key_count, vfile_cur(vf), "rot");
-        vfile_seek(&vf, key_size * header->rotation_key_count);
     }
+    vfile_seek(&vf, key_size * header->rotation_key_count);
 }
 
 static ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept {
