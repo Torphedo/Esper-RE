@@ -15,7 +15,6 @@ include_directories(
     ext/glfw/include
     ext/cglm/include
     ext/imgui
-    ext/ImGuiFileDialog
     ext/bobtail
     ${Esper-RE_SOURCE_DIR}/src
 )
@@ -57,4 +56,4 @@ target_link_libraries(ssb PRIVATE bobtail)
 # Polaris handles its own linking
 
 # Copy test files to [build]/src/bin/ so they can be accessed while debugging
-file(COPY "bin" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+file(COPY "bin" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

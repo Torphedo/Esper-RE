@@ -1,11 +1,12 @@
 #include <cstdio>
 
 #include <glad/glad.h>
-#include <nfd.h>
-#include <cglm/struct.h>
-#include <imgui_curve.hpp>
+// Need this define to use operators on ImGui vector types
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <nfd.h> // Cross-platform native file dialog
+#include <cglm/struct.h>
 
 #include <common/int.h>
 #include <common/vfile.h>
