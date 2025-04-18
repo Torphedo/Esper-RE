@@ -63,7 +63,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
         // tex_header->texture_count /= sizeof(atlas_tex_entry);
     }
 
-    LOG_MSG(info, "Surface count: %d Image count: %d\n\n", tex_header->atlas_count, tex_header->texture_count);
+    LOG_MSG(info, "Atlas count: %d Image count: %d\n\n", tex_header->atlas_count, tex_header->texture_count);
 
     // &tex_header[1] = the address after the header.
     atlas_name* names = (atlas_name*)&tex_header[1];
@@ -102,7 +102,7 @@ void chunk_texture(void* ctx, chunk_generic header, u8* chunk_buf, u32 idx) {
 
     u32 total_image_pixels = 0;
     for (u32 i = 0; i < tex_header->texture_count; i++) {
-        LOG_MSG(info, "%-32s: Width %4hi, Height %4hi, \"pad\" 0x%x, texcoord (%f,%f) (Surface %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].padding, textures[i].atlas_texcoords[0], textures[i].atlas_texcoords[1], textures[i].index);
+        LOG_MSG(info, "%-32s: Width %4hi, Height %4hi, \"pad\" 0x%x, texcoord (%f, %f) (Atlas %2d)\n", textures[i].filename, textures[i].width, textures[i].height, textures[i].padding, textures[i].atlas_texcoords[0], textures[i].atlas_texcoords[1], textures[i].index);
         total_image_pixels += textures[i].width * textures[i].height;
     }
     LOG_MSG(debug, "Total pixel count for all textures: 0x%08X\n", total_image_pixels);

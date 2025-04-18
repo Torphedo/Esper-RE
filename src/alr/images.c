@@ -288,9 +288,9 @@ u64 pixel_count_max_mips(u32 width, u32 height, bool compressed) {
     return count;
 }
 
-u64 full_pixel_count(u32 width, u32 height, u32 mipmap_count, bool compressed) {
+u64 full_pixel_count(u32 width, u32 height, s32 mipmap_count, bool compressed) {
     u64 pixel_count = width * height;
-    for (u32 i = 0; i < mipmap_count - 1; i++) {
+    for (s32 i = 0; i < mipmap_count - 1; i++) {
         width /= 2;
         height /= 2;
         u32 res = width * height;
