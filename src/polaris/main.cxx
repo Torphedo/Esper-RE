@@ -20,21 +20,17 @@ void print_usage() {
 }
 
 int dump_all_textures(const polaris& pol) {
-    al::resource::chunk texture_chunk(0, 0, 0);
-    al::resource::chunk atlas_chunk(0, 0, 0);
+    al::resource::chunk texture_chunk = pol.alr.first_chunk_by_id(0x15);
+    al::resource::chunk atlas_chunk = pol.alr.first_chunk_by_id(0x10);
+    if (texture_chunk.size == 0 && atlas_chunk.size == 0) {
+        LOG_MSG(warning, "I couldn't find any textures to dump.\n");
+        return EXIT_FAILURE;
+    }
+
     system("mkdir textures"); // We need this folder for later
 
     // Try to find texture and texture atlas metadata, we need both to make a
     // good guess about dimensions.
-    for (al::resource::chunk chunk : pol.alr.chunks) {
-        if (chunk.id == 0x15) {
-            texture_chunk = chunk;
-        }
-        if (chunk.id == 0x10) {
-            atlas_chunk = chunk;
-        }
-    }
-
     u32 textures_dumped = 0;
 
     // Read texture chunk data
@@ -75,7 +71,7 @@ int dump_all_textures(const polaris& pol) {
 
         if (atlas_entries != nullptr && header_atlas.atlas_count > i) {
             atlas_entry entry = atlas_entries[i];
-            // We get better dimension info from the atlas headers, use it!
+            // We get better dimension info from the atlas headers, so use it!
             // Dimensions from the atlas headers are almost always more
             // accurate, so we always use them unless they're obviously wrong.
 
@@ -105,7 +101,7 @@ int dump_all_textures(const polaris& pol) {
     if (textures_dumped == 0) {
         // This isn't a *failure*, but might be confusing if we don't say
         // anything and someone expects a texture file to appear.
-        LOG_MSG(warning, "Couldn't find any textures to dump.\n");
+        LOG_MSG(warning, "I couldn't find any textures to dump.\n");
     }
     return EXIT_SUCCESS;
 }

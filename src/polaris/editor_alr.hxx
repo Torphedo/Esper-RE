@@ -189,6 +189,8 @@ public:
     /// @return List of chunks
     std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
 
+    chunk first_chunk_by_id(u32 id) const noexcept;
+
     void draw(viewport_t& viewport) noexcept;
 
     u8* resource_buffer() const noexcept {

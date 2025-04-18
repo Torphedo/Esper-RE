@@ -1,6 +1,5 @@
 // Need this define to use operators on ImGui vector types
 #define IMGUI_DEFINE_MATH_OPERATORS
-
 #include "editor_alr.hxx"
 #include <nfd.h>
 
@@ -33,7 +32,9 @@ do {                                 \
     }                                \
 } while(0)
 
-u32 al::resource::chunk::num_indices(const al::resource& alr) const noexcept {
+namespace al {
+
+u32 resource::chunk::num_indices(const resource& alr) const noexcept {
     if (id != 0x2) {
         return 0; // Can't use the assert macro because we return a value
     }
@@ -56,7 +57,7 @@ u32 al::resource::chunk::num_indices(const al::resource& alr) const noexcept {
     return MAX(0, buf_size / (sizeof(u16)));
 }
 
-void al::resource::chunk::dump_idx_buf(const al::resource& alr, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
+void resource::chunk::dump_idx_buf(const resource& alr, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
     vfile vf = vfile_open(alr.data + offset, size);
 
@@ -109,7 +110,7 @@ void al::resource::chunk::dump_idx_buf(const al::resource& alr, FILE* out, std::
 
 }
 
-void al::resource::chunk::dump_vertex_buf(const al::resource& alr, const char* path, vertbuf_entry entry) const noexcept {
+void resource::chunk::dump_vertex_buf(const resource& alr, const char* path, vertbuf_entry entry) const noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // Dump to OBJ
@@ -188,7 +189,7 @@ void al::resource::chunk::dump_vertex_buf(const al::resource& alr, const char* p
     }
 }
 
-void al::resource::chunk::chunk_0x1(const al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x1(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x1);
 
     vfile vf = vfile_open(alr.data, alr.alr_size);
@@ -215,7 +216,7 @@ void al::resource::chunk::chunk_0x1(const al::resource& alr, viewport_t& viewpor
     hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)alr.data);
 }
 
-void al::resource::chunk::chunk_0x2(const al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     if (ImGui::Button("Export to OBJ")) {
@@ -283,7 +284,7 @@ void al::resource::chunk::chunk_0x2(const al::resource& alr, viewport_t& viewpor
     ImGui::PopItemWidth();
 }
 
-void al::resource::chunk::chunk_0x3(const al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x3);
 
     // TODO: add a 3D viewport here so we can see all the matrix positions
@@ -465,7 +466,7 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
 
 }
 
-void al::resource::chunk::chunk_0x5(const al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexcept {
     vfile vf = vfile_open(alr.data + offset, size);
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
@@ -488,7 +489,7 @@ void al::resource::chunk::chunk_0x5(const al::resource& alr, viewport_t& viewpor
     vfile_seek(&vf, header->rotation_key_size * header->rotation_key_count);
 }
 
-void al::resource::chunk::chunk_0x7(const al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x7(const resource& alr, viewport_t& viewport) noexcept {
     // This is the same as normal animation frames, but seems to ignore the
     // existing keyframe size fields.
     vfile vf = vfile_open(alr.data + offset, size);
@@ -558,7 +559,7 @@ static ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_wi
     return image_pos;
 }
 
-void al::resource::chunk::chunk_0x10(const al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x10);
 
     // We use the vfile API to handle the chunk data
@@ -586,16 +587,20 @@ void al::resource::chunk::chunk_0x10(const al::resource& alr, viewport_t& viewpo
 
     // We have to look up texture entries to find out where each texture is
     texture_entry* entries = nullptr;
-    for (chunk c : alr.chunks) {
-        if (c.id == 0x15) {
-            // Skip to the chunk
-            vfile tmp = vfile_open(alr.data + c.offset, c.size);
-            vfile_seek(&tmp, sizeof(chunk_generic));
+    u32 num_entries = 0;
+    resource::chunk c = alr.first_chunk_by_id(0x15);
+    if (c.size == 0) {
+        // This should never happen
+        ImGui::PlsReportIf(true, "Couldn't find an 0x15 chunk!\n");
+        return;
+    } else {
+        // Skip to the chunk
+        vfile tmp = vfile_open(alr.data + c.offset, c.size);
+        vfile_seek(&tmp, sizeof(chunk_generic));
 
-            const u32 num_entries = VFILE_READ(u32, &tmp);
-            entries = (texture_entry*)vfile_cur(tmp);
-            break;
-        }
+        //
+        num_entries = VFILE_READ(u32, &tmp);
+        entries = (texture_entry*)vfile_cur(tmp);
     }
 
 
@@ -710,7 +715,7 @@ void al::resource::chunk::chunk_0x10(const al::resource& alr, viewport_t& viewpo
     draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
-void al::resource::chunk::chunk_0x11(const al::resource& alr, viewport_t& viewport) const noexcept {
+void resource::chunk::chunk_0x11(const resource& alr, viewport_t& viewport) const noexcept {
     CHUNK_ID_ASSERT(0x11);
 
     vfile vf = vfile_open(alr.data + offset, size);
@@ -729,7 +734,7 @@ void al::resource::chunk::chunk_0x11(const al::resource& alr, viewport_t& viewpo
     }
 }
 
-void al::resource::chunk::import_dds_0x15(const al::resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
+void resource::chunk::import_dds_0x15(const resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
     CHUNK_ID_ASSERT(0x15);
 
     const texture_entry cur = entries[window_0x15.selected_texture];
@@ -764,7 +769,7 @@ void al::resource::chunk::import_dds_0x15(const al::resource& alr, const char* p
     window_0x15.tex.height = window_0x15.tex.width = exponent(2, power);
 }
 
-void al::resource::chunk::chunk_0x15(al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x15);
 
     // We use the vfile API to handle the chunk data
@@ -858,7 +863,7 @@ void al::resource::chunk::chunk_0x15(al::resource& alr, viewport_t& viewport) no
     ImGui::EndGroup();
 }
 
-void al::resource::chunk::send_vertbuf_to_viewport(al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // We use the vfile API to handle the chunk data
@@ -950,7 +955,7 @@ void al::resource::chunk::send_vertbuf_to_viewport(al::resource& alr, viewport_t
     viewport.meshes.push_back(mesh);
 }
 
-void al::resource::chunk::chunk_0x16(al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // We use the vfile API to handle the chunk data
@@ -1004,7 +1009,7 @@ void al::resource::chunk::chunk_0x16(al::resource& alr, viewport_t& viewport) no
     ImGui::EndChild();
 }
 
-void al::resource::chunk::draw(al::resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
     if (alr.data == nullptr || alr.alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
         return;
@@ -1063,7 +1068,7 @@ void al::resource::chunk::draw(al::resource& alr, viewport_t& viewport) noexcept
     }
 }
 
-bool al::resource::chunk::validate(const al::resource& alr, std::string& msg, bool headless) const noexcept {
+bool resource::chunk::validate(const resource& alr, std::string& msg, bool headless) const noexcept {
     if (alr.data == nullptr || alr.alr_size == 0) {
         return false; // Something is already wrong...
     }
@@ -1166,7 +1171,7 @@ bool al::resource::chunk::validate(const al::resource& alr, std::string& msg, bo
     return result;
 }
 
-al::resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
+resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     this->id = id;
     this->size = size;
     this->offset = offset;
@@ -1204,7 +1209,7 @@ al::resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     }
 }
 
-bool al::resource::load(const char* path) noexcept {
+bool resource::load(const char* path) noexcept {
     if (!file_exists(path)) {
         LOG_MSG(error, "I couldn't find an ALR file named \"%s\".\n", path);
         return false;
@@ -1236,7 +1241,7 @@ bool al::resource::load(const char* path) noexcept {
     return true;
 }
 
-bool al::resource::save(const char* path) const noexcept {
+bool resource::save(const char* path) const noexcept {
     FILE* out = fopen(path, "wb");
     if (out == nullptr) {
         return false;
@@ -1252,11 +1257,11 @@ bool al::resource::save(const char* path) const noexcept {
     return result;
 }
 
-std::vector<al::resource::chunk> al::resource::shatter_alr(const u8* buf, s64 size) noexcept {
+std::vector<resource::chunk> resource::shatter_alr(const u8* buf, s64 size) noexcept {
     // Technically we cast away const here, but we don't write any data so it's
     // fine.
     vfile vf = vfile_open((void*)buf, size);
-    std::vector<al::resource::chunk> out;
+    std::vector<resource::chunk> out;
 
     // Loop until we exhaust the buffer or exit early
     u32 prev_id = -1;
@@ -1266,7 +1271,7 @@ std::vector<al::resource::chunk> al::resource::shatter_alr(const u8* buf, s64 si
         const uintptr_t offset = vf.pos; // It's important to save offset before reading
         const u32 id = VFILE_READ(u32, &vf);
         const s32 chunk_size = VFILE_READ(s32, &vf);
-        al::resource::chunk chunk(id, chunk_size, offset);
+        resource::chunk chunk(id, chunk_size, offset);
 
         if (chunk.id == 0 && prev_id == 0) {
             // There's never multiple consecutive chunks with ID 0. This means
@@ -1295,7 +1300,18 @@ std::vector<al::resource::chunk> al::resource::shatter_alr(const u8* buf, s64 si
     return out;
 }
 
-void al::resource::draw(viewport_t& viewport) noexcept {
+resource::chunk resource::first_chunk_by_id(u32 id) const noexcept {
+    // TODO: Add an overload to find a chunk within an offset range. Since the list is sorted we can do a sort of binary search by starting @ the middle
+    for (resource::chunk c : chunks) {
+        if (c.id == id) {
+            return c; // Found it!
+        }
+    }
+
+    return chunk(0, 0, 0); // Nothin...
+}
+
+void resource::draw(viewport_t& viewport) noexcept {
     ImGui::Begin("ALR Chunks");
 
     const char* filter_label = "ID Filter";
@@ -1330,8 +1346,7 @@ void al::resource::draw(viewport_t& viewport) noexcept {
         ImGui::TableHeadersRow();
 
         // Draw a row for each chunk
-        for (size_t n = 0; n < chunks.size(); n++) {
-            al::resource::chunk& chunk = chunks.at(n);
+        for (resource::chunk& chunk : chunks) {
             if (this->chunk_filter.has_value()) {
                 if (this->chunk_filter.value() != chunk.id) {
                     // Only show chunks that match the ID filter
@@ -1363,8 +1378,7 @@ void al::resource::draw(viewport_t& viewport) noexcept {
 
 
     // Draw window for all chunks being displayed right now
-    for (u32 i = 0; i < chunks.size(); i++ ) {
-        al::resource::chunk& chunk = chunks.at(i);
+    for (resource::chunk& chunk : chunks) {
         if (!chunk.active) {
             continue;
         }
@@ -1398,7 +1412,7 @@ void al::resource::draw(viewport_t& viewport) noexcept {
         }
         char buf[0x30] = {0};
         // Each window needs a unique ID, but "##x" isn't shown
-        snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%lX ##%u", chunk.id, known_name, chunk.offset, i);
+        snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%lX", chunk.id, known_name, chunk.offset);
 
         if (ImGui::Begin(buf, &chunk.active)) {
             chunk.draw(*this, viewport);
@@ -1408,7 +1422,7 @@ void al::resource::draw(viewport_t& viewport) noexcept {
     }
 }
 
-void al::resource::expand_reservation(s64 new_size) noexcept {
+void resource::expand_reservation(s64 new_size) noexcept {
     if (new_size < reserve_size) {
         LOG_MSG(error, "No reason to shrink reservation from 0x%X -> 0x%X, ignoring!\n", reserve_size, new_size);
         return;
@@ -1432,11 +1446,13 @@ void al::resource::expand_reservation(s64 new_size) noexcept {
     reserve_size = new_size;
 }
 
-al::resource::resource() noexcept {
+resource::resource() noexcept {
     // "Expand" our reservation from 0 bytes to... not 0.
     this->expand_reservation(reserve_size);
 }
 
-al::resource::~resource() noexcept {
+resource::~resource() noexcept {
     vmem_free(data, reserve_size);
 }
+
+} // namespace al

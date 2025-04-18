@@ -9,9 +9,6 @@
 #include <common/int.h>
 #include <common/vfile.h>
 
-#include <formats/pd_common.h>
-#include <formats/alr.h>
-
 #include "alr_texture.hxx"
 #include "editor_alr.hxx"
 #include "polaris.hxx"
