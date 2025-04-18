@@ -36,10 +36,13 @@ const char* texformat_str(alr_pixel_format format) {
 
 texture convert_tex(u8* resbuf, texture_entry entry) {
     // We default to uncompressed RGBA8 here
-    texture out = {};
-    out.data = resbuf + entry.data_ptr;
-    out.channels = 4;
-    out.height = out.width = 1 << entry.resolution_pwr;
+    texture out = {
+        .data = resbuf + entry.data_ptr,
+        .height = out.width = 1 << entry.resolution_pwr,
+        .compressed = false,
+        .channels = 4,
+    };
+
     if (entry.unknown == TEXTURE_CUBEMAP) {
         // TODO: Add cubemap support in our standard texture struct
     }

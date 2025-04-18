@@ -20,13 +20,13 @@ void print_usage() {
 }
 
 int dump_all_textures(const polaris& pol) {
-    polaris::chunk texture_chunk = polaris::chunk(0, 0, 0);
-    polaris::chunk atlas_chunk = polaris::chunk(0, 0, 0);
+    al::resource::chunk texture_chunk(0, 0, 0);
+    al::resource::chunk atlas_chunk(0, 0, 0);
     system("mkdir textures"); // We need this folder for later
 
     // Try to find texture and texture atlas metadata, we need both to make a
     // good guess about dimensions.
-    for (polaris::chunk chunk : pol.chunks) {
+    for (al::resource::chunk chunk : pol.alr.chunks) {
         if (chunk.id == 0x15) {
             texture_chunk = chunk;
         }
@@ -38,7 +38,7 @@ int dump_all_textures(const polaris& pol) {
     u32 textures_dumped = 0;
 
     // Read texture chunk data
-    vfile vf = vfile_open(pol.alr_data + texture_chunk.offset, texture_chunk.size);
+    vfile vf = vfile_open(pol.alr.data + texture_chunk.offset, texture_chunk.size);
     // Skip over the ID and size fields we already have
     vfile_seek(&vf, sizeof(chunk_generic));
     const u32 num_entries = VFILE_READ(u32, &vf);
@@ -49,7 +49,7 @@ int dump_all_textures(const polaris& pol) {
     atlas_name* atlas_names = nullptr;
     atlas_header header_atlas = {0};
     if (atlas_chunk.size > 0) {
-        vf = vfile_open(pol.alr_data + atlas_chunk.offset, atlas_chunk.size);
+        vf = vfile_open(pol.alr.data + atlas_chunk.offset, atlas_chunk.size);
 
         // Skip over the ID and size fields we already have
         vfile_seek(&vf, sizeof(chunk_generic));
@@ -64,7 +64,7 @@ int dump_all_textures(const polaris& pol) {
 
     for (u32 i = 0; i < num_entries; i++) {
         // Convert the ALR texture data to our standard texture struct
-        texture cur_tex = convert_tex(pol.alr_data + pol.resbuf_offset, tex_entries[i]);
+        texture cur_tex = convert_tex(pol.alr.data + pol.alr.resbuf_offset, tex_entries[i]);
 
         // Decode the texture filename
         char decoded_name[0x20] = {0};
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
     polaris pol;
     if (argc >= 2) {
         // We have an argument, it should be a filepath.
-        if (!pol.load_alr(argv[1])) {
+        if (!pol.alr.load(argv[1])) {
             // An error message will be printed for us down the chain, just exit
             return EXIT_FAILURE;
         }
