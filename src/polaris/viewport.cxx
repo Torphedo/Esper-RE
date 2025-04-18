@@ -1,8 +1,9 @@
 #include "viewport.hxx"
-#include "mesh_view.hxx"
-#include "polaris.hxx"
 #include <imgui.h>
 #include "imgui_utils.hxx"
+
+#include "mesh_view.hxx"
+#include "polaris.hxx"
 
 #include <common/logging.h>
 
@@ -37,7 +38,7 @@ out vec4 fragment_rgba;
 in vec2 texcoord;
 uniform sampler2D albedo_texture;
 uniform sampler2D normal_texture;
-uniform vec3 cam_pos;
+uniform vec3 cam_dir;
 uniform int flags = 0;
 
 void main() {
@@ -56,13 +57,13 @@ void main() {
         discard;
     }
 
-    vec3 normal_vec = cam_pos;
+    vec3 normal_vec = cam_dir;
     if (has_normal) {
         normal_vec = texture(normal_texture, texcoord).rgb;
         normal_vec = (normal_vec * 2.0) - 1.0;
     }
     const float ambient = 0.3f;
-    float diffuse_factor = abs(dot(cam_pos, normal_vec)) + ambient;
+    float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
 
     fragment_rgba = color * diffuse_factor;
     fragment_rgba.a = 1.0;
@@ -119,7 +120,7 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
     uniform_pvm = glGetUniformLocation(shader, "pvm");
     uniform_uv_divisor = glGetUniformLocation(shader, "uv_divisor");
     uniform_flags = glGetUniformLocation(shader, "flags");
-    uniform_cam_pos = glGetUniformLocation(shader, "cam_pos");
+    uniform_cam_dir = glGetUniformLocation(shader, "cam_dir");
 
     uniform_sampler_albedo = glGetUniformLocation(shader, "albedo_texture");
     uniform_sampler_normal = glGetUniformLocation(shader, "normal_texture");
@@ -147,10 +148,12 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
     return initialized;
 }
 
-void viewport_t::destroy() noexcept {
+viewport_t::~viewport_t() noexcept {
     if (initialized) {
         glDeleteFramebuffers(1, &fbo);
         glDeleteTextures(1, &color_tex);
+        glDeleteTextures(1, &depth_tex);
+        glDeleteProgram(shader);
         for (mesh_view mesh : meshes) {
             mesh.destroy();
         }
@@ -203,7 +206,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         const float padding = ImGui::GetStyle().FramePadding.x * 2;
         bool wireframe_changed = ImGui::Checkbox("Wireframe", &wireframe);
         ImGui::SameLine();
-        bool cull_changed = ImGui::Checkbox("Back-face culling", &cull_back_faces);
+        bool cull_changed = ImGui::Checkbox("Back-face culling", &backface_cull);
 
         ImGui::SameLine();
         bool temp_render_texcoords = shader_flags.render_texcoords;
@@ -254,7 +257,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
             }
         }
         if (cull_changed) {
-            if (cull_back_faces) {
+            if (backface_cull) {
                 glEnable(GL_CULL_FACE);
             } else {
                 glDisable(GL_CULL_FACE);
@@ -264,7 +267,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         // Bind shader & upload camera transform
         glUseProgram(shader);
         glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
-        glUniform3fv(uniform_cam_pos, 1, cam.facing().raw);
+        glUniform3fv(uniform_cam_dir, 1, cam.facing().raw);
         glUniform1i(uniform_flags, *((u32*)&shader_flags));
 
         glUniform1i(uniform_sampler_albedo, 0);

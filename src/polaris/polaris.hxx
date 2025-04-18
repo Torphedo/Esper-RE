@@ -1,16 +1,12 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <optional>
-#include <imgui.h>
-#include <imgui_hex_editor.h>
 
 #include <formats/alr.h>
-#include <common/image.h>
-#include <common/vmem.h>
+
 #include "editor_alr.hxx"
-#include "viewport.hxx"
 #include "mapdata.hxx"
+#include "viewport.hxx"
 
 extern "C" {
     #include <common/gl/input.h>
@@ -27,6 +23,9 @@ struct polaris {
     // TODO: Unload textures if they aren't being used in the viewport when loading another ALR, to save on memory.
     std::vector<gl_obj> gl_textures;
 
+    // 3D viewport
+    viewport_t viewport;
+
     // Whether to show the ImGui Demo Window
     bool show_demo = false;
 
@@ -36,14 +35,12 @@ struct polaris {
     // Input state from the previous frame
     input_internal prev_input = {};
 
-    // 3D viewport
-    viewport_t viewport;
-
     /// @brief Hide input from the rest of the program when ImGui is using it.
     void handle_input_suppression() noexcept;
 
     /// @brief Check if this ALR meets all of our expectations
-    /// @param output A text buffer for messages to be communicated to the user. A message might be added here even if the function succeeds.
+    /// @param output A text buffer for user-facing messages. Even if the
+    /// function succeeds, there might be a message.
     /// @return Whether the ALR data passed validation
     bool validate(std::string& output) const noexcept;
 
@@ -59,7 +56,6 @@ struct polaris {
 
     polaris() noexcept;
     ~polaris() noexcept {
-        viewport.destroy();
         this->unload_gl_textures();
     }
 };

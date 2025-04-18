@@ -1015,7 +1015,7 @@ void al::resource::chunk::draw(al::resource& alr, viewport_t& viewport) noexcept
 
     // We pass false here, because drawing means we're not in headless mode.
     bool valid = this->validate(alr, msg, false);
-    ImGui::PlsReportIf(!valid, msg.c_str());
+    ImGui::PlsReportIf(msg.length() > 0, msg.c_str());
 
     if (ImGui::BeginTabBar("Chunk Tabs")) {
         if (ImGui::BeginTabItem("Specialized Chunk Editor")) {

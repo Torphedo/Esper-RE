@@ -1,25 +1,18 @@
-#include <cstdio>
-
-#include <glad/glad.h>
 // Need this define to use operators on ImGui vector types
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_internal.h>
+#include "imgui_utils.hxx"
 #include <nfd.h> // Cross-platform native file dialog
 #include <cglm/struct.h>
 
 #include <common/int.h>
 #include <common/vfile.h>
-#include <common/file.h>
-#include <common/vmem.h>
-#include <common/logging.h>
 
 #include <formats/pd_common.h>
 #include <formats/alr.h>
 
 #include "alr_texture.hxx"
-#include "pd_mesh.hxx"
-#include "imgui_utils.hxx"
 #include "editor_alr.hxx"
 #include "polaris.hxx"
 
