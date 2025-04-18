@@ -1,8 +1,10 @@
 #pragma once
 #include <assert.h>
 #include <common/int.h>
+#include <common/file.h>
 
-static const char* st00_magic = "ST00";
+static const u32 st00_magic = MAGIC('S', 'T', '0', '0');
+static const u32 nm00_magic = MAGIC('N', 'M', '0', '0');
 
 typedef struct {
     u32 magic;
@@ -19,4 +21,4 @@ typedef struct {
     // These all seem to be offsets to chunks of data
     s32 unk7[54];
 }st00_t;
-static_assert(sizeof(st00_t) == 0x13C);
+static_assert(sizeof(st00_t) == 0x13C, "Map header size is wrong!");
