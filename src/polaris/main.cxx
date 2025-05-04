@@ -148,7 +148,12 @@ int main(int argc, char** argv) {
         LOG_MSG(info, "Validating \"%s\"...\n", path);
         std::string message = "";
         const bool result = pol.validate(message);
-        printf("%s\n", message.c_str());
+        if (result) {
+            LOG_MSG(info, "Validation passed!\n");
+        } else {
+            LOG_MSG(info, "Validation failed!\n");
+        }
+        printf("%s", message.c_str());
 
         return !result;
     } else if (strcmp(flag, "--help") == 0) {
