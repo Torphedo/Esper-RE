@@ -13,8 +13,7 @@ float clampf(float x, float min, float max) {
     }
     else if (x < min) {
         return min;
-    }
-    else {
+    } else {
         return x;
     }
 }
@@ -170,7 +169,7 @@ void camera::proj_view(mat4 out) const noexcept {
     mat4 projection = {0};
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     const float aspect = (float)mode->width / (float)mode->height;
-    glm_perspective_rh_no(glm_rad(45), aspect, 0.001f, 50000.0f, projection);
+    glm_perspective_rh_no(glm_rad(45), aspect, near_clip_plane, far_clip_plane, projection);
 
     // Camera matrix
     mat4 view = {0};
