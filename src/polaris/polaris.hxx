@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 #include <formats/alr.h>
 
@@ -21,16 +22,23 @@ struct polaris {
     mapdata map;
 
     // TODO: Unload textures if they aren't being used in the viewport when loading another ALR, to save on memory.
+    // Set of OpenGL textures used in the viewport
     std::vector<gl_obj> gl_textures;
 
     // 3D viewport
     viewport_t viewport;
 
+    // Whether we're running without graphics.
+    bool headless = true;
+
     // Whether to show the ImGui Demo Window
     bool show_demo = false;
 
-    // Whether we're running without graphics.
-    bool headless = true;
+    // Whether we show a window with all the debug performance timers.
+    bool show_timers = false;
+
+    // Set of named timers keyed by name
+    std::unordered_map<const char*, double> timer_map;
 
     // Input state from the previous frame
     input_internal prev_input = {};
@@ -42,7 +50,7 @@ struct polaris {
     /// @param output A text buffer for user-facing messages. Even if the
     /// function succeeds, there might be a message.
     /// @return Whether the ALR data passed validation
-    bool validate(std::string& output) const noexcept;
+    bool validate(std::string& output) noexcept;
 
     void unload_gl_textures() noexcept;
 

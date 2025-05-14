@@ -46,6 +46,7 @@ add_executable(polaris
     src/polaris/pd_mesh.cxx
     src/formats/pd_common.c
 
+    src/polaris/scope_timer.cxx
     src/polaris/viewport.cxx
     src/polaris/mesh_view.cxx
     src/polaris/camera.cxx

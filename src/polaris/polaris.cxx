@@ -1,5 +1,4 @@
 // Need this define to use operators on ImGui vector types
-#include "formats/alr.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -10,14 +9,17 @@
 #include <common/int.h>
 #include <common/vfile.h>
 
+#include "formats/alr.h"
 #include "alr_texture.hxx"
 #include "editor_alr.hxx"
 #include "polaris.hxx"
+#include "scope_timer.hxx"
 
-// =============================================================================
-// The rest of this file is for the main Polaris class
+// TODO: Since the timer data is on the class, this method can't be marked const
+// (even though we don't modify any other data and ought to be const).
+bool polaris::validate(std::string& output) noexcept {
+    const scope_timer draw_timer(timer_map, "polaris_validate");
 
-bool polaris::validate(std::string& output) const noexcept {
     bool result = true;
     std::optional<al::resource::chunk> header_chunk;
     for (const al::resource::chunk& chunk : this->alr.chunks) {
@@ -201,6 +203,7 @@ void polaris::do_menu_bar() noexcept {
             if (ImGui::BeginMenu("Windows")) {
                 ImGui::MenuItem("Viewport", nullptr, &this->viewport.enabled);
                 ImGui::MenuItem("Viewport Editor", nullptr, &this->viewport.editor_enabled);
+                ImGui::MenuItem("Performance Timers", nullptr, &this->show_timers);
                 ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
                 ImGui::EndMenu();
             }
@@ -323,6 +326,8 @@ bool load_gl_textures(polaris* pol) {
 }
 
 void polaris::do_gui(GLFWwindow* window) noexcept {
+    const scope_timer draw_timer(timer_map, "main_draw");
+
     // Make the entire window a giant docking space
     ImGui::DockSpaceOverViewport();
 
@@ -353,6 +358,14 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
 
     if (this->show_demo) {
         ImGui::ShowDemoWindow(&this->show_demo);
+    }
+
+    if (this->show_timers) {
+        ImGui::Begin("Performance Timers", &show_timers);
+        for (std::pair<const char*, double> entry : timer_map) {
+            ImGui::Text("%s: %.2lfms", entry.first, entry.second * 1000);
+        }
+        ImGui::End();
     }
 
     this->alr.draw(viewport);
