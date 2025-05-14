@@ -1,4 +1,5 @@
 // Need this define to use operators on ImGui vector types
+#include "formats/alr.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "editor_alr.hxx"
 #include <nfd.h>
@@ -896,24 +897,24 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
     bool has_strips = false;
     const chunk_0x1_entry* texinfo_entries = nullptr;
     // Upload the index buffers
-    for (chunk chunk : alr.chunks) {
-        if (chunk.id == 0x1 && chunk.offset < this->offset) {
+    for (chunk c : alr.chunks) {
+        if (c.id == 0x1 && c.offset < this->offset) {
             // Skip to chunk and get header
-            vf.pos = chunk.offset;
+            vf.pos = c.offset;
             const chunk_0x1_header header = VFILE_READ(chunk_0x1_header, &vf);
             texinfo_entries = (chunk_0x1_entry*) vfile_cur(vf);
         }
 
-        if (chunk.id == this->id && chunk.offset > this->offset) {
+        if (c.id == this->id && c.offset > this->offset) {
             // We've hit a mesh metadata chunk past our own, so any
             // further index buffers will be garbage data to us. Quit.
             break;
         }
 
         // We only want index buffer chunks for the current mesh
-        if (chunk.id == 0x2 && chunk.offset >= offset) {
+        if (c.id == 0x2 && c.offset >= offset) {
             // Skip to chunk and get header
-            vf.pos = chunk.offset + sizeof(chunk_generic);
+            vf.pos = c.offset + sizeof(chunk_generic);
             const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
             // We only want index buffers meant for this vertex buffer
             if (idx_header.vertex_buf != window_0x16.selected_vertex_buf) {
@@ -935,7 +936,7 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
             has_strips |= tri_strip;
             const index_buffer idx_buf = {
                 .data = ((u8*)vfile_cur(vf)),
-                .num = chunk.num_indices(alr),
+                .num = c.num_indices(alr),
                 .albedo_tex_idx = albedo_texture_idx,
                 .normal_tex_idx = normal_texture_idx,
                 .draw_mode = (u16)(tri_strip ? GL_TRIANGLE_STRIP : GL_TRIANGLES),
@@ -1068,6 +1069,24 @@ void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
     }
 }
 
+bool validate_entry_sizes(std::string& msg, u32 total_size, u32 header_size, u32 num_entries, u32 entry_size) {
+    const u32 estimated_num_entries = (total_size - header_size) / entry_size;
+    if (estimated_num_entries != num_entries) {
+        str_format_append(msg, "Entry count seems to be wrong!");
+
+        // Some ALRs (like boss03b & boss01) replace the texture count field
+        // with a size in bytes, fairly close to the chunk size. I'm not sure
+        // why they do this, but it can be accounted for.
+        const s64 size_diff = (s64)num_entries - (s64)total_size;
+        if (abs(size_diff) < 100) {
+            str_format_append(msg, "What was supposed to be an entry count looks to be a size in bytes.");
+        }
+        return false;
+    }
+
+    return true;
+}
+
 bool resource::chunk::validate(const resource& alr, std::string& msg, bool headless) const noexcept {
     if (alr.data == nullptr || alr.alr_size == 0) {
         return false; // Something is already wrong...
@@ -1086,8 +1105,11 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
             result = false;
         }
         break;
-    case 0x1:
+    case 0x1: {
+        const u16 num_entries = VFILE_READ(u16, &chunk);
+        result &= validate_entry_sizes(msg, size, sizeof(chunk_0x1_header), num_entries, sizeof(chunk_0x1_entry));
         break;
+    }
     case 0x2: {
         const auto header = VFILE_READ(idxbuf_header, &chunk);
         const auto indices = (u16*)vfile_cur(chunk);
@@ -1100,10 +1122,20 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
             str_format_append(msg, "What I thought was padding had data!");
             result = false;
         }
+
+        // Check that ALR reported array size matches the measured size
+        const u32 estimated_num_entries = (size - sizeof(header)) / sizeof(*indices);
+        result &= validate_entry_sizes(msg, size, sizeof(header), estimated_num_entries, sizeof(*indices));
+
+        // TODO: Check that the vertex/texture entry indices are in bounds
+
         break;
     }
-    case 0x3:
+    case 0x3: {
+        const u16 num_joints = VFILE_READ(u16, &chunk);
+        result &= validate_entry_sizes(msg, size, sizeof(chunk_armature), num_joints, sizeof(joint_t));
         break;
+    }
     case 0x5:
         break;
     case 0x7:
@@ -1114,8 +1146,10 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
             result = false;
         }
         break;
-    case 0x10:
+    case 0x10: {
+        const u32 num_entries = VFILE_READ(u32, &chunk);
         break;
+    }
     case 0x11: {
         chunk.pos -= sizeof(chunk_generic);
         const auto header = VFILE_READ(chunk_layout, &chunk);
@@ -1134,11 +1168,10 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
         }
         break;
     }
-    case 0x13:
-        break;
     case 0x15: {
         const u32 num_entries = VFILE_READ(u32, &chunk);
         const auto entries = (texture_entry*)vfile_cur(chunk);
+        result &= validate_entry_sizes(msg, size, sizeof(chunk_generic), num_entries, sizeof(texture_entry));
 
         for (u32 i = 0; i < num_entries; i++) {
             if (entries[i].pad != 0) {
@@ -1153,8 +1186,12 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
         }
         break;
     }
-    case 0x16:
+    case 0x16: {
+        const u32 num_entries = VFILE_READ(u32, &chunk);
+        const auto entries = (texture_entry*)vfile_cur(chunk);
+        result &= validate_entry_sizes(msg, size, sizeof(chunk_generic) + sizeof(u32), num_entries, sizeof(vertbuf_entry));
         break;
+    }
     default:
         // Unimplemented chunk, skip
         str_format_append(msg, "Unknown chunk type 0x%X @ offset 0x%lx\n", id, offset);
@@ -1164,7 +1201,7 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
     if (!result) {
         // In CLI mode, we don't have the context that's on-screen in the GUI.
         if (headless) {
-            str_format_append(msg, " [0x%X chunk @ 0x%x]", id, offset);
+            str_format_append(msg, "\t[0x%X chunk @ 0x%x]", id, offset);
         }
         msg.append("\n");
     }
@@ -1309,6 +1346,54 @@ resource::chunk resource::first_chunk_by_id(u32 id) const noexcept {
     }
 
     return chunk(0, 0, 0); // Nothin...
+}
+
+resource::chunk resource::first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept {
+    assert(low < high && "Low bound must be < high bound!");
+
+    const s32 chunk_count = chunks.size();
+
+    s32 pivot = chunk_count / 2;
+    float multiplier = 0.5f;
+    while (multiplier != 1.0f) {
+        multiplier = 1.0f;
+        const u32 offset = chunks.at(pivot).offset;
+        if (offset < low) {
+            // We undershot, advance by half the remaining space (multiplier 1.5)
+            multiplier = 1.5f;
+        }
+        if (offset > high) {
+            // We overshot, go back half the remaining space (multiplier 0.5)
+            multiplier = 0.5f;
+        }
+
+        pivot += (chunk_count - pivot) * multiplier;
+    }
+
+    s32 pos = pivot;
+    while (chunks.at(pos).offset > low && pos > 0) {
+        pos--;
+        if (chunks.at(pos).offset < low) {
+            // This chunk is below the bound, skip it and use the next lowest.
+            pos++;
+            break;
+        }
+    }
+    pos = MAX(0, pos); // Clamp to positive values
+
+    for (u32 i = pos; i < chunk_count; i++) {
+        const chunk& c = chunks.at(i);
+        if (c.offset > high) {
+            break;
+        }
+
+        if (c.id == id) {
+            return c; // Found it!
+        }
+    }
+
+    // Nothin...
+    return chunk(0, 0, 0);
 }
 
 void resource::draw(viewport_t& viewport) noexcept {

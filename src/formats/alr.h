@@ -254,9 +254,9 @@ typedef struct {
     float aabb_max[3];
     u16 unk4[6];
     u32 unk1; // Definitely a u32, unknown purpose
-    u16 texture_idx; // Index of vertex buffer in the 0x16 chunk
+    u16 texture_idx; // 0x1 texture entry to apply to this mesh
     u16 unk2;
-    u16 vertex_buf; // Same as above, so far?
+    u16 vertex_buf; // Index of vertex buffer in the 0x16 chunk
     u16 unk3; // Usually IDX_TYPE_NORMAL. When it's IDX_TYPE_STRIP, the indices are for a triangle strip. Maybe a bitfield?
     // Seems to be the first index of the first triangle. Maybe used to help order index buffers in optimal order
     u32 first_idx;

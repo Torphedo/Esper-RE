@@ -21,6 +21,7 @@ void str_format_append(std::string& output, const char* format_str, ...) {
     va_end(arg_list);
 
     output.append(buf);
+    output.append("\n");
 }
 
 // Minor helper functions for ImGui
