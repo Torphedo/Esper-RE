@@ -1157,7 +1157,7 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
         break;
     default:
         // Unimplemented chunk, skip
-        str_format_append(msg, "Unknown chunk type 0x%X @ offset 0x%lx", id, offset);
+        str_format_append(msg, "Unknown chunk type 0x%X @ offset 0x%lx\n", id, offset);
         break;
     }
 

@@ -82,17 +82,30 @@ bool polaris::validate(std::string& output) const noexcept {
         // should always be the last chunk.
         {
             if (!terminator.has_value()) {
-                str_format_append(output, "Chunk series @ offset 0x%x missing a null terminator!\n", prev_offset);
+                str_format_append(output, "Chunk series @ offset 0x%x missing a null terminator!\n", cur_offset);
                 result = false;
             }
             else if (last.offset != terminator->offset) {
-                str_format_append(output, "Chunk series @ offset 0x%x has terminator @ 0x%x, but last chunk @ 0x%x!\n", prev_offset, terminator->offset, last.offset);
+                str_format_append(output, "Chunk series @ offset 0x%x has terminator @ 0x%x, but last chunk @ 0x%x!\n", cur_offset, terminator->offset, last.offset);
                 result = false;
             }
         }
 
         // Update previous offset
         prev_offset = cur_offset;
+    }
+
+    // Verify that the offset table is in order (aside from negative entries)
+    {
+        s32 temp = -1;
+        for (s32 i = 0; i < header.offset_array_size; i++) {
+            const s32 offset = offsets[i];
+            if (offset <= temp) {
+                str_format_append(output, "Offset %d [0x%x] <= offset %d [0x%x]\n", i, offset, i - 1, temp);
+                result = false;
+            }
+            temp = offset;
+        }
     }
 
     return result;
