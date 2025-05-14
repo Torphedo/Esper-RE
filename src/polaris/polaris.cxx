@@ -1,4 +1,5 @@
 // Need this define to use operators on ImGui vector types
+#include "formats/alr.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -18,8 +19,80 @@
 
 bool polaris::validate(std::string& output) const noexcept {
     bool result = true;
-    for (al::resource::chunk chunk : this->alr.chunks) {
+    std::optional<al::resource::chunk> header_chunk;
+    for (const al::resource::chunk& chunk : this->alr.chunks) {
         result &= chunk.validate(this->alr, output, headless);
+        if (chunk.id == 0x11) {
+            header_chunk = chunk;
+        }
+    }
+
+    // We expect that the header chunk is always present
+    if (!header_chunk.has_value()) {
+        str_format_append(output, "ALR header is missing!\n");
+        return false;
+    }
+
+    if (header_chunk->offset != 0) {
+        str_format_append(output, "Expected header @ offset 0 [found @ 0x%x]!\n", header_chunk->offset);
+        result = false;
+    }
+
+    // Get vfile for header offsets
+    vfile alr_vf = vfile_open(this->alr.data, this->alr.alr_size);
+    vfile header_vf = alr_vf;
+    const auto header = VFILE_READ(chunk_layout, &header_vf);
+    const s32* offsets = (s32*)vfile_cur(header_vf);
+
+    s32 prev_offset = offsets[0];
+    u32 chunk_idx = 0;
+
+    for (u32 i = 1; i < header.offset_array_size; i++) {
+        const s32 cur_offset = offsets[i];
+        if (cur_offset < 0) {
+            str_format_append(output, "Header offset #%d is negative [%d]!\n", i, cur_offset);
+            continue;
+        }
+
+        // The first 0x00 chunk we find after the previous offset.
+        std::optional<al::resource::chunk> terminator;
+        // The last chunk before we hit the current offset
+        al::resource::chunk last(0xFF, 0, 0);
+
+        // Skip up to the last chunk before the current offset
+        while (chunk_idx < alr.chunks.size()) {
+            const al::resource::chunk chunk = alr.chunks.at(chunk_idx);
+
+            // Save the first 0x00 chunk we find
+            if (chunk.id == 0x00 && !terminator.has_value()) {
+                terminator = chunk;
+            }
+
+            // We've hit the current offset
+            if (chunk.offset >= cur_offset) {
+                break;
+            }
+
+            // If we got here, this chunk is still before the current offset.
+            last = chunk;
+            chunk_idx++;
+        }
+
+        // Unless our assumptions break or the file is wrong, the terminator
+        // should always be the last chunk.
+        {
+            if (!terminator.has_value()) {
+                str_format_append(output, "Chunk series @ offset 0x%x missing a null terminator!\n", prev_offset);
+                result = false;
+            }
+            else if (last.offset != terminator->offset) {
+                str_format_append(output, "Chunk series @ offset 0x%x has terminator @ 0x%x, but last chunk @ 0x%x!\n", prev_offset, terminator->offset, last.offset);
+                result = false;
+            }
+        }
+
+        // Update previous offset
+        prev_offset = cur_offset;
     }
 
     return result;

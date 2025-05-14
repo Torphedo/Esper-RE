@@ -1019,7 +1019,7 @@ void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
     std::string msg;
 
     // We pass false here, because drawing means we're not in headless mode.
-    bool valid = this->validate(alr, msg, false);
+    const bool valid = this->validate(alr, msg, false);
     ImGui::PlsReportIf(msg.length() > 0, msg.c_str());
 
     if (ImGui::BeginTabBar("Chunk Tabs")) {
