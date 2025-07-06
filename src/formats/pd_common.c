@@ -10,7 +10,7 @@
 // In the game, alphabetic characters are sometimes interpreted as uppercase
 // and sometimes lowercase. Similarly, the underscore is sometimes interpreted
 // as a space.
-// Lookup table extracted from PDUWP.exe by Vu314
+// Lookup table extracted from PDUWP.exe by Vu
 const char char_lookup[] = "\0000123456789abcdefghijklmnopqrstuvwxyz_";
 
 enum {

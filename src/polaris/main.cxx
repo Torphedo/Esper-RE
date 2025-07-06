@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
         if (result) {
             LOG_MSG(info, "Validation passed!\n");
         } else {
-            LOG_MSG(info, "Validation failed!\n");
+            LOG_MSG(error, "Validation failed!\n");
         }
         printf("%s", message.c_str());
 

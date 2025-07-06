@@ -6,7 +6,7 @@
 // https://phantomdust.miraheze.org/wiki/File_Formats/SSB
 
 // Data in this file comes mostly from the wiki page, and most of that SSB
-// research comes from Vu314. Thanks for the help :)
+// research comes from Vu. Thanks for the help :)
 
 typedef struct {
     u32 magic; // 20 00 00 00 

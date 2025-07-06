@@ -73,7 +73,7 @@ in-place instead of scrolling.
 
 ## SSB Tool [`src/ssb`]
 This is even more barebones than the deck editor, because  I don't work with SSBs often.
-Our resident SSB expert is Vu314, who has some Python tools [here](https://github.com/VSaige3/pd-ssb-decomp).
+Our resident SSB expert is Vu, who has some Python tools [here](https://github.com/VSaige3/pd-ssb-decomp).
 For more information on the file format, check out the [wiki page](https://phantomdust.miraheze.org/wiki/File_Formats/SSB).
 The tool in this repo will only display an SSB's function export table:
 

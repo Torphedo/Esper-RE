@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
         case version:
             printf("ssb (Esper-RE tools) v%s\n", version_string);
             printf("Open-source @ %s\n", url);
-            printf("Written by Torphedo [w/ help from Vu314]\n");
+            printf("Written by Torphedo [w/ help from Vu]\n");
             return 0;
         case help:
             LOG_MSG(info, "Usage: ssb [filename] [--info]\n");
