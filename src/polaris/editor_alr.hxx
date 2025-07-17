@@ -111,12 +111,6 @@ public:
         /// This always draws, and doesn't check the @ref active flag
         void draw(al::resource& alr, viewport_t& viewport) noexcept;
 
-        /// @brief Check if this chunk meets all of our expectations
-        /// @param alr A reference to the polaris instance with the relevant ALR data
-        /// @param output A text buffer for messages to be communicated to the user. A message might be added here even if the function succeeds.
-        /// @return Whether the chunk passed validation
-        bool validate(const al::resource& alr, std::string& msg, bool headless) const noexcept;
-
         // Dedicated editing windows for each chunk type
         void chunk_0x1(const al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x2(const al::resource& alr, viewport_t& viewport) noexcept;

@@ -1,7 +1,7 @@
 // Need this define to use operators on ImGui vector types
-#include "formats/alr.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "editor_alr.hxx"
+#include <imgui_internal.h>
 #include <nfd.h>
 
 #include <common/file.h>
@@ -10,12 +10,13 @@
 #include <common/logging.h>
 
 #include <formats/pd_common.h>
+#include <formats/alr.h>
 
 #include "alr_texture.hxx"
 #include "pd_mesh.hxx"
 
 #include "imgui_utils.hxx"
-#include <imgui_internal.h>
+#include "validation.hxx"
 
 enum {
     // The power of 2 to limit texture resolutions to
@@ -1020,7 +1021,7 @@ void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
     std::string msg;
 
     // We pass false here, because drawing means we're not in headless mode.
-    const bool valid = this->validate(alr, msg, false);
+    const bool valid = alr_chunk_validate(alr, *this, msg, false);
     ImGui::PlsReportIf(msg.length() > 0, msg.c_str());
 
     if (ImGui::BeginTabBar("Chunk Tabs")) {
@@ -1067,166 +1068,6 @@ void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
         }
         ImGui::EndTabBar();
     }
-}
-
-bool validate_entry_sizes(std::string& msg, u32 total_size, u32 header_size, u32 num_entries, u32 entry_size) {
-    const u32 estimated_num_entries = (total_size - header_size) / entry_size;
-    if (estimated_num_entries != num_entries) {
-        str_format_append(msg, "Entry count seems to be wrong!");
-
-        // Some ALRs (like boss03b & boss01) replace the texture count field
-        // with a size in bytes, fairly close to the chunk size. I'm not sure
-        // why they do this, but it can be accounted for. - torph
-        const s64 size_diff = (s64)num_entries - (s64)total_size;
-        if (abs(size_diff) < 100) {
-            str_format_append(msg, "What was supposed to be an entry count looks to be a size in bytes.");
-        }
-        return false;
-    }
-
-    return true;
-}
-
-bool resource::chunk::validate(const resource& alr, std::string& msg, bool headless) const noexcept {
-    if (alr.data == nullptr || alr.alr_size == 0) {
-        return false; // Something is already wrong...
-    }
-    bool result = true;
-
-    // We might want access to ALR and/or chunk data during validation
-    vfile alr_file = vfile_open(alr.data, alr.alr_size);
-    vfile chunk = vfile_open(alr.data + this->offset, this->size);
-    chunk.pos += sizeof(chunk_generic);
-
-    switch (id) {
-    case 0x0:
-        if (size != 8) {
-            str_format_append(msg, "0x0 chunk had %d bytes of data (expected 8)!", size);
-            result = false;
-        }
-        break;
-    case 0x1: {
-        const u16 num_entries = VFILE_READ(u16, &chunk);
-        result &= validate_entry_sizes(msg, size, sizeof(chunk_0x1_header), num_entries, sizeof(chunk_0x1_entry));
-        break;
-    }
-    case 0x2: {
-        const auto header = VFILE_READ(idxbuf_header, &chunk);
-        const auto indices = (u16*)vfile_cur(chunk);
-        if (header.num_indices > 0 && header.first_idx != indices[0]) {
-            str_format_append(msg, "The listed first index (%d) didn't match the real first index (%d)!", offset, header.first_idx, indices[0]);
-            result = false;
-        }
-        const idxbuf_header empty = {0};
-        if (memcmp(header.pad, empty.pad, sizeof(header.pad)) != 0) {
-            str_format_append(msg, "What I thought was padding had data!");
-            result = false;
-        }
-
-        // Check that ALR reported array size matches the measured size
-        const u32 estimated_num_entries = (size - sizeof(header)) / sizeof(*indices);
-        result &= validate_entry_sizes(msg, size, sizeof(header), estimated_num_entries, sizeof(*indices));
-
-        // TODO: Check that the vertex/texture entry indices are in bounds
-
-        break;
-    }
-    case 0x3: {
-        const u16 num_joints = VFILE_READ(u16, &chunk);
-        result &= validate_entry_sizes(msg, size, sizeof(chunk_armature), num_joints, sizeof(joint_t));
-        break;
-    }
-    case 0x5:
-        break;
-    case 0x7:
-        break;
-    case 0xD:
-        if (size != 12) {
-            str_format_append(msg, "0xD chunk had %d bytes of data (expected 12)!", size);
-            result = false;
-        }
-        break;
-    case 0x10: {
-        const atlas_header header = VFILE_READ(atlas_header, &chunk);
-        vfile_seek(&chunk, sizeof(atlas_name) * header.atlas_count);
-
-        const auto* atlas_entries = (atlas_entry*)vfile_cur(chunk);
-        vfile_seek(&chunk, sizeof(atlas_entry) * header.atlas_count);
-        const auto* tex_entries = (atlas_tex_entry*)vfile_cur(chunk);
-
-        for (u32 i = 0; i < header.atlas_count; i++) {
-            u32 num_matched = 0;
-            for (u32 j = 0; j < header.texture_count; j++) {
-                if (tex_entries[j].index == i) {
-                    num_matched++;
-                }
-            }
-
-            const u32 expected = atlas_entries[i].tex_count;
-            if (num_matched != expected) {
-                str_format_append(msg, "Atlas %d says it has %d children, but there's only %d\n", expected, num_matched);
-                result = false;
-            }
-        }
-
-        break;
-    }
-    case 0x11: {
-        chunk.pos -= sizeof(chunk_generic);
-        const auto header = VFILE_READ(chunk_layout, &chunk);
-        if (header.texbuf_offset + header.texbuf_size > alr.alr_size) {
-            str_format_append(msg, "0x%x-byte resource buffer @ 0x%x can't fit in this 0x%x-byte ALR!", header.texbuf_size, header.texbuf_offset, alr.alr_size);
-            result = false;
-        }
-        if (header.pad != 0) {
-            str_format_append(msg, "What I thought was padding had data!");
-            result = false;
-        }
-        const u32 guessed_offset_count = (header.chunk_size - sizeof(header)) / sizeof(u32);
-        if (guessed_offset_count != header.offset_array_size) {
-            str_format_append(msg, "Offset array size seems wrong (found %d, should be %d)!", header.offset_array_size, guessed_offset_count);
-            result = false;
-        }
-        break;
-    }
-    case 0x15: {
-        const u32 num_entries = VFILE_READ(u32, &chunk);
-        const auto entries = (texture_entry*)vfile_cur(chunk);
-        result &= validate_entry_sizes(msg, size, sizeof(chunk_generic), num_entries, sizeof(texture_entry));
-
-        for (u32 i = 0; i < num_entries; i++) {
-            if (entries[i].pad != 0) {
-                str_format_append(msg, "What I thought was padding in entry %d had data!", i);
-                result = false;
-            }
-            const s64 resbuf_size = alr.alr_size - alr.resbuf_offset;
-            if (entries[i].data_ptr > resbuf_size) {
-                str_format_append(msg, "Entry %d is well outside the resource buffer!", i);
-                result = false;
-            }
-        }
-        break;
-    }
-    case 0x16: {
-        const u32 num_entries = VFILE_READ(u32, &chunk);
-        const auto entries = (texture_entry*)vfile_cur(chunk);
-        result &= validate_entry_sizes(msg, size, sizeof(chunk_generic) + sizeof(u32), num_entries, sizeof(vertbuf_entry));
-        break;
-    }
-    default:
-        // Unimplemented chunk, skip
-        str_format_append(msg, "Unknown chunk type 0x%X @ offset 0x%lx\n", id, offset);
-        break;
-    }
-
-    if (!result) {
-        // In CLI mode, we don't have the context that's on-screen in the GUI.
-        if (headless) {
-            str_format_append(msg, "\t[0x%X chunk @ 0x%x]", id, offset);
-        }
-        msg.append("\n");
-    }
-    return result;
 }
 
 resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {

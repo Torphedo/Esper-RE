@@ -9,6 +9,7 @@
 #include "gui_loop.hxx"
 #include "polaris.hxx"
 #include "alr_texture.hxx"
+#include "validation.hxx"
 
 static const char* version_string = "1.0.0";
 static const char* url = "https://github.com/Torphedo/Esper-RE";
@@ -147,7 +148,7 @@ int main(int argc, char** argv) {
     } else if (strcmp(flag, validate_flag) == 0) {
         LOG_MSG(info, "Validating \"%s\"...\n", path);
         std::string message = "";
-        const bool result = pol.validate(message);
+        const bool result = alr_validate(message, pol);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");
         } else {

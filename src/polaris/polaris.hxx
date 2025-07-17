@@ -47,12 +47,6 @@ struct polaris {
     /// @brief Hide input from the rest of the program when ImGui is using it.
     void handle_input_suppression() noexcept;
 
-    /// @brief Check if this ALR meets all of our expectations
-    /// @param output A text buffer for user-facing messages. Even if the
-    /// function succeeds, there might be a message.
-    /// @return Whether the ALR data passed validation
-    bool validate(std::string& output) const noexcept;
-
     void unload_gl_textures() noexcept;
 
     void do_menu_bar() noexcept;
