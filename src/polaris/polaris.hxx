@@ -37,8 +37,9 @@ struct polaris {
     // Whether we show a window with all the debug performance timers.
     bool show_timers = false;
 
-    // Set of named timers keyed by name
-    std::unordered_map<const char*, double> timer_map;
+    // Set of named timers keyed by name.
+    // "mutable" allows const methods to modify this
+    mutable std::unordered_map<const char*, double> timer_map;
 
     // Input state from the previous frame
     input_internal prev_input = {};
@@ -50,7 +51,7 @@ struct polaris {
     /// @param output A text buffer for user-facing messages. Even if the
     /// function succeeds, there might be a message.
     /// @return Whether the ALR data passed validation
-    bool validate(std::string& output) noexcept;
+    bool validate(std::string& output) const noexcept;
 
     void unload_gl_textures() noexcept;
 

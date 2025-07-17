@@ -15,9 +15,7 @@
 #include "polaris.hxx"
 #include "scope_timer.hxx"
 
-// TODO: Since the timer data is on the class, this method can't be marked const
-// (even though we don't modify any other data and ought to be const).
-bool polaris::validate(std::string& output) noexcept {
+bool polaris::validate(std::string& output) const noexcept {
     const scope_timer draw_timer(timer_map, "polaris_validate");
 
     bool result = true;
@@ -82,15 +80,13 @@ bool polaris::validate(std::string& output) noexcept {
 
         // Unless our assumptions break or the file is wrong, the terminator
         // should always be the last chunk.
-        {
-            if (!terminator.has_value()) {
-                str_format_append(output, "Chunk series @ offset 0x%x missing a null terminator!\n", cur_offset);
-                result = false;
-            }
-            else if (last.offset != terminator->offset) {
-                str_format_append(output, "Chunk series @ offset 0x%x has terminator @ 0x%x, but last chunk @ 0x%x!\n", cur_offset, terminator->offset, last.offset);
-                result = false;
-            }
+        if (!terminator.has_value()) {
+            str_format_append(output, "Chunk series @ offset 0x%x missing a null terminator!\n", cur_offset);
+            result = false;
+        }
+        else if (last.offset != terminator->offset) {
+            str_format_append(output, "Chunk series @ offset 0x%x has terminator @ 0x%x, but last chunk @ 0x%x!\n", cur_offset, terminator->offset, last.offset);
+            result = false;
         }
 
         // Update previous offset
@@ -98,16 +94,14 @@ bool polaris::validate(std::string& output) noexcept {
     }
 
     // Verify that the offset table is in order (aside from negative entries)
-    {
-        s32 temp = -1;
-        for (s32 i = 0; i < header.offset_array_size; i++) {
-            const s32 offset = offsets[i];
-            if (offset <= temp) {
-                str_format_append(output, "Offset %d [0x%x] <= offset %d [0x%x]\n", i, offset, i - 1, temp);
-                result = false;
-            }
-            temp = offset;
+    s32 temp = -1;
+    for (s32 i = 0; i < header.offset_array_size; i++) {
+        const s32 offset = offsets[i];
+        if (offset <= temp) {
+            str_format_append(output, "Offset %d [0x%x] <= offset %d [0x%x]\n", i, offset, i - 1, temp);
+            result = false;
         }
+        temp = offset;
     }
 
     return result;

@@ -1076,7 +1076,7 @@ bool validate_entry_sizes(std::string& msg, u32 total_size, u32 header_size, u32
 
         // Some ALRs (like boss03b & boss01) replace the texture count field
         // with a size in bytes, fairly close to the chunk size. I'm not sure
-        // why they do this, but it can be accounted for.
+        // why they do this, but it can be accounted for. - torph
         const s64 size_diff = (s64)num_entries - (s64)total_size;
         if (abs(size_diff) < 100) {
             str_format_append(msg, "What was supposed to be an entry count looks to be a size in bytes.");
