@@ -1147,7 +1147,28 @@ bool resource::chunk::validate(const resource& alr, std::string& msg, bool headl
         }
         break;
     case 0x10: {
-        const u32 num_entries = VFILE_READ(u32, &chunk);
+        const atlas_header header = VFILE_READ(atlas_header, &chunk);
+        vfile_seek(&chunk, sizeof(atlas_name) * header.atlas_count);
+
+        const auto* atlas_entries = (atlas_entry*)vfile_cur(chunk);
+        vfile_seek(&chunk, sizeof(atlas_entry) * header.atlas_count);
+        const auto* tex_entries = (atlas_tex_entry*)vfile_cur(chunk);
+
+        for (u32 i = 0; i < header.atlas_count; i++) {
+            u32 num_matched = 0;
+            for (u32 j = 0; j < header.texture_count; j++) {
+                if (tex_entries[j].index == i) {
+                    num_matched++;
+                }
+            }
+
+            const u32 expected = atlas_entries[i].tex_count;
+            if (num_matched != expected) {
+                str_format_append(msg, "Atlas %d says it has %d children, but there's only %d\n", expected, num_matched);
+                result = false;
+            }
+        }
+
         break;
     }
     case 0x11: {
@@ -1359,11 +1380,11 @@ resource::chunk resource::first_chunk_in_range(u32 id, u32 low, u32 high) const 
         multiplier = 1.0f;
         const u32 offset = chunks.at(pivot).offset;
         if (offset < low) {
-            // We undershot, advance by half the remaining space (multiplier 1.5)
+            // We undershot, advance by half the remaining space
             multiplier = 1.5f;
         }
         if (offset > high) {
-            // We overshot, go back half the remaining space (multiplier 0.5)
+            // We overshot, go back half the remaining space
             multiplier = 0.5f;
         }
 

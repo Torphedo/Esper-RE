@@ -44,6 +44,19 @@ bool polaris::validate(std::string& output) const noexcept {
     const auto header = VFILE_READ(chunk_layout, &header_vf);
     const s32* offsets = (s32*)vfile_cur(header_vf);
 
+    const s64 size_mismatch = alr.alr_size - (header.texbuf_offset + header.texbuf_size);
+    if (size_mismatch < 0) {
+        str_format_append(output,
+                          "Header claims resbuf is 0x%X bytes @ 0x%X, but ALR is only 0x%X bytes (off by 0x%X)\n",
+                          header.texbuf_size, header.texbuf_offset, alr.alr_size, abs(size_mismatch));
+        result = false;
+    } else if (size_mismatch > 0) {
+        str_format_append(output,
+                          "Header claims resbuf is 0x%X bytes @ 0x%X, leaving 0x%X bytes extra\n",
+                          header.texbuf_size, header.texbuf_offset, size_mismatch);
+        result = false;
+    }
+
     s32 prev_offset = offsets[0];
     u32 chunk_idx = 0;
 
