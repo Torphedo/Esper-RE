@@ -5,6 +5,7 @@
 #include <common/vfile.h>
 #include <common/int.h>
 #include <formats/cad.h>
+#include "imgui_utils.hxx"
 
 void editor_cad::do_gui() noexcept {
     if (!data) {
@@ -13,22 +14,51 @@ void editor_cad::do_gui() noexcept {
 
     ImGui::Begin("CAD Data");
     if (ImGui::BeginTabBar("Chunk Tabs")) {
-        if (ImGui::BeginTabItem("Raw file data")) {
-            hex_edit.DrawContents((void *) this->data, this->size);
-            ImGui::EndTabItem();
-        }
         if (ImGui::BeginTabItem("Chunks")) {
             vfile vf = vfile_open(data, size);
-            const u32 num_vertices = VFILE_READ(u32, &vf);
-            vec3s *vertices = (vec3s *) vfile_cur(vf);
-            vfile_seek(&vf, sizeof(*vertices) * num_vertices);
+            auto cad = (cad_file*)vfile_cur(vf);
 
-            for (u32 i = 0; i < num_vertices; i++) {
-                char label[64] = {0};
-                snprintf(label, sizeof(label) - 1, "##vertex %d", i);
-                ImGui::InputFloat3(label, vertices[i].raw);
+            if (ImGui::CollapsingHeader("Vertices")) {
+                ImGui::Text("%d vertices @ 0x%lX", cad->vertex_count, offsetof(cad_file, vertex_count));
+                for (u32 i = 0; i < cad->vertex_count; i++) {
+                    char label[64] = {0};
+                    snprintf(label, sizeof(label) - 1, "##vertex %d", i);
+                    ImGui::InputFloat3(label, &cad->vertices[i].x);
+                }
             }
 
+            if (ImGui::CollapsingHeader("Quads")) {
+                ImGui::Text("%d quads @ 0x%lX", cad->quad_count, offsetof(cad_file, quad_count));
+                for (u32 i = 0; i < cad->quad_count; i++) {
+                    char label[64] = {0};
+                    snprintf(label, sizeof(label) - 1, "##quad_vert %d", i);
+                    ImGui::InputScalarN(label, ImGuiDataType_S32, cad->quads[i].vertices, 3);
+                }
+            }
+
+            if (ImGui::CollapsingHeader("Paths")) {
+                ImGui::Text("%d paths @ 0x%lX", cad->path_count, offsetof(cad_file, path_count));
+                for (u32 i = 0; i < cad->path_count; i++) {
+                    cad_path* path = &cad->paths[i];
+                    char label[64] = {0};
+
+                    snprintf(label, sizeof(label) - 1, "Start point ##%d", i);
+                    ImGui::InputFloat3(label, &path->start_point.x);
+
+                    snprintf(label, sizeof(label) - 1, "End point ##%d", i);
+                    ImGui::InputFloat3(label, &path->end_point.x);
+
+                    snprintf(label, sizeof(label) - 1, "Connected areas ##%d", i);
+                    ImGui::InputScalarN(label, ImGuiDataType_U32, path->connected_areas, 2);
+                    ImGui::Separator();
+                    ImGui::NewLine();
+                }
+            }
+
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Raw file data")) {
+            hex_edit.DrawContents((void *) this->data, this->size);
             ImGui::EndTabItem();
         }
 
