@@ -1,11 +1,12 @@
-#include "cad.hxx"
+#include "editor_cad.hxx"
 
 #include <cglm/struct.h>
 
 #include <common/vfile.h>
 #include <common/int.h>
+#include <formats/cad.h>
 
-void cad::do_gui() noexcept {
+void editor_cad::do_gui() noexcept {
     if (!data) {
         return; // Ignore if not initialized
     }

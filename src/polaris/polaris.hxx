@@ -7,7 +7,7 @@
 
 #include "editor_alr.hxx"
 #include "mapdata.hxx"
-#include "cad.hxx"
+#include "editor_cad.hxx"
 #include "viewport.hxx"
 
 extern "C" {
@@ -23,7 +23,7 @@ struct polaris {
     mapdata map;
 
     // State for .cad AI pathfinding data
-    cad ai_cad;
+    editor_cad ai_cad;
 
     // TODO: Unload textures if they aren't being used in the viewport when loading another ALR, to save on memory.
     // Set of OpenGL textures used in the viewport

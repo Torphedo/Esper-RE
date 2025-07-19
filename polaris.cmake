@@ -42,7 +42,7 @@ add_executable(polaris
     src/polaris/fileclass.cxx
     src/polaris/editor_alr.cxx
     src/polaris/mapdata.cxx
-    src/polaris/cad.cxx
+    src/polaris/editor_cad.cxx
 
     src/polaris/viewport.cxx
     src/polaris/mesh_view.cxx
