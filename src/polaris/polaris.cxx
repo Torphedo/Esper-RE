@@ -86,6 +86,7 @@ void polaris::do_menu_bar() noexcept {
     bool save_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_S, false);
 
     bool load_layout = false;
+    bool load_cad = false;
 
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
@@ -93,6 +94,7 @@ void polaris::do_menu_bar() noexcept {
                 load_alr |= ImGui::MenuItem("Load ALR", "Ctrl-L");
                 save_alr |= ImGui::MenuItem("Save ALR", "Ctrl-S");
                 load_layout |= ImGui::MenuItem("Load .dat");
+                load_cad |= ImGui::MenuItem("Load CAD");
                 ImGui::EndMenu();
             }
 
@@ -144,6 +146,17 @@ void polaris::do_menu_bar() noexcept {
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
             this->map = mapdata(path);
+        }
+        free(path);
+    }
+
+    if (load_cad) {
+        // Display the file picker and load if a file is picked
+        nfdu8filteritem_t filters[] = { { "CAD", "cad"} };
+        char* path = nullptr;
+        nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        if (result == NFD_OKAY && path != nullptr) {
+            this->ai_cad.load(path);
         }
         free(path);
     }
@@ -272,6 +285,7 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
 
     this->alr.draw(viewport);
     this->map.do_gui();
+    this->ai_cad.do_gui();
 
     // It's the end of the frame for us, save the current input
     prev_input = input;

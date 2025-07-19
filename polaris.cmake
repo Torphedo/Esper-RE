@@ -39,18 +39,20 @@ add_executable(polaris
     src/polaris/main.cxx
     src/polaris/gui_loop.cxx
 
-    src/polaris/polaris.cxx
     src/polaris/fileclass.cxx
     src/polaris/editor_alr.cxx
-    src/polaris/validation.cxx
-    src/polaris/alr_texture.cxx
     src/polaris/mapdata.cxx
+    src/polaris/cad.cxx
+
+    src/polaris/viewport.cxx
+    src/polaris/mesh_view.cxx
+    src/polaris/validation.cxx # Validation for ALRs
+    src/polaris/alr_texture.cxx
+    src/polaris/polaris.cxx
     src/polaris/pd_mesh.cxx
     src/formats/pd_common.c
 
     src/polaris/scope_timer.cxx
-    src/polaris/viewport.cxx
-    src/polaris/mesh_view.cxx
     src/polaris/camera.cxx
     src/polaris/imgui_utils.cxx
 
@@ -58,6 +60,6 @@ add_executable(polaris
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
-    src/polaris/validation.cxx src/polaris/validation.hxx)
+)
 
 target_link_libraries(polaris PRIVATE glfw imgui bobtail nfd)
