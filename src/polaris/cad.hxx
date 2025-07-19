@@ -8,8 +8,5 @@
 struct cad : public fileclass {
     MemoryEditor hex_edit;
 
-    // fileclass overrides
-    virtual bool load_verify() const noexcept override;
-
     void do_gui() noexcept;
 };

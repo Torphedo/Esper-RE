@@ -5,10 +5,6 @@
 #include <common/vfile.h>
 #include <common/int.h>
 
-bool cad::load_verify() const noexcept {
-    return true;
-}
-
 void cad::do_gui() noexcept {
     if (!data) {
         return; // Ignore if not initialized
