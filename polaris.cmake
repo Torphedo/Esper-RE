@@ -40,6 +40,7 @@ add_executable(polaris
     src/polaris/gui_loop.cxx
 
     src/polaris/polaris.cxx
+    src/polaris/fileclass.cxx
     src/polaris/editor_alr.cxx
     src/polaris/validation.cxx
     src/polaris/alr_texture.cxx

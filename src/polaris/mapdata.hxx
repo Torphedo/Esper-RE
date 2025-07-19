@@ -4,21 +4,21 @@
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 
-// This class represents ".dat" map files in memory
-class mapdata {
-public:
-    u8* data = nullptr;
-    size_t size = 0;
+#include "fileclass.hxx"
 
+// This class represents ".dat" map files in memory
+struct mapdata : public fileclass {
+public:
     MemoryEditor hex_edit;
     u32 selected_chunk = 0;
 
     bool initialized = false;
 
-    // Explicit constructor
-    mapdata(const char* filepath);
-    mapdata() = default;
+    // fileclass overrides
+    virtual bool load_verify() const noexcept override;
 
+    mapdata() = default;
+    mapdata(const char* filepath);
     mapdata& operator=(mapdata&& other);
     ~mapdata();
 

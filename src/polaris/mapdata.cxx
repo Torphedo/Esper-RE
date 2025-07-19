@@ -8,35 +8,17 @@
 #include "formats/st00.h"
 #include "imgui_utils.hxx"
 
-mapdata::mapdata(const char* filepath) {
-    if (!file_exists(filepath)) {
-        return;
-    }
-
-    size = file_size(filepath);
-    if (size < 4) {
-        LOG_MSG(error, "The map file \"%s\" is too small (%d bytes)!\n", size);
-        size = 0;
-        return;
-    }
-
-    data = file_load(filepath);
-
-    if (data == nullptr) {
-        LOG_MSG(error, "Failed to load map file \"%s\"\n", filepath);
-    }
-
+bool mapdata::load_verify() const noexcept {
     const u32 magic = *(u32*)data;
     if (magic != st00_magic) {
         LOG_MSG(error, "\"%s\" doesn't seem to be a .dat map file (invalid magic 0x%x)\n", magic);
-        free(data);
-        data = nullptr;
-        size = 0;
-        return;
+        return false;
     }
+    return true;
+}
 
-    // Everything is fine
-    initialized = true;
+mapdata::mapdata(const char* filepath) {
+    initialized = load(filepath);
 }
 
 // Move assignment operator (when assigning with a temp value)
@@ -52,7 +34,6 @@ mapdata& mapdata::operator=(mapdata&& other) {
 }
 
 mapdata::~mapdata() {
-    free(data);
     initialized = false;
 }
 
