@@ -1,11 +1,27 @@
 #include "editor_cad.hxx"
 
 #include <cglm/struct.h>
+#include <nfd.h>
 
 #include <common/vfile.h>
 #include <common/int.h>
 #include <formats/cad.h>
 #include "imgui_utils.hxx"
+
+static bool dump_raw_vertices(vec3f* verts, u32 vert_count, const char* out_path) {
+    FILE* f = fopen(out_path, "wb");
+    if (!f) {
+        return false;
+    }
+
+    for (u32 i = 0; i < vert_count; i++) {
+        vec3f* vert = &verts[i];
+        fprintf(f, "v %f %f %f\n", vert->x, vert->y, vert->z);
+    }
+
+    fclose(f);
+    return true;
+}
 
 void editor_cad::do_gui() noexcept {
     if (!data) {
@@ -20,6 +36,16 @@ void editor_cad::do_gui() noexcept {
 
             if (ImGui::CollapsingHeader("Vertices")) {
                 ImGui::Text("%d vertices @ 0x%lX", cad->vertex_count, offsetof(cad_file, vertex_count));
+                if (ImGui::Button("Dump to OBJ")) {
+                    char* path = nullptr;
+                    const nfdu8filteritem_t filters[] = { { "3D Object", "obj"} };
+                    nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+                    if (result == NFD_OKAY && path != nullptr) {
+                        dump_raw_vertices(cad->vertices, cad->vertex_count, path);
+                    }
+                    free(path);
+                }
+
                 for (u32 i = 0; i < cad->vertex_count; i++) {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##vertex %d", i);
