@@ -50,8 +50,9 @@ void editor_cad::do_gui() noexcept {
 
                     snprintf(label, sizeof(label) - 1, "Connected areas ##%d", i);
                     ImGui::InputScalarN(label, ImGuiDataType_U32, path->connected_areas, 2);
+                    ImGui::Spacing();
                     ImGui::Separator();
-                    ImGui::NewLine();
+                    ImGui::Spacing();
                 }
             }
 
