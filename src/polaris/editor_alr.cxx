@@ -1282,7 +1282,7 @@ void resource::draw(viewport_t& viewport) noexcept {
         this->chunk_filter = std::optional<u32>();
     }
 
-    if (ImGui::BeginTable("alr chunks", 3, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Reorderable)) {
+    if (ImGui::BeginTable("alr chunks", 4, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Reorderable)) {
         // Make header row that never scrolls away
         ImGui::TableSetupScrollFreeze(0, 1);
 
@@ -1290,35 +1290,46 @@ void resource::draw(viewport_t& viewport) noexcept {
         ImGui::TableSetupColumn("ID");
         ImGui::TableSetupColumn("Offset");
         ImGui::TableSetupColumn("Size");
+        ImGui::TableSetupColumn("Index");
         ImGui::TableHeadersRow();
 
         // Draw a row for each chunk
-        for (resource::chunk& chunk : chunks) {
-            if (this->chunk_filter.has_value()) {
-                if (this->chunk_filter.value() != chunk.id) {
-                    // Only show chunks that match the ID filter
-                    continue;
+        ImGuiListClipper clipper;
+        clipper.Begin(chunks.size());
+        while (clipper.Step()) {
+            for (u32 i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                resource::chunk &chunk = chunks[i];
+                if (this->chunk_filter.has_value()) {
+                    if (this->chunk_filter.value() != chunk.id) {
+                        // Only show chunks that match the ID filter
+                        continue;
+                    }
                 }
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("0x%X", chunk.id);
+
+                // Selectable needs a unique ID, so we use the offset as the
+                // selectable column because it's unique
+                ImGui::TableSetColumnIndex(1);
+                char buf[0x10] = {0};
+                snprintf(buf, sizeof(buf), "0x%02lX", chunk.offset);
+                // The extra flag makes the selection highlight go across the whole table
+                const u32 select_flags = ImGuiSelectableFlags_SpanAllColumns;
+                if (ImGui::Selectable(buf, chunk.active, select_flags)) {
+                    // Display chunk window
+                    chunk.active = !chunk.active;
+                }
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text("0x%X", chunk.size);
+
+               ImGui::TableSetColumnIndex(3);
+               ImGui::Text("%d", i);
             }
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text("0x%X", chunk.id);
-
-            // Selectable needs a unique ID, so we use the offset as the
-            // selectable column because no 2 chunks have the same offset.
-            ImGui::TableSetColumnIndex(1);
-            char buf[0x10] = {0};
-            snprintf(buf, sizeof(buf), "0x%02lX", chunk.offset);
-            // The extra flag makes the selection highlight go across the whole table
-            if (ImGui::Selectable(buf, chunk.active, ImGuiSelectableFlags_SpanAllColumns)) {
-                // Display chunk window
-                chunk.active = !chunk.active;
-            }
-
-            ImGui::TableSetColumnIndex(2);
-            ImGui::Text("0x%X", chunk.size);
         }
+        clipper.End();
         ImGui::EndTable();
     }
     ImGui::End();
