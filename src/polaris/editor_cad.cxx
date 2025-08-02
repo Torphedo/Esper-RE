@@ -8,15 +8,23 @@
 #include <formats/cad.h>
 #include "imgui_utils.hxx"
 
-static bool dump_raw_vertices(vec3f* verts, u32 vert_count, const char* out_path) {
+static bool dump_raw_vertices(const cad_file& cad, const char* out_path) {
     FILE* f = fopen(out_path, "wb");
     if (!f) {
         return false;
     }
 
-    for (u32 i = 0; i < vert_count; i++) {
-        vec3f* vert = &verts[i];
-        fprintf(f, "v %f %f %f\n", vert->x, vert->y, vert->z);
+    // Dump vertices
+    for (u32 i = 0; i < cad.vertex_count; i++) {
+        const vec3f& vert = cad.vertices[i];
+        fprintf(f, "v %f %f %f\n", vert.x, vert.y, vert.z);
+    }
+
+    // Dump indices
+    for (const cad_quad& quad : cad.quads) {
+        // We add 1 to everything since OBJ indices start @ 1.
+        fprintf(f, "f %d %d %d\n", quad.vertices[0] + 1, quad.vertices[1] + 1, quad.vertices[2] + 1);
+        fprintf(f, "f %d %d %d\n", quad.vertices[0] + 1, quad.vertices[2] + 1, quad.vertices[3] + 1);
     }
 
     fclose(f);
@@ -41,7 +49,7 @@ void editor_cad::do_gui() noexcept {
                     const nfdu8filteritem_t filters[] = { { "3D Object", "obj"} };
                     nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
                     if (result == NFD_OKAY && path != nullptr) {
-                        dump_raw_vertices(cad->vertices, cad->vertex_count, path);
+                        dump_raw_vertices(*cad, path);
                     }
                     free(path);
                 }
@@ -58,7 +66,7 @@ void editor_cad::do_gui() noexcept {
                 for (u32 i = 0; i < cad->quad_count; i++) {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##quad_vert %d", i);
-                    ImGui::InputScalarN(label, ImGuiDataType_S32, cad->quads[i].vertices, 3);
+                    ImGui::InputScalarN(label, ImGuiDataType_S32, cad->quads[i].vertices, 4);
                 }
             }
 

@@ -12,8 +12,11 @@ typedef struct {
     u8 flags;
     u8 unknown1[3];
     s32 unknown2[8];
-    // We think this is the index into the vertex buffer. Why are they 32-bit
-    // when the vertex buffer has a fixed size of 1000?
+    // These are indices into the vertex buffer. To render these as triangles:
+    // - 0, 1, and 2 form the 1st triangle
+    // - 0, 2, and 3 form the 2nd triangle
+    // ^ This was found by trial and error.
+    // Why are they 32-bit when the vertex buffer has a fixed size of 1000?
     s32 vertices[4];
     s16 unknown3[4];
     s8 unknown4[24];
