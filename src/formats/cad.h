@@ -8,6 +8,12 @@ extern "C" {
 #include <assert.h>
 #include "alr.h" // For vec3f structure
 
+enum {
+    CAD_QUAD_FLAG_1    = 1 << 0,
+    // Flag for a jump pad the AI may want to pathfind to
+    CAD_QUAD_FLAG_JUMP = 1 << 1,
+};
+
 typedef struct {
     u8 flags;
     u8 unknown1[3];

@@ -23,8 +23,11 @@ static bool dump_raw_vertices(const cad_file& cad, const char* out_path) {
     // Dump indices
     for (const cad_quad& quad : cad.quads) {
         const char* group = "unimplemented_nonzero";
-        if (quad.flags & 1) {
+        if (quad.flags & CAD_QUAD_FLAG_1) {
             group = "flag_1";
+        }
+        else if (quad.flags & CAD_QUAD_FLAG_JUMP) {
+            group = "flag_2_jump_pad";
         } else if (quad.flags == 0) {
             group = "none";
         }
