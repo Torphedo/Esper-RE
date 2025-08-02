@@ -22,6 +22,14 @@ static bool dump_raw_vertices(const cad_file& cad, const char* out_path) {
 
     // Dump indices
     for (const cad_quad& quad : cad.quads) {
+        const char* group = "unimplemented_nonzero";
+        if (quad.flags & 1) {
+            group = "flag_1";
+        } else if (quad.flags == 0) {
+            group = "none";
+        }
+        fprintf(f, "g %s\n", group);
+
         // We add 1 to everything since OBJ indices start @ 1.
         fprintf(f, "f %d %d %d\n", quad.vertices[0] + 1, quad.vertices[1] + 1, quad.vertices[2] + 1);
         fprintf(f, "f %d %d %d\n", quad.vertices[0] + 1, quad.vertices[2] + 1, quad.vertices[3] + 1);
@@ -67,6 +75,18 @@ void editor_cad::do_gui() noexcept {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##quad_vert %d", i);
                     ImGui::InputScalarN(label, ImGuiDataType_S32, cad->quads[i].vertices, 4);
+                    snprintf(label, sizeof(label) - 1, "Flags##%d", i);
+                    ImGui::InputU8(label, &cad->quads[i].flags);
+                    ImGui::Separator();
+                }
+            }
+
+            if (ImGui::CollapsingHeader("Quad Unknown 3")) {
+                ImGui::Text("%d quads @ 0x%lX", cad->quad_count, offsetof(cad_file, quad_count));
+                for (u32 i = 0; i < cad->quad_count; i++) {
+                    char label[64] = {0};
+                    snprintf(label, sizeof(label) - 1, "##quad_unk3 %d", i);
+                    ImGui::InputScalarN(label, ImGuiDataType_S16, cad->quads[i].unknown3, 4);
                 }
             }
 
