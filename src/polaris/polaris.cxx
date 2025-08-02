@@ -285,7 +285,7 @@ void polaris::do_gui(GLFWwindow* window) noexcept {
 
     this->alr.draw(viewport);
     this->map.do_gui();
-    this->ai_cad.do_gui();
+    this->ai_cad.do_gui(viewport);
 
     // It's the end of the frame for us, save the current input
     prev_input = input;

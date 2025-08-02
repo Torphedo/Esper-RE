@@ -9,9 +9,17 @@ extern "C" {
 #include "alr.h" // For vec3f structure
 
 enum {
-    CAD_QUAD_FLAG_1    = 1 << 0,
+    CAD_QUAD_FLAG_BREAKABLE = 1 << 0,
+
     // Flag for a jump pad the AI may want to pathfind to
-    CAD_QUAD_FLAG_JUMP = 1 << 1,
+    CAD_QUAD_FLAG_JUMP      = 1 << 1,
+
+    // Unknown purpose, Vu says it might make a quad invalid
+    CAD_QUAD_FLAG_3         = 1 << 2,
+
+    // Flag for whether the quad is currently destroyed. This is set at runtime,
+    // you should never see it set in a file.
+    CAD_QUAD_FLAG_BROKEN    = 1 << 3,
 };
 
 typedef struct {

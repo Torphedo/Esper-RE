@@ -6,6 +6,8 @@
 #include <common/vfile.h>
 #include <common/int.h>
 #include <formats/cad.h>
+#include "mesh_view.hxx"
+#include "viewport.hxx"
 #include "imgui_utils.hxx"
 
 static bool dump_raw_vertices(const cad_file& cad, const char* out_path) {
@@ -27,11 +29,14 @@ static bool dump_raw_vertices(const cad_file& cad, const char* out_path) {
     for (u32 i = 0; i < quad_count; i++) {
         const cad_quad& quad = cad.quads[i];
         const char* group = "unimplemented_nonzero";
-        if (quad.flags & CAD_QUAD_FLAG_1) {
-            group = "flag_1";
+        if (quad.flags & CAD_QUAD_FLAG_BREAKABLE) {
+            group = "flag_0_breakable";
         }
         else if (quad.flags & CAD_QUAD_FLAG_JUMP) {
-            group = "flag_2_jump_pad";
+            group = "flag_1_jump_pad";
+        }
+        else if (quad.unknown3[2] == -1) {
+            group = "stair_neg1";
         } else if (quad.flags == 0) {
             group = "none";
         }
@@ -46,7 +51,36 @@ static bool dump_raw_vertices(const cad_file& cad, const char* out_path) {
     return true;
 }
 
-void editor_cad::do_gui() noexcept {
+void send_cad_mesh_to_viewport(const cad_file& cad, viewport_t& viewport) {
+    mesh_view mesh;
+    mesh.setup();
+    mesh.vertex_size = sizeof(cad.vertices[0]);
+
+    const u32 vert_count = MIN(cad.vertex_count, ARRAY_SIZE(cad.vertices));
+    mesh.update_vertex_buf((const u8*)cad.vertices, sizeof(cad.vertices[0]) * vert_count);
+
+    mesh.attributes[ATTRIBUTE_POSITION] = {
+        .type = GL_FLOAT,
+        .components = 3,
+        .empty = false,
+    };
+    mesh.apply_attributes();
+
+    // We add an index buffer for every quad since our indices are spaced out.
+    const u32 quad_count = MIN(cad.quad_count, ARRAY_SIZE(cad.quads));
+    for (u32 i = 0; i < quad_count; i++) {
+        const index_buffer idxbuf = {
+            .data = (const u8*)cad.quads[i].vertices,
+            .num = 4,
+            .draw_mode = GL_TRIANGLE_FAN,
+        };
+        mesh.add_index_buf(idxbuf);
+    }
+
+    viewport.meshes.push_back(mesh);
+}
+
+void editor_cad::do_gui(viewport_t& viewport) noexcept {
     if (!data) {
         return; // Ignore if not initialized
     }
@@ -72,6 +106,10 @@ void editor_cad::do_gui() noexcept {
                     free(path);
                 }
 
+                if (ImGui::Button("Send to viewport")) {
+                    send_cad_mesh_to_viewport(*cad, viewport);
+                }
+
                 for (u32 i = 0; i < vert_count; i++) {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##vertex %d", i);
@@ -85,8 +123,12 @@ void editor_cad::do_gui() noexcept {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##quad_vert %d", i);
                     ImGui::InputScalarN(label, ImGuiDataType_S32, cad->quads[i].vertices, 4);
+
                     snprintf(label, sizeof(label) - 1, "Flags##%d", i);
                     ImGui::InputU8(label, &cad->quads[i].flags);
+
+                    snprintf(label, sizeof(label) - 1, "Stairs flag##%d", i);
+                    ImGui::Text("Stairs flag %d: 0x%hX", i, cad->quads[i].unknown3[2]);
                     ImGui::Separator();
                 }
             }
