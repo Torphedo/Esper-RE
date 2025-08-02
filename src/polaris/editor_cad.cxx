@@ -14,14 +14,18 @@ static bool dump_raw_vertices(const cad_file& cad, const char* out_path) {
         return false;
     }
 
+    const u32 quad_count = MIN(cad.quad_count, ARRAY_SIZE(cad.quads));
+    const u32 vert_count = MIN(cad.vertex_count, ARRAY_SIZE(cad.vertices));
+
     // Dump vertices
-    for (u32 i = 0; i < cad.vertex_count; i++) {
+    for (u32 i = 0; i < vert_count; i++) {
         const vec3f& vert = cad.vertices[i];
         fprintf(f, "v %f %f %f\n", vert.x, vert.y, vert.z);
     }
 
     // Dump indices
-    for (const cad_quad& quad : cad.quads) {
+    for (u32 i = 0; i < quad_count; i++) {
+        const cad_quad& quad = cad.quads[i];
         const char* group = "unimplemented_nonzero";
         if (quad.flags & CAD_QUAD_FLAG_1) {
             group = "flag_1";
@@ -53,8 +57,11 @@ void editor_cad::do_gui() noexcept {
             vfile vf = vfile_open(data, size);
             auto cad = (cad_file*)vfile_cur(vf);
 
+            const u32 quad_count = MIN(cad->quad_count, ARRAY_SIZE(cad->quads));
+            const u32 vert_count = MIN(cad->vertex_count, ARRAY_SIZE(cad->vertices));
+
             if (ImGui::CollapsingHeader("Vertices")) {
-                ImGui::Text("%d vertices @ 0x%lX", cad->vertex_count, offsetof(cad_file, vertex_count));
+                ImGui::Text("%d vertices @ 0x%lX", vert_count, offsetof(cad_file, vertex_count));
                 if (ImGui::Button("Dump to OBJ")) {
                     char* path = nullptr;
                     const nfdu8filteritem_t filters[] = { { "3D Object", "obj"} };
@@ -65,7 +72,7 @@ void editor_cad::do_gui() noexcept {
                     free(path);
                 }
 
-                for (u32 i = 0; i < cad->vertex_count; i++) {
+                for (u32 i = 0; i < vert_count; i++) {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##vertex %d", i);
                     ImGui::InputFloat3(label, &cad->vertices[i].x);
@@ -73,8 +80,8 @@ void editor_cad::do_gui() noexcept {
             }
 
             if (ImGui::CollapsingHeader("Quads")) {
-                ImGui::Text("%d quads @ 0x%lX", cad->quad_count, offsetof(cad_file, quad_count));
-                for (u32 i = 0; i < cad->quad_count; i++) {
+                ImGui::Text("%d quads @ 0x%lX", quad_count, offsetof(cad_file, quad_count));
+                for (u32 i = 0; i < quad_count; i++) {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##quad_vert %d", i);
                     ImGui::InputScalarN(label, ImGuiDataType_S32, cad->quads[i].vertices, 4);
@@ -85,8 +92,8 @@ void editor_cad::do_gui() noexcept {
             }
 
             if (ImGui::CollapsingHeader("Quad Unknown 3")) {
-                ImGui::Text("%d quads @ 0x%lX", cad->quad_count, offsetof(cad_file, quad_count));
-                for (u32 i = 0; i < cad->quad_count; i++) {
+                ImGui::Text("%d quads @ 0x%lX", quad_count, offsetof(cad_file, quad_count));
+                for (u32 i = 0; i < quad_count; i++) {
                     char label[64] = {0};
                     snprintf(label, sizeof(label) - 1, "##quad_unk3 %d", i);
                     ImGui::InputScalarN(label, ImGuiDataType_S16, cad->quads[i].unknown3, 4);
