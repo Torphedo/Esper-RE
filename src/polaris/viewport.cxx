@@ -144,7 +144,6 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // This defaults to false
     return initialized;
 }
 
@@ -274,7 +273,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         glUniform1i(uniform_sampler_normal, 1);
 
         // Render all index buffers of all known meshes
-        for (mesh_view mesh : meshes) {
+        for (const mesh_view& mesh : meshes) {
             if (!mesh.active) {
                 continue; // This mesh is hidden
             }
@@ -288,21 +287,20 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
                     continue; // This index buffer is hidden
                 }
 
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.albedo_tex_idx));
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
                 shader_flags_t flags = this->shader_flags;
                 if (flags.has_normal) {
                     flags.has_normal = (idx_buf.normal_tex_idx != 0);
                 }
-                glUniform1i(uniform_flags, *((u32*)&flags));
+                glUniform1i(uniform_flags, flags);
 
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.normal_tex_idx));
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                if (idx_buf.albedo_tex_idx < pol->gl_textures.size()) {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.albedo_tex_idx));
+                }
+                if (idx_buf.normal_tex_idx < pol->gl_textures.size()) {
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.normal_tex_idx));
+                }
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
                 glDrawElements(idx_buf.draw_mode, idx_buf.num, idx_buf.index_type(), 0);

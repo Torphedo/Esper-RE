@@ -73,7 +73,12 @@ struct viewport_t {
         bool render_normals: 1;
         bool has_normal: 1; // Whether this object even has a normal map
         u32: 0; // This pads the bitfield to 32 bits
-    }shader_flags = {0};
+
+        // Implicit conversion
+        operator u32() {
+            return *(u32*)this;
+        }
+    }shader_flags = {};
 
     // All meshes in the scene
     std::vector<mesh_view> meshes;
