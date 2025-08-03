@@ -212,10 +212,10 @@ void mesh_view::edit_menu(const polaris* pol) {
         ImGui::Checkbox(label, &buf.enabled);
 
         snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
-        bool albedo_changed = ImGui::InputU16(label, &buf.albedo_tex_idx);
+        bool albedo_changed = ImGui::InputS16(label, &buf.albedo_tex_idx);
 
         snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
-        bool normal_changed = ImGui::InputU16(label, &buf.normal_tex_idx);
+        bool normal_changed = ImGui::InputS16(label, &buf.normal_tex_idx);
         buf.albedo_tex_idx %= pol->gl_textures.size();
         buf.normal_tex_idx %= pol->gl_textures.size();
 

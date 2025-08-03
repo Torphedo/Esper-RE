@@ -18,16 +18,20 @@ const char* vertex_shader = R"(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_texcoord;
+layout (location = 2) in vec3 a_color;
 
 uniform mat4 pvm;
 uniform uint uv_divisor;
 out vec2 texcoord;
+out vec3 vert_color;
 
 void main() {
     gl_Position = pvm * vec4(a_pos, 1.0);
 
     // We map the large integer value into the [0, 1] range for texture lookups
     texcoord = a_texcoord / uv_divisor;
+    // TODO: Add configurable colors. Should probably be done by uniform and not attribute
+    vert_color = vec3(1.0, 1.0, 1.0);
 }
 )";
 
@@ -36,6 +40,7 @@ const char* fragment_shader = R"(
 out vec4 fragment_rgba;
 
 in vec2 texcoord;
+in vec3 vert_color;
 uniform sampler2D albedo_texture;
 uniform sampler2D normal_texture;
 uniform vec3 cam_dir;
@@ -43,34 +48,25 @@ uniform int flags = 0;
 
 void main() {
     bool render_uv_colors = (flags & 1) != 0;
-    bool render_normal_colors = (flags & 2) != 0;
     bool has_normal = (flags & 4) != 0;
+    bool has_albedo = (flags & 8) != 0;
 
     vec4 color = vec4(texcoord, 0.0, 1.0);
     // I figure avoiding a texture sample is worth an if statement. - torph
     if (!render_uv_colors) {
         color = texture(albedo_texture, texcoord);
     }
+    if (!has_albedo) {
+        color.rgb = vert_color;
+    }
 
-    // TODO: Do alpha blending here. This is low-priority since most textures have BC1 1-bit alpha (except for a few normal maps).
+    // TODO: Do alpha blending here. This is low-priority since most textures
+    // have BC1 1-bit alpha (except for a few normal maps).
     if (color.a < 0.1) {
         discard;
     }
 
-    vec3 normal_vec = cam_dir;
-    if (has_normal) {
-        normal_vec = texture(normal_texture, texcoord).rgb;
-        normal_vec = (normal_vec * 2.0) - 1.0;
-    }
-    const float ambient = 0.3f;
-    float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
-
-    fragment_rgba = color * diffuse_factor;
-    fragment_rgba.a = 1.0;
-
-    if (render_normal_colors) {
-        fragment_rgba = vec4(normal_vec, 1.0);
-    }
+    fragment_rgba = color;
 }
 )";
 
@@ -188,7 +184,6 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
     // Editor window
     this->render_editor(pol);
 
-    // Calculate delta time every time we render
     static double prev_time = glfwGetTime();
     const double cur_time = glfwGetTime();
     const double delta_time = cur_time - prev_time;
@@ -249,11 +244,8 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
 
         // Actually apply state toggles now that the framebuffer is bound
         if (wireframe_changed) {
-            if (wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            } else {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
+            const u32 poly_mode = wireframe ? GL_LINE : GL_FILL;
+            glPolygonMode(GL_FRONT_AND_BACK, poly_mode);
         }
         if (cull_changed) {
             if (backface_cull) {
@@ -269,8 +261,8 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         glUniform3fv(uniform_cam_dir, 1, cam.facing().raw);
         glUniform1i(uniform_flags, *((u32*)&shader_flags));
 
-        glUniform1i(uniform_sampler_albedo, 0);
-        glUniform1i(uniform_sampler_normal, 1);
+        glUniform1i(uniform_sampler_albedo, POL_TEXSLOT_ALBEDO);
+        glUniform1i(uniform_sampler_normal, POL_TEXSLOT_NORMAL);
 
         // Render all index buffers of all known meshes
         for (const mesh_view& mesh : meshes) {
@@ -280,27 +272,31 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
 
             glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
 
-
             glBindVertexArray(mesh.vao);
             for (index_buffer idx_buf : mesh.idx_buffers) {
                 if (!idx_buf.enabled) {
                     continue; // This index buffer is hidden
                 }
 
-                shader_flags_t flags = this->shader_flags;
-                if (flags.has_normal) {
-                    flags.has_normal = (idx_buf.normal_tex_idx != 0);
+                gl_obj albedo_tex = 0;
+                gl_obj normal_tex = 0;
+                const s32 tex_idx_max = pol->gl_textures.size();
+                if (idx_buf.albedo_tex_idx < tex_idx_max && idx_buf.albedo_tex_idx >= 0) {
+                    albedo_tex = pol->gl_textures.at(idx_buf.albedo_tex_idx);
                 }
-                glUniform1i(uniform_flags, flags);
+                if (idx_buf.normal_tex_idx < tex_idx_max && idx_buf.normal_tex_idx >= 0) {
+                    normal_tex = pol->gl_textures.at(idx_buf.normal_tex_idx);
+                }
 
-                if (idx_buf.albedo_tex_idx < pol->gl_textures.size()) {
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.albedo_tex_idx));
-                }
-                if (idx_buf.normal_tex_idx < pol->gl_textures.size()) {
-                    glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.normal_tex_idx));
-                }
+                glActiveTexture(GL_TEXTURE0 + POL_TEXSLOT_ALBEDO);
+                glBindTexture(GL_TEXTURE_2D, albedo_tex);
+                glActiveTexture(GL_TEXTURE0 + POL_TEXSLOT_NORMAL);
+                glBindTexture(GL_TEXTURE_2D, normal_tex);
+
+                shader_flags_t flags = this->shader_flags;
+                flags.has_normal = (normal_tex != 0);
+                flags.has_albedo = (albedo_tex != 0);
+                glUniform1i(uniform_flags, flags);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
                 glDrawElements(idx_buf.draw_mode, idx_buf.num, idx_buf.index_type(), 0);

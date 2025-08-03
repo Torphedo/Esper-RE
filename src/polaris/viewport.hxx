@@ -10,20 +10,16 @@
 // in this file is a member of polaris.
 class polaris;
 
+enum {
+    POL_TEXSLOT_ALBEDO,
+    POL_TEXSLOT_NORMAL,
+};
+
 /// @brief Wrapper class for a custom viewport renderable in ImGui
 /// 
 /// The basic viewport functionality is pretty simple, mostly coming from here:
 /// https://learnopengl.com/Advanced-OpenGL/Framebuffers
 struct viewport_t {
-    // Whether the viewport has been set up and can be rendered to.
-    bool initialized = false;
-
-    // Whether the viewport window should render
-    bool enabled = false;
-
-    // Whether the viewport editor window should render.
-    bool editor_enabled = false;
-
     // Custom framebuffer that can be rendered to
     gl_obj fbo = 0;
 
@@ -62,8 +58,18 @@ struct viewport_t {
     camera cam;
     bool cursor_lock = false; // For infinite camera panning
 
+    // Whether the viewport has been set up and can be rendered to.
+    bool initialized = false;
+
+    // Whether the viewport window should render
+    bool enabled = false;
+
+    // Whether the viewport editor window should render.
+    bool editor_enabled = false;
+
     // Wireframe mode toggle
     bool wireframe = false;
+
     // Backface culling toggle
     bool backface_cull = true;
 
@@ -71,7 +77,8 @@ struct viewport_t {
     struct shader_flags_t {
         bool render_texcoords: 1;
         bool render_normals: 1;
-        bool has_normal: 1; // Whether this object even has a normal map
+        bool has_normal: 1; // Whether this object has a normal map
+        bool has_albedo: 1; // Whether this object has an albedo texture
         u32: 0; // This pads the bitfield to 32 bits
 
         // Implicit conversion

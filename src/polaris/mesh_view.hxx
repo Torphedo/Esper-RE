@@ -37,8 +37,8 @@ struct index_buffer {
     u32 vertex_group = 0;
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
-    u16 albedo_tex_idx = 0;
-    u16 normal_tex_idx = 0;
+    s16 albedo_tex_idx = -1;
+    s16 normal_tex_idx = -1;
     u16 draw_mode = GL_TRIANGLES;
     bool enabled = true; // Whether to render this index buffer
     u8 index_size = sizeof(u16); // Almost all indices are 16-bit
