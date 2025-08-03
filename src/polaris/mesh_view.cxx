@@ -148,6 +148,7 @@ bool mesh_view::apply_attributes() {
     for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
         const vertex_attribute attr = attributes[i];
         if (attr.empty) {
+            glDisableVertexAttribArray(i);
             continue;
         }
 
@@ -180,15 +181,13 @@ void mesh_view::edit_menu(const polaris* pol) {
 
         if (i == ATTRIBUTE_TEXCOORD) {
             ImGui::Checkbox("Auto-scale integer UVs", &use_type_divisor);
+            if (!this->use_type_divisor) {
+                ImGui::InputU32("Custom UV Divisor", &this->uv_divisor);
+            }
         }
 
-        if (i == ATTRIBUTE_TEXCOORD && !this->use_type_divisor) {
-            ImGui::InputU32("Custom UV Divisor", &this->uv_divisor);
-        }
-
-        attributes[i].edit_menu(); 
+        attributes[i].edit_menu();
         ImGui::NewLine();
-
         ImGui::EndChild();
     }
 
@@ -237,19 +236,20 @@ void mesh_view::edit_menu(const polaris* pol) {
 
         // Find index of the selected primitive type in the lookup table
         u16 current_type = 0;
-        for (u32 i = 0; i < ARRAY_SIZE(gl_types); i++) {
-            if (buf.draw_mode == gl_types[i]) {
-                current_type = i;
+        for (u32 j = 0; j < ARRAY_SIZE(gl_types); j++) {
+            if (buf.draw_mode == gl_types[j]) {
+                current_type = j;
                 break;
             }
         }
 
-        if (ImGui::BeginCombo("Primitive type", gl_type_strings[current_type])) {
-            for (u32 i = 0; i < ARRAY_SIZE(gl_types); i++) {
-                const bool selected = current_type == i;
-                if (ImGui::Selectable(gl_type_strings[i], selected)) {
+        snprintf(label, sizeof(label) - 1, "Primitive type ##%d", i);
+        if (ImGui::BeginCombo(label, gl_type_strings[current_type])) {
+            for (u32 j = 0; j < ARRAY_SIZE(gl_types); j++) {
+                const bool selected = current_type == j;
+                if (ImGui::Selectable(gl_type_strings[j], selected)) {
                     // Save new primitive type if needed
-                    current_type = i;
+                    current_type = j;
                     buf.draw_mode = gl_types[current_type];
                 }
                 if (selected) {
