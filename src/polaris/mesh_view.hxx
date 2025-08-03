@@ -41,6 +41,11 @@ struct index_buffer {
     u16 normal_tex_idx = 0;
     u16 draw_mode = GL_TRIANGLES;
     bool enabled = true; // Whether to render this index buffer
+    u8 index_size = sizeof(u16); // Almost all indices are 16-bit
+
+    /// @brief Get the OpenGL type enum for the indices based on the size
+    u32 index_type();
+
 };
 
 // We need a forward declaration instead of a header include, since a class

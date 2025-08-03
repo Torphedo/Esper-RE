@@ -57,6 +57,16 @@ void vertex_attribute::edit_menu() {
     type = gl_type_table[current_type].gl_type;
 }
 
+
+u32 index_buffer::index_type() {
+    switch (index_size) {
+    case 4:
+        return GL_UNSIGNED_INT;
+    default:
+        return GL_UNSIGNED_SHORT;
+    }
+}
+
 bool mesh_view::setup() {
     if (initialized) {
         return true; // Don't setup twice and leak OpenGL objects
@@ -116,7 +126,7 @@ bool mesh_view::add_index_buf(index_buffer buf) {
 
     glGenBuffers(1, &buf.obj);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf.obj);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf.num * sizeof(u16), buf.data, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, buf.num * buf.index_size, buf.data, GL_DYNAMIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);

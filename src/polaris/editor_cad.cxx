@@ -73,6 +73,7 @@ void send_cad_mesh_to_viewport(const cad_file& cad, viewport_t& viewport) {
             .data = (const u8*)cad.quads[i].vertices,
             .num = 4,
             .draw_mode = GL_TRIANGLE_FAN,
+            .index_size = 4,
         };
         mesh.add_index_buf(idxbuf);
     }
