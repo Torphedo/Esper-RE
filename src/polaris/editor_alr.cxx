@@ -319,7 +319,7 @@ void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexc
     ImGui::InputU16("Unknown 2", &joint->unk2);
     ImGui::InputU16("Unknown 3", &joint->unk3);
     if (ImGui::Button("Dump to file")) {
-        FILE* f = fopen("bones.txt", "wb");
+        FILE* f = fopen("bones.dae", "wb");
         if (f != nullptr) {
             vfile armature_view = vf;
             armature_view.pos = 0;

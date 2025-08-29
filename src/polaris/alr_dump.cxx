@@ -11,8 +11,8 @@ namespace al {
 // IMPORTANT: If Blender complains and won't import the DAE, make sure you
 // haven't accidentally made the XML start with a newline. If you do, Blender's
 // XML parser will freak out.
-const char* DAE_HEADER = R"(\
-<?xml version="1.0" encoding="utf-8"?>
+// Be careful with the raw string literal, you can't escape newlines.
+const char* DAE_HEADER = R"(<?xml version="1.0" encoding="utf-8"?>
 <COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <asset>
     <contributor>
@@ -44,7 +44,7 @@ mat4s transform_from_joint(const joint_t & joint) {
 }
 
 void xml_dump_joint(FILE* f, const char* name, const mat4s& xform) {
-    fprintf(f, R"(<node id="Armature_%s" name="%s" sid="%s_id" type="JOINT">%c)",
+    fprintf(f, R"(<node id="%s" name="%s" sid="%s" type="JOINT">%c)",
         name, name, name, '\n');
 
     fprintf(f, "<matrix sid=\"transform\">");
@@ -75,22 +75,24 @@ void dump_armature(FILE* f, vfile armature_data) {
         }
 
         joint_t cur_joint = joints[i];
-        // Need to get the name before [cur_joint] becomes one of the parents
+        // Need to get the name now, before [cur_joint] changes
         decoded_text name = {0};
         decode_single32(name.data, cur_joint.name);
 
+        // We need the transform of this bone in the bind pose - the "original"
+        // pose of the skeleton (usually a T-pose or A-pose).
         mat4s xform = transform_from_joint(cur_joint);
 
-        // Apply parent transforms
+        // Apply parent transforms to get final bone transform
         while (cur_joint.parent_idx > 0) {
             cur_joint = joints[cur_joint.parent_idx];
             mat4s xform_parent = transform_from_joint(cur_joint);
             xform = glms_mul(xform, xform_parent);
         }
 
-        // We need the inverse bind pose transform
+        // 3D software wants the inverse bind pose transform
         xform = glms_mat4_inv(xform);
-        xform = glms_mat4_transpose(xform);
+        xform = glms_mat4_transpose(xform); // DAE is row-major, we're column-major
 
         xml_dump_joint(f, name.data, xform);
     }
