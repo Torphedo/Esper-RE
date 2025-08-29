@@ -1,5 +1,5 @@
 # Esper-RE
-A repository containing tools, templates, and information for editing and reverse-engineering Phantom Dust files.
+Tools, templates, and information for modding and researching Phantom Dust files.
 These tools mainly focus on [ALR](https://phantomdust.miraheze.org/wiki/Modding/File_Formats/ALR)
 files, but there are also some simple tools for [Deck/Arsenal](https://phantomdust.miraheze.org/wiki/Modding/File_Formats/Decks)
 files and [SSB](https://phantomdust.miraheze.org/wiki/File_Formats/SSB) menu script files. You can find more info
@@ -15,14 +15,14 @@ only that data).
 
 Support status:
 
-| Feature           | Viewing                           | Export                | Import                                  |
-| ----------------- | --------------------------------- | --------------------- | --------------------------------------- |
-| Textures (square) | Supported                         | Supported             | Supported (at same resolution & format) |
-| Textures (atlas)  | Supported                         | Unsupported           | Unsupported                             |
-| Character meshes  | Supported                         | Supported             | Unsupported                             |
-| Stage meshes      | Supported                         | Supported (WIP)       | Unsupported                             |
-| Animations        | Supported (graph)                 | Unsupported           | Unsupported                             |
-| Skeleton          | Early WIP                         | Supported (Early WIP) | Unsupported                             |
+| Feature           | Viewing                    | Export                             | Import                                   |
+| ----------------- | -------------------------- | ---------------------------------- | ---------------------------------------- |
+| Textures (square) | ✅                         | ✅(`.dds`)                         | ✅ (`.dds`, at same resolution & format) |
+| Textures (atlas)  | ✅                         | ❌                                 | ❌                                       |
+| Character meshes  | ✅                         | ✅(`.obj`)                         | ❌                                       |
+| Stage meshes      | ✅                         | ✅ (`.obj`, no materials/textures) | ❌                                       |
+| Animations        | ✅ (graph)                 | ❌                                 | ❌                                       |
+| Skeleton          | ❌                         | ✅ (`.dae`)                        | ❌                                       |
 
 Here's what the UI for viewing/editing map files and textures:    
 <img src="https://github.com/user-attachments/assets/a1fa4f13-0791-4ced-89ed-757387500670" style="width:90%;"/>     
@@ -37,16 +37,14 @@ operation in *headless* mode (no GUI):
 `polaris [alr filename] [flag]`
 
 - `--dump-textures`
-  - Dump all textures to a `textures` folder in DDS format. Uses the best available info,
-    instead of trying 
+  - Dump all textures to a `textures` folder in DDS format.
 - `--validate`
   - Run assertions and consistency checks across the whole file. Doesn't guarantee
     the file will work in the game, just that nothing looks wrong based on our
-    current knowledge of ALRs. Mainly serves as a debug tool to find new edge cases.
+    current knowledge of ALRs.
 
 ## ALR [`src/alr`]
-This is a not very well named command-line program that can export/replace
-textures and split files apart in different ways. It's been mostly obseleted by
+This program can export/replace textures, and split ALR files apart in a few different ways. It's been mostly obseleted by
 Polaris, but is still more reliable for unusual files (like bosses) and uncommon
 texture formats (like cubemaps). Here's some typical output:        
 <img src="https://github.com/user-attachments/assets/ad8a35d6-a630-40bc-854e-3d56442ad21e" style="width:80%;"/>
@@ -72,7 +70,7 @@ in-place instead of scrolling.
 <img src="https://github.com/user-attachments/assets/8992a8e4-cddf-495b-99c2-db9998c41bda" style="width:70%;"/>
 
 ## SSB Tool [`src/ssb`]
-This is even more barebones than the deck editor, because  I don't work with SSBs often.
+This is even more barebones than the deck editor, because I don't work with SSBs often.
 Our resident SSB expert is Vu, who has some Python tools [here](https://github.com/VSaige3/pd-ssb-decomp).
 For more information on the file format, check out the [wiki page](https://phantomdust.miraheze.org/wiki/File_Formats/SSB).
 The tool in this repo will only display an SSB's function export table:
