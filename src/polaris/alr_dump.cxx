@@ -37,22 +37,49 @@ mat4s transform_from_joint(const joint_t & joint) {
     const mat4s pos = glms_translate_make(*(vec3s*)&joint.position);
     const mat4s rot = glms_euler_xyz(*(vec3s*)&joint.rotation);
 
-    mat4s transform = glms_mul(pos, rot);
+    mat4s transform = glms_mul(rot, pos);
     transform = glms_scale(transform, *(vec3s*)&joint.scale);
 
     return transform;
 }
 
-void xml_dump_joint(FILE* f, const char* name, const mat4s& xform) {
-    fprintf(f, R"(<node id="%s" name="%s" sid="%s" type="JOINT">%c)",
-        name, name, name, '\n');
+// Just the game's structure, but made so that we can traverse down from the
+// root instead of up from the leaves
+struct joint_tree {
+    joint_t joint;
+    std::vector<u32> children;
+};
 
+void xml_dump_joint(FILE* f, const joint_tree* joints, u32 idx, mat4s parent_xform = glms_mat4_identity()) {
+    const joint_tree& node = joints[idx];
+    if (node.joint.name == UINT32_MAX && node.children.empty()) {
+        // Unnamed node that won't affect the rest of the skeleton
+        return;
+    }
+
+    decoded_text name = {0};
+    decode_single32(name.data, node.joint.name);
+    fprintf(f, R"(<node id="%s_%d" name="%s_%d" sid="%s_%d" type="JOINT">%c)",
+        name.data, idx, name.data, idx, name.data, idx, '\n');
+
+    // We need the transform of this bone in the bind pose - the "original"
+    // pose of the skeleton (usually a T-pose or A-pose).
+    mat4s xform = transform_from_joint(node.joint);
+
+    // 3D software wants the inverse bind pose transform
+    // We transpose because DAE is row-major, and we're column-major
+    const mat4s inv_bind_xform = glms_mat4_transpose(glms_mat4_inv(xform));
     fprintf(f, "<matrix sid=\"transform\">");
-    const float* raw = (float*)&xform;
+    const float* raw = (float*)&inv_bind_xform;
     for (u32 i = 0; i < (sizeof(mat4s) / sizeof(float)); i++) {
         fprintf(f, "%f ", raw[i]);
     }
     fprintf(f, "</matrix>");
+
+    for (u32 i : node.children) {
+        xml_dump_joint(f, joints, i, xform);
+    }
+
     fprintf(f, "\n</node>\n");
 }
 
@@ -69,32 +96,30 @@ void dump_armature(FILE* f, vfile armature_data) {
     const chunk_armature header = VFILE_READ(chunk_armature, &armature_data);
     auto* joints = (joint_t *) vfile_cur(armature_data);
 
+    std::vector<joint_tree> roots(header.joint_count);
     for (u32 i = 0; i < header.joint_count; i++) {
-        if (joints[i].name == UINT32_MAX) {
-            continue; // Skip bones with no name
-        }
-
         joint_t cur_joint = joints[i];
-        // Need to get the name now, before [cur_joint] changes
-        decoded_text name = {0};
-        decode_single32(name.data, cur_joint.name);
+        roots[i].joint = cur_joint;
 
-        // We need the transform of this bone in the bind pose - the "original"
-        // pose of the skeleton (usually a T-pose or A-pose).
-        mat4s xform = transform_from_joint(cur_joint);
-
-        // Apply parent transforms to get final bone transform
-        while (cur_joint.parent_idx > 0) {
-            cur_joint = joints[cur_joint.parent_idx];
-            mat4s xform_parent = transform_from_joint(cur_joint);
-            xform = glms_mul(xform, xform_parent);
+        // Bounds check
+        if (cur_joint.parent_idx < 0 || cur_joint.parent_idx > header.joint_count - 1) {
+            continue;
         }
 
-        // 3D software wants the inverse bind pose transform
-        xform = glms_mat4_inv(xform);
-        xform = glms_mat4_transpose(xform); // DAE is row-major, we're column-major
+        roots[cur_joint.parent_idx].children.push_back(i);
+    }
 
-        xml_dump_joint(f, name.data, xform);
+    for (u32 i = 0; i < roots.size(); i++) {
+        const bool no_name = roots[i].joint.name == UINT32_MAX;
+        const bool is_root = roots[i].joint.parent_idx < 0;
+        const bool out_of_bounds = roots[i].joint.parent_idx > s32(roots.size() - 1);
+        const bool has_children = roots[i].children.size() > 0;
+
+        if (!is_root || out_of_bounds || (no_name && !has_children)) {
+            continue;
+        }
+
+        xml_dump_joint(f, roots.data(), i);
     }
 
     fprintf(f, "</node>\n");
