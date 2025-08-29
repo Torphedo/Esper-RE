@@ -17,6 +17,7 @@
 
 #include "imgui_utils.hxx"
 #include "validation.hxx"
+#include "alr_dump.hxx"
 
 enum {
     // The power of 2 to limit texture resolutions to
@@ -286,16 +287,6 @@ void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexc
     ImGui::PopItemWidth();
 }
 
-mat4s transform_from_components(const vec3f& position, const vec3f& rotation, const vec3f& scale) {
-    const mat4s pos = glms_translate_make(*(vec3s*)&position);
-    const mat4s rot = glms_euler_xyz(*(vec3s*)&rotation);
-
-    mat4s transform = glms_mul(pos, rot);
-    transform = glms_scale(transform, *(vec3s*)&scale);
-
-    return transform;
-}
-
 void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x3);
 
@@ -330,28 +321,9 @@ void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexc
     if (ImGui::Button("Dump to file")) {
         FILE* f = fopen("bones.txt", "wb");
         if (f != nullptr) {
-            for (u32 i = 0; i < header.joint_count; i++) {
-                if (joints[i].name == UINT32_MAX) {
-                    continue; // Skip bones with no name
-                }
-
-                joint_t cur_joint = joints[i];
-                decoded_text name = {0};
-                decode_single32(name.data, cur_joint.name);
-
-                mat4s transform = transform_from_components(cur_joint.position, cur_joint.rotation, cur_joint.scale);
-
-                // Collect all parents and apply them going down the chain
-                while (cur_joint.parent_idx > 0) {
-                    cur_joint = joints[cur_joint.parent_idx];
-                    mat4s parent = transform_from_components(cur_joint.position, cur_joint.rotation, cur_joint.scale);
-                    transform = glms_mul(parent, transform);
-                }
-
-                vec4s pos = glms_mat4_mulv(transform, {0, 0, 0, 1});
-                fprintf(f, "# %6s\n", name.data);
-                fprintf(f, "v %f %f %f\n", pos.x, pos.y, pos.z);
-            }
+            vfile armature_view = vf;
+            armature_view.pos = 0;
+            dump_armature(f, armature_view);
             fclose(f);
         }
     }

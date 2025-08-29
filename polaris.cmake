@@ -58,6 +58,8 @@ add_executable(polaris
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
-    src/polaris/validation.cxx src/polaris/validation.hxx)
+    src/polaris/validation.cxx
+    src/polaris/alr_dump.cxx
+)
 
 target_link_libraries(polaris PRIVATE glfw imgui bobtail nfd)
