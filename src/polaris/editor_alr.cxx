@@ -1185,8 +1185,19 @@ std::vector<resource::chunk> resource::shatter_alr(const u8* buf, s64 size) noex
 }
 
 resource::chunk resource::first_chunk_by_id(u32 id) const noexcept {
-    // TODO: Add an overload to find a chunk within an offset range. Since the list is sorted we can do a sort of binary search by starting @ the middle
-    for (resource::chunk c : chunks) {
+    return first_chunk_in_range(id, 0, alr_size);
+}
+
+resource::chunk resource::prev_chunk_by_id(u32 id, u32 high, u32 low) const noexcept {
+    assert(low < high && "Low bound must be < high bound!");
+    for (s64 i = chunks.size() - 1; i > 0; i--) {
+        const chunk& c = chunks[i];
+        if (high < c.offset) {
+            continue; // Skip to starting offset
+        }
+        if (c.offset < low) {
+            break; // We passed the low bound
+        }
         if (c.id == id) {
             return c; // Found it!
         }
@@ -1196,51 +1207,22 @@ resource::chunk resource::first_chunk_by_id(u32 id) const noexcept {
 }
 
 resource::chunk resource::first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept {
+    // TODO: Add an overload to find a chunk within an offset range. Since the list is sorted we can do a sort of binary search by starting @ the middle
     assert(low < high && "Low bound must be < high bound!");
 
-    const s32 chunk_count = chunks.size();
-
-    s32 pivot = chunk_count / 2;
-    float multiplier = 0.5f;
-    while (multiplier != 1.0f) {
-        multiplier = 1.0f;
-        const u32 offset = chunks.at(pivot).offset;
-        if (offset < low) {
-            // We undershot, advance by half the remaining space
-            multiplier = 1.5f;
-        }
-        if (offset > high) {
-            // We overshot, go back half the remaining space
-            multiplier = 0.5f;
-        }
-
-        pivot += (chunk_count - pivot) * multiplier;
-    }
-
-    s32 pos = pivot;
-    while (chunks.at(pos).offset > low && pos > 0) {
-        pos--;
-        if (chunks.at(pos).offset < low) {
-            // This chunk is below the bound, skip it and use the next lowest.
-            pos++;
+    for (const auto & c : chunks) {
+        if (high < c.offset) {
             break;
         }
-    }
-    pos = MAX(0, pos); // Clamp to positive values
-
-    for (u32 i = pos; i < chunk_count; i++) {
-        const chunk& c = chunks.at(i);
-        if (c.offset > high) {
-            break;
+        if (c.offset < low) {
+            continue;
         }
-
         if (c.id == id) {
             return c; // Found it!
         }
     }
 
-    // Nothin...
-    return chunk(0, 0, 0);
+    return chunk(0, 0, 0); // Nothin...
 }
 
 void resource::draw(viewport_t& viewport) noexcept {

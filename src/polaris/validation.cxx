@@ -128,6 +128,10 @@ bool validate_entry_sizes(std::string& msg, u32 total_size, u32 header_size, u32
     return true;
 }
 
+// Assumes a variable std::string& msg exists, which the formatted message is
+// added to if the condition fails.
+#define AL_ASSERT(cond, ...) result = (cond) ? result : (str_format_append(msg, __VA_ARGS__), false)
+
 bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chunk, std::string& msg, bool headless) noexcept {
     if (alr.data == nullptr || alr.alr_size == 0) {
         return false; // Something is already wrong...
@@ -141,10 +145,7 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
 
     switch (chunk.id) {
         case 0x0:
-            if (chunk.size != 8) {
-                str_format_append(msg, "0x0 chunk had %d bytes of data (expected 8)!", chunk.size);
-                result = false;
-            }
+            AL_ASSERT(chunk.size == sizeof(chunk_generic), "0x0 chunk had %d bytes of data (expected 8)!", chunk.size);
             break;
         case 0x1: {
             const u16 num_entries = VFILE_READ(u16, &chunkvf);
@@ -174,18 +175,38 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
         }
         case 0x3: {
             const u16 num_joints = VFILE_READ(u16, &chunkvf);
-            result &= validate_entry_sizes(msg, chunk.size, sizeof(chunk_armature), num_joints, sizeof(joint_t));
+            // We don't validate the entry count since the value in the header
+            // doesn't actually indicate entry count
             break;
         }
-        case 0x5:
+        case 0x5: {
+            const anim_header header = VFILE_READ(anim_header, &chunkvf);
+            const al::resource::chunk skel_chunk = alr.first_chunk_in_range(3, chunk.offset, alr.alr_size);
+            if (skel_chunk.offset == 0) {
+                str_format_append(msg, "Couldn't find matching skeleton chunk for animation @%x", chunk.offset);
+            } else {
+                vfile skel_vf = vfile_open(alr.data + skel_chunk.offset, skel_chunk.size);
+                vfile_seek(&skel_vf, sizeof(chunk_generic));
+
+                // Skeleton header == "skull"
+                const chunk_armature skull = VFILE_READ(chunk_armature, &skel_vf);
+                const u32 joint_slots = (skel_vf.size - skel_vf.pos) / sizeof(joint_t);
+
+                if (header.unknown_settings1 > skull.joint_count) {
+                    str_format_append(msg, "Joint index (0x%x) < joint count (0x%x)", header.unknown_settings1, skull.joint_count);
+                    if (header.unknown_settings1 < joint_slots) {
+                        str_format_append(msg, "\t(but still under the actual array size (0x%x)", joint_slots);
+                    } else {
+                        result = false;
+                    }
+                }
+            }
             break;
+        }
         case 0x7:
             break;
         case 0xD:
-            if (chunk.size != 12) {
-                str_format_append(msg, "0xD chunk had %d bytes of data (expected 12)!", chunk.size);
-                result = false;
-            }
+            AL_ASSERT(chunk.size == 12, "0xD chunk had %d bytes of data (expected 12)!", chunk.size);
             break;
         case 0x10: {
             const atlas_header header = VFILE_READ(atlas_header, &chunkvf);
@@ -236,15 +257,9 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
             result &= validate_entry_sizes(msg, chunk.size, sizeof(chunk_generic), num_entries, sizeof(texture_entry));
 
             for (u32 i = 0; i < num_entries; i++) {
-                if (entries[i].pad != 0) {
-                    str_format_append(msg, "What I thought was padding in entry %d had data!", i);
-                    result = false;
-                }
                 const s64 resbuf_size = alr.alr_size - alr.resbuf_offset;
-                if (entries[i].data_ptr > resbuf_size) {
-                    str_format_append(msg, "Entry %d is well outside the resource buffer!", i);
-                    result = false;
-                }
+                AL_ASSERT(entries[i].pad == 0, "What I thought was padding in entry %d had data!", i);
+                AL_ASSERT(entries[i].data_ptr < resbuf_size, "Entry %d is well outside the resource buffer!", i);
             }
             break;
         }

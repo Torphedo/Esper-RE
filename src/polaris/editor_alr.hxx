@@ -183,8 +183,10 @@ public:
     /// @return List of chunks
     std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
 
-    chunk first_chunk_by_id(u32 id) const noexcept;
-    chunk first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept;
+    [[nodiscard]] chunk first_chunk_by_id(u32 id) const noexcept;
+    // Search backwards from an offset to find a chunk
+    [[nodiscard]] chunk prev_chunk_by_id(u32 id, u32 high, u32 low = 0) const noexcept;
+    [[nodiscard]] chunk first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept;
 
     void draw(viewport_t& viewport) noexcept;
 
