@@ -133,7 +133,21 @@ void update_gl_tex(texture img, gl_obj texture_id) {
                 break;
         }
 
-        glTexImage2D(GL_TEXTURE_2D, 0, format, img.width, img.height, 0, format, gl_size, img.data);
+        // Internal format aren't supposed to be a BGR format. Some drivers will
+        // let this slide, others will work but give error messages.
+        GLint internalFormat = format;
+        switch (format) {
+            case GL_BGR:
+                internalFormat = GL_RGB;
+                break;
+            case GL_BGRA:
+                internalFormat = GL_RGBA;
+                break;
+            default:
+                break;
+        }
+
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, img.width, img.height, 0, format, gl_size, img.data);
     }
 
     // Reset state
