@@ -24,6 +24,9 @@ struct viewport_t {
     // Whether the viewport editor window should render.
     bool editor_enabled = false;
 
+    u16 width = 0;
+    u16 height = 0;
+
     // Custom framebuffer that can be rendered to
     gl_obj fbo = 0;
 
@@ -84,7 +87,7 @@ struct viewport_t {
 
     // Set up a custom framebuffer. Returns whether it succeeded, you can also
     // check the [initialized] member.
-    bool setup(u16 width, u16 height) noexcept;
+    bool setup(u16 new_width, u16 new_height) noexcept;
 
     // Destroys the underlying OpenGL resources and invalidates all copies of this instance.
     ~viewport_t() noexcept;
@@ -98,12 +101,15 @@ struct viewport_t {
     // Simple wrapper methods for those who like them
     void bind() const noexcept {
         if (initialized) {
+            glViewport(0, 0, width, height);
             glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
         }
     }
 
     void unbind() const noexcept {
         if (initialized) {
+            const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            glViewport(0, 0, mode->width, mode->height);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
     }

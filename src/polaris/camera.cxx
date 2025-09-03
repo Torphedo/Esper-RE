@@ -1,5 +1,6 @@
 #include "camera.hxx"
 #include <cglm/struct.h>
+#include <glad/glad.h>
 #include <common/int.h>
 
 extern "C" {
@@ -130,13 +131,13 @@ void camera::set_mode(camera_mode new_mode) noexcept {
 
     switch (new_mode) {
         case CAMERA_ORBIT:
-            invert_mouse_x = false; 
+            invert_mouse_x = false;
             invert_mouse_y = false;
             mouse_sens = 0.015f;
             break;
         default:
         case CAMERA_FLY:
-            invert_mouse_x = false; 
+            invert_mouse_x = false;
             invert_mouse_y = true;
             mouse_sens = 0.005f;
             break;
@@ -148,7 +149,7 @@ void camera::set_mode(camera_mode new_mode) noexcept {
         orbit_angles.x = fmodf(orbit_angles.x + glm_rad(180), 360);
         orbit_angles.y = -orbit_angles.y;
     }
-    
+
     // Set mode
     mode = new_mode;
 }
@@ -167,8 +168,12 @@ void camera::proj_view(mat4 out) const noexcept {
 
     // Projection matrix
     mat4 projection = {0};
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    const float aspect = (float)mode->width / (float)mode->height;
+    int viewportVals[4] = {0};
+    glGetIntegerv(GL_VIEWPORT, viewportVals);
+    const float width = float(viewportVals[2]);
+    const float height = float(viewportVals[3]);
+
+    const float aspect = width / height;
     glm_perspective_rh_no(glm_rad(45), aspect, near_clip_plane, far_clip_plane, projection);
 
     // Camera matrix

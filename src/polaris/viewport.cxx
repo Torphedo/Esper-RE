@@ -1,3 +1,4 @@
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "viewport.hxx"
 #include <imgui.h>
 #include "imgui_utils.hxx"
@@ -74,7 +75,7 @@ void main() {
 }
 )";
 
-bool viewport_t::setup(u16 width, u16 height) noexcept {
+bool viewport_t::setup(u16 new_width, u16 new_height) noexcept {
     // Setup the OpenGL objects we'll need
     glGenFramebuffers(1, &fbo);
     if (fbo == 0) {
@@ -97,13 +98,13 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
 
     // Setup backing color texture for framebuffer
     glBindTexture(GL_TEXTURE_2D, color_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, new_width, new_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     // We only really care about the downscale filter
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     // Setup backing depth texture for framebuffer
     glBindTexture(GL_TEXTURE_2D, depth_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, new_width, new_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
 
     // Actually attach texture to the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -143,6 +144,11 @@ bool viewport_t::setup(u16 width, u16 height) noexcept {
     // Clean up our state
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    if (initialized) {
+        width = new_width;
+        height = new_height;
+    }
 
     // This defaults to false
     return initialized;
@@ -198,6 +204,10 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
     bool is_hovered = false;
     ImGui::Begin("Viewport");
     {
+        // Start rendering to the viewport
+        bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         // Get camera transform
         mat4 pvm = {0};
         cam.proj_view(pvm);
@@ -243,10 +253,6 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         const char* move_speed_label = "Move Speed";
         ImGui::SetNextItemWidth(ImGui::CalcTextSize(move_speed_label).x + 20.0f + padding);
         ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 1000.0f);
-
-        // Start rendering to the viewport
-        bind();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Actually apply state toggles now that the framebuffer is bound
         if (wireframe_changed) {
@@ -313,7 +319,11 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
             glBindVertexArray(0);
         }
 
-        ImGui::Image(color_tex, ImGui::GetContentRegionAvail());
+        ImVec2 image_size = ImVec2(width, height);
+        const float scale = ImGui::ImageScaleForWindow(width, height);
+        image_size *= scale;
+
+        ImGui::Image(color_tex, image_size);
         const bool mouse_click = ImGui::IsMouseDown(0);
         is_hovered = ImGui::IsItemHovered();
         if (is_hovered && mouse_click) {
