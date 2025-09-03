@@ -30,6 +30,9 @@ namespace ImGui {
     /// @return Whether the text was edited
     bool InputPDString(const char* label, u32* text1, u32* text2 = nullptr);
 
+    float ImageScaleForWindow(u16 width, u16 height);
+    ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept;
+
     // These are just less verbose wrappers around ImGui::InputScalar.
     // I don't want to duplicate all the ImGui docs here, so just check
     // ImGui::InputScalar for docs.

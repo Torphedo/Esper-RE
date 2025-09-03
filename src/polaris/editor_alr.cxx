@@ -501,51 +501,6 @@ void resource::chunk::chunk_0x7(const resource& alr, viewport_t& viewport) noexc
     vfile_seek(&vf, key_size * header->rotation_key_count);
 }
 
-static ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept {
-    // We need unique labels every time, so just combine some values that are
-    // usually different. Texture ID is the same in a texture atlas and its
-    // contents. This isn't foolproof but it works.
-    char label[0x20] = {0};
-    snprintf(label, sizeof(label), "Scale to window##%d%lf%s", tex_id, uv1.x, id);
-    ImGui::Checkbox(label, scale_to_window);
-
-    if (*scale_to_window) {
-        // Force view size == texture size to make auto-scaling work
-        *scale_factor = 1.0f;
-    } else {
-        snprintf(label, sizeof(label), "Render Scale ##%d%lf%s", tex_id, uv1.x, id);
-        ImGui::SetNextItemWidth(ImGui::CharWidth() * 16);
-        ImGui::SliderFloat(label, scale_factor, 0.001f, 10.0f);
-    }
-
-    // Scale the texture depending on the current settings.
-    ImVec2 view_size = ImVec2((float)width * (*scale_factor), (float)height * (*scale_factor));
-    if (*scale_to_window) {
-        // We try to fill the space available to us
-        const ImVec2 avail = ImGui::GetContentRegionAvail();
-
-        // This is the scale on each axis that'll make the image fill the whole window
-        const ImVec2 scale_temp = avail / view_size;
-
-        // We scale by a uniform factor to preserve aspect ratio, so pick the
-        // closer axis (to keep the entire image in frame)
-
-        // Sometimes the scale ends up negative and I'm not sure why, so I just threw an fabsf() on it.
-        // - torph
-        const float new_scale = fabsf(MIN(scale_temp.x, scale_temp.y));
-
-        view_size *= new_scale;
-        // Some callers rely on accurate scale info, so pass it along
-        *scale_factor = new_scale;
-    }
-
-    const ImVec2 image_pos = ImGui::GetCursorScreenPos();
-    // TODO: Look into showing mipmap contents
-    ImGui::Image(tex_id, view_size, uv0, uv1);
-
-    return image_pos;
-}
-
 void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x10);
 
@@ -682,7 +637,7 @@ void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noex
     ImGui::PopItemWidth();
 
     // Draw the whole atlas
-    ImVec2 image_pos = draw_image(window_0x10.gl_tex_id, atlas->width, atlas->height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
+    ImVec2 image_pos = ImGui::draw_image(window_0x10.gl_tex_id, atlas->width, atlas->height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
 
     // Calculate UVs of the selected texture in the atlas
     const ImVec2 uv1 = ImVec2(tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
@@ -699,7 +654,7 @@ void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noex
 
     ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex->height, tex->width, tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
 
-    draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
+    ImGui::draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
 void resource::chunk::chunk_0x11(const resource& alr, viewport_t& viewport) const noexcept {
@@ -846,7 +801,7 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
         free(path);
     }
 
-    draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale, "preview");
+    ImGui::draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale, "preview");
     ImGui::EndGroup();
 }
 
