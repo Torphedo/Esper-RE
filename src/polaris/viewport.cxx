@@ -19,24 +19,34 @@ const char* vertex_shader = R"(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_texcoord;
+layout (location = 2) in vec3 a_tangent;
 
 uniform mat4 pvm;
 uniform uint uv_divisor;
+out vec3 frag_pos;
 out vec2 texcoord;
+out vec3 tangent;
+out mat4 transform;
 
 void main() {
     gl_Position = pvm * vec4(a_pos, 1.0);
 
     // We map the large integer value into the [0, 1] range for texture lookups
     texcoord = a_texcoord / uv_divisor;
+    frag_pos = a_pos;
+    tangent = normalize(a_tangent / uv_divisor);
+    transform = pvm;
 }
 )";
 
-const char* fragment_shader = R"(
+const char* fragment_shader = R"glsl(
 #version 330 core
 out vec4 fragment_rgba;
 
+in vec3 frag_pos;
 in vec2 texcoord;
+in vec3 tangent;
+in mat4 transform;
 uniform sampler2D albedo_texture;
 uniform sampler2D normal_texture;
 uniform vec3 cam_dir;
@@ -58,22 +68,32 @@ void main() {
         discard;
     }
 
-    vec3 normal_vec = cam_dir;
-    if (has_normal) {
-        normal_vec = texture(normal_texture, texcoord).rgb;
-        normal_vec = (normal_vec * 2.0) - 1.0;
-    }
-    const float ambient = 0.3f;
-    float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
+    vec3 vert_normal = tangent;
+    // Map to range [-1, 1]
+    vert_normal = normalize((vert_normal * 2.0) - 1.0);
 
-    fragment_rgba = color * diffuse_factor;
+    vec4 sample = texture(normal_texture, texcoord);
+    vec3 tex_normal = sample.rgb * sample.aaa;
+    // Map to range [-1, 1]
+    tex_normal = normalize((tex_normal * 2.0) - 1.0);
+    vec3 tex_normal_diff = normalize(tex_normal - vec3(0, 0, 1.0));
+
+    vec3 normal = cam_dir;
+    if (has_normal) {
+        normal = normalize(vert_normal + tex_normal_diff);
+    }
+    const float ambient = 0.75f;
+    float diffuse = max(dot(cam_dir, normal), 0.0);
+
+    color.rgb = vec3(1.0, 1.0, 1.0);
+    fragment_rgba = color * (diffuse);
     fragment_rgba.a = 1.0;
 
     if (render_normal_colors) {
-        fragment_rgba = vec4(normal_vec, 1.0);
+        fragment_rgba = vec4(vert_normal, 1.0);
     }
 }
-)";
+)glsl";
 
 bool viewport_t::setup(u16 new_width, u16 new_height) noexcept {
     // Setup the OpenGL objects we'll need
@@ -296,8 +316,6 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.albedo_tex_idx));
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
                 shader_flags_t flags = this->shader_flags;
                 if (flags.has_normal) {
@@ -307,8 +325,9 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
 
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.normal_tex_idx));
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                // Normals look better when less pixelated
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
                 glDrawElements(idx_buf.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);

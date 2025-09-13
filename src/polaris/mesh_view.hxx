@@ -8,12 +8,14 @@
 typedef enum : u8 {
     ATTRIBUTE_POSITION,
     ATTRIBUTE_TEXCOORD,
+    ATTRIBUTE_NORMAL,
     ATTRIBUTE_ENUM_MAX,
 }attribute_idx;
 
 static const char* attribute_names[] = {
     "Position",
     "Texture Coordinates",
+    "Normal",
     "[Invalid]",
 };
 

@@ -168,7 +168,8 @@ void mesh_view::edit_menu(const polaris* pol) {
         ImGui::Text("%s:", attribute_names[i]);
         ImGui::BeginChild(label, ImVec2(0, 0), ImGuiChildFlags_AutoResizeY);
 
-        if (i == ATTRIBUTE_TEXCOORD) {
+
+        if (attributes[i].type != GL_FLOAT) {
             ImGui::Checkbox("Auto-scale integer UVs", &use_type_divisor);
         }
 
