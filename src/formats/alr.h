@@ -96,7 +96,7 @@ typedef struct {
     u32 vertex_count;
     u32 pad;
     u32 unknown2;
-    u32 data_ptr; // This is speculation
+    u32 data_ptr;
     u32 pad2;
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
