@@ -1,4 +1,5 @@
 #include "pd_mesh.hxx"
+#include <cstring>
 
 #include <common/vfile.h>
 
@@ -168,26 +169,26 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
 }
 
 void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header) {
-
     // Search our table of known formats
-    std::optional<mesh_view> format = find_format_by_size(vert_header.vertex_size);
+    vertex_format_t format = {};
+    for (vertex_format_t entry : alr_vert_formats) {
+        if (entry.id == vert_header.format) {
+            format = entry;
+            break;
+        }
+    }
 
-    if (!format.has_value()) {
-        // Couldn't find a matching format... try our best guess.
-        format = known_formats[0];
+    if (format.size == 0) {
+        // Couldn't find a matching format... use a default
+        format = {
+            .size = 12,
+            ALR_POS_ONLY,
+        };
     }
 
     // Copy format data to the output
-    out->vertex_size = vert_header.vertex_size;
-    out->use_type_divisor = format->use_type_divisor;
-    out->uv_divisor = format->uv_divisor;
-    for (u32 i = 0; i < ARRAY_SIZE(out->attributes); i++) {
-        out->attributes[i] = format->attributes[i];
-        if (i > 0 && out->attributes[i].offset == 0) {
-            // Guess the correct offset based on the last one
-            const vertex_attribute prev_attr = format->attributes[i - 1];
-            vertex_attribute& cur_attr = out->attributes[i];
-            cur_attr.offset = prev_attr.offset + (prev_attr.components * gl_type_size(prev_attr.type));
-        }
-    }
+    out->vertex_size = format.size;
+    // TODO: Make divisors per-attribute instead of UV-only
+    out->uv_divisor = format.attributes[ATTRIBUTE_TEXCOORD].divisor;
+    memcpy(out->attributes, format.attributes, sizeof(format.attributes));
 }

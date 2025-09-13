@@ -45,7 +45,7 @@ struct mesh_view {
     // Divide by the maximum value of the current integer type instead of using
     // the divisor value. This maps an integer value into the range [0, 1]
     // based on its type, and is usually what you want.
-    bool use_type_divisor = true;
+    bool use_type_divisor = false;
 
     bool initialized = false;
 

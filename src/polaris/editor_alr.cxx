@@ -887,13 +887,6 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
         }
     }
 
-    // This is a dirty hack but seems to work... - torph
-    if (has_strips) {
-        mesh.attributes[ATTRIBUTE_TEXCOORD].offset += 4;
-        mesh.use_type_divisor = false;
-        mesh.uv_divisor = 4096;
-        mesh.apply_attributes();
-    }
     viewport.meshes.push_back(mesh);
 }
 

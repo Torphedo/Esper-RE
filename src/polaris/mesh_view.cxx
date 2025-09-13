@@ -62,13 +62,6 @@ bool mesh_view::setup() {
         return true; // Don't setup twice and leak OpenGL objects
     }
 
-    // Set all the attributes empty, so that when the caller places things
-    // in the array they automatically get marked non-empty. This lets us
-    // use it instead of a dynamic array
-    for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
-        attributes[i].exists = false;
-    }
-
     glGenVertexArrays(1, &vao);
     if (vao == 0) {
         return false;

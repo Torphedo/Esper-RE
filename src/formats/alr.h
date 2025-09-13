@@ -154,9 +154,9 @@ typedef struct {
     .exists = true,     \
 }                       \
 
-#define ALR_STD_UV_DEF(custom_divisor) { \
-    .type = GL_UNSIGNED_SHORT,           \
-    .offset = 12,                        \
+#define ALR_STD_UV_DEF(custom_offset, custom_divisor) { \
+    .type = GL_SHORT,                    \
+    .offset = custom_offset,             \
     .divisor = custom_divisor,           \
     .components = 2,                     \
     .exists = true,                      \
@@ -167,11 +167,17 @@ typedef struct {
 static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
     {   .id = 0x01,
         .size = 0x18,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(16, 4096),
+        },
     },
     {   .id = 0x03,
         .size = 0x20,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(16, 4096),
+        },
     },
     {   .id = 0x05,
         .size = 0x1C,
@@ -187,7 +193,10 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
     },
     {   .id = 0x09,
         .size = 0x14,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(12, 4096),
+        },
     },
     {   .id = 0x0B,
         .size = 0x10,
@@ -204,12 +213,15 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
         .size = 0x18,
         .attributes = {
             ALR_STD_POS,
-            ALR_STD_UV_DEF(INT16_MAX),
+            ALR_STD_UV_DEF(12, INT16_MAX),
         },
     },
     {   .id = 0x15,
         .size = 0x18,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(12, INT16_MAX),
+        },
     },
     {   .id = 0x16,
         .size = 0x1C,
@@ -237,15 +249,24 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
     },
     {   .id = 0x1F,
         .size = 0x20,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(16, 4096),
+        },
     },
     {   .id = 0x21,
         .size = 0x20,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(16, 4096),
+        },
     },
     {   .id = 0x25,
         .size = 0x1C,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(16, 4096),
+        },
     },
 };
 
