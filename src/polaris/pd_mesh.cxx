@@ -52,7 +52,7 @@ mesh_view known_formats[] = {
                 .components = 3,
             },
             { // Texcoord
-                .empty = true,
+                .exists = true,
             },
         },
         .vertex_size = 12,

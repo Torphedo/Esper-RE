@@ -21,18 +21,18 @@ type_lookup_entry gl_type_table[] = {
     { "s16", GL_SHORT },
 };
 
-void vertex_attribute::edit_menu() {
+void edit_menu(vertex_attribute& attr) {
     const u8 min_components = 1;
     const u8 max_components = 4;
-    ImGui::SliderScalar("# Components", ImGuiDataType_U8, &components, &min_components, &max_components);
+    ImGui::SliderScalar("# Components", ImGuiDataType_U8, &attr.components, &min_components, &max_components);
 
-    ImGui::InputU16("Offset", &offset);
-    ImGui::Checkbox("Disable attribute", &empty);
+    ImGui::InputU16("Offset", &attr.offset);
+    ImGui::Checkbox("Enable attribute", &attr.exists);
 
     // Find the index of our current type in the lookup table
     u16 current_type = 0;
     for (u32 i = 0; i < ARRAY_SIZE(gl_type_table); i++) {
-        if (type == gl_type_table[i].gl_type) {
+        if (attr.type == gl_type_table[i].gl_type) {
             current_type = i;
             break;
         }
@@ -54,7 +54,7 @@ void vertex_attribute::edit_menu() {
     }
 
     // Update current type if needed.
-    type = gl_type_table[current_type].gl_type;
+    attr.type = gl_type_table[current_type].gl_type;
 }
 
 bool mesh_view::setup() {
@@ -66,7 +66,7 @@ bool mesh_view::setup() {
     // in the array they automatically get marked non-empty. This lets us
     // use it instead of a dynamic array
     for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
-        attributes[i].empty = true;
+        attributes[i].exists = false;
     }
 
     glGenVertexArrays(1, &vao);
@@ -137,7 +137,7 @@ bool mesh_view::apply_attributes() {
 
     for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
         const vertex_attribute attr = attributes[i];
-        if (attr.empty) {
+        if (!attr.exists) {
             continue;
         }
 
@@ -176,7 +176,8 @@ void mesh_view::edit_menu(const polaris* pol) {
             ImGui::InputU32("Custom UV Divisor", &this->uv_divisor);
         }
 
-        attributes[i].edit_menu(); 
+        ::edit_menu(attributes[i]);
+
         ImGui::NewLine();
 
         ImGui::EndChild();

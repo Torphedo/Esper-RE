@@ -268,9 +268,6 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
             break;
         }
         case 0x16: {
-            const u32 format_ids[] =   {0x11, 0x07, 0x0B, 0x03, 0x01, 0x10, 0x09, 0x0D, 0x25, 0x08, 0x21, 0x1F, 0x1A, 0x18, 0x05, 0x15, 0x1D, 0x17, 0x15, 0x1E, 0x16};
-            const u32 format_sizes[] = {0x18, 0x10, 0x10, 0x20, 0x18, 0x0C, 0x14, 0x00, 0x1C, 0x14, 0x20, 0x20, 0x28, 0x10, 0x1C, 0x18, 0x24, 0x20, 0x18, 0x1C, 0x1C};
-
             const u32 num_entries = VFILE_READ(u32, &chunkvf);
             const auto entries = (vertbuf_entry*)vfile_cur(chunkvf);
             result &= validate_entry_sizes(msg, chunk.size, sizeof(chunk_generic) + sizeof(u32), num_entries, sizeof(vertbuf_entry));
@@ -283,16 +280,24 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
                         "Vertex sizes in entry %d don't match! (%d vs. %d)", i, entry.vertex_size, entry.vertex_size2);
 
                 bool found_format = false;
-                for (u32 i = 0; i < ARRAY_SIZE(format_ids); i++) {
-                    if (entry.unknown_flag == format_ids[i]) {
-                        found_format = true;
-                        AL_ASSERT(entry.vertex_size == format_sizes[i],
-                                "Format ID 0x%x is 0x%x bytes (expected 0x%x)", entry.unknown_flag, entry.vertex_size, format_sizes[i]);
+                if (entry.format < ALR_MAX_FORMAT) {
+                    u8 expected_size = 0;
+                    for (vertex_format_t format_entry : alr_vert_formats) {
+                        if (format_entry.id == entry.format) {
+                            expected_size = format_entry.size;
+                            break;
+                        }
                     }
+                    AL_ASSERT(entry.vertex_size == expected_size,
+                              "Format ID 0x%x is 0x%x bytes (expected 0x%x)", entry.format, entry.vertex_size, expected_size);
+
+                    // Format 0xD has a size of 0, but any other time that
+                    // indicates that the format isn't in the array.
+                    found_format = ((entry.format != 0x0D) && (expected_size != 0));
                 }
 
                 if (!found_format) {
-                    LOG_MSG(warning, "Unknown vertex format 0x%02X with size 0x%02X\n", entry.unknown_flag, entry.vertex_size);
+                    LOG_MSG(warning, "Unknown vertex format 0x%02X with size 0x%02X\n", entry.format, entry.vertex_size);
                 }
             }
             break;

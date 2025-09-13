@@ -1,34 +1,12 @@
 #pragma once
-#include <common/int.h>
-#include <glad/glad.h>
 #include <vector>
-// Structures for rendering arbitrary format vertices
+#include <glad/glad.h>
 
-// All supported vertex attribute slots
-typedef enum : u8 {
-    ATTRIBUTE_POSITION,
-    ATTRIBUTE_TEXCOORD,
-    ATTRIBUTE_ENUM_MAX,
-}attribute_idx;
+#include <common/int.h>
+#include <formats/alr.h>
 
-static const char* attribute_names[] = {
-    "Position",
-    "Texture Coordinates",
-    "[Invalid]",
-};
-
-// Vertex attribute data for glVertexAttribPointer()
-struct vertex_attribute {
-    u16 type = GL_FLOAT; // Data type like GL_FLOAT, GL_UNSIGNED_BYTE, etc.
-    u16 offset = 0;
-    u8 components = 1; // This can only be between 1 and 4
-    // Whether this is an unused entry (the poor man's reverse std::optional).
-    // Please don't manually overwrite, I put it last so you can leave it blank
-    bool empty = false;
-
-    /// @brief Dear ImGui menu to edit the attribute (for an existing window)
-    void edit_menu();
-};
+/// @brief Dear ImGui menu to edit the attribute (for an existing window)
+void edit_menu(vertex_attribute& attr);
 
 struct index_buffer {
     // TODO: Remove this remaining data pointer, since it's never used after construction

@@ -1,6 +1,12 @@
 #pragma once
-#include <common/int.h>
+#include <stdbool.h>
 #include <assert.h>
+#include <common/int.h>
+
+// Sorry about this dependency, I use OpenGL type enums (like GL_FLOAT) for the
+// vertex format definitons.
+#include <glad/glad.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -88,7 +94,7 @@ static_assert(sizeof(texture_entry) == 0x1C, "Wrong texture metadata size!");
 // This describes the format, size, etc. of vertex buffers.
 // Together with 0x15 chunks, it maps out the resource buffer.
 typedef struct {
-    u8 unknown_flag;
+    u8 format; // Determines the structure of the vertex data
     u8 vertex_size; // These are always the same (so far?)
     u8 vertex_size2;
     u8 unknown_flag2;
@@ -100,6 +106,154 @@ typedef struct {
     u32 pad2;
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
+
+// All supported vertex attribute slots
+typedef enum {
+    ATTRIBUTE_POSITION,
+    ATTRIBUTE_TEXCOORD,
+    ATTRIBUTE_ENUM_MAX,
+}attribute_idx;
+
+static const char* attribute_names[] = {
+    "Position",
+    "Texture Coordinates",
+    "[Invalid]",
+};
+
+// Vertex attribute data for glVertexAttribPointer()
+typedef struct {
+    u16 type; // Data type like GL_FLOAT, GL_UNSIGNED_BYTE, etc.
+    u16 offset;
+    // A value to divide each component by before using it. Unused if 0
+    u16 divisor;
+    u8 components; // This can only be between 1 and 4
+
+    // Whether this entry is used (the poor man's std::optional).
+    bool exists;
+}vertex_attribute;
+
+enum {
+    ALR_MAX_FORMAT = 0x26,
+};
+
+typedef struct {
+    // Format value from vertex entry structure. I was going to make an array
+    // with this as the index, but sparse arrays are annoying to declare
+    // without the [index] = {}, syntax, which g++ doesn't implement even in
+    // extern "C" mode. - torph
+    u8 id;
+    u8 size;
+    vertex_attribute attributes[ATTRIBUTE_ENUM_MAX];
+}vertex_format_t;
+
+// Position is the same for all formats so far
+#define ALR_STD_POS   { \
+    .type = GL_FLOAT,   \
+    .offset = 0,        \
+    .components = 3,    \
+    .exists = true,     \
+}                       \
+
+#define ALR_STD_UV_DEF(custom_divisor) { \
+    .type = GL_UNSIGNED_SHORT,           \
+    .offset = 12,                        \
+    .divisor = custom_divisor,           \
+    .components = 2,                     \
+    .exists = true,                      \
+}                                        \
+
+#define ALR_POS_ONLY .attributes = { ALR_STD_POS }
+
+static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
+    {   .id = 0x01,
+        .size = 0x18,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x03,
+        .size = 0x20,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x05,
+        .size = 0x1C,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x07,
+        .size = 0x10,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x08,
+        .size = 0x14,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x09,
+        .size = 0x14,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x0B,
+        .size = 0x10,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x0D,
+        .size = 0x00,
+    },
+    {   .id = 0x10,
+        .size = 0x0C,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x11,
+        .size = 0x18,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(INT16_MAX),
+        },
+    },
+    {   .id = 0x15,
+        .size = 0x18,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x16,
+        .size = 0x1C,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x17,
+        .size = 0x20,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x18,
+        .size = 0x10,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x1A,
+        .size = 0x28,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x1D,
+        .size = 0x24,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x1E,
+        .size = 0x1C,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x1F,
+        .size = 0x20,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x21,
+        .size = 0x20,
+        ALR_POS_ONLY,
+    },
+    {   .id = 0x25,
+        .size = 0x1C,
+        ALR_POS_ONLY,
+    },
+};
+
+
+// Structs for each vertex format. The number corresponds to the hexidecimal
+// value of 
+typedef struct {
+}vertex_format1;
 
 // There are lots of different vertex formats used for different purposes. The
 // known vertex sizes (in bytes) are:
