@@ -3,23 +3,6 @@
 
 #include <common/vfile.h>
 
-u16 gl_type_size(u16 type) {
-    switch (type) {
-    case GL_FLOAT:
-    case GL_UNSIGNED_INT:
-    case GL_INT:
-        return 4;
-    case GL_UNSIGNED_SHORT:
-    case GL_SHORT:
-        return 2;
-    case GL_UNSIGNED_BYTE:
-    case GL_BYTE:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
 u32 gl_type_max(u16 type) {
     switch (type) {
     case GL_UNSIGNED_INT:
@@ -39,125 +22,70 @@ u32 gl_type_max(u16 type) {
     }
 }
 
-// Table of known vertex formats we can look up by size. If an attribute
-// doesn't have an offset listed, that means it comes immediately after the
-// last attribute. This can be overidden by setting an explicit offset.
-mesh_view known_formats[] = {
-    {
-        // Sorry I have to use a comment to say what the attributes are. I was
-        // using array designators with enum indices, but C++ doesn't support
-        // that :( - torph
-        .attributes = {
-            { // Position
-                .type = GL_FLOAT,
-                .components = 3,
-            },
-            { // Texcoord
-                .exists = true,
-            },
-        },
-        .vertex_size = 12,
-    },
-    {
-        .attributes = {
-            { // Position
-                .type = GL_FLOAT,
-                .components = 3,
-            },
-            { // Texcoord
-                .type = GL_SHORT,
-                .offset = 12,
-                .components = 2,
-            },
-        },
-        .vertex_size = 24,
-    },
-    {
-        .attributes = {
-            { // Position
-                .type = GL_FLOAT,
-                .components = 3,
-            },
-            { // Texcoord
-                .type = GL_SHORT,
-                .offset = 12,
-                .components = 2,
-            },
-        },
-        .vertex_size = 28,
-    },
-    {
-        .attributes = {
-            { // Position
-                .type = GL_FLOAT,
-                .components = 3,
-            },
-            { // Texcoord
-                .type = GL_SHORT,
-                .offset = 12,
-                .components = 2,
-            },
-        },
-        .vertex_size = 32,
-    },
-};
-
-std::optional<mesh_view> find_format_by_size(u8 size) {
-    for (u32 i = 0; i < ARRAY_SIZE(known_formats); i++) {
-        if (known_formats[i].vertex_size == size) {
-            // This format is a match!
-            return known_formats[i];
-        }
-    }
-
-    // Return blank optional
-    const std::optional<mesh_view> result;
-    return result;
-}
-
 bool has_uvs(u8 vert_size) {
     // Known formats with UVs
     return vert_size == 24 || vert_size == 32 || vert_size == 20;
 }
 
+vec4s read_attr(vfile& vf, vertex_attribute attr) {
+    vec4s result = {};
+    if (!attr.exists) {
+        return result;
+    }
+
+    vf.pos = attr.offset;
+    for (u32 i = 0; i < attr.components; i++) {
+        float val = 0.0f;
+        switch (attr.type) {
+            case GL_FLOAT:
+                val = VFILE_READ(float, &vf);
+                break;
+            case GL_BYTE:
+                val = VFILE_READ(s8, &vf);
+                break;
+            case GL_UNSIGNED_BYTE:
+                val = VFILE_READ(u8, &vf);
+                break;
+            case GL_SHORT:
+                val = VFILE_READ(s16, &vf);
+                break;
+            case GL_UNSIGNED_SHORT:
+                val = VFILE_READ(u16, &vf);
+                break;
+        }
+
+        result.raw[i] = val;
+    }
+
+    return result;
+}
+
 // TODO: Make this also use the format table.
-std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
+std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
+    vertex_format_t format = format_by_id(format_id);
     std_vertex output = {};
     // Get a virtual file for the buffer
-    vfile vf = vfile_open(vertbuf, vert_size);
+    vfile vf = vfile_open(vertbuf, format.size);
 
     // The only thing consistent across formats is that they always start with
     // the 3D position.
-    output.pos = VFILE_READ(vec3s, &vf);
 
-    // Handle all known vertex formats
-    switch (vert_size) {
-    case 24:
-        // Convert UVs from 16-bit to floating-point
-        output.texcoord = {
-            VFILE_READ(u16, &vf) / (float)INT16_MAX,
-            VFILE_READ(u16, &vf) / (float)INT16_MAX,
-        };
-        break;
-    case 32:
-        // This format has UVs in a slightly different place
-        vfile_seek(&vf, 4);
-        // This format only uses values up to 4096 in UVs (why?)
-        output.texcoord = {
-            VFILE_READ(u16, &vf) / 4096.0f,
-            VFILE_READ(u16, &vf) / 4096.0f,
-        };
+    vertex_attribute pos_attr = format.attributes[ATTRIBUTE_POSITION];
+    if (pos_attr.exists) {
+        vec4s pos = read_attr(vf, pos_attr);
+        output.pos = vec3s{pos.x, pos.y, pos.z};
+    }
 
-        vfile_seek(&vf, 6);
-        output.normal = {
-            VFILE_READ(u16, &vf) / 4096.0f,
-            VFILE_READ(u16, &vf) / 4096.0f,
-            VFILE_READ(u16, &vf) / 4096.0f,
-        };
-        break;
-    case 12: // This format is only position
-    default:
-        break;
+    vertex_attribute uv_attr = format.attributes[ATTRIBUTE_TEXCOORD];
+    if (uv_attr.exists) {
+        vec4s uv = read_attr(vf, uv_attr);
+        output.texcoord = vec2s{uv.x, uv.y};
+    }
+
+    vertex_attribute normal_attr = format.attributes[ATTRIBUTE_TEXCOORD];
+    if (normal_attr.exists) {
+        vec4s normal = read_attr(vf, normal_attr);
+        output.normal = vec3s{normal.x, normal.y, normal.z};
     }
 
     // Fix vertically flipped UVs to match what Blender expects
@@ -170,21 +98,7 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size) {
 
 void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header) {
     // Search our table of known formats
-    vertex_format_t format = {};
-    for (vertex_format_t entry : alr_vert_formats) {
-        if (entry.id == vert_header.format) {
-            format = entry;
-            break;
-        }
-    }
-
-    if (format.size == 0) {
-        // Couldn't find a matching format... use a default
-        format = {
-            .size = 12,
-            ALR_POS_ONLY,
-        };
-    }
+    vertex_format_t format = format_by_id(vert_header.format);
 
     // Copy format data to the output
     out->vertex_size = format.size;

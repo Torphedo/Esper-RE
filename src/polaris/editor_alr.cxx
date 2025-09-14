@@ -130,7 +130,7 @@ void resource::chunk::dump_vertex_buf(const resource& alr, const char* path, ver
         for (u32 i = 0; i < entry.vertex_count; i++) {
             const s64 next_pos = vf.pos + entry.vertex_size;
             // Read the vertex (this abstracts away the many different formats)
-            const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.vertex_size);
+            const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.format);
 
             // Save whatever vertex data we got
             if (vert.pos.has_value()) {

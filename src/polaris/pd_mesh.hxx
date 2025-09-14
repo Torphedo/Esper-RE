@@ -26,9 +26,9 @@ bool has_uvs(u8 vert_size);
 /// @brief Convert a single vertex to the standard format.
 ///
 /// @param vertbuf Buffer containing PD vertex data (must be at least [vert_size] bytes)
-/// @param vert_size The expected size of the vertex
+/// @param vert_size The format ID found in the vertex buffer entry
 /// @return A vertex in standard format
-std_vertex standardize_pd_vertex(void* vertbuf, u8 vert_size);
+std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id);
 
 void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header);
 

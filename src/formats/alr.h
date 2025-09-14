@@ -111,12 +111,16 @@ static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
 typedef enum {
     ATTRIBUTE_POSITION,
     ATTRIBUTE_TEXCOORD,
+    ATTRIBUTE_NORMAL,
+    ATTRIBUTE_WEIGHT,
     ATTRIBUTE_ENUM_MAX,
 }attribute_idx;
 
 static const char* attribute_names[] = {
     "Position",
     "Texture Coordinates",
+    "Vertex Normal",
+    "Weight",
     "[Invalid]",
 };
 
@@ -270,19 +274,19 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
     },
 };
 
+static vertex_format_t format_by_id(u8 id) {
+    for (u32 i = 0; i < ARRAY_SIZE(alr_vert_formats); i++) {
+        if (alr_vert_formats[i].id == id) {
+            return alr_vert_formats[i];
+        }
+    }
 
-// Structs for each vertex format. The number corresponds to the hexidecimal
-// value of 
-typedef struct {
-}vertex_format1;
-
-// There are lots of different vertex formats used for different purposes. The
-// known vertex sizes (in bytes) are:
-// - 0xC (st06.alr)
-// - 0x10 (pc00a.alr for low LOD character)
-// - 0x14 (st06.alr)
-// - 0x18 (st06.alr, pc00a.alr for high LOD character)
-// - 0x20 (st06.alr)
+    vertex_format_t out = {
+        .size = 12,
+        ALR_POS_ONLY,
+    };
+    return out;
+}
 
 // 0x10 chunk
 // =====================================================================================================================
