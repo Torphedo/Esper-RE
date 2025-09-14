@@ -111,6 +111,7 @@ static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
 typedef enum {
     ATTRIBUTE_POSITION,
     ATTRIBUTE_TEXCOORD,
+    ATTRIBUTE_LIGHTMAP_TEXCOORD,
     ATTRIBUTE_NORMAL,
     ATTRIBUTE_WEIGHT,
     ATTRIBUTE_ENUM_MAX,
@@ -256,6 +257,7 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
         .attributes = {
             ALR_STD_POS,
             ALR_STD_UV_DEF(16, 4096),
+            ALR_STD_UV_DEF(28, 4096),
         },
     },
     {   .id = 0x21,
