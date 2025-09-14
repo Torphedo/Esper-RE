@@ -60,7 +60,7 @@ u32 resource::chunk::num_indices(const resource& alr) const noexcept {
     return MAX(0, buf_size / (sizeof(u16)));
 }
 
-void resource::chunk::dump_idx_buf(const resource& alr, FILE* out, std::optional<vertbuf_entry> vert_entry) const noexcept {
+void resource::chunk::dump_idx_buf(const resource& alr, FILE* out, bool has_uvs, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
     vfile vf = vfile_open(alr.data + offset, size);
 
@@ -87,12 +87,7 @@ void resource::chunk::dump_idx_buf(const resource& alr, FILE* out, std::optional
         idx2++;
         idx3++;
 
-        bool use_uvs = false;
-        if (vert_entry.has_value()) {
-            use_uvs = has_uvs(vert_entry->vertex_size);
-        }
-
-        if (use_uvs) {
+        if (has_uvs) {
             fprintf(out, "f %hu/%hu %hu/%hu %hu/%hu\n", idx1, idx1, idx2, idx2, idx3, idx3);
         } else {
             fprintf(out, "f %hu %hu %hu\n", idx1, idx2, idx3);
@@ -184,7 +179,7 @@ void resource::chunk::dump_vertex_buf(const resource& alr, const char* path, ver
             }
 
             fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-            idx_chunk.dump_idx_buf(alr, out, entry);
+            idx_chunk.dump_idx_buf(alr, out, has_uvs, entry);
         }
 
         // Cleanup
@@ -234,7 +229,7 @@ void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexc
                 return;
             }
 
-            this->dump_idx_buf(alr, out);
+            this->dump_idx_buf(alr, out, false);
             fclose(out);
         }
         free(path);

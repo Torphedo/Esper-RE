@@ -22,11 +22,6 @@ u32 gl_type_max(u16 type) {
     }
 }
 
-bool has_uvs(u8 vert_size) {
-    // Known formats with UVs
-    return vert_size == 24 || vert_size == 32 || vert_size == 20;
-}
-
 vec4s read_attr(vfile& vf, vertex_attribute attr) {
     vec4s result = {};
     if (!attr.exists) {

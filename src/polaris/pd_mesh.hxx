@@ -20,9 +20,6 @@ struct std_vertex {
     // This is incomplete, more will be added here as research progresses
 };
 
-/// @brief Find out if a vertex format (identified by size) has texture coordinates
-bool has_uvs(u8 vert_size);
-
 /// @brief Convert a single vertex to the standard format.
 ///
 /// @param vertbuf Buffer containing PD vertex data (must be at least [vert_size] bytes)
