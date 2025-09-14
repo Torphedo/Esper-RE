@@ -48,6 +48,9 @@ vec4s read_attr(vfile& vf, vertex_attribute attr) {
                 val = VFILE_READ(u16, &vf);
                 break;
         }
+        if (attr.divisor > 0) {
+            val /= float(attr.divisor);
+        }
 
         result.raw[i] = val;
     }
@@ -79,8 +82,11 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
 
     vertex_attribute normal_attr = format.attributes[ATTRIBUTE_TEXCOORD];
     if (normal_attr.exists) {
-        vec4s normal = read_attr(vf, normal_attr);
-        output.normal = vec3s{normal.x, normal.y, normal.z};
+        vec4s normal_temp = read_attr(vf, normal_attr);
+        vec3s normal = vec3s{normal_temp.x, normal_temp.y, normal_temp.z};
+        normal = glms_normalize(normal);
+
+        output.normal = normal;
     }
 
     // Fix vertically flipped UVs to match what Blender expects
