@@ -434,7 +434,10 @@ typedef struct {
     float aabb_min[3];
     // AABB max of the object represented by the index buffer
     float aabb_max[3];
-    u16 unk4[6];
+    u32 unk5;
+    u8 unk6;
+    u8 unk7;
+    u16 unk4[3];
     u32 unk1; // Definitely a u32, unknown purpose
     u16 texture_idx; // 0x1 texture entry to apply to this mesh
     u16 unk2;
@@ -466,14 +469,18 @@ typedef struct {
     u32 unk2; // 8
     u32 unk3; // Usually 0? // C
     u16 unk4; // E
-    u16 unk5; // 10
-    u16 unk6; // 12
+    u8 vertbuf_format;
+    u8 vert_size;
+    u8 entry_idx;
+    u8 unk6; // 12
     u16 unk7; // 14
     u16 unk8; // 16
     u16 unk9; // 18
     u16 texture_idx; // 1C
+    // With specific texture formats (just 0x1F so far), this becomes the index
+    // of the lightmap texture, and the next value is the index of the normal map.
     u16 normal_idx;
-    u16 reflect_idx;
+    u16 normal_backup_idx;
     u32 pad[4];
     u8 unk10[4];
     u8 unk11[4];

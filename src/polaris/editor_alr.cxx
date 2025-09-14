@@ -832,13 +832,23 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
 
     bool has_strips = false;
     const chunk_0x1_entry* texinfo_entries = nullptr;
+    const joint_t* transform_entries = nullptr;
     // Upload the index buffers
     for (chunk c : alr.chunks) {
-        if (c.id == 0x1 && c.offset < this->offset) {
-            // Skip to chunk and get header
-            vf.pos = c.offset;
-            const chunk_0x1_header header = VFILE_READ(chunk_0x1_header, &vf);
-            texinfo_entries = (chunk_0x1_entry*) vfile_cur(vf);
+        if (c.offset < this->offset) {
+            if (c.id == 0x1) {
+                // Skip to chunk and get header
+                vf.pos = c.offset;
+                const chunk_0x1_header header = VFILE_READ(chunk_0x1_header, &vf);
+                texinfo_entries = (chunk_0x1_entry *) vfile_cur(vf);
+            }
+            if (c.id == 0x3) {
+                // Skip to chunk and get header
+                vf.pos = c.offset;
+                const auto genheader = VFILE_READ(chunk_generic, &vf);
+                const chunk_armature header = VFILE_READ(chunk_armature, &vf);
+                transform_entries = (joint_t*)vfile_cur(vf);
+            }
         }
 
         if (c.id == this->id && c.offset > this->offset) {
@@ -870,12 +880,21 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
 
             const bool tri_strip = (idx_header.unk3 == IDX_TYPE_STRIP);
             has_strips |= tri_strip;
+            const joint_t* joint = &transform_entries[idx_header.unk2];
+            mat4s obj_transform = transform_from_joint(*joint);
+            while (joint->parent_idx > 0) {
+                joint = &transform_entries[joint->parent_idx];
+                obj_transform = glms_mul(obj_transform, transform_from_joint(*joint));
+            }
+            const vec3s obj_pos = glms_mat4_mulv3(obj_transform, vec3s{}, 1.0f);
+
             const index_buffer idx_buf = {
                 .data = ((u8*)vfile_cur(vf)),
                 .num = c.num_indices(alr),
                 .albedo_tex_idx = albedo_texture_idx,
                 .normal_tex_idx = normal_texture_idx,
                 .draw_mode = (u16)(tri_strip ? GL_TRIANGLE_STRIP : GL_TRIANGLES),
+                .pos = obj_pos,
             };
 
             mesh.add_index_buf(idx_buf);
