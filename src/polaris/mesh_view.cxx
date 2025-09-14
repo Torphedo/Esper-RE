@@ -196,6 +196,9 @@ void mesh_view::edit_menu(const polaris* pol) {
         snprintf(label, sizeof(label) - 1, "Render ##%d", i);
         ImGui::Checkbox(label, &buf.enabled);
 
+        snprintf(label, sizeof(label) - 1, "Position ##%d", i);
+        ImGui::InputFloat3(label, buf.pos.raw);
+
         snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
         bool albedo_changed = ImGui::InputU16(label, &buf.albedo_tex_idx);
 

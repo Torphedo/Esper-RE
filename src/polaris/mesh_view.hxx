@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <glad/glad.h>
+#include <cglm/struct.h>
 
 #include <common/int.h>
 #include <formats/alr.h>
@@ -18,6 +19,7 @@ struct index_buffer {
     u16 albedo_tex_idx = 0;
     u16 normal_tex_idx = 0;
     u16 draw_mode = GL_TRIANGLES;
+    vec3s pos = {};
     bool enabled = true; // Whether to render this index buffer
 };
 

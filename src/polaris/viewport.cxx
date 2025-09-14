@@ -229,6 +229,10 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         shader_flags.render_normals = temp_render_normals;
 
         ImGui::SameLine();
+        static bool do_offset = false;
+        ImGui::Checkbox("Use offset", &do_offset);
+
+        ImGui::SameLine();
         bool temp_force_disable_normals = shader_flags.has_normal;
         ImGui::Checkbox("Use normals", &temp_force_disable_normals);
         shader_flags.has_normal = temp_force_disable_normals;
@@ -280,7 +284,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         glUniform1i(uniform_sampler_normal, 1);
 
         // Render all index buffers of all known meshes
-        for (mesh_view mesh : meshes) {
+        for (const mesh_view& mesh : meshes) {
             if (!mesh.active) {
                 continue; // This mesh is hidden
             }
@@ -293,6 +297,13 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
                 if (!idx_buf.enabled) {
                     continue; // This index buffer is hidden
                 }
+                mat4s obj_pvm = {};
+                if (do_offset) {
+                    obj_pvm = glms_mul(*(mat4s*)pvm, glms_translate_make(idx_buf.pos));
+                } else {
+                    obj_pvm = *(mat4s*)pvm;
+                }
+                glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.albedo_tex_idx));
