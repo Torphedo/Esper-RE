@@ -324,10 +324,10 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
         image_size *= scale;
 
         ImGui::Image(color_tex, image_size);
-        const bool mouse_click = ImGui::IsMouseDown(0);
         is_hovered = ImGui::IsItemHovered();
-        if (is_hovered && mouse_click) {
-            if (!cursor_lock) {
+        if (ImGui::IsMouseClicked(0)) {
+            cam.get_cursor_delta();
+            if (is_hovered) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
                 // Get non-accelerated input if possible
@@ -337,16 +337,25 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
                 cursor_lock = true;
             }
         }
-        else if (!mouse_click && cursor_lock) {
-            // Disable when left click is released
+        if (ImGui::IsMouseReleased(0)) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
             cursor_lock = false;
         }
 
-        if (is_hovered) {
-            // Update the camera state
+        if (cursor_lock) {
+            vec2s prev_cursor = cam.last_cursor;
             cam.update(delta_time);
+            cam.last_cursor = prev_cursor;
+            glfwSetCursorPos(window, cam.last_cursor.x, cam.last_cursor.y);
+            // It seems like if we don't overwrite this, floating point
+            // imprecisions will cause constant slight movement in the last
+            // direction the mouse moved
+            input.cursor = prev_cursor;
+        } else {
+            double x, y;
+            glfwGetCursorPos(window, &x, &y);
+            cam.last_cursor = vec2s{float(x), float(y)};
         }
 
         glUseProgram(0);

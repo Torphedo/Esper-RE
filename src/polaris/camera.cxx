@@ -31,32 +31,23 @@ vec3s orbit_pos_by_angles(camera& cam) {
     return pos_difference;
 }
 
-vec2s get_cursor_delta(camera& cam, vec2s cursor_pos) {
-    static vec2s last_cursor = {0};
-
-    // Nullify movement unless click is held
-    if (!input.click_left) {
-        last_cursor = input.cursor;
-    }
-
-    vec2s cursor_delta = {
-        (cursor_pos.x - last_cursor.x) * cam.mouse_sens,
-        (cursor_pos.y - last_cursor.y) * cam.mouse_sens
-    };
+vec2s camera::get_cursor_delta() {
+    vec2s cursor_delta = glms_vec2_sub(input.cursor, last_cursor);
+    cursor_delta = glms_vec2_scale(cursor_delta, mouse_sens);
 
     // Save state so we can find the delta next time we're called
-    last_cursor = cursor_pos;
+    last_cursor = input.cursor;
 
     if (fabsf(input.RS.x) > deadzone || fabsf(input.RS.y) > deadzone) {
-        cursor_delta.x = input.RS.x * cam.mouse_sens * 5;
-        cursor_delta.y = input.RS.y * cam.mouse_sens * 5;
+        cursor_delta.x = input.RS.x * mouse_sens * 5;
+        cursor_delta.y = input.RS.y * mouse_sens * 5;
     }
 
     // Invert sign as needed.
-    if (cam.invert_mouse_x) {
+    if (invert_mouse_x) {
         cursor_delta.x = -cursor_delta.x;
     }
-    if (cam.invert_mouse_y) {
+    if (invert_mouse_y) {
         cursor_delta.y = -cursor_delta.y;
     }
 
@@ -66,7 +57,7 @@ vec2s get_cursor_delta(camera& cam, vec2s cursor_pos) {
 void camera::update(double delta_time) noexcept {
     static vec2s last_scroll = {0};
 
-    const vec2s cursor_delta = get_cursor_delta(*this, input.cursor);
+    const vec2s cursor_delta = get_cursor_delta();
 
     const vec2s scroll_delta = {
         input.scroll.x - last_scroll.x,

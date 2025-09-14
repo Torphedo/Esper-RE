@@ -24,6 +24,7 @@ struct camera {
     bool invert_mouse_x = false;
     bool invert_mouse_y = false;
     camera_mode mode = CAMERA_ORBIT;
+    vec2s last_cursor = {0};
 
     /// @brief Updates the camera mode.
     ///
@@ -45,4 +46,6 @@ struct camera {
 
     // Get combined projection & view matrix for the current camera position
     void proj_view(mat4 out) const noexcept;
+
+    vec2s get_cursor_delta();
 };
