@@ -19,7 +19,7 @@ struct index_buffer {
     u16 albedo_tex_idx = 0;
     u16 normal_tex_idx = 0;
     u16 draw_mode = GL_TRIANGLES;
-    vec3s pos = {};
+    mat4s transform = glms_mat4_identity();
     bool enabled = true; // Whether to render this index buffer
 };
 

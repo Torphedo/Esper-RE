@@ -886,7 +886,6 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
                 joint = &transform_entries[joint->parent_idx];
                 obj_transform = glms_mul(obj_transform, transform_from_joint(*joint));
             }
-            const vec3s obj_pos = glms_mat4_mulv3(obj_transform, vec3s{}, 1.0f);
 
             const index_buffer idx_buf = {
                 .data = ((u8*)vfile_cur(vf)),
@@ -894,7 +893,7 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
                 .albedo_tex_idx = albedo_texture_idx,
                 .normal_tex_idx = normal_texture_idx,
                 .draw_mode = (u16)(tri_strip ? GL_TRIANGLE_STRIP : GL_TRIANGLES),
-                .pos = obj_pos,
+                .transform = obj_transform,
             };
 
             mesh.add_index_buf(idx_buf);
