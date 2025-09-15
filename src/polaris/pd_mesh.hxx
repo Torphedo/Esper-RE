@@ -29,5 +29,4 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id);
 
 void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header);
 
-u16 gl_type_size(u16 type);
 u32 gl_type_max(u16 type);

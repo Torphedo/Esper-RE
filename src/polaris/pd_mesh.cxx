@@ -3,25 +3,6 @@
 
 #include <common/vfile.h>
 
-u32 gl_type_max(u16 type) {
-    switch (type) {
-    case GL_UNSIGNED_INT:
-        return UINT32_MAX;
-    case GL_INT:
-        return INT32_MAX;
-    case GL_UNSIGNED_SHORT:
-        return UINT16_MAX;
-    case GL_SHORT:
-        return INT16_MAX;
-    case GL_UNSIGNED_BYTE:
-        return UINT8_MAX;
-    case GL_BYTE:
-        return INT8_MAX;
-    default:
-        return 1;
-    }
-}
-
 vec4s read_attr(vfile& vf, vertex_attribute attr) {
     vec4s result = {};
     if (!attr.exists) {

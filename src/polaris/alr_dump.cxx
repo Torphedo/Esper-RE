@@ -54,7 +54,7 @@ struct joint_tree {
     std::vector<u32> children;
 };
 
-void xml_dump_joint(FILE* f, const joint_tree* joints, u32 idx, mat4s parent_xform = glms_mat4_identity()) {
+void xml_dump_joint(FILE* f, const joint_tree* joints, u32 idx) {
     const joint_tree& node = joints[idx];
     if (node.joint.name == UINT32_MAX && node.children.empty()) {
         // Unnamed node that won't affect the rest of the skeleton
@@ -81,7 +81,7 @@ void xml_dump_joint(FILE* f, const joint_tree* joints, u32 idx, mat4s parent_xfo
     fprintf(f, "</matrix>");
 
     for (u32 i : node.children) {
-        xml_dump_joint(f, joints, i, xform);
+        xml_dump_joint(f, joints, i);
     }
 
     fprintf(f, "\n</node>\n");
