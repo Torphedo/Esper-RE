@@ -37,29 +37,6 @@ do {                                 \
 
 namespace al {
 
-u32 resource::chunk::num_indices(const resource& alr) const noexcept {
-    if (id != 0x2) {
-        return 0; // Can't use the assert macro because we return a value
-    }
-
-    // Open ALR data and skip to header
-    vfile vf = vfile_open(alr.data, alr.alr_size);
-    vf.pos = this->offset + sizeof(chunk_generic);
-    const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
-
-    if (header.unk3 == IDX_TYPE_STRIP) {
-        return header.num_indices;
-    } else {
-        return header.num_indices;
-    }
-
-    // Buffer space available for indices
-    const s32 buf_size = size - sizeof(chunk_generic) - sizeof(idxbuf_header);
-
-    // Indices are always u16 (so far)
-    return MAX(0, buf_size / (sizeof(u16)));
-}
-
 void resource::chunk::dump_idx_buf(const resource& alr, FILE* out, bool has_uvs, std::optional<vertbuf_entry> vert_entry) const noexcept {
     CHUNK_ID_ASSERT(0x2);
     vfile vf = vfile_open(alr.data + offset, size);
@@ -94,9 +71,7 @@ void resource::chunk::dump_idx_buf(const resource& alr, FILE* out, bool has_uvs,
         }
 
         if (vert_entry.has_value()) {
-            // The indicator for triangle strips seems to be in the index buffer
-            // header
-            if (header.unk3 != IDX_TYPE_STRIP) {
+            if (header.primitive_type != IDX_TYPE_STRIP) {
                 // For triangle strips, we advance by 1 index but still read 3
                 // indices per iteration. For normal index buffers, we read and
                 // advance 3 at a time. Our loop counts up by 1, so we have to
@@ -244,9 +219,11 @@ void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexc
 
     ImGui::PushItemWidth(ImGui::CharWidth() * 32);
 
-    ImGui::InputU16("Texture ID", &header->texture_idx);
+    ImGui::InputU16("Texture entry ID", &header->texture_idx);
+    ImGui::InputU16("Transform index", &header->transform_idx);
     ImGui::InputU16("Vertex Buffer", &header->vertex_buf);
 
+    ImGui::InputU16("Primitive type", &header->primitive_type);
     ImGui::InputU32("# of triangles", &header->num_tris);
     ImGui::InputU32("# of indices", &header->num_indices);
     ImGui::InputU32("Smallest index", &header->first_idx);
@@ -262,8 +239,6 @@ void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexc
         ImGui::InputFloat("Unknown float 1", &header->unk_float);
 
         ImGui::InputU32("Unknown integer 1", &header->unk1);
-        ImGui::InputU16("Unknown integer 2", &header->unk2);
-        ImGui::InputU16("Unknown integer 3", &header->unk3);
         ImGui::SetNextItemWidth(ImGui::CharWidth() * 12 * 6);
         ImGui::InputScalarN("Unknown integer 4", ImGuiDataType_U16, header->unk4, 6);
     }
@@ -878,9 +853,9 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
                 normal_texture_idx += alr.cur_alr_texture_0;
             }
 
-            const bool tri_strip = (idx_header.unk3 == IDX_TYPE_STRIP);
+            const bool tri_strip = (idx_header.primitive_type == IDX_TYPE_STRIP);
             has_strips |= tri_strip;
-            const joint_t* joint = &transform_entries[idx_header.unk2];
+            const joint_t* joint = &transform_entries[idx_header.transform_idx];
             mat4s obj_transform = transform_from_joint(*joint);
             while (joint->parent_idx > 0) {
                 joint = &transform_entries[joint->parent_idx];
@@ -889,7 +864,7 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
 
             const index_buffer idx_buf = {
                 .data = ((u8*)vfile_cur(vf)),
-                .num = c.num_indices(alr),
+                .num = idx_header.num_indices,
                 .albedo_tex_idx = albedo_texture_idx,
                 .normal_tex_idx = normal_texture_idx,
                 .draw_mode = (u16)(tri_strip ? GL_TRIANGLE_STRIP : GL_TRIANGLES),

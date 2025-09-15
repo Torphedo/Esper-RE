@@ -421,10 +421,15 @@ static_assert(sizeof(joint_t) == 0x40, "Wrong joint size!");
 // =====================================================================================================================
 // Information about an index buffer.
 
-enum {
+// The primitive type determines how the vertices are translated into triangles.
+typedef enum {
+    // Every 3 vertices are a new triangle (GL_TRIANGLES)
     IDX_TYPE_NORMAL = 5,
+    // Each vertex combines with the last 2 to form a triangle strip.
+    // Strips are separated by repeating the same vertex to create an invisible
+    // triangle. (GL_TRIANGLE_STRIP)
     IDX_TYPE_STRIP = 6,
-};
+}alr_primitive_type;
 
 typedef struct {
     // Centerpoint of the object represented by the index buffer
@@ -440,9 +445,11 @@ typedef struct {
     u16 unk4[3];
     u32 unk1; // Definitely a u32, unknown purpose
     u16 texture_idx; // 0x1 texture entry to apply to this mesh
-    u16 unk2;
+    u16 transform_idx;
+    // Index of 0x3 entry that has this object's transform. When applying that
+    // transform, remember to apply the parent transforms
     u16 vertex_buf; // Index of vertex buffer in the 0x16 chunk
-    u16 unk3; // Usually IDX_TYPE_NORMAL. When it's IDX_TYPE_STRIP, the indices are for a triangle strip. Maybe a bitfield?
+    u16 primitive_type; // alr_primitive_type enum
     // Seems to be the first index of the first triangle. Maybe used to help order index buffers in optimal order
     u32 first_idx;
     // The number of triangles formed by the indices
