@@ -3,8 +3,12 @@
 #include <set>
 #include <cglm/struct.h>
 
+#include <common/vfile.h>
+
 #include <formats/alr.h>
 #include <formats/pd_common.h>
+#include "editor_alr.hxx"
+#include "pd_mesh.hxx"
 
 namespace al {
 
@@ -83,7 +87,7 @@ void xml_dump_joint(FILE* f, const joint_tree* joints, u32 idx, mat4s parent_xfo
     fprintf(f, "\n</node>\n");
 }
 
-void dump_armature(FILE* f, vfile armature_data) {
+void dump_armature_dae(FILE* f, vfile armature_data) {
     if (!armature_data.ptr || armature_data.size < sizeof(chunk_armature)) {
         LOG_MSG(error, "Not exporting armature because there was nothing to export.\n");
         return;
@@ -124,6 +128,132 @@ void dump_armature(FILE* f, vfile armature_data) {
 
     fprintf(f, "</node>\n");
     fprintf(f, DAE_FOOTER);
+}
+
+void fprint_obj_idx(FILE* out, bool uv, bool normal, u16 idx) {
+    fprintf(out, "%hu", idx);
+    if (uv) {
+        fprintf(out, "/%hu", idx);
+    }
+    if (normal) {
+        fprintf(out, "/%hu", idx);
+    }
+}
+
+void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
+    vfile vf = vfile_open((void*)(alr_data + offset), 0x10);
+
+    // We use the temporary size until we can get the actual size here
+    const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
+    vf.size = generic_header.size; // This just sets the limit of how much we can read
+    const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+
+    const u16* indices = (u16*)vfile_cur(vf);
+    for (s32 i = 2; i < header.num_indices; i++) {
+        // We add 1 because OBJ indices start at 1
+        u16 idx1 = indices[i - 2] + 1;
+        u16 idx2 = indices[i - 1] + 1;
+        u16 idx3 = indices[i] + 1;
+
+        if (idx1 == idx2 || idx1 == idx3 || idx2 == idx3) {
+            // Triangle strips will repeat 1 index to create a triangle with an
+            // area of 0, which is used to end a strip and start another.
+            // We skip these since they're not part of the geometry.
+            continue;
+        }
+
+        fprintf(out, "f ");
+        fprint_obj_idx(out, idx1, has_uvs, false);
+        fprint_obj_idx(out, idx2, has_uvs, false);
+        fprint_obj_idx(out, idx3, has_uvs, false);
+        fprintf(out, "\n");
+
+        if (header.primitive_type != IDX_TYPE_STRIP) {
+            // For triangle strips we advance 1 each loop, but for normal
+            // triangles we need to make up the difference to advance 3 each loop.
+            i += 2;
+        }
+    }
+}
+
+void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx) {
+    // Dump to OBJ
+    FILE *out = fopen(path, "wb");
+    if (out != nullptr) {
+        // Open resource buffer
+        vfile vf = vfile_open(alr.data, alr.alr_size);
+        vfile_seek(&vf, vertchunk_offset);
+        const auto genheader = VFILE_READ(chunk_generic, &vf);
+        const u32 vert_entries = VFILE_READ(u32, &vf);
+        const vertbuf_entry* entries = (vertbuf_entry*)vfile_cur(vf);
+        const vertbuf_entry entry = entries[vert_entry_idx];
+
+        // Jump to the appropriate data
+        vf.pos = alr.resbuf_offset;
+        vfile_seek(&vf, entry.data_ptr);
+        bool has_uvs = false;
+        for (u32 i = 0; i < entry.vertex_count; i++) {
+            const s64 next_pos = vf.pos + entry.vertex_size;
+            // Read the vertex (this abstracts away the many different formats)
+            const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.format);
+
+            // Save whatever vertex data we got
+            if (vert.pos.has_value()) {
+                const vec3s pos = vert.pos.value();
+                fprintf(out, "v %f %f %f\n", pos.x, pos.y, pos.z);
+            }
+
+            if (vert.texcoord.has_value()) {
+                has_uvs = true;
+                const vec2s uv = vert.texcoord.value();
+                fprintf(out, "vt %f %f\n", uv.x, uv.y);
+            }
+
+            if (vert.normal.has_value()) {
+                const vec3s normal = vert.normal.value();
+                fprintf(out, "vn %f %f %f\n", normal.x, normal.y, normal.z);
+            }
+
+            // Skip to the next vertex
+            vf.pos = next_pos;
+        }
+
+        // Vertices are dumped, now for indices
+        for (al::resource::chunk idx_chunk : alr.chunks) {
+            if (idx_chunk.id == 0x16 && idx_chunk.offset > vertchunk_offset) {
+                // We've hit a mesh metadata chunk past our own, so any
+                // further index buffers will be garbage data to us. Quit.
+                break;
+            }
+
+            if (idx_chunk.id != 0x2) {
+                // We only want index buffer chunks
+                continue;
+            }
+
+            if (idx_chunk.offset < vertchunk_offset) {
+                // This index buffer is from a previous mesh, so it's
+                // garbage data to us. Skip.
+                continue;
+            }
+
+            // Skip to idx_chunk and skip header
+            vf.pos = idx_chunk.offset;
+            vfile_seek(&vf, sizeof(chunk_generic));
+            const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+
+            // We only want index buffers meant for this vertex buffer
+            if (header.vertex_buf != vert_entry_idx) {
+                continue;
+            }
+
+            fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
+            al::dump_idx_buf(alr.data, idx_chunk.offset, out, has_uvs);
+        }
+
+        // Cleanup
+        fclose(out);
+    }
 }
 
 } // namespace al

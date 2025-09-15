@@ -13,6 +13,7 @@
 #include <formats/alr.h>
 
 #include "alr_texture.hxx"
+#include "alr_dump.hxx"
 #include "pd_mesh.hxx"
 
 #include "imgui_utils.hxx"
@@ -36,131 +37,6 @@ do {                                 \
 } while(0)
 
 namespace al {
-
-void resource::chunk::dump_idx_buf(const resource& alr, FILE* out, bool has_uvs, std::optional<vertbuf_entry> vert_entry) const noexcept {
-    CHUNK_ID_ASSERT(0x2);
-    vfile vf = vfile_open(alr.data + offset, size);
-
-    // Skip over chunk header
-    const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
-    const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
-
-    const u16* indices = (u16*)vfile_cur(vf);
-    for (s32 i = 2; i < header.num_indices; i++) {
-        u16 idx1 = indices[i - 2];
-        u16 idx2 = indices[i - 1];
-        u16 idx3 = indices[i];
-
-        if (idx1 == idx2 || idx1 == idx3 || idx2 == idx3) {
-            // One of the indices is a duplicate, so this triangle will have
-            // zero area. This happens sometimes in triangle strips, telling us
-            // where one strip ends and another begins. We can safely skip it,
-            // because it's not really part of the geometry.
-            continue;
-        }
-
-        // OBJ indices start at 1 :(
-        idx1++;
-        idx2++;
-        idx3++;
-
-        if (has_uvs) {
-            fprintf(out, "f %hu/%hu %hu/%hu %hu/%hu\n", idx1, idx1, idx2, idx2, idx3, idx3);
-        } else {
-            fprintf(out, "f %hu %hu %hu\n", idx1, idx2, idx3);
-        }
-
-        if (vert_entry.has_value()) {
-            if (header.primitive_type != IDX_TYPE_STRIP) {
-                // For triangle strips, we advance by 1 index but still read 3
-                // indices per iteration. For normal index buffers, we read and
-                // advance 3 at a time. Our loop counts up by 1, so we have to
-                // add an extra 2.
-                i += 2;
-            }
-        }
-    }
-
-}
-
-void resource::chunk::dump_vertex_buf(const resource& alr, const char* path, vertbuf_entry entry) const noexcept {
-    CHUNK_ID_ASSERT(0x16);
-
-    // Dump to OBJ
-    FILE *out = fopen(path, "wb");
-    if (out != nullptr) {
-        // Open resource buffer
-        vfile vf = vfile_open(alr.data, alr.alr_size);
-
-        // Jump to the appropriate data
-        vfile_seek(&vf, alr.resbuf_offset);
-        vfile_seek(&vf, entry.data_ptr);
-        bool has_uvs = false;
-        bool has_normals = false;
-        for (u32 i = 0; i < entry.vertex_count; i++) {
-            const s64 next_pos = vf.pos + entry.vertex_size;
-            // Read the vertex (this abstracts away the many different formats)
-            const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.format);
-
-            // Save whatever vertex data we got
-            if (vert.pos.has_value()) {
-                const vec3s pos = vert.pos.value();
-                fprintf(out, "v %f %f %f\n", pos.x, pos.y, pos.z);
-            }
-
-            if (vert.texcoord.has_value()) {
-                has_uvs = true;
-                const vec2s uv = vert.texcoord.value();
-                fprintf(out, "vt %f %f\n", uv.x, uv.y);
-            }
-
-            if (vert.normal.has_value()) {
-                has_normals = true;
-                const vec3s normal = vert.normal.value();
-                fprintf(out, "vn %f %f %f\n", normal.x, normal.y, normal.z);
-            }
-
-            // Skip to the next vertex
-            vf.pos = next_pos;
-        }
-
-        // Vertices are dumped, now for indices
-        for (chunk idx_chunk : alr.chunks) {
-            if (idx_chunk.id == this->id && idx_chunk.offset > this->offset) {
-                // We've hit a mesh metadata chunk past our own, so any
-                // further index buffers will be garbage data to us. Quit.
-                break;
-            }
-
-            if (idx_chunk.id != 0x2) {
-                // We only want index buffer chunks
-                continue;
-            }
-
-            if (idx_chunk.offset < offset) {
-                // This index buffer is from a previous mesh, so it's
-                // garbage data to us. Skip.
-                continue;
-            }
-
-            // Skip to idx_chunk and skip header
-            vf.pos = idx_chunk.offset;
-            vfile_seek(&vf, sizeof(chunk_generic));
-            const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
-
-            // We only want index buffers meant for this vertex buffer
-            if (header.vertex_buf != window_0x16.selected_vertex_buf) {
-                continue;
-            }
-
-            fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-            idx_chunk.dump_idx_buf(alr, out, has_uvs, entry);
-        }
-
-        // Cleanup
-        fclose(out);
-    }
-}
 
 void resource::chunk::chunk_0x1(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x1);
@@ -198,14 +74,11 @@ void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexc
         char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            // Dump to OBJ
             FILE* out = fopen(path, "ab");
-            if (out == nullptr) {
-                return;
+            if (out) {
+                al::dump_idx_buf(alr.data, offset, out, false);
+                fclose(out);
             }
-
-            this->dump_idx_buf(alr, out, false);
-            fclose(out);
         }
         free(path);
     }
@@ -260,7 +133,6 @@ void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexc
 void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x3);
 
-    // TODO: add a 3D viewport here so we can see all the matrix positions
     vfile vf = vfile_open(alr.data + offset, size);
     vfile_seek(&vf, sizeof(chunk_generic)); // Skip ID & size
 
@@ -293,7 +165,7 @@ void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexc
         if (f != nullptr) {
             vfile armature_view = vf;
             armature_view.pos = 0;
-            dump_armature(f, armature_view);
+            dump_armature_dae(f, armature_view);
             fclose(f);
         }
     }
@@ -420,7 +292,6 @@ static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const c
         };
         ImGui::GraphData(info);
     }
-
 }
 
 void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexcept {
@@ -428,7 +299,6 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
-    // TODO: Add an animation graph to add to the more manual editor
     ImGui::Text("Length: %.3f frames", header->length);
     ImGui::Text("%d translation keys, 0x%X bytes each", header->translation_key_count, header->translation_key_size);
     ImGui::Text("%d rotation keys, 0x%X bytes each", header->rotation_key_count, header->rotation_key_size);
@@ -474,32 +344,24 @@ void resource::chunk::chunk_0x7(const resource& alr, viewport_t& viewport) noexc
 void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x10);
 
-    // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(alr.data + offset, size);
     // Skip over the ID and size fields we already have
     vfile_seek(&vf, sizeof(chunk_generic));
 
-    // We use pointers instead of reading into stack copies, so we can edit the
-    // data directly. I'm not usually a big fan of using auto, but it doesn't
-    // hide the real data type so I think it's fine here.
     auto* header = (atlas_header*) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
-    // Read surface names
     auto* atlas_names = (atlas_name*) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*atlas_names) * header->atlas_count);
 
-    // Read surface metadata
     auto* atlases = (atlas_entry*) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*atlases) * header->atlas_count);
 
-    // Read texture metadata
     auto* textures = (atlas_tex_entry *) vfile_cur(vf);
     vfile_seek(&vf, sizeof(*textures) * header->texture_count);
 
     // We have to look up texture entries to find out where each texture is
     texture_entry* entries = nullptr;
-    u32 num_entries = 0;
     resource::chunk c = alr.first_chunk_by_id(0x15);
     if (c.size == 0) {
         // This should never happen
@@ -510,8 +372,7 @@ void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noex
         vfile tmp = vfile_open(alr.data + c.offset, c.size);
         vfile_seek(&tmp, sizeof(chunk_generic));
 
-        //
-        num_entries = VFILE_READ(u32, &tmp);
+        const u32 num_entries = VFILE_READ(u32, &tmp);
         entries = (texture_entry*)vfile_cur(tmp);
     }
 
@@ -911,7 +772,7 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
         char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            this->dump_vertex_buf(alr, path, *entry);
+            al::dump_vertex_buf(alr, path, offset, window_0x16.selected_vertex_buf);
         }
         free(path);
     }
