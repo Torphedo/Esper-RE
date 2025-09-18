@@ -61,7 +61,7 @@ int dump_all_textures(const polaris& pol) {
 
     for (u32 i = 0; i < num_entries; i++) {
         // Convert the ALR texture data to our standard texture struct
-        texture cur_tex = convert_tex(pol.alr.data + pol.alr.resbuf_offset, tex_entries[i]);
+        texture cur_tex = convert_tex(pol.alr.resource_buffer(), tex_entries[i]);
 
         // Decode the texture filename
         char decoded_name[0x20] = {0};

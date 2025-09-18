@@ -191,10 +191,7 @@ gl_obj texture_manager::get(al::resource& alr, u32 idx) noexcept {
         atlases = (atlas_entry*)vfile_cur(vf);
     }
 
-    u8* resbuf = alr.data + alr.resbuf_offset;
-
-    // TODO: Support texture info from atlas chunk
-    texture tex = convert_tex(resbuf, entries[idx]);
+    texture tex = convert_tex(alr.resource_buffer(), entries[idx]);
 
     // Use atlas metadata if reasonable
     if (atlases) {

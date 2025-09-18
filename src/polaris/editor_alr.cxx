@@ -427,7 +427,7 @@ void resource::chunk::chunk_0x10(resource& alr, viewport_t& viewport) noexcept {
     atlas_entry* atlas = &atlases[window_0x10.selected_atlas];
     atlas_tex_entry* tex = &textures[window_0x10.selected_atlas_texture];
 
-    texture cur_tex = convert_tex(alr.data + alr.resbuf_offset, entries[tex->index]);
+    texture cur_tex = convert_tex(alr.resource_buffer(), entries[tex->index]);
     // Override dimensions, we only want format info from the other chunk
     cur_tex.height = atlas->height;
     cur_tex.width = atlas->width;
@@ -561,7 +561,7 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
     decode_single32(name.data, entry->text1);
     decode_single32(&name.data[ENCODED_CHAR_COUNT], entry->text2);
 
-    window_0x15.tex = convert_tex(alr.data + alr.resbuf_offset, *entry);
+    window_0x15.tex = convert_tex(alr.resource_buffer(), *entry);
     ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
     ImGui::InputPDString("Texture Name", &entry->text1, &entry->text2);
     ImGui::Text("%dx%d pixels @ resbuf+0x%X\n", window_0x15.tex.height, window_0x15.tex.width, entry->data_ptr);
@@ -754,7 +754,7 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
     ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));
 
     // Hex editor for vertex buffer data
-    u8* vertbuf = alr.data + alr.resbuf_offset + entry->data_ptr;
+    u8* vertbuf = alr.resource_buffer() + entry->data_ptr;
     window_0x16.hex_vertbuf.DrawContents(vertbuf, entry->vertex_count * entry->vertex_size);
     ImGui::EndChild();
 }
