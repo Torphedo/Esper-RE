@@ -690,15 +690,11 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
             }
 
             const index_buffer idx_buf = {
-                .data = ((u8*)vfile_cur(vf)),
-                .num = idx_header.num_indices,
-                .albedo_tex_idx = albedo_texture_idx,
-                .normal_tex_idx = normal_texture_idx,
-                .draw_mode = (u16)(tri_strip ? GL_TRIANGLE_STRIP : GL_TRIANGLES),
+                .idx_chunk_offset = u32(c.offset),
                 .transform = obj_transform,
             };
 
-            mesh.add_index_buf(idx_buf);
+            mesh.add_index_buf(alr.data, alr.alr_size, idx_buf);
         }
     }
 

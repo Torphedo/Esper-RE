@@ -5,6 +5,7 @@
 
 #include "mesh_view.hxx"
 #include "polaris.hxx"
+#include "common/vfile.h"
 
 #include <common/logging.h>
 
@@ -303,24 +304,38 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
                 }
                 glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
+                // We cast away const here but don't write to the buffer
+                vfile vf = vfile_open(alr.data, alr.alr_size);
+                vf.pos = idx_buf.idx_chunk_offset;
+                vfile_seek(&vf, sizeof(chunk_generic));
+                const auto header = VFILE_READ(idxbuf_header, &vf);
+                chunk_0x1_entry tex_entry = {};
+                alr.tex_manager.get_material(alr, header.texture_idx, &tex_entry);
+
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, idx_buf.albedo_tex_idx));
+                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, tex_entry.texture_idx));
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+                gl_obj normal_idx = tex_entry.normal_idx;
+                if (tex_entry.vertbuf_format == 0x1F) {
+                    normal_idx = tex_entry.normal_backup_idx;
+                }
+
                 shader_flags_t flags = this->shader_flags;
                 if (flags.has_normal) {
-                    flags.has_normal = (idx_buf.normal_tex_idx != 0);
+                    flags.has_normal = (normal_idx != 0);
                 }
                 glUniform1i(uniform_flags, *((u32*)&flags));
 
                 glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, idx_buf.normal_tex_idx));
+                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, normal_idx));
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+                const u16 draw_mode = (header.primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
-                glDrawElements(idx_buf.draw_mode, idx_buf.num, GL_UNSIGNED_SHORT, 0);
+                glDrawElements(draw_mode, header.num_indices, GL_UNSIGNED_SHORT, 0);
             }
             // VAO keeps index buffer binding, so clear it after draw.
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
