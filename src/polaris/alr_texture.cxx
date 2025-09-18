@@ -162,18 +162,55 @@ gl_obj texture_manager::get(al::resource& alr, u32 idx) noexcept {
         return gl_tex_map[idx];
     }
 
+    if (texheader_offset == 0) {
+        // What do you want from me?
+        return 0;
+    }
+
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = texheader_offset;
-    const auto header = VFILE_READ(texture_header, &vf);
-    if (idx > header.array_size) {
-        LOG_MSG(error, "Requested texture index %d is out of bounds (max = %d)\n", idx, header.array_size);
+    const auto texheader = VFILE_READ(texture_header, &vf);
+    if (idx > texheader.array_size) {
+        LOG_MSG(error, "Requested texture index %d is out of bounds (max = %d)\n", idx, texheader.array_size);
         return 0;
     }
     const auto* entries = (texture_entry*)vfile_cur(vf);
+
+    const atlas_entry* atlases = nullptr;
+    if (atlasheader_offset > 0) {
+        vf.pos = atlasheader_offset;
+        vfile_seek(&vf, sizeof(chunk_generic)); // Skip id/size
+        const auto atlasheader = VFILE_READ(atlas_header, &vf);
+        if (idx > atlasheader.atlas_count) {
+            LOG_MSG(error, "Requested texture atlas index %d is out of bounds (max = %d)\n", idx, atlasheader.atlas_count);
+            return 0;
+        }
+
+        // Skip over names
+        vfile_seek(&vf, atlasheader.atlas_count * sizeof(atlas_name));
+        atlases = (atlas_entry*)vfile_cur(vf);
+    }
+
     u8* resbuf = alr.data + alr.resbuf_offset;
 
     // TODO: Support texture info from atlas chunk
     texture tex = convert_tex(resbuf, entries[idx]);
+
+    // Use atlas metadata if reasonable
+    if (atlases) {
+        const u32 too_small = 0;
+        const u32 too_big = 8192;
+        const u32 height = atlases[idx].height;
+        const u32 width = atlases[idx].width;
+        if (too_small < height && height < too_big) {
+            tex.height = height;
+        }
+
+        if (too_small < width && width < too_big) {
+            tex.width = width;
+        }
+
+    }
 
     gl_obj gl_tex_id = 0;
     glGenTextures(1, &gl_tex_id);

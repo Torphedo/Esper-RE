@@ -341,7 +341,7 @@ void resource::chunk::chunk_0x7(const resource& alr, viewport_t& viewport) noexc
     vfile_seek(&vf, key_size * header->rotation_key_count);
 }
 
-void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x10(resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x10);
 
     vfile vf = vfile_open(alr.data + offset, size);
@@ -419,9 +419,6 @@ void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noex
 
         if (ImGui::Selectable(buf, window_0x10.selected_atlas_texture == i)) {
             window_0x10.selected_atlas_texture = i;
-            // Once we have a mechanism to find the atlases' position in the
-            // texture buffer, clicking on a texture should set it as the
-            // active texture and display it.
         }
     }
     ImGui::EndChild();
@@ -436,24 +433,7 @@ void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noex
     cur_tex.width = atlas->width;
 
 
-    if (window_0x10.gl_tex_id == 0) {
-        // Create & upload initial texture state
-        glGenTextures(1, &window_0x10.gl_tex_id);
-        if (window_0x10.gl_tex_id == 0) {
-            const char* name = (char*)&textures[window_0x10.selected_atlas_texture].filename;
-            LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
-        }
-
-        update_gl_tex(cur_tex, window_0x10.gl_tex_id);
-        window_0x10.tex = cur_tex;
-        window_0x10.scale = 1.0f;
-    }
-    else if (memcmp(&cur_tex, &window_0x10.tex, sizeof(cur_tex)) != 0) {
-        // The texture changed since last frame, update the OpenGL state
-        update_gl_tex(cur_tex, window_0x10.gl_tex_id);
-        window_0x10.tex = cur_tex;
-    }
-
+    window_0x10.gl_tex_id = alr.tex_manager.get(alr, window_0x10.selected_atlas);
 
     // User input for atlas properties
     ImGui::PushItemWidth(ImGui::CharWidth() * (sizeof(aName->name) - 1 + 5));
@@ -464,6 +444,12 @@ void resource::chunk::chunk_0x10(const resource& alr, viewport_t& viewport) noex
     ImGui::InputU16("Atlas Height", &atlas->height);
     ImGui::InputU16("Atlas Width", &atlas->width);
     ImGui::InputU32("Atlas Texture Count", &atlas->tex_count);
+
+    if (memcmp(&cur_tex, &window_0x10.tex, sizeof(cur_tex)) != 0) {
+        // Texture settings have changed
+        alr.tex_manager.invalidate(window_0x10.selected_atlas);
+    }
+    window_0x10.tex = cur_tex;
 
     ImGui::PopItemWidth();
 

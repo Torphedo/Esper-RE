@@ -119,7 +119,7 @@ public:
         void chunk_0x3(const al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x5(const al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x7(const al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x10(const al::resource& alr, viewport_t& viewport) noexcept;
+        void chunk_0x10(al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x11(const al::resource& alr, viewport_t& viewport) const noexcept;
 
         /// Replace the selected texture with a DDS file from disk, updating the
