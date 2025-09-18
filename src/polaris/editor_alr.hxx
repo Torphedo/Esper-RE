@@ -11,7 +11,7 @@
 
 #include <formats/alr.h>
 
-#include "viewport.hxx"
+#include "alr_texture.hxx"
 
 // State for 0x1 (index buffer) window
 struct window_state_0x1 {
@@ -66,6 +66,8 @@ struct window_state_0x16 {
     u32 selected_vertex_buf = 0;
     MemoryEditor hex_vertbuf;
 };
+
+struct viewport_t;
 
 namespace al {
 
@@ -129,19 +131,6 @@ public:
         void import_dds_0x15(const al::resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
         void chunk_0x15(al::resource& alr, viewport_t& viewport) noexcept;
 
-        u32 num_indices(const al::resource& alr) const noexcept;
-
-        /// @brief Save index buffer data from an 0x2 chunk into an OBJ file.
-        ///
-        /// @param alr The rest of the program's state
-        /// @param out The output file to write to
-        /// @param vert_entry Optional metadata about the vertex format. If
-        /// present, extra checks occur to avoid saving invalid indices, and
-        /// indices are formatted to use UVs or triangle strips if present.
-        /// Otherwise, the indices are saved as-is.
-        void dump_idx_buf(const al::resource& alr, FILE* out, bool has_uvs, std::optional<vertbuf_entry> vert_entry = std::optional<vertbuf_entry>()) const noexcept;
-
-        void dump_vertex_buf(const al::resource& alr, const char* path, vertbuf_entry entry) const noexcept;
         void send_vertbuf_to_viewport(al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x16(al::resource& alr, viewport_t& viewport) noexcept;
     };
@@ -157,13 +146,7 @@ public:
     s64 reserve_size = 1024 * 1024 * 32;
     std::vector<chunk> chunks;
 
-    // TODO: Invoke texture load directly instead of using this extra state
-    bool textures_need_reload = false; 
-
-    // When multiple ALRs are loaded and sent to the viewport, the current
-    // ALR's "texture 0" won't be at index 0, so we need to keep track of that
-    // offset.
-    u16 cur_alr_texture_0 = 0;
+    texture_manager tex_manager;
 
     // If present, only display chunks with this ID
     std::optional<u32> chunk_filter;

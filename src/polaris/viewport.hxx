@@ -93,10 +93,10 @@ struct viewport_t {
     ~viewport_t() noexcept;
 
     // Render a Dear ImGui editor for the viewport contents
-    void render_editor(const polaris* pol) noexcept;
+    void render_editor(al::resource& alr) noexcept;
 
     // Render a Dear ImGui window showing the viewport contents
-    bool render_contents(GLFWwindow* window, const polaris* pol) noexcept;
+    bool render_contents(GLFWwindow* window, al::resource& pol) noexcept;
 
     // Simple wrapper methods for those who like them
     void bind() const noexcept {

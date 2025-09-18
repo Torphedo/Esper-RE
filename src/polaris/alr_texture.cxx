@@ -1,6 +1,8 @@
 #include <glad/glad.h>
 
+#include <common/vfile.h>
 #include "alr_texture.hxx"
+#include "editor_alr.hxx"
 
 const char* texformat_str(alr_pixel_format format) {
     const char* out = "[UNKNOWN]";
@@ -154,3 +156,53 @@ void update_gl_tex(texture img, gl_obj texture_id) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+
+gl_obj texture_manager::get(al::resource& alr, u32 idx) noexcept {
+    if (gl_tex_map.contains(idx)) {
+        return gl_tex_map[idx];
+    }
+
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vf.pos = texheader_offset;
+    const auto header = VFILE_READ(texture_header, &vf);
+    if (idx > header.array_size) {
+        LOG_MSG(error, "Requested texture index %d is out of bounds (max = %d)\n", idx, header.array_size);
+        return 0;
+    }
+    const auto* entries = (texture_entry*)vfile_cur(vf);
+    u8* resbuf = alr.data + alr.resbuf_offset;
+
+    // TODO: Support texture info from atlas chunk
+    texture tex = convert_tex(resbuf, entries[idx]);
+
+    gl_obj gl_tex_id = 0;
+    glGenTextures(1, &gl_tex_id);
+    update_gl_tex(tex, gl_tex_id);
+
+    gl_tex_map[idx] = gl_tex_id;
+
+    return gl_tex_id;
+}
+
+bool texture_manager::get_material(al::resource& alr, u32 idx, chunk_0x1_entry* entry_out) const noexcept {
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vf.pos = texheader_offset;
+    const auto header = VFILE_READ(chunk_0x1_header, &vf);
+    const auto* entries = (chunk_0x1_entry*)vfile_cur(vf);
+
+    if (idx < header.num_entries) {
+        *entry_out = entries[idx];
+        return true;
+    }
+
+    return false;
+}
+
+texture_manager::~texture_manager() noexcept {
+    for (const auto& pair : gl_tex_map) {
+        gl_obj tex = pair.second;
+        glDeleteTextures(1, &tex);
+    }
+
+    gl_tex_map.clear();
+}

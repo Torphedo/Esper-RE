@@ -21,10 +21,6 @@ struct polaris {
     // State for accompanying .dat file for a stage ALR.
     mapdata map;
 
-    // TODO: Unload textures if they aren't being used in the viewport when loading another ALR, to save on memory.
-    // Set of OpenGL textures used in the viewport
-    std::vector<gl_obj> gl_textures;
-
     // 3D viewport
     viewport_t viewport;
 
@@ -47,8 +43,6 @@ struct polaris {
     /// @brief Hide input from the rest of the program when ImGui is using it.
     void handle_input_suppression() noexcept;
 
-    void unload_gl_textures() noexcept;
-
     void do_menu_bar() noexcept;
 
     /// @brief Render and update all the UI
@@ -56,9 +50,4 @@ struct polaris {
 
     /// @brief Increase the amount of address space reserved for the ALR data
     void expand_reservation(s64 new_size) noexcept;
-
-    polaris() noexcept;
-    ~polaris() noexcept {
-        this->unload_gl_textures();
-    }
 };

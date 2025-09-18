@@ -25,7 +25,9 @@ struct index_buffer {
 
 // We need a forward declaration instead of a header include, since a class
 // in this file is a member of polaris.
-class polaris;
+namespace al {
+    struct resource;
+}
 
 struct mesh_view {
     // Meshes tend to have 1 vertex buffer and many index buffers, so we store
@@ -43,11 +45,6 @@ struct mesh_view {
 
     // Texture coordinates are divided by this value in the shader before use.
     u32 uv_divisor = 1;
-
-    // Divide by the maximum value of the current integer type instead of using
-    // the divisor value. This maps an integer value into the range [0, 1]
-    // based on its type, and is usually what you want.
-    bool use_type_divisor = false;
 
     bool initialized = false;
 
@@ -78,5 +75,5 @@ struct mesh_view {
     bool apply_attributes();
 
     /// @brief ImGui menu to edit the mesh properties
-    void edit_menu(const polaris* pol);
+    void edit_menu(al::resource& alr);
 };

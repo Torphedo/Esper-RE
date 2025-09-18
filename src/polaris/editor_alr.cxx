@@ -575,31 +575,15 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
     decode_single32(name.data, entry->text1);
     decode_single32(&name.data[ENCODED_CHAR_COUNT], entry->text2);
 
-    texture cur_tex = convert_tex(alr.data + alr.resbuf_offset, *entry);
+    window_0x15.tex = convert_tex(alr.data + alr.resbuf_offset, *entry);
     ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
     ImGui::InputPDString("Texture Name", &entry->text1, &entry->text2);
-    ImGui::Text("%dx%d pixels @ resbuf+0x%X\n", cur_tex.height, cur_tex.width, entry->data_ptr);
+    ImGui::Text("%dx%d pixels @ resbuf+0x%X\n", window_0x15.tex.height, window_0x15.tex.width, entry->data_ptr);
 
     const char* format = texformat_str((alr_pixel_format)entry->pixel_format);
     ImGui::Text("Suspected format: %s (code 0x%X)", format, entry->pixel_format);
 
-    if (window_0x15.gl_tex_id == 0) {
-        // Create & upload initial texture state
-        glGenTextures(1, &window_0x15.gl_tex_id);
-        if (window_0x15.gl_tex_id == 0) {
-            LOG_MSG(error, "Failed to create OpenGL texture for \"%s\"\n", name);
-        }
-
-        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
-        window_0x15.tex = cur_tex;
-        window_0x15.scale = 1.0f;
-    }
-    else if (memcmp(&cur_tex, &window_0x15.tex, sizeof(cur_tex)) != 0) {
-        // The texture changed since last frame, update the OpenGL state
-        update_gl_tex(cur_tex, window_0x15.gl_tex_id);
-        window_0x15.tex = cur_tex;
-    }
-
+    window_0x15.gl_tex_id = alr.tex_manager.get(alr, window_0x15.selected_texture);
 
     ImGui::Text("2^(resolution power) = width = height");
 
@@ -708,10 +692,6 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
             if (texinfo_entries != nullptr) {
                 albedo_texture_idx = texinfo_entries[idx_header.texture_idx].texture_idx;
                 normal_texture_idx = texinfo_entries[idx_header.texture_idx].normal_idx; 
-
-                // Account for multiple ALRs being loaded.
-                albedo_texture_idx += alr.cur_alr_texture_0;
-                normal_texture_idx += alr.cur_alr_texture_0;
             }
 
             const bool tri_strip = (idx_header.primitive_type == IDX_TYPE_STRIP);
@@ -918,7 +898,9 @@ bool resource::load(const char* path) noexcept {
     }
     alr_size = size;
     chunks = shatter_alr(data, alr_size);
-    this->textures_need_reload = true;
+    tex_manager.material_header_offset = first_chunk_by_id(0x1).offset;
+    tex_manager.atlasheader_offset = first_chunk_by_id(0x10).offset;
+    tex_manager.texheader_offset = first_chunk_by_id(0x15).offset;
     return true;
 }
 

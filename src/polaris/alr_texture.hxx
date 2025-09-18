@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 
 #include <common/image.h>
 #include <formats/alr.h>
@@ -14,3 +15,25 @@ texture convert_tex(u8* resbuf, texture_entry entry);
 /// This will re-upload the entire texture to the GPU, even if only the data
 /// format or dimensions changed (but not the texture buffer).
 void update_gl_tex(texture img, gl_obj texture_id);
+
+namespace al {
+    struct resource;
+}
+
+struct texture_manager {
+    // Ofset of the 0x1 chunk
+    u32 material_header_offset;
+
+    // Offset of the 0x15 chunk
+    u32 texheader_offset;
+
+    // Offset of the 0x10 chunk
+    u32 atlasheader_offset;
+
+    std::map<u32, gl_obj> gl_tex_map;
+
+    gl_obj get(al::resource& alr, u32 idx) noexcept;
+    bool get_material(al::resource& alr, u32 idx, chunk_0x1_entry* entry_out) const noexcept;
+
+    ~texture_manager() noexcept;
+};

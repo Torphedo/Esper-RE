@@ -168,7 +168,7 @@ viewport_t::~viewport_t() noexcept {
     }
 }
 
-void viewport_t::render_editor(const polaris* pol) noexcept {
+void viewport_t::render_editor(al::resource& alr) noexcept {
     if (!editor_enabled) {
         return;
     }
@@ -182,18 +182,18 @@ void viewport_t::render_editor(const polaris* pol) noexcept {
     // use the for loop style with a colon (or make sure you get a reference),
     // otherwise it'll run the menu on a copy and not modify the data
     mesh_view& mesh = meshes.at(selected_mesh);
-    mesh.edit_menu(pol);
+    mesh.edit_menu(alr);
 
     ImGui::End();
 }
 
-bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcept {
+bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept {
     if (!enabled || !initialized) {
         return false;
     }
 
     // Editor window
-    this->render_editor(pol);
+    this->render_editor(alr);
 
     // Calculate delta time every time we render
     static double prev_time = glfwGetTime();
@@ -304,7 +304,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
                 glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.albedo_tex_idx));
+                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, idx_buf.albedo_tex_idx));
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -315,7 +315,7 @@ bool viewport_t::render_contents(GLFWwindow* window, const polaris* pol) noexcep
                 glUniform1i(uniform_flags, *((u32*)&flags));
 
                 glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, pol->gl_textures.at(idx_buf.normal_tex_idx));
+                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, idx_buf.normal_tex_idx));
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 

@@ -134,10 +134,6 @@ bool mesh_view::apply_attributes() {
             continue;
         }
 
-        if (use_type_divisor) {
-            uv_divisor = gl_type_max(attr.type);
-        }
-
         // Update vertex format w/ OpenGL
         glEnableVertexAttribArray(i);
         glVertexAttribPointer(i, attr.components, attr.type, GL_FALSE, this->vertex_size, (void*)(u64)attr.offset);
@@ -148,7 +144,7 @@ bool mesh_view::apply_attributes() {
     return true;
 }
 
-void mesh_view::edit_menu(const polaris* pol) {
+void mesh_view::edit_menu(al::resource& alr) {
     ImGui::Checkbox("Render mesh", &active);
     ImGui::InputU16("Vertex size", &this->vertex_size);
 
@@ -161,13 +157,7 @@ void mesh_view::edit_menu(const polaris* pol) {
         ImGui::Text("%s:", attribute_names[i]);
         ImGui::BeginChild(label, ImVec2(0, 0), ImGuiChildFlags_AutoResizeY);
 
-        if (i == ATTRIBUTE_TEXCOORD) {
-            ImGui::Checkbox("Auto-scale integer UVs", &use_type_divisor);
-        }
-
-        if (i == ATTRIBUTE_TEXCOORD && !this->use_type_divisor) {
-            ImGui::InputU32("Custom UV Divisor", &this->uv_divisor);
-        }
+        ImGui::InputU32("Custom Divisor", &this->uv_divisor);
 
         ::edit_menu(attributes[i]);
 
@@ -209,13 +199,13 @@ void mesh_view::edit_menu(const polaris* pol) {
 
         snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
         bool normal_changed = ImGui::InputU16(label, &buf.normal_tex_idx);
-        buf.albedo_tex_idx %= pol->gl_textures.size();
-        buf.normal_tex_idx %= pol->gl_textures.size();
+        // buf.albedo_tex_idx %= pol->alr.tex_manager.
+        // buf.normal_tex_idx %= pol->gl_textures.size();
 
         snprintf(label, sizeof(label) - 1, "Show textures ##%d", i);
         if (ImGui::CollapsingHeader(label)) {
-            ImGui::Image(pol->gl_textures.at(buf.albedo_tex_idx), ImVec2(512, 512));
-            ImGui::Image(pol->gl_textures.at(buf.normal_tex_idx), ImVec2(512, 512));
+            ImGui::Image(alr.tex_manager.get(alr, buf.albedo_tex_idx), ImVec2(512, 512));
+            ImGui::Image(alr.tex_manager.get(alr, buf.normal_tex_idx), ImVec2(512, 512));
         }
 
         // Edit triangle mode
