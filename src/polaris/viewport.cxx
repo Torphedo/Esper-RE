@@ -5,8 +5,8 @@
 
 #include "mesh_view.hxx"
 #include "polaris.hxx"
-#include "common/vfile.h"
 
+#include <common/vfile.h>
 #include <common/logging.h>
 
 extern "C" {
@@ -375,7 +375,8 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
             // It seems like if we don't overwrite this, floating point
             // imprecisions will cause constant slight movement in the last
             // direction the mouse moved
-            input.cursor = prev_cursor;
+            input.cursor_x = prev_cursor.x;
+            input.cursor_y = prev_cursor.y;
         } else {
             double x, y;
             glfwGetCursorPos(window, &x, &y);

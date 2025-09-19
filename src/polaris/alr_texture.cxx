@@ -43,6 +43,7 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
         .data = resbuf + entry.data_ptr,
         .height = out.width = 1 << entry.resolution_pwr,
         .compressed = false,
+        .unit_size = 1,
         .channels = 4,
     };
 
@@ -53,7 +54,7 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
     switch (entry.pixel_format) {
         case FORMAT_MONO_16_2:
         case FORMAT_MONO_16:
-            out.unit_size = 1; // See documentation, this means 16-bit channels
+            out.unit_size = 2; // See documentation, this means 16-bit channels
             out.channels = 1;
             break;
         case FORMAT_A8:
@@ -117,7 +118,22 @@ void update_gl_tex(texture img, gl_obj texture_id) {
         glCompressedTexImage2D(GL_TEXTURE_2D, 0, format, img.width, img.height, 0, size, img.data);
     } else {
         // "Raw" uncompressed image
-        const GLenum gl_size = GL_UNSIGNED_BYTE + (img.unit_size * 2);
+        GLenum gl_size = GL_UNSIGNED_BYTE;
+        switch (img.unit_size) {
+        case 1:
+            gl_size = GL_UNSIGNED_BYTE;
+            break;
+        case 2:
+            gl_size = GL_UNSIGNED_SHORT;
+            break;
+        case 4:
+            gl_size = GL_UNSIGNED_INT;
+            break;
+        default:
+            LOG_MSG(warning, "Unknown unit size %d, assuming 8-bit.\n", img.unit_size);
+            break;
+        }
+
         GLint format;
         switch (img.channels) {
             case 1:

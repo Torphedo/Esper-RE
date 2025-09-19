@@ -15,8 +15,10 @@ void polaris::handle_input_suppression() noexcept {
     if (ImGui::GetIO().WantCaptureMouse) {
         // ImGui wants control of the mouse (it's probably over a window),
         // so we'll suppress the real mouse state this frame.
-        input.cursor = prev_input.cursor;
-        input.scroll = prev_input.scroll;
+        input.cursor_x = prev_input.cursor_x;
+        input.cursor_y = prev_input.cursor_y;
+        input.scroll_x = prev_input.scroll_x;
+        input.scroll_y = prev_input.scroll_y;
         input.click_left = prev_input.click_left;
         input.click_right = prev_input.click_right;
         input.click_middle = prev_input.click_middle;
@@ -26,16 +28,16 @@ void polaris::handle_input_suppression() noexcept {
 
     if (ImGui::GetIO().WantCaptureKeyboard) {
         // Save non-keyboard input
-        const vec2s cursor = input.cursor;
-        const vec2s scroll = input.scroll;
+        const vec2s cursor = vec2s{input.cursor_x, input.cursor_y};
+        const vec2s scroll = vec2s{input.scroll_x, input.scroll_y};
         const bool click_left = input.click_left;
         const bool click_right = input.click_right;
         const bool click_middle = input.click_middle;
         const bool mouse_4 = input.mouse_button_4;
         const bool mouse_5 = input.mouse_button_5;
 
-        const vec2s LS = input.LS;
-        const vec2s RS = input.RS;
+        const vec2s LS = vec2s{input.LS_x, input.LS_y};
+        const vec2s RS = vec2s{input.RS_x, input.RS_y};
         const float LT = input.LT;
         const float RT = input.RT;
         const gamepad_t gp = input.gp;
@@ -44,10 +46,14 @@ void polaris::handle_input_suppression() noexcept {
         input = prev_input;
 
         // Restore non-keyboard input
-        input.cursor = cursor;
-        input.scroll = scroll;
-        input.LS = LS;
-        input.RS = RS;
+        input.cursor_x = cursor.x;
+        input.cursor_y = cursor.y;
+        input.scroll_x = scroll.x;
+        input.scroll_y = scroll.y;
+        input.LS_x = LS.x;
+        input.LS_y = LS.y;
+        input.RS_x = RS.x;
+        input.RS_y = RS.y;
         input.LT = LT;
         input.RT = RT;
         input.gp = gp;
