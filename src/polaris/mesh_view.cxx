@@ -3,7 +3,6 @@
 #include <imgui.h>
 
 #include <common/vfile.h>
-#include "pd_mesh.hxx"
 #include "polaris.hxx"
 #include "imgui_utils.hxx"
 
@@ -182,10 +181,6 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
     ImGui::Text("Index buffers");
     ImGui::NewLine();
 
-    std::optional<gl_obj> copy_albedo;
-    std::optional<gl_obj> copy_normal;
-    std::optional<u32> prev_vertex_group;
-
     for (u32 i = 0; i < idx_buffers.size(); i++) {
         ImGui::Text("Index buffer %d", i);
         index_buffer& buf = idx_buffers.at(i);
@@ -211,10 +206,10 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
         alr.tex_manager.get_material(alr, header.texture_idx, &tex_entry);
 
         snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
-        bool albedo_changed = ImGui::InputU16(label, &tex_entry->texture_idx);
+        ImGui::InputU16(label, &tex_entry->texture_idx);
 
         snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
-        bool normal_changed = ImGui::InputU16(label, &tex_entry->normal_idx);
+        ImGui::InputU16(label, &tex_entry->normal_idx);
         // buf.albedo_tex_idx %= pol->alr.tex_manager.
         // buf.normal_tex_idx %= pol->gl_textures.size();
 
@@ -259,13 +254,6 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
             ImGui::EndCombo();
         }
         */
-
-        if (albedo_changed) {
-            copy_albedo = tex_entry->texture_idx;
-        }
-        if (normal_changed) {
-            copy_normal = tex_entry->normal_idx;
-        }
 
         ImGui::NewLine();
     }

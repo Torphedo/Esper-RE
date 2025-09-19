@@ -20,7 +20,6 @@ struct window_state_0x1 {
 
 // State for 0x2 (index buffer) window
 struct window_state_0x2 {
-    bool trust_alr_tri_count = false;
 };
 
 // State for 0x3 (armature) window

@@ -115,7 +115,6 @@ void update_gl_tex(texture img, gl_obj texture_id) {
 
         // Re-upload the texture
         glCompressedTexImage2D(GL_TEXTURE_2D, 0, format, img.width, img.height, 0, size, img.data);
-
     } else {
         // "Raw" uncompressed image
         const GLenum gl_size = GL_UNSIGNED_BYTE + (img.unit_size * 2);
