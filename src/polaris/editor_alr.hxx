@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 #include <vector>
 #include <optional>
 
@@ -134,6 +133,21 @@ public:
         void chunk_0x16(al::resource& alr, viewport_t& viewport) noexcept;
     };
 
+    // State for texture editor, which pulls information from 0x15 and 0x16 chunks
+    struct tex_edit_state_t {
+        // Status of texture export popup
+        bool tex_export_active = false;
+        texture export_cfg = {};
+        u32 offset_0x15 = 0;
+        u32 offset_0x10 = 0;
+        u32 export_tex_idx = 0; // Index of texture entry we're exporting
+        bool override_buf = 0;
+
+        void draw(resource& alr) noexcept;
+    };
+
+    tex_edit_state_t tex_edit;
+
     // Currently loaded ALR & metadata for all its chunks
     u8* data = nullptr;
     s64 alr_size = 0;
@@ -149,7 +163,6 @@ public:
 
     // If present, only display chunks with this ID
     std::optional<u32> chunk_filter;
-
 
     /// @brief Overwrite the loaded ALR with a new one
     bool load(const char* path) noexcept;

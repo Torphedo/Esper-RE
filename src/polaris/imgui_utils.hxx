@@ -7,6 +7,17 @@
 void str_format_append(std::string& output, const char* format_str, ...);
 
 namespace ImGui {
+    struct scope_indent {
+        const float indent;
+        scope_indent(float indent = 0.0f) : indent(indent) {
+            ImGui::Indent(indent);
+        }
+
+        ~scope_indent() {
+            ImGui::Unindent(indent);
+        }
+    };
+
     void BeginChildFitContent(const char* id, float width_percent);
 
     float CharWidth();

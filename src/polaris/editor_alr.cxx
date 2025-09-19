@@ -592,14 +592,10 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
 
     ImGui::SameLine();
     if (ImGui::Button("Export DDS")) {
-        // Display the file picker
-        nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
-        char* path = nullptr;
-        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, name.data);
-        if (result == NFD_OKAY && path != nullptr) {
-            img_write(window_0x15.tex, path);
-        }
-        free(path);
+        alr.tex_edit.tex_export_active = true;
+        alr.tex_edit.export_cfg = window_0x15.tex;
+        alr.tex_edit.export_cfg.data = (u8*)entry->data_ptr;
+        alr.tex_edit.export_tex_idx = window_0x15.selected_texture;
     }
 
     ImGui::draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale, "preview");
@@ -850,6 +846,75 @@ resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
         default:
             return;
     }
+}
+
+void resource::tex_edit_state_t::draw(resource& alr) noexcept {
+    if (!tex_export_active) {
+        return;
+    }
+    if (!offset_0x10) {
+        offset_0x10 = alr.first_chunk_by_id(0x10).offset;
+    }
+    if (!offset_0x15) {
+        offset_0x15 = alr.first_chunk_by_id(0x15).offset;
+    }
+
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vf.pos = offset_0x15;
+    const auto tex_header = VFILE_READ(texture_header, &vf);
+    const texture_entry* entries = (texture_entry*)vfile_cur(vf);
+
+    vf.pos = offset_0x10 + sizeof(chunk_generic);
+    const auto aHeader = VFILE_READ(atlas_header, &vf);
+    vfile_seek(&vf, sizeof(atlas_name) * aHeader.atlas_count);
+    const auto aEntries = (atlas_entry*)vfile_cur(vf);
+
+    ImGui::Begin("Texture Editor", &tex_export_active);
+    ImGui::PushItemWidth(ImGui::CharWidth() * 20);
+
+    if (ImGui::InputU32("Texture index", &export_tex_idx)) {
+        export_cfg.data = (u8*)u64(entries[export_tex_idx].data_ptr);
+    }
+
+    ImGui::InputU16("Height", &export_cfg.height);
+    ImGui::InputU16("Width", &export_cfg.width);
+    ImGui::InputU16("Mipmap Level", &export_cfg.mip_level);
+
+    ImGui::Checkbox("Compressed format", &export_cfg.compressed);
+    if (!export_cfg.compressed) {
+        ImGui::scope_indent indent;
+        ImGui::InputU8("# Channels", &export_cfg.channels);
+        // TODO: Update bobtail to get reasonable unit size
+        ImGui::InputU8("Unit Size", &export_cfg.unit_size);
+    }
+
+    ImGui::Checkbox("Override buffer settings", &override_buf);
+    if (override_buf) {
+        ImGui::scope_indent indent;
+        ImGui::InputU64("Resbuf offset", (uintptr_t*)&export_cfg.data, 1, 5, nullptr, ImGuiInputTextFlags_CharsHexadecimal);
+    }
+
+    if (ImGui::Button("Export")) {
+        decoded_text name = {};
+        decode_single32(name.data, entries[export_tex_idx].text1);
+        decode_single32(&name.data[6], entries[export_tex_idx].text2);
+
+        // Display the file picker
+        nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
+        char* path = nullptr;
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, name.data);
+        if (result == NFD_OKAY && path != nullptr) {
+            // We only put a resbuf offset here normally, make it a pointer briefly
+            export_cfg.data += (uintptr_t)alr.resource_buffer();
+            img_write(export_cfg, path);
+            export_cfg.data -= (uintptr_t)alr.resource_buffer();
+            tex_export_active = false;
+        }
+        free(path);
+    }
+
+    ImGui::PopItemWidth();
+    ImGui::End();
 }
 
 bool resource::load(const char* path) noexcept {
@@ -1103,6 +1168,8 @@ void resource::draw(viewport_t& viewport) noexcept {
 
         ImGui::End();
     }
+
+    tex_edit.draw(*this);
 }
 
 void resource::expand_reservation(s64 new_size) noexcept {
