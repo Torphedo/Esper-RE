@@ -8,6 +8,7 @@
 #include <common/vfile.h>
 #include <common/vmem.h>
 #include <common/logging.h>
+#include <common/crc32.h>
 
 #include <formats/pd_common.h>
 #include <formats/alr.h>
@@ -664,6 +665,8 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
         offset_0x15 = alr.first_chunk_by_id(0x15).offset;
     }
 
+    const u32 hash = crc32fast((u8*)this, sizeof(*this));
+
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = offset_0x15;
     const auto tex_header = VFILE_READ(texture_header, &vf);
@@ -677,8 +680,10 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
     ImGui::Begin("Texture Editor", &tex_export_active);
     ImGui::PushItemWidth(ImGui::CharWidth() * 20);
 
-    if (ImGui::InputU32("Texture index", &export_tex_idx)) {
-        export_cfg.data = (u8*)u64(entries[export_tex_idx].data_ptr);
+    const u32 expected_offset = entries[export_tex_idx].data_ptr;
+    const bool uninitialized = (expected_offset != (uintptr_t)export_cfg.data) && !override_buf;
+    if (ImGui::InputU32("Texture index", &export_tex_idx) || uninitialized) {
+        export_cfg.data = (u8 *) u64(entries[export_tex_idx].data_ptr);
     }
 
     ImGui::InputU16("Height", &export_cfg.height);
@@ -697,6 +702,24 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
     if (override_buf) {
         ImGui::scope_indent indent;
         ImGui::InputU64("Resbuf offset", (uintptr_t*)&export_cfg.data, 1, 5, nullptr, ImGuiInputTextFlags_CharsHexadecimal);
+    }
+
+    if (hash != crc32fast((u8*)this, sizeof(*this))) {
+        // Settings have changed
+        alr.tex_manager.invalidate(export_tex_idx);
+        gl_obj tex_id = 0;
+        glGenTextures(1, &tex_id);
+        if (tex_id != 0) {
+            // Need to turn offset into pointer while uploading texture
+            export_cfg.data += (uintptr_t)alr.resource_buffer();
+            update_gl_tex(export_cfg, tex_id);
+            export_cfg.data -= (uintptr_t)alr.resource_buffer();
+            alr.tex_manager.gl_tex_map[export_tex_idx] = tex_id;
+        }
+    }
+    if (ImGui::CollapsingHeader("Preview")) {
+        const ImVec2 size(export_cfg.width, export_cfg.height);
+        ImGui::Image(alr.tex_manager.get(alr, export_tex_idx), size);
     }
 
     if (ImGui::Button("Export")) {
