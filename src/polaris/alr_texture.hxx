@@ -36,9 +36,7 @@ struct texture_manager {
     bool get_material(al::resource& alr, u32 idx, chunk_0x1_entry** entry_out) const noexcept;
     bool get_material(al::resource& alr, u32 idx, chunk_0x1_entry* entry_out) const noexcept;
 
-    void invalidate(u32 idx) {
-        gl_tex_map.erase(idx);
-    }
+    void invalidate(u32 idx) noexcept;
 
     ~texture_manager() noexcept;
 };

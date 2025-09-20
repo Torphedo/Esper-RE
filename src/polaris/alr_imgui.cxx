@@ -8,7 +8,7 @@
 
 namespace al {
     bool edit_chunk_layout(chunk_layout& layout) {
-        const u32 hash = crc32buf((u8*)&layout, sizeof(layout));
+        const u32 hash = crc32fast((u8*)&layout, sizeof(layout));
         const int hex_flags = ImGuiInputTextFlags_CharsHexadecimal;
 
         ImGui::InputU32("Resource Buffer Offset", &layout.texbuf_offset, hex_flags);
@@ -23,11 +23,11 @@ namespace al {
             }
         }
 
-        return (hash != crc32buf((u8*)&layout, sizeof(layout)));
+        return (hash != crc32fast((u8*)&layout, sizeof(layout)));
     }
 
     bool edit_texture_entry(texture_entry& entry) {
-        const u32 hash = crc32buf((u8*)&entry, sizeof(entry));
+        const u32 hash = crc32fast((u8*)&entry, sizeof(entry));
 
         alr_pixel_format pixel_fmt_table[] = {
             FORMAT_RGBA8, FORMAT_RGBA8_2, FORMAT_RGBA8_3,
@@ -76,11 +76,11 @@ namespace al {
         }
         ImGui::PopItemWidth();
 
-        return (hash != crc32buf((u8*)&entry, sizeof(entry)));
+        return (hash != crc32fast((u8*)&entry, sizeof(entry)));
     }
 
     bool edit_atlas_entry(atlas_entry& entry, atlas_name& name_entry) {
-        const u32 hash = crc32buf((u8*)&entry, sizeof(entry));
+        const u32 hash = crc32fast((u8*)&entry, sizeof(entry));
 
         ImGui::PushItemWidth(ImGui::CharWidth() * sizeof(name_entry.name));
         ImGui::InputText("Atlas Name", name_entry.name, sizeof(name_entry.name) - 1);
@@ -100,11 +100,11 @@ namespace al {
         }
         ImGui::PopItemWidth();
 
-        return (hash != crc32buf((u8*)&entry, sizeof(entry)));
+        return (hash != crc32fast((u8*)&entry, sizeof(entry)));
     }
 
     bool edit_atlas_texture(atlas_tex_entry& entry) {
-        const u32 hash = crc32buf((u8*)&entry, sizeof(entry));
+        const u32 hash = crc32fast((u8*)&entry, sizeof(entry));
         ImGui::PushItemWidth(ImGui::CharWidth() * sizeof(entry.filename));
 
         ImGui::InputU32("Parent Atlas", &entry.index);
@@ -119,11 +119,11 @@ namespace al {
         }
 
         ImGui::PopItemWidth();
-        return (hash != crc32buf((u8*)&entry, sizeof(entry)));
+        return (hash != crc32fast((u8*)&entry, sizeof(entry)));
     }
 
     bool edit_vertbuf_entry(vertbuf_entry& entry) {
-        const u32 hash = crc32buf((u8*)&entry, sizeof(entry));
+        const u32 hash = crc32fast((u8*)&entry, sizeof(entry));
         const int hex_flags = ImGuiInputTextFlags_CharsHexadecimal;
         ImGui::PushItemWidth(ImGui::CharWidth() * 16);
 
@@ -143,11 +143,11 @@ namespace al {
 
         ImGui::PopItemWidth();
 
-        return (hash != crc32buf((u8*)&entry, sizeof(entry)));
+        return (hash != crc32fast((u8*)&entry, sizeof(entry)));
     }
 
     bool edit_joint_t(joint_t& joint, vfile armature_vf, MemoryEditor& hex_edit) {
-        const u32 hash = crc32buf((u8*)&joint, sizeof(joint));
+        const u32 hash = crc32fast((u8*)&joint, sizeof(joint));
 
         ImGui::InputPDString("Joint Name", &joint.name);
         ImGui::Text("Parent index: %d", joint.parent_idx);
@@ -186,7 +186,7 @@ namespace al {
             ImGui::EndTabBar();
         }
 
-        return (hash != crc32buf((u8*)&joint, sizeof(joint)));
+        return (hash != crc32fast((u8*)&joint, sizeof(joint)));
     }
 
     void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const char* label_extra) {

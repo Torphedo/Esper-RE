@@ -226,7 +226,7 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
 
                 const u32 expected = atlas_entries[i].tex_count;
                 if (num_matched != expected) {
-                    str_format_append(msg, "Atlas %d says it has %d children, but there's only %d\n", expected, num_matched);
+                    str_format_append(msg, "Atlas %d claims to have %d children, but actually has %d\n", i, expected, num_matched);
                     result = false;
                 }
             }

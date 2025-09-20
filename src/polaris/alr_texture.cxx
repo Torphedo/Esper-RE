@@ -172,6 +172,11 @@ void update_gl_tex(texture img, gl_obj texture_id) {
 }
 
 
+void texture_manager::invalidate(u32 idx) noexcept {
+    glDeleteTextures(1, &gl_tex_map[idx]);
+    gl_tex_map.erase(idx);
+}
+
 gl_obj texture_manager::get(al::resource& alr, u32 idx) noexcept {
     if (gl_tex_map.contains(idx)) {
         return gl_tex_map[idx];

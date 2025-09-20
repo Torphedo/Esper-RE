@@ -334,7 +334,11 @@ typedef struct {
     u32 index; // The atlas index this texture belongs to
     char filename[32];
     u32 padding[2]; // Can't be a u64 because of struct padding
-    float atlas_texcoords[2]; // This is often 1.0f
+    // Texture coordinate of the bottom right corner of this texture within the
+    // atlas. The size in texture coordinates is calculated by dividing the
+    // texture size by the size of the whole atlas. Then, that's subtracted from
+    // the bottom right corner to find the top left corner.
+    float atlas_texcoords[2];
     u32 width;
     u32 height;
 }atlas_tex_entry;
@@ -478,18 +482,18 @@ typedef struct {
 static_assert(sizeof(chunk_0x1_header) == 0xC, "Wrong 0x1 chunk header size!");
 
 typedef struct {
-    u8 unk1[4]; // 4
-    u32 unk2; // 8
-    u32 unk3; // Usually 0? // C
-    u16 unk4; // E
+    u8 unk1[4];
+    u32 unk2;
+    u32 unk3; // Usually 0?
+    u16 unk4;
     u8 vertbuf_format;
     u8 vert_size;
     u8 entry_idx;
-    u8 unk6; // 12
-    u16 unk7; // 14
-    u16 unk8; // 16
-    u16 unk9; // 18
-    u16 texture_idx; // 1C
+    u8 unk6;
+    u16 unk7;
+    u16 unk8;
+    u16 unk9;
+    u16 texture_idx;
     // With specific texture formats (just 0x1F so far), this becomes the index
     // of the lightmap texture, and the next value is the index of the normal map.
     u16 normal_idx;
