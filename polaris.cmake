@@ -60,6 +60,7 @@ add_executable(polaris
     ${glsl_headers}
     src/polaris/validation.cxx
     src/polaris/alr_dump.cxx
+    src/polaris/alr_imgui.cxx
 )
 
 target_link_libraries(polaris PRIVATE glfw imgui bobtail nfd)

@@ -18,7 +18,7 @@ typedef struct {
 }vec3f;
 
 // 0x11 chunk
-// =====================================================================================================================
+// =============================================================================
 // All ALR files begin with this structure.
 // Followed by a u32 array whose size is listed in the header. The u32s are
 // offsets to chunks of data throughout the file, and aren't always in order.
@@ -33,12 +33,13 @@ typedef struct {
     u32 offset_array_size; // Number of offsets in the array
     u32 texbuf_size;       // Total size of resource buffer at end of the file
     u64 pad;
+    u32 offsets[]; // This takes up 0 bytes in C
 }chunk_layout;
 static_assert(sizeof(chunk_layout) == 0x20, "Wrong layout chunk header size!");
 
 
 // 0x15 chunk
-// =====================================================================================================================
+// =============================================================================
 // This describes the format/dimensions/etc. of textures, and always comes after the 0x11 chunk.
 // At the end of the file is a large buffer with vertex and texture data (the resource buffer).
 // Together with 0x16 chunks, it maps out the resource buffer.
@@ -51,7 +52,6 @@ static_assert(sizeof(texture_header) == 0xC, "Wrong texture metadata chunk heade
 
 typedef enum {
     // These are all the same(?)
-    // TODO: Why are so many images BRGA?
     FORMAT_RGBA8 =   0b00000110,
     FORMAT_RGBA8_2 = 0b10010010,
     FORMAT_RGBA8_3 = 0b10000110,
@@ -90,22 +90,26 @@ typedef struct {
 static_assert(sizeof(texture_entry) == 0x1C, "Wrong texture metadata size!");
 
 // 0x16 chunk
-// =====================================================================================================================
+// =============================================================================
 // This describes the format, size, etc. of vertex buffers.
 // Together with 0x15 chunks, it maps out the resource buffer.
 typedef struct {
     u8 format; // Determines the structure of the vertex data
     u8 vertex_size; // These are always the same (so far?)
     u8 vertex_size2;
-    u8 unknown_flag2;
-    u32 unknown3;
+    u8 unknown1;
+    u32 unknown2;
     u32 vertex_count;
     u32 pad;
-    u32 unknown2;
+    u32 unknown3;
     u32 data_ptr;
     u32 pad2;
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
+
+// ======= BEGIN CUSTOM STRUCTURES =======
+// These aren't part of any ALR file, they just let us describe vertex formats
+// using data instead of code.
 
 // All supported vertex attribute slots
 typedef enum {
@@ -289,9 +293,11 @@ static vertex_format_t format_by_id(u8 id) {
     };
     return out;
 }
+// ======= END CUSTOM STRUCTURES =======
+
 
 // 0x10 chunk
-// =====================================================================================================================
+// =============================================================================
 // This chunk is for texture atlases and their sub-textures.
 typedef struct {
     u32 atlas_count; // The number of texture atlases
@@ -335,7 +341,7 @@ typedef struct {
 static_assert(sizeof(atlas_tex_entry) == 0x3C, "Wrong texture metadata size!");
 
 // 0x5 chunk
-// =====================================================================================================================
+// =============================================================================
 // This stores keyframes for a single animation.
 typedef struct {
     u32 id; // 0x5
@@ -393,7 +399,7 @@ typedef struct {
 static_assert(sizeof(anim_rotation_key) == 0x7, "Wrong rotation key size!");
 
 // 0x3 chunk
-// =====================================================================================================================
+// =============================================================================
 // This stores all the joints in the skeleton/armature and their relationships to each other.
 typedef struct {
     u16 joint_count;
@@ -418,7 +424,7 @@ typedef struct {
 static_assert(sizeof(joint_t) == 0x40, "Wrong joint size!");
 
 // 0x2 chunk
-// =====================================================================================================================
+// =============================================================================
 // Information about an index buffer.
 
 // The primitive type determines how the vertices are translated into triangles.
@@ -461,7 +467,7 @@ typedef struct {
 static_assert(sizeof(idxbuf_header) == 0x60, "Wrong index buffer header size!");
 
 // 0x1 chunk
-// =====================================================================================================================
+// =============================================================================
 // Not researched yet.
 typedef struct {
     u32 id;

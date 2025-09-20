@@ -19,12 +19,7 @@
 #include "imgui_utils.hxx"
 #include "validation.hxx"
 #include "alr_dump.hxx"
-
-enum {
-    // The power of 2 to limit texture resolutions to
-    // e.g. 2^12 = 4096
-    ALR_TEX_POWER_LIMIT = 12,
-};
+#include "alr_imgui.hxx"
 
 // Normally I'd make this a method, but by using a macro we can have LOG_MSG()
 // automatically log the name of the method that shouldn't have been called.
@@ -154,144 +149,8 @@ void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexc
     // Don't allow out of bounds index
     window_0x3.selected_joint = CLAMP(min, window_0x3.selected_joint, max);
 
-    joint_t* joint = &joints[window_0x3.selected_joint];
-    ImGui::InputPDString("Joint Name", &joint->name);
-    ImGui::Text("Parent index: %d", joint->parent_idx);
-    ImGui::InputU16("Unknown 1", &joint->unk1);
-    ImGui::InputU16("Unknown 2", &joint->unk2);
-    ImGui::InputU16("Unknown 3", &joint->unk3);
-    if (ImGui::Button("Dump to file")) {
-        FILE* f = fopen("bones.dae", "wb");
-        if (f != nullptr) {
-            vfile armature_view = vf;
-            armature_view.pos = 0;
-            dump_armature_dae(f, armature_view);
-            fclose(f);
-        }
-    }
-
-    if (ImGui::BeginTabBar("editors")) {
-        if (ImGui::BeginTabItem("Float editor")) {
-
-            // Matrix inputs
-            ImGui::PushItemWidth(400.0f); // Make inputs narrower
-            ImGui::InputFloat3("Position", &joint->position.x);
-            ImGui::InputFloat3("Euler Rotation", &joint->rotation.x);
-            ImGui::InputFloat3("Scale", &joint->scale.x);
-
-            ImGui::PopItemWidth();
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem("Hex Editor")) {
-            // Show hex editor
-            hex_edit.DrawContents(joint, sizeof(*joint));
-
-            ImGui::EndTabItem();
-        }
-
-        ImGui::EndTabBar();
-    }
-}
-
-/// @brief Create input boxes for ALR animation keys of any type or size
-///
-/// @param key_size The size of each animation key
-/// @param key_count The number of animation keys
-/// @param keyframes The address of the first key
-/// @param label_extra A unique name of this set of keyframes (must not be
-/// nullptr). This won't be displayed, only used to give the input boxes a
-/// unique ID in ImGui.
-static void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const char* label_extra) {
-    if (keyframes == nullptr || label_extra == nullptr) {
-        ImGui::Text("Programmer error: %s() was passed a null value", __func__);
-        return;
-    }
-
-    ImGuiDataType frame_type = ImGuiDataType_COUNT;
-    ImGuiDataType component_type = ImGuiDataType_COUNT;
-
-    switch (key_size) {
-    // Integer keys
-    case 3:
-    case 5:
-    case 7:
-        frame_type = ImGuiDataType_U8;
-        component_type = ImGuiDataType_U16;
-        break;
-
-    // Floating point keys
-    case 8:
-    case 12:
-    case 16:
-        frame_type = component_type = ImGuiDataType_Float;
-    }
-
-    const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
-    const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
-
-    // We know component and frame value size, so we can find out the # of components
-    const u16 num_components = (key_size - frame_size) / component_size;
-
-    if (num_components == 0 || component_type == ImGuiDataType_COUNT || frame_type == ImGuiDataType_COUNT) {
-        // Something wasn't filled out, probably unknown format
-        ImGui::Text("Unknown keyframe format (0x%X bytes)", key_size);
-        return;
-    }
-
-    // Give our float inputs 12 characters width per component
-    ImGui::PushItemWidth(ImGui::CharWidth() * num_components * 12);
-
-    // Each keyframe has a frame value (when it happens) and components (for 3D
-    // translation/rotation/scale, or weird stuff like brightness values).
-    vfile vf = vfile_open(keyframes, key_count * key_size);
-    for (u16 i = 0; i < key_count; i++) {
-        const u64 next_pos = vf.pos + key_size;
-        // Each input needs a unique label
-        char frame_label[0x20] = {0};
-        snprintf(frame_label, sizeof(frame_label), "Frame # ##%d##%8s", i, label_extra);
-
-        char component_label[0x20] = {0};
-        snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
-
-        // Display the input fields
-        ImGui::InputScalar(frame_label, frame_type, vfile_cur(vf));
-
-        // Skip over frame value
-        if (frame_type == ImGuiDataType_Float) {
-            vfile_seek(&vf, sizeof(float));
-        }
-        else if (frame_type == ImGuiDataType_U8) {
-            vfile_seek(&vf, sizeof(u8));
-        }
-
-        ImGui::InputScalarN(component_label, component_type, vfile_cur(vf), num_components);
-
-        // Space between keys keeps things readable
-        ImGui::Spacing();
-        ImGui::Spacing();
-
-        // Skip to next key
-        vf.pos = next_pos;
-    }
-    ImGui::PopItemWidth();
-
-    for (u32 cur_component = 0; cur_component < num_components; cur_component++) {
-        // Reset seek position
-        vf.pos = 0;
-
-
-        char buf[128] = {0};
-        snprintf(buf, sizeof(buf) - 1, "Curve editor %d", cur_component);
-
-        const u16 component_offset = frame_size + (component_size * cur_component);
-        const ImGui::graph_info info = {
-            keyframes, key_count, key_size,
-            0, component_offset, frame_type, component_type,
-            ImVec2(0, 0), 1.0f,
-        };
-        ImGui::GraphData(info);
-    }
+    joint_t& joint = joints[window_0x3.selected_joint];
+    al::edit_joint_t(joint, vf, hex_edit);
 }
 
 void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexcept {
@@ -426,32 +285,19 @@ void resource::chunk::chunk_0x10(resource& alr, viewport_t& viewport) noexcept {
     atlas_name* aName = &atlas_names[window_0x10.selected_atlas];
     atlas_entry* atlas = &atlases[window_0x10.selected_atlas];
     atlas_tex_entry* tex = &textures[window_0x10.selected_atlas_texture];
-
     texture cur_tex = convert_tex(alr.resource_buffer(), entries[tex->index]);
+
     // Override dimensions, we only want format info from the other chunk
     cur_tex.height = atlas->height;
     cur_tex.width = atlas->width;
-
-
-    window_0x10.gl_tex_id = alr.tex_manager.get(alr, window_0x10.selected_atlas);
-
-    // User input for atlas properties
-    ImGui::PushItemWidth(ImGui::CharWidth() * (sizeof(aName->name) - 1 + 5));
-    ImGui::InputText("Atlas Name", &aName->name[0], sizeof(aName->name) - 1);
-
     ImGui::Text("Atlas uses texture index %d, see 0x15 chunk for offset & format", window_0x10.selected_atlas);
-
-    ImGui::InputU16("Atlas Height", &atlas->height);
-    ImGui::InputU16("Atlas Width", &atlas->width);
-    ImGui::InputU32("Atlas Texture Count", &atlas->tex_count);
-
-    if (memcmp(&cur_tex, &window_0x10.tex, sizeof(cur_tex)) != 0) {
-        // Texture settings have changed
+    if (al::edit_atlas_entry(*atlas, *aName)) {
+        // Texture settings have changed, trigger reload
         alr.tex_manager.invalidate(window_0x10.selected_atlas);
     }
-    window_0x10.tex = cur_tex;
 
-    ImGui::PopItemWidth();
+    window_0x10.gl_tex_id = alr.tex_manager.get(alr, window_0x10.selected_atlas);
+    window_0x10.tex = cur_tex;
 
     // Draw the whole atlas
     ImVec2 image_pos = ImGui::draw_image(window_0x10.gl_tex_id, atlas->width, atlas->height, &window_0x10.use_actual_size_atlas, &window_0x10.scale_atlas, "atlas");
@@ -466,31 +312,16 @@ void resource::chunk::chunk_0x10(resource& alr, viewport_t& viewport) noexcept {
     const ImVec2 end = image_pos + (atlas_drawn_size * uv1);
     ImGui::GetWindowDrawList()->AddRect(start, end, 0xFF00FF00);
 
-    ImGui::SetNextItemWidth(ImGui::CharWidth() * (sizeof(tex->filename) - 1 + 5));
-    ImGui::InputText("Texture Name", &tex->filename[0], sizeof(tex->filename) - 1);
-
-    ImGui::Text("%dx%d pixels, UV coords (%.3f, %.3f)", tex->height, tex->width, tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
-
+    al::edit_atlas_texture(*tex);
     ImGui::draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
 void resource::chunk::chunk_0x11(const resource& alr, viewport_t& viewport) const noexcept {
     CHUNK_ID_ASSERT(0x11);
-
     vfile vf = vfile_open(alr.data + offset, size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
-    vfile_seek(&vf, sizeof(*layout));
-    auto* offsets = (u32*)vfile_cur(vf);
 
-    ImGui::Text("Texture buffer @ 0x%X [%d bytes]", layout->texbuf_offset, layout->texbuf_size);
-    ImGui::Text("%d offsets in array:\n", layout->offset_array_size);
-
-    if (ImGui::BeginListBox("Offsets")) {
-        for (u32 i = 0; i < layout->offset_array_size; i++) {
-            ImGui::Text("0x%X", offsets[i]);
-        }
-        ImGui::EndListBox();
-    }
+    al::edit_chunk_layout(*layout);
 }
 
 void resource::chunk::import_dds_0x15(const resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
@@ -514,7 +345,7 @@ void resource::chunk::import_dds_0x15(const resource& alr, const char* path, u32
     // The loaded image might not be an even power of 2, here we round to the
     // nearest one
     const u16 res = MAX(window_0x15.tex.width, window_0x15.tex.height);
-    for (u8 i = 0; i < ALR_TEX_POWER_LIMIT; i++) {
+    for (u8 i = 0; i < TEX_POWER_LIMIT; i++) {
         if (exponent(2, i) > res) {
             // This power is larger than the largest target resolution
             break;
@@ -556,28 +387,9 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
     ImGui::SameLine();
 
     ImGui::BeginGroup();
-    texture_entry* entry = &entries[window_0x15.selected_texture];
-    decoded_text name = {0};
-    decode_single32(name.data, entry->text1);
-    decode_single32(&name.data[ENCODED_CHAR_COUNT], entry->text2);
+    texture_entry& entry = entries[window_0x15.selected_texture];
 
-    window_0x15.tex = convert_tex(alr.resource_buffer(), *entry);
-    ImGui::Text("Warning: These pixel counts are guesses.\nIf they look wrong, trust your own judgement\nand the 0x10 (texture atlas) window.\n\n");
-    ImGui::InputPDString("Texture Name", &entry->text1, &entry->text2);
-    ImGui::Text("%dx%d pixels @ resbuf+0x%X\n", window_0x15.tex.height, window_0x15.tex.width, entry->data_ptr);
-
-    const char* format = texformat_str((alr_pixel_format)entry->pixel_format);
-    ImGui::Text("Suspected format: %s (code 0x%X)", format, entry->pixel_format);
-
-    window_0x15.gl_tex_id = alr.tex_manager.get(alr, window_0x15.selected_texture);
-
-    ImGui::Text("2^(resolution power) = width = height");
-
-    ImGui::SetNextItemWidth(ImGui::CharWidth() * 16);
-    const u8 step_pwr = 1; // Step for the resolution power input
-    ImGui::InputU8("Resolution power", &entry->resolution_pwr, step_pwr);
-    // This limits resolution to 4096^2, which is plenty for our use case
-    entry->resolution_pwr = MIN(entry->resolution_pwr, ALR_TEX_POWER_LIMIT);
+    al::edit_texture_entry(entry);
 
     if (ImGui::Button("Import DDS")) {
         // Display the file picker
@@ -590,11 +402,13 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
         free(path);
     }
 
+    window_0x15.tex = convert_tex(alr.resource_buffer(), entry);
+    window_0x15.gl_tex_id = alr.tex_manager.get(alr, window_0x15.selected_texture);
     ImGui::SameLine();
     if (ImGui::Button("Export DDS")) {
         alr.tex_edit.tex_export_active = true;
         alr.tex_edit.export_cfg = window_0x15.tex;
-        alr.tex_edit.export_cfg.data = (u8*)entry->data_ptr;
+        alr.tex_edit.export_cfg.data = (u8*)uintptr_t(entry.data_ptr);
         alr.tex_edit.export_tex_idx = window_0x15.selected_texture;
     }
 
@@ -669,13 +483,6 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
                 continue;
             }
 
-            u16 albedo_texture_idx = 0;
-            u16 normal_texture_idx = 0;
-            if (texinfo_entries != nullptr) {
-                albedo_texture_idx = texinfo_entries[idx_header.texture_idx].texture_idx;
-                normal_texture_idx = texinfo_entries[idx_header.texture_idx].normal_idx; 
-            }
-
             const bool tri_strip = (idx_header.primitive_type == IDX_TYPE_STRIP);
             has_strips |= tri_strip;
             const joint_t* joint = &transform_entries[idx_header.transform_idx];
@@ -722,7 +529,7 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
     ImGui::EndChild();
     ImGui::SameLine();
 
-    const vertbuf_entry* entry = &entries[window_0x16.selected_vertex_buf];
+    vertbuf_entry* entry = &entries[window_0x16.selected_vertex_buf];
     ImGui::BeginChild("Vertex Buffer Settings", ImVec2(600, 0));
     if (ImGui::Button("Dump to OBJ")) {
         // Display the file picker
@@ -739,8 +546,7 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
         this->send_vertbuf_to_viewport(alr, viewport);
     }
 
-    // Hex editor for vertex buffer entry
-    hex_edit.DrawContents((void*)entry, sizeof(*entries));
+    al::edit_vertbuf_entry(*entry);
     ImGui::EndChild();
 
     ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));
@@ -760,7 +566,6 @@ void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
     // Sanity check some of our assumptions & show warning messages if they fail
     std::string msg;
 
-    // We pass false here, because drawing means we're not in headless mode.
     const bool valid = alr_chunk_validate(alr, *this, msg, false);
     ImGui::PlsReportIf(msg.length() > 0, msg.c_str());
 

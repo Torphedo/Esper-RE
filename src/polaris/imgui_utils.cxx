@@ -129,8 +129,8 @@ ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, f
     ImVec2 view_size = ImVec2((float)width, (float)height);
     if (*scale_to_window) {
         *scale_factor = ImageScaleForWindow(width, height);
-        view_size *= *scale_factor;
     }
+    view_size *= *scale_factor;
 
     const ImVec2 image_pos = ImGui::GetCursorScreenPos();
     // TODO: Look into showing mipmap contents
