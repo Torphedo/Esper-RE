@@ -1,5 +1,6 @@
 #include <imgui.h>
 #include <common/int.h>
+#include <common/image.h>
 #include <string>
 
 /// std::string::append(), but with printf() formatting syntax.
@@ -40,6 +41,8 @@ namespace ImGui {
     /// @param text2 Optional encoded integer, allowing up to 12 characters total
     /// @return Whether the text was edited
     bool InputPDString(const char* label, u32* text1, u32* text2 = nullptr);
+
+    bool InputCompressedFormat(img_fmt_compressed& fmt, const char* label);
 
     float ImageScaleForWindow(u16 width, u16 height);
     ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept;

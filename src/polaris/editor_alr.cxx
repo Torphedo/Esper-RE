@@ -677,7 +677,7 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
     vfile_seek(&vf, sizeof(atlas_name) * aHeader.atlas_count);
     const auto aEntries = (atlas_entry*)vfile_cur(vf);
 
-    ImGui::Begin("Texture Editor", &tex_export_active);
+    ImGui::Begin("Advanced Texture Export", &tex_export_active);
     ImGui::PushItemWidth(ImGui::CharWidth() * 20);
 
     const u32 expected_offset = entries[export_tex_idx].data_ptr;
@@ -696,6 +696,8 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
         ImGui::InputU8("# Channels", &export_cfg.channels);
         // TODO: Update bobtail to get reasonable unit size
         ImGui::InputU8("Unit Size", &export_cfg.unit_size);
+    } else {
+        ImGui::InputCompressedFormat(export_cfg.fmt, "Format");
     }
 
     ImGui::Checkbox("Override buffer settings", &override_buf);

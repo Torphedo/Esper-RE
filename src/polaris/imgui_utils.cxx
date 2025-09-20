@@ -89,6 +89,30 @@ bool InputPDString(const char* label, u32* text1, u32* text2) {
     return edited;
 }
 
+bool InputCompressedFormat(img_fmt_compressed& fmt, const char* label) {
+    const char* fmt_strings[DXT_ENUM_MAX] = {
+        "DXT1/BC1",
+        "DXT3/BC2",
+        "DXT5/BC3",
+        "BC4",
+    };
+    const char* cur_fmt_name = (fmt >= DXT_ENUM_MAX) ? "UNKNOWN" : fmt_strings[fmt];
+
+    bool result = false;
+    if (ImGui::BeginCombo(label, cur_fmt_name)) {
+        for (u32 i = 0; i < DXT_ENUM_MAX; i++) {
+            cur_fmt_name = fmt_strings[i];
+            if (ImGui::Selectable(cur_fmt_name, fmt == i)) {
+                fmt = (img_fmt_compressed)i;
+                result = true;
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    return result;
+}
+
 float ImageScaleForWindow(u16 width, u16 height) {
     // We try to fill the space available to us
     const ImVec2 avail = ImGui::GetContentRegionAvail();
