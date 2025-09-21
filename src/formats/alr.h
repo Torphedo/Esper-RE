@@ -191,13 +191,16 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
     },
     {   .id = 0x05,
         .size = 0x1C,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(16, INT16_MAX),
+        },
     },
     {   .id = 0x07,
         .size = 0x10,
         ALR_POS_ONLY,
     },
-    {   .id = 0x08,
+    {   .id = 0x08, // Suspected to be collision
         .size = 0x14,
         ALR_POS_ONLY,
     },
