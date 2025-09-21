@@ -391,47 +391,6 @@ typedef struct {
 }anim_header;
 static_assert(sizeof(anim_header) == 0x20, "Wrong animation header size!");
 
-// Animation key with 1 component
-typedef struct {
-    float frame;
-    float x;
-}anim_key_1;
-static_assert(sizeof(anim_key_1) == 0x8, "Wrong 1-component keyframe size!");
-
-// Animation key with 2 components
-typedef struct {
-    float frame;
-    float x;
-    float y;
-}anim_key2;
-static_assert(sizeof(anim_key2) == 0xC, "Wrong 2-component keyframe size!");
-
-// Animation key with 3 components
-// X, Y, and Z may be labelled in the wrong order, depending on which axis the
-// game uses as "up" (but this is an arbitrary naming decision).
-typedef struct {
-    float frame;
-    float x;
-    float y;
-    float z;
-}anim_key3;
-static_assert(sizeof(anim_key3) == 0x10, "Wrong 3-component keyframe size!");
-
-// Force struct packing off just for this struct, otherwise we can't read the
-// data in the ALR file
-#pragma pack(push, r1, 1)
-
-// Animation key for rotation.
-// This comes from decompiling the 2003 build, but I don't remember seeing this in a real file.
-typedef struct {
-    u8 frame;
-    u16 unk1;
-    u16 unk2;
-    u16 unk3;
-}anim_rotation_key;
-#pragma pack(pop, r1)
-static_assert(sizeof(anim_rotation_key) == 0x7, "Wrong rotation key size!");
-
 // 0x3 chunk
 // =============================================================================
 // This stores all the joints in the skeleton/armature and their relationships to each other.
