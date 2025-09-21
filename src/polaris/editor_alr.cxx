@@ -159,6 +159,23 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
+    if (ImGui::Button("Dump animation")) {
+        resource::chunk armature_chunk = alr.first_chunk_in_range(0x3, this->offset, alr.resbuf_offset);
+        vfile armature_vf = vfile_open(alr.data + armature_chunk.offset, armature_chunk.size);
+        vfile_seek(&armature_vf, sizeof(chunk_generic));
+        const auto armature_header = VFILE_READ(chunk_armature, &armature_vf);
+        const auto* joints = (joint_t*)vfile_cur(armature_vf);
+
+        const u32 joint_idx = header->unknown_settings1;
+        const joint_t joint = joints[joint_idx];
+
+        decoded_text decoded = {};
+        decode_single32(decoded.data, joint.name);
+        std::string joint_name = std::string(decoded.data) + "_" + std::to_string(joint_idx);
+
+        dump_animation_maya(header, "file.anim", joint_name.c_str());
+    }
+
     {
         ImGui::ScopedWidth scope(15);
         ImGui::InputFloat("Animation Length", &header->length);

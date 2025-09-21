@@ -197,28 +197,10 @@ namespace al {
 
         ImGuiDataType frame_type = ImGuiDataType_COUNT;
         ImGuiDataType component_type = ImGuiDataType_COUNT;
-
-        switch (key_size) {
-            // Integer keys
-            case 3:
-            case 5:
-            case 7:
-                frame_type = ImGuiDataType_U8;
-                component_type = ImGuiDataType_U16;
-                break;
-
-                // Floating point keys
-            case 8:
-            case 12:
-            case 16:
-                frame_type = component_type = ImGuiDataType_Float;
-        }
-
-        const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
+        u32 num_components = 0;
+        anim_key_info(key_size, frame_type, component_type, num_components);
         const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
-
-        // We know component and frame value size, so we can find out the # of components
-        const u16 num_components = (key_size - frame_size) / component_size;
+        const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
 
         if (num_components == 0 || component_type == ImGuiDataType_COUNT || frame_type == ImGuiDataType_COUNT) {
             // Something wasn't filled out, probably unknown format

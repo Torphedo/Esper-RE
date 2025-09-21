@@ -10,6 +10,8 @@
 
 namespace al {
 
+void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& component_type, u32& num_components);
+
 void dump_armature_dae(FILE* f, vfile armature_data);
 mat4s transform_from_joint(const joint_t & joint);
 
@@ -28,5 +30,8 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 /// @param vertchunk_offset Offset of the 0x16 chunk in the ALR
 /// @param vert_entry_idx Index of the vertex buffer entry in the 0x16 chunk
 void dump_vertex_buf(const al::resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
+
+bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, const char* bone_name);
+// bool dump_animation_maya(const al::resource& alr, al::resource::chunk anim_chunk, const char* outpath, const char* bone_override);
 
 } // namespace al

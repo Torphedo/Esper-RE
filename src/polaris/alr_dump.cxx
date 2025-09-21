@@ -2,15 +2,47 @@
 #include <vector>
 #include <set>
 #include <cglm/struct.h>
+#include <imgui_internal.h>
 
 #include <common/vfile.h>
+#include <common/file.h>
 
 #include <formats/alr.h>
 #include <formats/pd_common.h>
 #include "editor_alr.hxx"
 #include "pd_mesh.hxx"
+#include "version.h"
 
 namespace al {
+
+void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& component_type, u32& num_components) {
+    frame_type = ImGuiDataType_COUNT;
+    component_type = ImGuiDataType_COUNT;
+
+    switch (key_size) {
+    // Integer keys
+    case 3:
+    case 5:
+    case 7:
+        frame_type = ImGuiDataType_U8;
+        component_type = ImGuiDataType_U16;
+        break;
+
+    // Floating point keys
+    case 8:
+    case 12:
+    case 16:
+        frame_type = component_type = ImGuiDataType_Float;
+    default:
+        break;
+    }
+
+    const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
+    const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
+
+    // We know component and frame value size, so we can find out the # of components
+    num_components = (key_size - frame_size) / component_size;
+}
 
 // IMPORTANT: If Blender complains and won't import the DAE, make sure you
 // haven't accidentally made the XML start with a newline. If you do, Blender's
@@ -254,6 +286,160 @@ void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset
         // Cleanup
         fclose(out);
     }
+}
+
+const char *anim_boilerplate = R"(animVersion 1.1;
+mayaVersion %s; # This is actually the Polaris version
+timeUnit film; # Frames
+linearUnit m;
+angularUnit deg;
+startTime 0;
+endTime %d;
+)";
+
+void fprint_anim_boilerplate(FILE* f, const char* polaris_version, float anim_length) {
+    fprintf(f, anim_boilerplate, polaris_version, (u32)anim_length);
+}
+
+void fprintf_anim_key(FILE* f, float frame, float val, u32 tan_locked, u32 weight_locked, u32 breakdown) {
+    fprintf(f, "    %f %f auto auto %d %d %d;", frame, val, tan_locked, weight_locked, breakdown);
+}
+
+enum anim_key_type : u8 {
+    KEY_TRANSLATE,
+    KEY_ROTATE,
+    KEY_SCALE,
+    KEY_TYPE_ENUM_MAX,
+};
+
+void fprintf_anim_data_start(FILE* f, anim_key_type type, char axis, const char* joint_name) {
+    type = MIN(type, KEY_SCALE); // Keep in bounds
+    const char* anim_types[KEY_TYPE_ENUM_MAX] = {
+        "translate",
+        "rotate",
+        "scale",
+    };
+    const char* unit_types[KEY_TYPE_ENUM_MAX] = {
+        "linear",
+        "angular",
+        "unitless",
+    };
+
+    const char* type_str = anim_types[type];
+    const char* units = unit_types[type];
+    s32 attr_idx = (type * 3) - 1;
+    switch (axis) {
+    case 'Z':
+        attr_idx++;
+        fallthrough;
+    case 'Y':
+        attr_idx++;
+        fallthrough;
+    case 'X':
+        attr_idx++;
+    default:
+        break;
+    }
+
+    fprintf(f, "anim %s.%s%c %s%c ", type_str, type_str, axis, type_str, axis);
+    fprintf(f, "%s 0 1 %d;\n", joint_name, attr_idx);
+    fprintf(f, R"(animData {
+  input time;
+  output %s;
+  weighted 1;
+  preInfinity constant;
+  postInfinity constant;
+  keys {)", units);
+    fprintf(f, "\n");
+}
+
+void fprintf_anim_data_end(FILE* f) {
+    fprintf(f, "\n  }\n}\n\n");
+}
+
+void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f, anim_key_type type, const char* bone_name) {
+    ImGuiDataType frame_type = ImGuiDataType_COUNT;
+    ImGuiDataType component_type = ImGuiDataType_COUNT;
+    u32 num_components = 0;
+    anim_key_info(key_size, frame_type, component_type, num_components);
+    const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
+    const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
+    const char* axes = "XYZ";
+
+    vfile vf = vfile_open((void*)keydata, num_keys * key_size);
+    for (u32 i = 0; i < num_components; i++) {
+        if (num_keys == 0) {
+            break; // Don't print empty key blocks, they break the parser
+        }
+
+        fprintf_anim_data_start(f, type, axes[i], bone_name);
+        for (u32 j = 0; j < num_keys; j++) {
+            const u32 next_key_pos = vf.pos + key_size;
+            float frame = 0.0f;
+            switch (frame_type) {
+                case ImGuiDataType_Float:
+                    frame = VFILE_READ(float, &vf);
+                    break;
+                case ImGuiDataType_U8:
+                    frame = VFILE_READ(u8, &vf);
+                    break;
+                default:
+                    LOG_MSG(warning, "Unknown key format with size %d!\n", key_size);
+                    break;
+            }
+
+            // Skip to component we want
+            float component = 0.0f;
+            vfile_seek(&vf, component_size * i);
+            switch (component_type) {
+                case ImGuiDataType_Float:
+                    component = VFILE_READ(float, &vf);
+                    break;
+                case ImGuiDataType_U16:
+                    component = VFILE_READ(u16, &vf);
+                    component /= float(UINT16_MAX);
+                    break;
+                default:
+                    LOG_MSG(warning, "Unknown key format with size %d!\n", key_size);
+                    break;
+            }
+
+            fprintf_anim_key(f, frame, component, 1, 0, 0);
+            if (j < (num_keys - 1)) {
+                // This is load-bearing. If we have a trailing newline in our
+                // key {} block, the Blender plugin will crash.
+                fprintf(f, "\n");
+            }
+            vf.pos = next_key_pos;
+        }
+
+        fprintf_anim_data_end(f);
+        vf.pos = 0;
+    }
+}
+
+bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, const char* bone_name) {
+    const bool exists = file_exists(outpath);
+    FILE* f = fopen(outpath, "ab");
+    if (!f) {
+        return false;
+    }
+
+    if (!exists) {
+        fprint_anim_boilerplate(f, POLARIS_VERSION, anim_chunk->length);
+    }
+
+    vfile vf = vfile_open((void*)anim_chunk, anim_chunk->size);
+    vfile_seek(&vf, sizeof(*anim_chunk));
+
+    dump_anim_channel(anim_chunk->translation_key_size, anim_chunk->translation_key_count, vfile_cur(vf), f, KEY_TRANSLATE, bone_name);
+    vfile_seek(&vf, anim_chunk->translation_key_size * anim_chunk->translation_key_count);
+
+    dump_anim_channel(anim_chunk->rotation_key_size, anim_chunk->rotation_key_count, vfile_cur(vf), f, KEY_ROTATE, bone_name);
+    vfile_seek(&vf, anim_chunk->rotation_key_size * anim_chunk->rotation_key_count);
+
+    fclose(f);
+    return true;
 }
 
 } // namespace al
