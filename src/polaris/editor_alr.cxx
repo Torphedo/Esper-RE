@@ -159,10 +159,23 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
-    ImGui::Text("Length: %.3f frames", header->length);
-    ImGui::Text("%d translation keys, 0x%X bytes each", header->translation_key_count, header->translation_key_size);
-    ImGui::Text("%d rotation keys, 0x%X bytes each", header->rotation_key_count, header->rotation_key_size);
-    ImGui::Text("%d scale keys", header->scale_key_count);
+    {
+        ImGui::ScopedWidth scope(15);
+        ImGui::InputFloat("Animation Length", &header->length);
+        ImGui::InputU32("# translation keys", &header->translation_key_count);
+        ImGui::InputU16("Translation key size", &header->translation_key_size);
+
+        ImGui::NewLine();
+        ImGui::InputU32("# rotation keys", &header->rotation_key_count);
+        ImGui::InputU16("Rotation key size", &header->rotation_key_size);
+
+        ImGui::NewLine();
+        ImGui::InputU32("# scale keys", &header->scale_key_count);
+
+        ImGui::NewLine();
+        ImGui::InputU16("Unknown 1", &header->unknown_settings1);
+        ImGui::InputU16("Unknown 2", &header->unknown_settings2);
+    }
 
     // Edit and skip to the next set of keys
     if (header->translation_key_count > 0 && ImGui::CollapsingHeader("Translation Keys")) {
