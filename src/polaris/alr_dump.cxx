@@ -364,7 +364,7 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
     anim_key_info(key_size, frame_type, component_type, num_components);
     const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
     const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
-    const char* axes = "XYZ";
+    const char* axes = "XZY";
 
     vfile vf = vfile_open((void*)keydata, num_keys * key_size);
     for (u32 i = 0; i < num_components; i++) {
@@ -394,10 +394,16 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
             switch (component_type) {
                 case ImGuiDataType_Float:
                     component = VFILE_READ(float, &vf);
+                    if (type == KEY_ROTATE) {
+                        component = glm_deg(component); // Convert to degrees
+                    }
                     break;
                 case ImGuiDataType_U16:
-                    component = VFILE_READ(u16, &vf);
-                    component /= float(UINT16_MAX);
+                    component = VFILE_READ(s16, &vf);
+                    component /= float(INT16_MAX);
+                    if (type == KEY_ROTATE) {
+                        component *= 180.0f; // Convert to degrees
+                    }
                     break;
                 default:
                     LOG_MSG(warning, "Unknown key format with size %d!\n", key_size);
