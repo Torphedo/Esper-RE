@@ -309,8 +309,9 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
                 vf.pos = idx_buf.idx_chunk_offset;
                 vfile_seek(&vf, sizeof(chunk_generic));
                 const auto header = VFILE_READ(idxbuf_header, &vf);
+                const auto mat_chunk = alr.prev_chunk_by_id(0x1, idx_buf.idx_chunk_offset);
                 chunk_0x1_entry tex_entry = {};
-                alr.tex_manager.get_material(alr, header.texture_idx, &tex_entry);
+                alr.tex_manager.get_material(alr, mat_chunk.offset, header.texture_idx, &tex_entry);
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, tex_entry.texture_idx));

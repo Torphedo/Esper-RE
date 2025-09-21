@@ -21,9 +21,6 @@ namespace al {
 }
 
 struct texture_manager {
-    // Ofset of the 0x1 chunk
-    u32 material_header_offset;
-
     // Offset of the 0x15 chunk
     u32 texheader_offset;
 
@@ -33,8 +30,8 @@ struct texture_manager {
     std::map<u32, gl_obj> gl_tex_map;
 
     gl_obj get(al::resource& alr, u32 idx) noexcept;
-    bool get_material(al::resource& alr, u32 idx, chunk_0x1_entry** entry_out) const noexcept;
-    bool get_material(al::resource& alr, u32 idx, chunk_0x1_entry* entry_out) const noexcept;
+    bool get_material(al::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept;
+    bool get_material(al::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry* entry_out) const noexcept;
 
     void invalidate(u32 idx) noexcept;
 

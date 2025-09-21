@@ -240,7 +240,7 @@ gl_obj texture_manager::get(al::resource& alr, u32 idx) noexcept {
     return gl_tex_id;
 }
 
-bool texture_manager::get_material(al::resource& alr, u32 idx, chunk_0x1_entry** entry_out) const noexcept {
+bool texture_manager::get_material(al::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept {
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = material_header_offset;
     const auto header = VFILE_READ(chunk_0x1_header, &vf);
@@ -254,9 +254,9 @@ bool texture_manager::get_material(al::resource& alr, u32 idx, chunk_0x1_entry**
     return false;
 }
 
-bool texture_manager::get_material(al::resource& alr, u32 idx, chunk_0x1_entry* entry_out) const noexcept {
+bool texture_manager::get_material(al::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry* entry_out) const noexcept {
     chunk_0x1_entry* entryptr = nullptr;
-    bool result = get_material(alr, idx, &entryptr);
+    bool result = get_material(alr, material_header_offset, idx, &entryptr);
     if (!result || !entryptr) {
         return false;
     }

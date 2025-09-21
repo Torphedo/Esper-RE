@@ -202,8 +202,9 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
         vf.pos = buf.idx_chunk_offset;
         vfile_seek(&vf, sizeof(chunk_generic));
         const auto header = VFILE_READ(idxbuf_header, &vf);
+        const auto mat_chunk = alr.prev_chunk_by_id(0x1, buf.idx_chunk_offset);
         chunk_0x1_entry* tex_entry = nullptr;
-        alr.tex_manager.get_material(alr, header.texture_idx, &tex_entry);
+        alr.tex_manager.get_material(alr, mat_chunk.offset, header.texture_idx, &tex_entry);
 
         snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
         ImGui::InputU16(label, &tex_entry->texture_idx);

@@ -775,7 +775,6 @@ bool resource::load(const char* path) noexcept {
     }
     alr_size = size;
     chunks = shatter_alr(data, alr_size);
-    tex_manager.material_header_offset = first_chunk_by_id(0x1).offset;
     tex_manager.atlasheader_offset = first_chunk_by_id(0x10).offset;
     tex_manager.texheader_offset = first_chunk_by_id(0x15).offset;
     return true;
