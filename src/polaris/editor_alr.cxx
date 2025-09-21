@@ -677,32 +677,22 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
     vfile_seek(&vf, sizeof(atlas_name) * aHeader.atlas_count);
     const auto aEntries = (atlas_entry*)vfile_cur(vf);
 
-    ImGui::Begin("Advanced Texture Export", &tex_export_active);
-    ImGui::PushItemWidth(ImGui::CharWidth() * 20);
+    if (!ImGui::Begin("Advanced Texture Export", &tex_export_active)) {
+        return;
+    }
+
+    ImGui::PushItemWidth(ImGui::CharWidth(20));
 
     const u32 expected_offset = entries[export_tex_idx].data_ptr;
     const bool uninitialized = (expected_offset != (uintptr_t)export_cfg.data) && !override_buf;
     if (ImGui::InputU32("Texture index", &export_tex_idx) || uninitialized) {
         export_cfg.data = (u8 *) u64(entries[export_tex_idx].data_ptr);
     }
-
-    ImGui::InputU16("Height", &export_cfg.height);
-    ImGui::InputU16("Width", &export_cfg.width);
-    ImGui::InputU16("Mipmap Level", &export_cfg.mip_level);
-
-    ImGui::Checkbox("Compressed format", &export_cfg.compressed);
-    if (!export_cfg.compressed) {
-        ImGui::scope_indent indent;
-        ImGui::InputU8("# Channels", &export_cfg.channels);
-        // TODO: Update bobtail to get reasonable unit size
-        ImGui::InputU8("Unit Size", &export_cfg.unit_size);
-    } else {
-        ImGui::InputCompressedFormat(export_cfg.fmt, "Format");
-    }
+    ImGui::EditTexture(export_cfg);
 
     ImGui::Checkbox("Override buffer settings", &override_buf);
     if (override_buf) {
-        ImGui::scope_indent indent;
+        ImGui::ScopedIndent indent;
         ImGui::InputU64("Resbuf offset", (uintptr_t*)&export_cfg.data, 1, 5, nullptr, ImGuiInputTextFlags_CharsHexadecimal);
     }
 
@@ -719,15 +709,25 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
             alr.tex_manager.gl_tex_map[export_tex_idx] = tex_id;
         }
     }
+
+    if (ImGui::CollapsingHeader("Guessing")) {
+        ImGui::Checkbox("Use atlas entry data", &guess_atlas);
+        if (ImGui::Button("Make a guess")) {
+            export_cfg = convert_tex(alr.resource_buffer(), entries[export_tex_idx]);
+            if (guess_atlas) {
+                export_cfg.width = aEntries[export_tex_idx].width;
+                export_cfg.height = aEntries[export_tex_idx].height;
+            }
+        }
+    }
+
     if (ImGui::CollapsingHeader("Preview")) {
         const ImVec2 size(export_cfg.width, export_cfg.height);
         ImGui::Image(alr.tex_manager.get(alr, export_tex_idx), size);
     }
 
     if (ImGui::Button("Export")) {
-        decoded_text name = {};
-        decode_single32(name.data, entries[export_tex_idx].text1);
-        decode_single32(&name.data[6], entries[export_tex_idx].text2);
+        decoded_text name = decode_double(entries[export_tex_idx].text1, entries[export_tex_idx].text2)
 
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };

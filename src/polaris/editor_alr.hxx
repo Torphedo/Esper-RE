@@ -141,6 +141,7 @@ public:
         u32 offset_0x15 = 0;
         u32 offset_0x10 = 0;
         u32 export_tex_idx = 0; // Index of texture entry we're exporting
+        bool guess_atlas = true;
         bool override_buf = false;
 
         void draw(resource& alr) noexcept;

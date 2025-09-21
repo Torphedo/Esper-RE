@@ -22,6 +22,8 @@ typedef struct {
 /// @param val value to decode
 void decode_single32(char* output, u32 val);
 
+decoded_text decode_double(u32 text1, u32 text2);
+
 /// @brief Encode 6 characters into a 32-bit integer.
 ///
 /// The only allowed characters are alphanumeric ASCII, spaces and underscores,

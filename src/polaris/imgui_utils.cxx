@@ -9,6 +9,7 @@
 
 #include <common/vfile.h>
 #include <common/int.h>
+#include <common/crc32.h>
 #include <formats/pd_common.h>
 
 void str_format_append(std::string& output, const char* format_str, ...) {
@@ -30,8 +31,8 @@ void BeginChildFitContent(const char* id, float width_percent) {
     ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
 }
 
-float CharWidth() {
-    return ImGui::CalcTextSize("1").x;
+float CharWidth(u32 num_chars) {
+    return ImGui::CalcTextSize("1").x * num_chars;
 }
 
 void PlsReportIf(bool condition, const char* format, ...) {
@@ -111,6 +112,27 @@ bool InputCompressedFormat(img_fmt_compressed& fmt, const char* label) {
     }
 
     return result;
+}
+
+bool EditTexture(texture& tex) noexcept {
+    ScopedWidth w(20);
+    const u32 hash = crc32fast((u8*)&tex, sizeof(tex));
+
+    ImGui::InputU16("Height", &tex.height);
+    ImGui::InputU16("Width", &tex.width);
+    ImGui::InputU16("Mipmap Level", &tex.mip_level);
+
+    ImGui::Checkbox("Compressed format", &tex.compressed);
+    if (!tex.compressed) {
+        ImGui::ScopedIndent indent;
+        ImGui::InputU8("# Channels", &tex.channels);
+        ImGui::InputU8("Bytes per channel", &tex.unit_size);
+    } else {
+        ImGui::InputCompressedFormat(tex.fmt, "Format");
+    }
+
+    // Use hash to check if changes were made
+    return (hash != crc32fast((u8*)&tex, sizeof(tex)));
 }
 
 float ImageScaleForWindow(u16 width, u16 height) {

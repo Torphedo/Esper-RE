@@ -8,20 +8,31 @@
 void str_format_append(std::string& output, const char* format_str, ...);
 
 namespace ImGui {
-    struct scope_indent {
+    struct ScopedIndent {
         const float indent;
-        scope_indent(float indent = 0.0f) : indent(indent) {
+        ScopedIndent(float indent = 0.0f) : indent(indent) {
             ImGui::Indent(indent);
         }
 
-        ~scope_indent() {
+        ~ScopedIndent() {
             ImGui::Unindent(indent);
         }
     };
 
-    void BeginChildFitContent(const char* id, float width_percent);
+    float CharWidth(u32 num_chars = 1);
 
-    float CharWidth();
+    // Be careful using this near ImGui::Begin()/End(), because it'll hit an
+    // assert if the destructor runs after an ImGui::End().
+    struct ScopedWidth {
+        ScopedWidth(u32 char_width) {
+            ImGui::PushItemWidth(ImGui::CharWidth() * float(char_width));
+        }
+        ~ScopedWidth() {
+            ImGui::PopItemWidth();
+        }
+    };
+
+    void BeginChildFitContent(const char* id, float width_percent);
 
     /// @brief A sort of backwards assert that displays a message in the GUI
     ///
@@ -43,6 +54,8 @@ namespace ImGui {
     bool InputPDString(const char* label, u32* text1, u32* text2 = nullptr);
 
     bool InputCompressedFormat(img_fmt_compressed& fmt, const char* label);
+
+    bool EditTexture(texture& tex) noexcept;
 
     float ImageScaleForWindow(u16 width, u16 height);
     ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept;
