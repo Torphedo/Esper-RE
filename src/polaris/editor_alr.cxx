@@ -191,7 +191,8 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
 
         ImGui::NewLine();
         ImGui::InputU16("Unknown 1", &header->unknown_settings1);
-        ImGui::InputU16("Unknown 2", &header->unknown_settings2);
+        ImGui::InputU8("Unknown 2", &header->unknown_settings2);
+        ImGui::InputU8("Unknown 3", &header->unknown_settings3);
     }
 
     // Edit and skip to the next set of keys

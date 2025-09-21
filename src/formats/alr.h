@@ -386,7 +386,8 @@ typedef struct {
     u32 translation_key_count; // Name from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
     u32 rotation_key_count;    // Name from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)
     u32 scale_key_count; // Hasn't been tested yet
-    u16 unknown_settings2;
+    u8 unknown_settings2;
+    u8 unknown_settings3;
     u16 translation_key_size;
 }anim_header;
 static_assert(sizeof(anim_header) == 0x20, "Wrong animation header size!");
