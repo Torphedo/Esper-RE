@@ -32,7 +32,7 @@ namespace al {
         alr_pixel_format pixel_fmt_table[] = {
             FORMAT_RGBA8, FORMAT_RGBA8_2, FORMAT_RGBA8_3,
             FORMAT_DXT1, FORMAT_DXT3, FORMAT_DXT5,
-            FORMAT_A8, FORMAT_A8_2,
+            FORMAT_A8, FORMAT_A8_2, FORMAT_A8_3,
             FORMAT_RG8,
             FORMAT_MONO_16, FORMAT_MONO_16_2,
         };

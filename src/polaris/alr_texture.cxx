@@ -13,6 +13,7 @@ const char* texformat_str(alr_pixel_format format) {
             break;
         case FORMAT_A8:
         case FORMAT_A8_2:
+        case FORMAT_A8_3:
             out = "1-channel 8-bit raw";
             break;
         case FORMAT_RG8:
@@ -59,6 +60,7 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
             break;
         case FORMAT_A8:
         case FORMAT_A8_2:
+        case FORMAT_A8_3:
             out.channels = 1;
             break;
         case FORMAT_RG8:

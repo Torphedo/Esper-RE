@@ -59,10 +59,11 @@ typedef enum {
     FORMAT_DXT3 = 0b00001110,
     FORMAT_DXT5 = 0b00001111,
     FORMAT_A8 = 0b10000000,
+    FORMAT_A8_2 = 0b10011111,
+    FORMAT_A8_3 = 0b10010011,
     FORMAT_RG8 = 0b10000100,
     FORMAT_MONO_16 = 0b10000010,
     FORMAT_MONO_16_2 = 0b10000101,
-    FORMAT_A8_2 = 0b10011111,
 }alr_pixel_format;
 
 // Bad enum name. I don't know what this value means except for these 2
