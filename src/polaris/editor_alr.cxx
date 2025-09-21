@@ -727,7 +727,7 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
     }
 
     if (ImGui::Button("Export")) {
-        decoded_text name = decode_double(entries[export_tex_idx].text1, entries[export_tex_idx].text2)
+        decoded_text name = decode_double(entries[export_tex_idx].text1, entries[export_tex_idx].text2);
 
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "DDS Image", "dds"} };
