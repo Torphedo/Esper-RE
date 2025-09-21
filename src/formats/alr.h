@@ -108,6 +108,32 @@ typedef struct {
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
 
+// 0x13 chunk
+// =============================================================================
+// Not much is known about these. They're found often in ALRs from /Effect, and
+// sometimes in stage ALRs from /Map.
+typedef struct {
+    float unk1[12];
+    // The last 8 bytes of this may be padding
+    u8 unk2[16];
+    // This is probably a 4x4 transform matrix
+    float unk3[16];
+}chunk_0x13;
+static_assert(sizeof(chunk_0x13) == 0x80);
+
+// 0x14 chunk
+// =============================================================================
+// Not much is known about these, they're found in ALRs from /Effect.
+typedef struct {
+    u8 pad1[8];
+    u32 text1;
+    u32 text2;
+    u16 unk1;
+    u16 unk2;
+    u8 pad2[16];
+}chunk_0x14;
+static_assert(sizeof(chunk_0x14) == 0x24);
+
 // ======= BEGIN CUSTOM STRUCTURES =======
 // These aren't part of any ALR file, they just let us describe vertex formats
 // using data instead of code.
