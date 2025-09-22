@@ -18,13 +18,13 @@ Support status:
 | Feature           | Viewing                    | Export                             | Import                                   |
 | ----------------- | -------------------------- | ---------------------------------- | ---------------------------------------- |
 | Textures (square) | ✅                         | ✅(`.dds`)                         | ✅ (`.dds`, at same resolution & format) |
-| Textures (atlas)  | ✅                         | ❌                                 | ❌                                       |
+| Textures (atlas)  | ✅                         | ✅(`.dds`)                         | ❌                                       |
 | Character meshes  | ✅                         | ✅(`.obj`)                         | ❌                                       |
-| Stage meshes      | ✅                         | ✅ (`.obj`, no materials/textures) | ❌                                       |
-| Animations        | ✅ (graph)                 | ❌                                 | ❌                                       |
+| Stage meshes      | ✅                         | ✅ (`.obj`)                        | ❌                                       |
+| Animations        | ✅ (graph)                 | ❌ (WIP `.anim` export)            | ❌                                       |
 | Skeleton          | ❌                         | ✅ (`.dae`)                        | ❌                                       |
 
-Here's what the UI for viewing/editing map files and textures:    
+Here's what the UI for viewing/editing map files and textures looks like:    
 <img src="https://github.com/user-attachments/assets/a1fa4f13-0791-4ced-89ed-757387500670" style="width:90%;"/>     
 And the UI for texture atlases:    
 <img src="https://github.com/user-attachments/assets/5d75910c-8339-4d1f-bf80-931227157220" style="width:70%;"/>
