@@ -17,18 +17,41 @@ typedef struct {
     float z;
 }vec3f;
 
+// ALRs are structured with groups of chunks, separated by empty 0x0 chunks.
+
+// For each animation, chunks are laid out like this:
+// - [one or more 0x5 chunk(s)
+// - 0x0 (null terminator)
+
+// For each model, chunks are laid out like this:
+// - 0x1
+// - 0x3
+// - 0x16
+// - [one or more 0x2 chunk(s)]
+// - 0xD (empty)
+// - 0x0 (null terminator)
+
+// The whole ALR is laid out like this:
+// - 0x11
+// - 0x15
+// - [animations, if present]
+// - [models, if present]
+// - 0x10 and 0x0, if texture atlas is used
+
 // 0x11 chunk
 // =============================================================================
-// All ALR files begin with this structure.
-// Followed by a u32 array whose size is listed in the header. The u32s are
-// offsets to chunks of data throughout the file, and aren't always in order.
-// It's unclear what these offsets are used for or if there's any pattern to
-// the grouping. They are part of the header chunk, so the size includes this
-// array.
+// All ALR files begin with this chunk, followed by an array of file offsets.
+// The order of offsets follows the structure above. This means the game can use
+// the animation ID (see alr_animations.h) as an index to look up animation data.
+// Sometimes the offsets are negative (maybe to indicate it doesn't have a
+// specific animation), and are usually (but not always) sorted.
 typedef struct {
     u32 id;                // 0x11
     s32 chunk_size;        // Size of this chunk (includes ID & size)
-    u32 flags;             // Unknown
+    // In development builds (and maybe modern ones), the game throws an error
+    // about the ALR being too old to load unless this is 0x52.
+    u16 version; // This is usually (maybe always?) 7
+    u16 unk2;
     u32 texbuf_offset;     // Offset of resource buffer at end of file
     u32 offset_array_size; // Number of offsets in the array
     u32 texbuf_size;       // Total size of resource buffer at end of the file
