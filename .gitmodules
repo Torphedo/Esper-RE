@@ -13,3 +13,6 @@
 [submodule "ext/nfde"]
 	path = ext/nfde
 	url = https://github.com/btzy/nativefiledialog-extended
+[submodule "lib/coregui"]
+	path = lib/coregui
+	url = https://github.com/torphedo/coregui

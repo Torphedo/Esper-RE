@@ -12,7 +12,6 @@ set(CMAKE_C_STANDARD 11)
 include_directories(
     ext
     ext/glad/include
-    ext/glfw/include
     ext/cglm/include
     ext/imgui
     ext/bobtail
@@ -21,7 +20,6 @@ include_directories(
 
 set(BOBTAIL_OPENGL ON)
 add_subdirectory(ext/bobtail)
-add_subdirectory(ext/glfw)
 add_subdirectory(ext/nfde)
 
 # Build Polaris

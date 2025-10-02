@@ -1,9 +1,11 @@
 #pragma once
+#include <glad/glad.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
 
 #include <formats/alr.h>
+#include <layer.hxx>
 
 #include "editor_alr.hxx"
 #include "mapdata.hxx"
@@ -14,7 +16,7 @@ extern "C" {
 }
 
 // State for the overall editor
-struct polaris {
+struct polaris : gui_layer {
     // State for a loaded ALR file
     al::resource alr;
 
@@ -45,8 +47,10 @@ struct polaris {
 
     void do_menu_bar() noexcept;
 
+    void init(GLFWwindow* window) noexcept override;
+    
     /// @brief Render and update all the UI
-    void do_gui(GLFWwindow *window) noexcept;
+    void update(GLFWwindow *window) noexcept override;
 
     /// @brief Increase the amount of address space reserved for the ALR data
     void expand_reservation(s64 new_size) noexcept;

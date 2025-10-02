@@ -1,17 +1,19 @@
+#include <glad/glad.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
+#include <gui_bootstrap.hxx>
+#include <layer_imgui.hxx>
 #include <common/logging.h>
 #include <common/vfile.h>
 
 #include "formats/alr.h"
-#include "gui_loop.hxx"
 #include "polaris.hxx"
 #include "alr_texture.hxx"
 #include "validation.hxx"
+#include "version.h"
 
-static const char* version_string = "1.0.0";
 static const char* url = "https://github.com/Torphedo/Esper-RE";
 const char* dump_textures_flag = "--dump-textures";
 const char* validate_flag = "--validate";
@@ -115,21 +117,25 @@ int main(int argc, char** argv) {
     // Enable ANSI escape codes (for printing in color) on Windows
     enable_win_ansi();
 
-    polaris pol;
+    gui_app app;
+    app.layers.emplace_back(std::make_unique<layer_imgui>());
+    app.layers.emplace_back(std::make_unique<polaris>());
+    polaris* pol = dynamic_cast<polaris*>(app.layers[1].get());
+    
     if (argc >= 2) {
         // We have an argument, it should be a filepath.
-        if (!pol.alr.load(argv[1])) {
+        if (!pol->alr.load(argv[1])) {
             // An error message will be printed for us down the chain, just exit
             return EXIT_FAILURE;
         }
     }
 
     if (argc < 3) {
-        pol.headless = false;
+        pol->headless = false;
         // No special arguments, run in normal graphical mode.
         // polaris::do_gui() has the real UI code, and is basically the real entry
         // point. Sorry for the kind of unintuitive structure.
-        if (!gui_main(pol)) {
+        if (!app.run("Polaris " POLARIS_VERSION)) {
             // Actual error message is reported at the failure point
             LOG_MSG(error, "Failed to start up!\n");
             return EXIT_FAILURE;
@@ -144,11 +150,11 @@ int main(int argc, char** argv) {
 
     if (strcmp(flag, dump_textures_flag) == 0) {
         LOG_MSG(info, "Dumping textures for %s\n", path);
-        return dump_all_textures(pol);
+        return dump_all_textures(*pol);
     } else if (strcmp(flag, validate_flag) == 0) {
         LOG_MSG(info, "Validating \"%s\"...\n", path);
         std::string message = "";
-        const bool result = alr_validate(message, pol);
+        const bool result = alr_validate(message, *pol);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");
         } else {
@@ -160,7 +166,7 @@ int main(int argc, char** argv) {
     } else if (strcmp(flag, "--help") == 0) {
         print_usage();
     } else if (strcmp(flag, "--version") == 0) {
-        printf("Polaris (Esper-RE tools) v%s", version_string);
+        printf("Polaris (Esper-RE tools) v%s", POLARIS_VERSION);
         printf("Open-source @ %s\n", url);
         printf("Written by Torphedo [w/ help from fleevoid, blasianblazy, & Nuion]\n");
     } else {

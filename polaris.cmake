@@ -16,6 +16,8 @@ add_library(imgui STATIC
     ext/imgui/backends/imgui_impl_opengl3.cpp
     ext/imgui/backends/imgui_impl_glfw.cpp
 )
+set(COREGUI_USE_IMGUI ON)
+add_subdirectory(lib/coregui)
 
 # Internal build tool to generate headers for GLSL shaders
 add_executable(txt2h "ext/txt2h.c")
@@ -37,7 +39,6 @@ endforeach()
 
 add_executable(polaris
     src/polaris/main.cxx
-    src/polaris/gui_loop.cxx
 
     src/polaris/polaris.cxx
     src/polaris/fileclass.cxx
@@ -63,4 +64,4 @@ add_executable(polaris
     src/polaris/alr_imgui.cxx
 )
 
-target_link_libraries(polaris PRIVATE glfw imgui bobtail nfd)
+target_link_libraries(polaris PRIVATE coregui imgui bobtail nfd)

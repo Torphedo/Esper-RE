@@ -138,7 +138,11 @@ void polaris::do_menu_bar() noexcept {
     }
 }
 
-void polaris::do_gui(GLFWwindow* window) noexcept {
+void polaris::init(GLFWwindow* window) noexcept {
+    NFD_Init();
+}
+
+void polaris::update(GLFWwindow* window) noexcept {
     const scope_timer draw_timer(timer_map, "main_draw");
 
     // Make the entire window a giant docking space
