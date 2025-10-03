@@ -1,11 +1,10 @@
 #include "camera.hxx"
+// Need this define to use operators on ImGui vector types
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui.h>
 #include <cglm/struct.h>
 #include <glad/glad.h>
 #include <common/int.h>
-
-extern "C" {
-    #include <common/gl/input.h>
-}
 
 // Restrict a number to a certain range
 float clampf(float x, float min, float max) {
@@ -32,18 +31,7 @@ vec3s orbit_pos_by_angles(camera& cam) {
 }
 
 vec2s camera::get_cursor_delta() {
-    const vec2s cursor = vec2s{input.cursor_x, input.cursor_y};
-
-    vec2s cursor_delta = glms_vec2_sub(cursor, last_cursor);
-    cursor_delta = glms_vec2_scale(cursor_delta, mouse_sens);
-
-    // Save state so we can find the delta next time we're called
-    last_cursor = cursor;
-
-    if (fabsf(input.RS_x) > deadzone || fabsf(input.RS_y) > deadzone) {
-        cursor_delta.x = input.RS_x * mouse_sens * 5;
-        cursor_delta.y = input.RS_y * mouse_sens * 5;
-    }
+    ImVec2 cursor_delta = ImGui::GetIO().MouseDelta * mouse_sens;
 
     // Invert sign as needed.
     if (invert_mouse_x) {
@@ -53,32 +41,32 @@ vec2s camera::get_cursor_delta() {
         cursor_delta.y = -cursor_delta.y;
     }
 
-    return cursor_delta;
+    return vec2s{cursor_delta.x, cursor_delta.y};
 }
 
 void camera::update(double delta_time) noexcept {
-    static vec2s last_scroll = {0};
+    static ImVec2 last_scroll = {};
 
     const vec2s cursor_delta = get_cursor_delta();
 
-    const vec2s scroll_delta = {
-        input.scroll_x - last_scroll.x,
-        input.scroll_y - last_scroll.y
-    };
+    const ImVec2 scroll = ImVec2(ImGui::GetIO().MouseWheel, ImGui::GetIO().MouseWheelH);
+    const ImVec2 scroll_delta = scroll - last_scroll;
     // Save state so we can find the delta next time we're called
-    last_scroll = vec2s{input.scroll_x, input.scroll_y};
+    last_scroll = scroll;
 
 
     const vec3s cam_dir = this->facing();
     const float multiplier = (float)delta_time * move_speed;
 
-    // This just sets each axis to zero if it's below the deadzone threshold
-    const float LS_x = input.LS_x * (fabsf(input.LS_x) > deadzone);
-    const float LS_y = input.LS_y * (fabsf(input.LS_y) > deadzone);
-
-    const float forward  = multiplier * ((input.w - input.s) - LS_y);
-    const float side     = multiplier * ((input.a - input.d) - LS_x);
-    float vertical = multiplier * ((input.space - input.shift) + (input.RT - input.LT));
+    const s8 w = ImGui::IsKeyDown(ImGuiKey_W);
+    const s8 a = ImGui::IsKeyDown(ImGuiKey_A);
+    const s8 s = ImGui::IsKeyDown(ImGuiKey_S);
+    const s8 d = ImGui::IsKeyDown(ImGuiKey_D);
+    const s8 space = ImGui::IsKeyDown(ImGuiKey_Space);
+    const s8 shift = ImGui::IsKeyDown(ImGuiKey_LeftShift);
+    const float forward  = multiplier * (w - s);
+    const float side     = multiplier * (a - d);
+    float vertical = multiplier * (space - shift);
 
     // Exclude vertical view component so it doesn't affect horizontal movement
     vec3s horizontal = glms_normalize({cam_dir.x, 0, cam_dir.z});

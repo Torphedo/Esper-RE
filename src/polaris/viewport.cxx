@@ -351,7 +351,6 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
         ImGui::Image(color_tex, image_size);
         is_hovered = ImGui::IsItemHovered();
         if (ImGui::IsMouseClicked(0)) {
-            cam.get_cursor_delta();
             if (is_hovered) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -363,25 +362,17 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
             }
         }
         if (ImGui::IsMouseReleased(0)) {
+            ImGui::GetIO().WantCaptureMouse = true;
+            ImGui::GetIO().WantCaptureKeyboard = true;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
             cursor_lock = false;
         }
 
         if (cursor_lock) {
-            vec2s prev_cursor = cam.last_cursor;
+            ImGui::GetIO().WantCaptureMouse = false;
+            ImGui::GetIO().WantCaptureKeyboard = false;
             cam.update(delta_time);
-            cam.last_cursor = prev_cursor;
-            glfwSetCursorPos(window, cam.last_cursor.x, cam.last_cursor.y);
-            // It seems like if we don't overwrite this, floating point
-            // imprecisions will cause constant slight movement in the last
-            // direction the mouse moved
-            input.cursor_x = prev_cursor.x;
-            input.cursor_y = prev_cursor.y;
-        } else {
-            double x, y;
-            glfwGetCursorPos(window, &x, &y);
-            cam.last_cursor = vec2s{float(x), float(y)};
         }
 
         glUseProgram(0);
