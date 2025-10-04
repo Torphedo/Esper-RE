@@ -230,10 +230,6 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
         shader_flags.render_normals = temp_render_normals;
 
         ImGui::SameLine();
-        static bool no_transforms = false;
-        ImGui::Checkbox("Disable object transforms", &no_transforms);
-
-        ImGui::SameLine();
         bool temp_force_disable_normals = shader_flags.has_normal;
         ImGui::Checkbox("Use normals", &temp_force_disable_normals);
         shader_flags.has_normal = temp_force_disable_normals;
@@ -298,10 +294,7 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
                 if (!idx_buf.enabled) {
                     continue; // This index buffer is hidden
                 }
-                mat4s obj_pvm = *(mat4s*)pvm;
-                if (!no_transforms) {
-                    obj_pvm = glms_mul(obj_pvm, idx_buf.transform);
-                }
+                mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.transform);
                 glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
                 // We cast away const here but don't write to the buffer
