@@ -22,6 +22,8 @@ struct viewport_t : gui_layer {
 
     framebuffer fbo;
 
+    al::resource* alr = nullptr;
+
     // Shader program used to render the scene
     gl_obj shader = 0;
 
@@ -70,12 +72,9 @@ struct viewport_t : gui_layer {
     // check the [initialized] member.
     void init(GLFWwindow* window) noexcept override;
 
+    void update(GLFWwindow* window) noexcept override;
+    void render(GLFWwindow* window) noexcept override;
+
     // Destroys the underlying OpenGL resources and invalidates all copies of this instance.
     void destroy() noexcept override;
-
-    // Render a Dear ImGui editor for the viewport contents
-    void render_editor(al::resource& alr) noexcept;
-
-    // Render a Dear ImGui window showing the viewport contents
-    bool render_contents(GLFWwindow* window, al::resource& pol) noexcept;
 };

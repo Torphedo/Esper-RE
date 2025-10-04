@@ -119,209 +119,197 @@ void viewport_t::destroy() noexcept {
     }
 }
 
-void viewport_t::render_editor(al::resource& alr) noexcept {
-    if (!editor_enabled) {
+void viewport_t::update(GLFWwindow* window) noexcept {
+    if (!active || !initialized) {
         return;
     }
-    ImGui::Begin("Viewport Editor", &this->active);
 
-    static u16 selected_mesh = 0;
-    ImGui::InputU16("Selected Mesh", &selected_mesh);
-    selected_mesh %= meshes.size();
+    if (editor_enabled) {
+        if (ImGui::Begin("Viewport Editor", &this->active)) {
 
-    // If you make this loop over all meshes in the future, make sure not to
-    // use the for loop style with a colon (or make sure you get a reference),
-    // otherwise it'll run the menu on a copy and not modify the data
-    mesh_view& mesh = meshes.at(selected_mesh);
-    mesh.edit_menu(alr);
+            static u16 selected_mesh = 0;
+            ImGui::InputU16("Selected Mesh", &selected_mesh);
+            selected_mesh %= meshes.size();
 
-    ImGui::End();
-}
+            // If you make this loop over all meshes in the future, make sure not to
+            // use the for loop style with a colon (or make sure you get a reference),
+            // otherwise it'll run the menu on a copy and not modify the data
+            mesh_view &mesh = meshes.at(selected_mesh);
+            mesh.edit_menu(*alr);
 
-bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept {
-    if (!active || !initialized) {
-        return false;
+        }
+        ImGui::End();
     }
 
-    // Editor window
-    this->render_editor(alr);
-
+    ImGui::Begin("Viewport");
     // Calculate delta time every time we render
     static double prev_time = glfwGetTime();
     const double cur_time = glfwGetTime();
     const double delta_time = cur_time - prev_time;
     prev_time = cur_time;
+    const float padding = ImGui::GetStyle().FramePadding.x * 2;
 
-    bool is_hovered = false;
-    ImGui::Begin("Viewport");
-    {
-        // Start rendering to the viewport
-        fbo.bind();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Get camera transform
-        mat4 pvm = {0};
-        cam.proj_view(pvm);
-
-        // Wireframe toggle
-        const float padding = ImGui::GetStyle().FramePadding.x * 2;
-        bool wireframe_changed = ImGui::Checkbox("Wireframe", &wireframe);
-        ImGui::SameLine();
-        bool cull_changed = ImGui::Checkbox("Back-face culling", &backface_cull);
-
-        ImGui::SameLine();
-        bool temp_render_texcoords = shader_flags.render_texcoords;
-        ImGui::Checkbox("Visualize UVs", &temp_render_texcoords);
-        shader_flags.render_texcoords = temp_render_texcoords;
-
-        ImGui::SameLine();
-        bool temp_render_normals = shader_flags.render_normals;
-        ImGui::Checkbox("Visualize normals", &temp_render_normals);
-        shader_flags.render_normals = temp_render_normals;
-
-        ImGui::SameLine();
-        bool temp_force_disable_normals = shader_flags.has_normal;
-        ImGui::Checkbox("Use normals", &temp_force_disable_normals);
-        shader_flags.has_normal = temp_force_disable_normals;
-
-        // Need this ridiculous workaround to make sure options don't take up
-        // like half the horizontal screen space
-        const char* options[] = {"Orbit", "Minecraft", "Fly"};
-        const char* label = "Camera Mode";
-        const float combo_width = ImGui::CalcTextSize(options[1]).x * 1.5f + padding;
-        ImGui::SetNextItemWidth(combo_width);
-        ImGui::SameLine();
-
-        camera_mode cur_mode = cam.mode;
-        ImGui::Combo(label, (int*)&cur_mode, options, CAMERA_MODE_ENUM_MAX);
-        if (cur_mode != cam.mode) {
-            // We need to use the setter instead of overwriting directly to get
-            // correct behaviour.
-            cam.set_mode(cur_mode);
-        }
-
-        ImGui::SameLine();
-        const char* move_speed_label = "Move Speed";
-        ImGui::SetNextItemWidth(ImGui::CalcTextSize(move_speed_label).x + 20.0f + padding);
-        ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 1000.0f);
-
-        // Actually apply state toggles now that the framebuffer is bound
-        if (wireframe_changed) {
-            if (wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            } else {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-        }
-        if (cull_changed) {
-            if (backface_cull) {
-                glEnable(GL_CULL_FACE);
-            } else {
-                glDisable(GL_CULL_FACE);
-            }
-        }
-
-        // Bind shader & upload camera transform
-        glUseProgram(shader);
-        glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
-        glUniform3fv(uniform_cam_dir, 1, cam.facing().raw);
-        glUniform1i(uniform_flags, *((u32*)&shader_flags));
-
-        glUniform1i(uniform_sampler_albedo, 0);
-        glUniform1i(uniform_sampler_normal, 1);
-
-        // Render all index buffers of all known meshes
-        for (const mesh_view& mesh : meshes) {
-            if (!mesh.active) {
-                continue; // This mesh is hidden
-            }
-
-            glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
-
-
-            glBindVertexArray(mesh.vao);
-            for (index_buffer idx_buf : mesh.idx_buffers) {
-                if (!idx_buf.enabled) {
-                    continue; // This index buffer is hidden
-                }
-                mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.transform);
-                glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
-
-                // We cast away const here but don't write to the buffer
-                vfile vf = vfile_open(alr.data, alr.alr_size);
-                vf.pos = idx_buf.idx_chunk_offset;
-                vfile_seek(&vf, sizeof(chunk_generic));
-                const auto header = VFILE_READ(idxbuf_header, &vf);
-                const auto mat_chunk = alr.prev_chunk_by_id(0x1, idx_buf.idx_chunk_offset);
-                chunk_0x1_entry tex_entry = {};
-                alr.tex_manager.get_material(alr, mat_chunk.offset, header.texture_idx, &tex_entry);
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, tex_entry.texture_idx));
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-                gl_obj normal_idx = tex_entry.normal_idx;
-                if (tex_entry.vertbuf_format == 0x1F) {
-                    normal_idx = tex_entry.normal_backup_idx;
-                }
-
-                shader_flags_t flags = this->shader_flags;
-                if (flags.has_normal) {
-                    flags.has_normal = (normal_idx != 0);
-                }
-                glUniform1i(uniform_flags, *((u32*)&flags));
-
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, normal_idx));
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-                const u16 draw_mode = (header.primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
-                glDrawElements(draw_mode, header.num_indices, GL_UNSIGNED_SHORT, 0);
-            }
-            // VAO keeps index buffer binding, so clear it after draw.
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glBindVertexArray(0);
-        }
-
-        ImVec2 image_size = ImVec2(fbo.width, fbo.height);
-        const float scale = ImGui::ImageScaleForWindow(fbo.width, fbo.height);
-        image_size *= scale;
-
-        ImGui::Image(fbo.color_tex, image_size);
-        is_hovered = ImGui::IsItemHovered();
-        if (ImGui::IsMouseClicked(0)) {
-            if (is_hovered) {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-                // Get non-accelerated input if possible
-                if (glfwRawMouseMotionSupported()) {
-                    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-                }
-                cursor_lock = true;
-            }
-        }
-        if (ImGui::IsMouseReleased(0)) {
-            ImGui::GetIO().WantCaptureMouse = true;
-            ImGui::GetIO().WantCaptureKeyboard = true;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
-            cursor_lock = false;
-        }
-
-        if (cursor_lock) {
-            ImGui::GetIO().WantCaptureMouse = false;
-            ImGui::GetIO().WantCaptureKeyboard = false;
-            cam.update(delta_time);
-        }
-
-        glUseProgram(0);
-        fbo.unbind(); // Reset state
+    // Wireframe toggle
+    fbo.bind();
+    if (ImGui::Checkbox("Wireframe", &wireframe)) {
+        fbo.set_wireframe(wireframe);
     }
+
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Back-face culling", &backface_cull)) {
+        fbo.set_backface_cull(backface_cull);
+    }
+
+    ImGui::SameLine();
+    bool temp_render_texcoords = shader_flags.render_texcoords;
+    ImGui::Checkbox("Visualize UVs", &temp_render_texcoords);
+    shader_flags.render_texcoords = temp_render_texcoords;
+
+    ImGui::SameLine();
+    bool temp_render_normals = shader_flags.render_normals;
+    ImGui::Checkbox("Visualize normals", &temp_render_normals);
+    shader_flags.render_normals = temp_render_normals;
+
+    ImGui::SameLine();
+    bool temp_force_disable_normals = shader_flags.has_normal;
+    ImGui::Checkbox("Use normals", &temp_force_disable_normals);
+    shader_flags.has_normal = temp_force_disable_normals;
+
+    // Need this ridiculous workaround to make sure options don't take up
+    // like half the horizontal screen space
+    const char *options[] = {"Orbit", "Minecraft", "Fly"};
+    const char *label = "Camera Mode";
+    const float combo_width = ImGui::CalcTextSize(options[1]).x * 1.5f + padding;
+    ImGui::SetNextItemWidth(combo_width);
+    ImGui::SameLine();
+
+    camera_mode cur_mode = cam.mode;
+    ImGui::Combo(label, (int *) &cur_mode, options, CAMERA_MODE_ENUM_MAX);
+    if (cur_mode != cam.mode) {
+        // We need to use the setter instead of overwriting directly to get
+        // correct behaviour.
+        cam.set_mode(cur_mode);
+    }
+
+    ImGui::SameLine();
+    const char *move_speed_label = "Move Speed";
+    ImGui::SetNextItemWidth(ImGui::CalcTextSize(move_speed_label).x + 20.0f + padding);
+    ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 1000.0f);
+
+
+    ImVec2 image_size = ImVec2(fbo.width, fbo.height);
+    const float scale = ImGui::ImageScaleForWindow(fbo.width, fbo.height);
+    image_size *= scale;
+
+    ImGui::Image(fbo.color_tex, image_size);
+    if (ImGui::IsMouseClicked(0)) {
+        if (ImGui::IsItemHovered()) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+            // Get non-accelerated input if possible
+            if (glfwRawMouseMotionSupported()) {
+                glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            }
+            cursor_lock = true;
+        }
+    }
+    if (ImGui::IsMouseReleased(0)) {
+        ImGui::GetIO().WantCaptureMouse = true;
+        ImGui::GetIO().WantCaptureKeyboard = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+        cursor_lock = false;
+    }
+
+    if (cursor_lock) {
+        ImGui::GetIO().WantCaptureMouse = false;
+        ImGui::GetIO().WantCaptureKeyboard = false;
+        cam.update(delta_time);
+    }
+
     ImGui::End();
 
-    return is_hovered;
+    fbo.unbind();
+}
+
+void viewport_t::render(GLFWwindow* window) noexcept {
+    if (!active || !initialized) {
+        return;
+    }
+
+    // Start rendering to the viewport
+    fbo.bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Get camera transform
+    mat4 pvm = {0};
+    cam.proj_view(pvm);
+
+    // Bind shader & upload camera transform
+    glUseProgram(shader);
+    glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
+    glUniform3fv(uniform_cam_dir, 1, cam.facing().raw);
+    glUniform1i(uniform_flags, *((u32*)&shader_flags));
+
+    glUniform1i(uniform_sampler_albedo, 0);
+    glUniform1i(uniform_sampler_normal, 1);
+
+    // Render all index buffers of all known meshes
+    for (const mesh_view& mesh : meshes) {
+        if (!mesh.active) {
+            continue; // This mesh is hidden
+        }
+
+        glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
+
+        glBindVertexArray(mesh.vao);
+        for (index_buffer idx_buf : mesh.idx_buffers) {
+            if (!idx_buf.enabled) {
+                continue; // This index buffer is hidden
+            }
+            mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.transform);
+            glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
+
+            // We cast away const here but don't write to the buffer
+            vfile vf = vfile_open(alr->data, alr->alr_size);
+            vf.pos = idx_buf.idx_chunk_offset;
+            vfile_seek(&vf, sizeof(chunk_generic));
+            const auto header = VFILE_READ(idxbuf_header, &vf);
+            const auto mat_chunk = alr->prev_chunk_by_id(0x1, idx_buf.idx_chunk_offset);
+            chunk_0x1_entry tex_entry = {};
+            alr->tex_manager.get_material(*alr, mat_chunk.offset, header.texture_idx, &tex_entry);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, tex_entry.texture_idx));
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+            gl_obj normal_idx = tex_entry.normal_idx;
+            if (tex_entry.vertbuf_format == 0x1F) {
+                normal_idx = tex_entry.normal_backup_idx;
+            }
+
+            shader_flags_t flags = this->shader_flags;
+            if (flags.has_normal) {
+                flags.has_normal = (normal_idx != 0);
+            }
+            glUniform1i(uniform_flags, *((u32*)&flags));
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, normal_idx));
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+            const u16 draw_mode = (header.primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
+            glDrawElements(draw_mode, header.num_indices, GL_UNSIGNED_SHORT, 0);
+        }
+        // VAO keeps index buffer binding, so clear it after draw.
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindVertexArray(0);
+    }
+
+    glUseProgram(0);
+    fbo.unbind(); // Reset state
 }
