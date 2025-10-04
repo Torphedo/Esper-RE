@@ -17,13 +17,13 @@ struct camera {
     vec2s orbit_angles = {0};
     float radius = 30.0f;
     float move_speed = 15.0f;
-    float mouse_sens = 0.015f;
+    float mouse_sens = 0.005f;
     float near_clip_plane = 0.1f;
     float far_clip_plane = 10000.0f;
 
     bool invert_mouse_x = false;
-    bool invert_mouse_y = false;
-    camera_mode mode = CAMERA_ORBIT;
+    bool invert_mouse_y = true;
+    camera_mode mode = CAMERA_POV;
 
     /// @brief Updates the camera mode.
     ///
