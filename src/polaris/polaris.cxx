@@ -92,7 +92,7 @@ void polaris::do_menu_bar() noexcept {
             }
 
             if (ImGui::BeginMenu("Windows")) {
-                ImGui::MenuItem("Viewport", nullptr, &this->viewport.enabled);
+                ImGui::MenuItem("Viewport", nullptr, &this->viewport.active);
                 ImGui::MenuItem("Viewport Editor", nullptr, &this->viewport.editor_enabled);
                 ImGui::MenuItem("Performance Timers", nullptr, &this->show_timers);
                 ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
@@ -140,29 +140,14 @@ void polaris::do_menu_bar() noexcept {
 
 void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
+    viewport.init(window);
 }
 
 void polaris::update(GLFWwindow* window) noexcept {
     const scope_timer draw_timer(timer_map, "main_draw");
 
-    // We have to wait until we know the graphics context has been created to do
-    // graphics-related initialization (since the program may run in headless
-    // mode with no graphics context).
-    if (!viewport.initialized) {
-        // Have the viewport render in full resolution, it'll be downscale when
-        // rendered as a texture by ImGui::Image
-        int width = 0;
-        int height = 0;
-        glfwGetFramebufferSize(window, &width, &height);
-        viewport.setup(width, height);
-    } else {
-        // TODO: Is there a good way to get a const& to ourselves?
-        if (!viewport.render_contents(window, alr)) {
-            // We don't want to supress input if the viewport needs it
-            this->handle_input_suppression();
-        }
-    }
-
+    viewport.update(window);
+    viewport.render_contents(window, alr);
     this->do_menu_bar();
 
     if (this->show_demo) {
@@ -182,4 +167,12 @@ void polaris::update(GLFWwindow* window) noexcept {
 
     // It's the end of the frame for us, save the current input
     prev_input = input;
+}
+
+void polaris::render(GLFWwindow* window) noexcept {
+    viewport.render(window);
+}
+
+void polaris::destroy() noexcept {
+    viewport.destroy();
 }

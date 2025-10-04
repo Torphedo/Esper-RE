@@ -51,6 +51,8 @@ struct polaris : gui_layer {
     
     /// @brief Render and update all the UI
     void update(GLFWwindow *window) noexcept override;
+    void render(GLFWwindow *window) noexcept override;
+    void destroy() noexcept override;
 
     /// @brief Increase the amount of address space reserved for the ALR data
     void expand_reservation(s64 new_size) noexcept;

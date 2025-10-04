@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 
 #include <common/int.h>
+#include <layer.hxx>
+
 #include "camera.hxx"
 #include "framebuffer.hxx"
 
@@ -11,16 +13,9 @@
 // in this file is a member of polaris.
 class polaris;
 
-/// @brief Wrapper class for a custom viewport renderable in ImGui
-/// 
-/// The basic viewport functionality is pretty simple, mostly coming from here:
-/// https://learnopengl.com/Advanced-OpenGL/Framebuffers
-struct viewport_t {
+struct viewport_t : gui_layer {
     // Whether the viewport has been set up and can be rendered to.
     bool initialized = false;
-
-    // Whether the viewport window should render
-    bool enabled = false;
 
     // Whether the viewport editor window should render.
     bool editor_enabled = false;
@@ -71,16 +66,12 @@ struct viewport_t {
     // All meshes in the scene
     std::vector<mesh_view> meshes;
 
-    // Setup requires an active OpenGL context, so the "real" ctor is .setup().
-    // All methods will be no-ops until [initialized] is set by .setup().
-    viewport_t() = default;
-
     // Set up a custom framebuffer. Returns whether it succeeded, you can also
     // check the [initialized] member.
-    bool setup(u16 new_width, u16 new_height) noexcept;
+    void init(GLFWwindow* window) noexcept override;
 
     // Destroys the underlying OpenGL resources and invalidates all copies of this instance.
-    ~viewport_t() noexcept;
+    void destroy() noexcept override;
 
     // Render a Dear ImGui editor for the viewport contents
     void render_editor(al::resource& alr) noexcept;
