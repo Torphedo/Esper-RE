@@ -77,43 +77,12 @@ void main() {
 )";
 
 bool viewport_t::setup(u16 new_width, u16 new_height) noexcept {
-    // Setup the OpenGL objects we'll need
-    glGenFramebuffers(1, &fbo);
-    if (fbo == 0) {
-        LOG_MSG(error, "Failed to setup framebuffer object for viewport!\n");
-        return false;
-    }
-    glGenTextures(1, &this->color_tex);
-    glGenTextures(1, &this->depth_tex);
-    if (color_tex == 0 || depth_tex == 0) {
-        if (color_tex != 0) {
-            glDeleteTextures(1, &this->color_tex);
-        }
-        if (depth_tex != 0) {
-            glDeleteTextures(1, &this->depth_tex);
-        }
-        glDeleteFramebuffers(1, &fbo); // Clean up
-        LOG_MSG(error, "Failed to setup framebuffer backing texture for viewport!\n");
+    initialized = fbo.setup(new_width, new_height);
+    if (!initialized) {
         return false;
     }
 
-    // Setup backing color texture for framebuffer
-    glBindTexture(GL_TEXTURE_2D, color_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, new_width, new_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    // We only really care about the downscale filter
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    // Setup backing depth texture for framebuffer
-    glBindTexture(GL_TEXTURE_2D, depth_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, new_width, new_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-
-    // Actually attach texture to the framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
-    // Enable depth testing for this framebuffer since we set up a depth buffer
-    glEnable(GL_DEPTH_TEST);
-
+    fbo.bind();
     shader = program_compile_src(vertex_shader, fragment_shader);
     if (!shader_link_check(shader)) {
         LOG_MSG(error, "Shader compilation error!\n");
@@ -127,29 +96,10 @@ bool viewport_t::setup(u16 new_width, u16 new_height) noexcept {
     uniform_sampler_albedo = glGetUniformLocation(shader, "albedo_texture");
     uniform_sampler_normal = glGetUniformLocation(shader, "normal_texture");
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        // uh oh...
-        LOG_MSG(warning, "Failed to setup a complete framebuffer!\n");
-    } else {
-        // execute victory dance
-        // This should always succeed, we don't bother printing
-        initialized = true;
-    }
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
     if (wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
-
-    // Clean up our state
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    if (initialized) {
-        width = new_width;
-        height = new_height;
-    }
+    fbo.unbind();
 
     // This defaults to false
     return initialized;
@@ -157,9 +107,7 @@ bool viewport_t::setup(u16 new_width, u16 new_height) noexcept {
 
 viewport_t::~viewport_t() noexcept {
     if (initialized) {
-        glDeleteFramebuffers(1, &fbo);
-        glDeleteTextures(1, &color_tex);
-        glDeleteTextures(1, &depth_tex);
+        fbo.destroy();
         glDeleteProgram(shader);
         for (mesh_view mesh : meshes) {
             mesh.destroy();
@@ -206,7 +154,7 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
     ImGui::Begin("Viewport");
     {
         // Start rendering to the viewport
-        bind();
+        fbo.bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Get camera transform
@@ -337,11 +285,11 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
             glBindVertexArray(0);
         }
 
-        ImVec2 image_size = ImVec2(width, height);
-        const float scale = ImGui::ImageScaleForWindow(width, height);
+        ImVec2 image_size = ImVec2(fbo.width, fbo.height);
+        const float scale = ImGui::ImageScaleForWindow(fbo.width, fbo.height);
         image_size *= scale;
 
-        ImGui::Image(color_tex, image_size);
+        ImGui::Image(fbo.color_tex, image_size);
         is_hovered = ImGui::IsItemHovered();
         if (ImGui::IsMouseClicked(0)) {
             if (is_hovered) {
@@ -369,7 +317,7 @@ bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept
         }
 
         glUseProgram(0);
-        unbind(); // Reset state
+        fbo.unbind(); // Reset state
     }
     ImGui::End();
 

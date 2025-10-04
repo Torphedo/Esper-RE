@@ -62,6 +62,7 @@ add_executable(polaris
     src/polaris/validation.cxx
     src/polaris/alr_dump.cxx
     src/polaris/alr_imgui.cxx
+    src/polaris/framebuffer.cxx
 )
 
 target_link_libraries(polaris PRIVATE coregui imgui bobtail nfd)

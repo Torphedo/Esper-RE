@@ -5,6 +5,7 @@
 
 #include <common/int.h>
 #include "camera.hxx"
+#include "framebuffer.hxx"
 
 // We need a forward declaration instead of a header include, since a class
 // in this file is a member of polaris.
@@ -24,18 +25,7 @@ struct viewport_t {
     // Whether the viewport editor window should render.
     bool editor_enabled = false;
 
-    u16 width = 0;
-    u16 height = 0;
-
-    // Custom framebuffer that can be rendered to
-    gl_obj fbo = 0;
-
-    // Color texture that backs the framebuffer. Render this to see the current
-    // contents of the framebuffer
-    gl_obj color_tex = 0;
-
-    // Depth buffer to back the framebuffer's depth test
-    gl_obj depth_tex = 0;
+    framebuffer fbo;
 
     // Shader program used to render the scene
     gl_obj shader = 0;
@@ -97,20 +87,4 @@ struct viewport_t {
 
     // Render a Dear ImGui window showing the viewport contents
     bool render_contents(GLFWwindow* window, al::resource& pol) noexcept;
-
-    // Simple wrapper methods for those who like them
-    void bind() const noexcept {
-        if (initialized) {
-            glViewport(0, 0, width, height);
-            glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
-        }
-    }
-
-    void unbind() const noexcept {
-        if (initialized) {
-            const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-            glViewport(0, 0, mode->width, mode->height);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        }
-    }
 };
