@@ -61,7 +61,7 @@ struct viewport_t : gui_layer {
         bool render_normals: 1;
         bool has_normal: 1; // Whether this object even has a normal map
         u32: 0; // This pads the bitfield to 32 bits
-    }shader_flags = {0};
+    }shader_flags = {};
 
     // All meshes in the scene
     std::vector<mesh_view> meshes;
