@@ -1,6 +1,10 @@
 #pragma once
 #include <common/int.h>
 
+/// @brief Wrapper class for rendering to a texture
+///
+/// The basic functionality is pretty simple, mostly coming from here:
+/// https://learnopengl.com/Advanced-OpenGL/Framebuffers
 struct framebuffer {
     bool initialized = false;
     u16 width = 0;

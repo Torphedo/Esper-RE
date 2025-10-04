@@ -76,17 +76,22 @@ void main() {
 }
 )";
 
-bool viewport_t::setup(u16 new_width, u16 new_height) noexcept {
-    initialized = fbo.setup(new_width, new_height);
+void viewport_t::init(GLFWwindow* window) noexcept {
+    // Have the viewport render in full resolution, it'll be downscale when
+    // rendered as a texture by ImGui::Image
+    int width = 0;
+    int height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    initialized = fbo.setup(width, height);
     if (!initialized) {
-        return false;
+        return;
     }
 
     fbo.bind();
     shader = program_compile_src(vertex_shader, fragment_shader);
     if (!shader_link_check(shader)) {
         LOG_MSG(error, "Shader compilation error!\n");
-        return false;
+        return;
     }
     uniform_pvm = glGetUniformLocation(shader, "pvm");
     uniform_uv_divisor = glGetUniformLocation(shader, "uv_divisor");
@@ -100,12 +105,9 @@ bool viewport_t::setup(u16 new_width, u16 new_height) noexcept {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
     fbo.unbind();
-
-    // This defaults to false
-    return initialized;
 }
 
-viewport_t::~viewport_t() noexcept {
+void viewport_t::destroy() noexcept {
     if (initialized) {
         fbo.destroy();
         glDeleteProgram(shader);
@@ -121,7 +123,7 @@ void viewport_t::render_editor(al::resource& alr) noexcept {
     if (!editor_enabled) {
         return;
     }
-    ImGui::Begin("Viewport Editor", &editor_enabled);
+    ImGui::Begin("Viewport Editor", &this->active);
 
     static u16 selected_mesh = 0;
     ImGui::InputU16("Selected Mesh", &selected_mesh);
@@ -137,7 +139,7 @@ void viewport_t::render_editor(al::resource& alr) noexcept {
 }
 
 bool viewport_t::render_contents(GLFWwindow* window, al::resource& alr) noexcept {
-    if (!enabled || !initialized) {
+    if (!active || !initialized) {
         return false;
     }
 
