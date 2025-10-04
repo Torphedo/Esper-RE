@@ -85,3 +85,16 @@ void framebuffer::destroy() noexcept {
     glDeleteTextures(1, &color_tex);
     glDeleteTextures(1, &depth_tex);
 }
+
+void framebuffer::set_wireframe(bool state) const noexcept {
+    const int setting = state ? GL_LINE : GL_FILL;
+    glPolygonMode(GL_FRONT_AND_BACK, setting);
+}
+
+void framebuffer::set_backface_cull(bool state) const noexcept {
+    if (state) {
+        glEnable(GL_CULL_FACE);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+}

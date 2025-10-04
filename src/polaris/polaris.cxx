@@ -86,13 +86,13 @@ void polaris::do_menu_bar() noexcept {
 void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
     viewport.init(window);
+    viewport.alr = &alr;
 }
 
 void polaris::update(GLFWwindow* window) noexcept {
     const scope_timer draw_timer(timer_map, "main_draw");
 
     viewport.update(window);
-    viewport.render_contents(window, alr);
     this->do_menu_bar();
 
     if (this->show_demo) {

@@ -29,4 +29,7 @@ struct framebuffer {
     // Simple wrapper methods for those who like them
     void bind() const noexcept;
     void unbind() const noexcept;
+
+    void set_wireframe(bool state) const noexcept;
+    void set_backface_cull(bool state) const noexcept;
 };
