@@ -4,66 +4,11 @@
 #include <imgui_internal.h>
 #include "imgui_utils.hxx"
 #include <nfd.h> // Cross-platform native file dialog
-#include <cglm/struct.h>
 
 #include <common/int.h>
 
 #include "polaris.hxx"
 #include "scope_timer.hxx"
-
-void polaris::handle_input_suppression() noexcept {
-    if (ImGui::GetIO().WantCaptureMouse) {
-        // ImGui wants control of the mouse (it's probably over a window),
-        // so we'll suppress the real mouse state this frame.
-        input.cursor_x = prev_input.cursor_x;
-        input.cursor_y = prev_input.cursor_y;
-        input.scroll_x = prev_input.scroll_x;
-        input.scroll_y = prev_input.scroll_y;
-        input.click_left = prev_input.click_left;
-        input.click_right = prev_input.click_right;
-        input.click_middle = prev_input.click_middle;
-        input.mouse_button_4 = prev_input.mouse_button_4;
-        input.mouse_button_5 = prev_input.mouse_button_5;
-    }
-
-    if (ImGui::GetIO().WantCaptureKeyboard) {
-        // Save non-keyboard input
-        const vec2s cursor = vec2s{input.cursor_x, input.cursor_y};
-        const vec2s scroll = vec2s{input.scroll_x, input.scroll_y};
-        const bool click_left = input.click_left;
-        const bool click_right = input.click_right;
-        const bool click_middle = input.click_middle;
-        const bool mouse_4 = input.mouse_button_4;
-        const bool mouse_5 = input.mouse_button_5;
-
-        const vec2s LS = vec2s{input.LS_x, input.LS_y};
-        const vec2s RS = vec2s{input.RS_x, input.RS_y};
-        const float LT = input.LT;
-        const float RT = input.RT;
-        const gamepad_t gp = input.gp;
-
-        // Copy over all keyboard input
-        input = prev_input;
-
-        // Restore non-keyboard input
-        input.cursor_x = cursor.x;
-        input.cursor_y = cursor.y;
-        input.scroll_x = scroll.x;
-        input.scroll_y = scroll.y;
-        input.LS_x = LS.x;
-        input.LS_y = LS.y;
-        input.RS_x = RS.x;
-        input.RS_y = RS.y;
-        input.LT = LT;
-        input.RT = RT;
-        input.gp = gp;
-        input.click_left = click_left;
-        input.click_right = click_right;
-        input.click_middle = click_middle;
-        input.mouse_button_4 = mouse_4;
-        input.mouse_button_5 = mouse_5;
-    }
-}
 
 void polaris::do_menu_bar() noexcept {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -164,9 +109,6 @@ void polaris::update(GLFWwindow* window) noexcept {
 
     this->alr.draw(viewport);
     this->map.do_gui();
-
-    // It's the end of the frame for us, save the current input
-    prev_input = input;
 }
 
 void polaris::render(GLFWwindow* window) noexcept {

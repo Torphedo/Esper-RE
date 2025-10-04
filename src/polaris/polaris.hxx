@@ -39,12 +39,6 @@ struct polaris : gui_layer {
     // "mutable" allows const methods to modify this
     mutable std::unordered_map<const char*, double> timer_map;
 
-    // Input state from the previous frame
-    input_internal prev_input = {};
-
-    /// @brief Hide input from the rest of the program when ImGui is using it.
-    void handle_input_suppression() noexcept;
-
     void do_menu_bar() noexcept;
 
     void init(GLFWwindow* window) noexcept override;
@@ -53,7 +47,4 @@ struct polaris : gui_layer {
     void update(GLFWwindow *window) noexcept override;
     void render(GLFWwindow *window) noexcept override;
     void destroy() noexcept override;
-
-    /// @brief Increase the amount of address space reserved for the ALR data
-    void expand_reservation(s64 new_size) noexcept;
 };
