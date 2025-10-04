@@ -145,9 +145,6 @@ void polaris::init(GLFWwindow* window) noexcept {
 void polaris::update(GLFWwindow* window) noexcept {
     const scope_timer draw_timer(timer_map, "main_draw");
 
-    // Make the entire window a giant docking space
-    ImGui::DockSpaceOverViewport();
-
     // We have to wait until we know the graphics context has been created to do
     // graphics-related initialization (since the program may run in headless
     // mode with no graphics context).
