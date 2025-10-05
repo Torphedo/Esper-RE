@@ -12,23 +12,15 @@
 
 #include "alr_texture.hxx"
 
-// State for 0x1 (index buffer) window
+// State for 0x1 (material) window
 struct window_state_0x1 {
     u32 selected_entry = 0;
-};
-
-// State for 0x2 (index buffer) window
-struct window_state_0x2 {
 };
 
 // State for 0x3 (armature) window
 struct window_state_0x3 {
     s32 selected_joint = 0;
     bool slider = false;
-};
-
-// State for 0x5 (animation) window
-struct window_state_0x5 {
 };
 
 // State for 0x10 chunk window
@@ -80,9 +72,7 @@ public:
         // TODO: See if we can use std::variant or inheritance to make it harder to call functions on the wrong chunk type
         union {
             window_state_0x1 window_0x1;
-            window_state_0x2 window_0x2;
             window_state_0x3 window_0x3;
-            window_state_0x5 window_0x5;
             window_state_0x10 window_0x10;
             window_state_0x15 window_0x15;
             window_state_0x16 window_0x16;
@@ -100,9 +90,6 @@ public:
 
         /// The location of this chunk in the ALR file
         uintptr_t offset = 0;
-
-        /// A chunk is "orphaned" if it can't be found using the offset table
-        bool orphan = false;
 
         /// Whether to show this chunk's editing window
         bool active = false;
