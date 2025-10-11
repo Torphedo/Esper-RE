@@ -107,8 +107,19 @@ void polaris::update(GLFWwindow* window) noexcept {
         ImGui::End();
     }
 
-    this->alr.draw(viewport);
-    this->map.do_gui();
+    ImGui::Begin("Files");
+    ImGui::BeginChild("File Tree", ImVec2(ImGui::GetContentRegionAvail().x * 0.3f, ImGui::GetContentRegionAvail().y));
+    this->alr.draw_file();
+
+    // this->map.do_gui();
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginChild("Content View");
+    alr.draw();
+    ImGui::EndChild();
+
+    ImGui::End();
 }
 
 void polaris::render(GLFWwindow* window) noexcept {
