@@ -32,6 +32,7 @@ public:
 
     enum alr_data_type {
         TYPE_TEXTURE,
+        TYPE_ATLAS,
         TYPE_MESH,
         TYPE_ANIMATION,
     };
@@ -48,8 +49,15 @@ public:
     std::vector<chunk> chunks;
 
     texture_manager tex_manager;
-    u32 selected_tex = 0;
-    u32 selected_mesh = 0;
+    union {
+        u32 texture;
+        u32 mesh;
+        struct {
+            u16 atlas;
+            u16 atlas_entry;
+        };
+    }selection;
+
     alr_data_type active_type = TYPE_TEXTURE;
 
     bool tex_auto_scale = false;

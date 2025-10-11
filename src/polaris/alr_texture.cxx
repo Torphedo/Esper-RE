@@ -217,7 +217,7 @@ gl_obj texture_manager::get(al::resource& alr, u32 idx) noexcept {
     // Use atlas metadata if reasonable
     if (atlases) {
         const u32 too_small = 0;
-        const u32 too_big = 2048;
+        const u32 too_big = 8192;
         const u32 height = atlases[idx].height;
         const u32 width = atlases[idx].width;
         if (too_small < height && height < too_big) {
