@@ -49,14 +49,15 @@ public:
     std::vector<chunk> chunks;
 
     texture_manager tex_manager;
-    union {
-        u32 texture;
-        u32 mesh;
-        struct {
-            u16 atlas;
-            u16 atlas_entry;
-        };
-    }selection;
+
+    u16 selected_texture = 0;
+
+    // The selected texture atlas in an 0x10 chunk
+    u16 selected_atlas = 0;
+    u16 selected_atlas_entry = 0;
+
+    u16 selected_vert_chunk_offset = 0;
+    u16 selected_vertbuf = 0;
 
     alr_data_type active_type = TYPE_TEXTURE;
 

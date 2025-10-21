@@ -177,7 +177,7 @@ void resource::draw_file() noexcept {
             std::string label;
             str_format_append(label, "%s##%d", name.data, i);
             if (ImGui::Selectable(label.c_str())) {
-                selection.texture = i;
+                selected_texture = i;
                 active_type = TYPE_TEXTURE;
             }
         }
@@ -208,8 +208,8 @@ void resource::draw_file() noexcept {
                             continue;
                         }
                         if (ImGui::Selectable(entry.filename)) {
-                            selection.atlas = atlas;
-                            selection.atlas_entry = tex;
+                            selected_atlas = atlas;
+                            selected_atlas_entry = tex;
                             active_type = TYPE_ATLAS;
                         }
                     }
@@ -220,18 +220,23 @@ void resource::draw_file() noexcept {
 
     if (ImGui::CollapsingHeader("Models")) {
         const ImGui::ScopedIndent indent(ImGui::CharWidth(2));
-        const chunk vert_chunk = this->first_chunk_by_id(0x16);
+        chunk vert_chunk = this->first_chunk_by_id(0x16);
         vfile mesh_vf = vf_from_chunk(vert_chunk, true);
         const u32 num_entries = VFILE_READ(u32, &mesh_vf);
         const vertbuf_entry* entries = (vertbuf_entry*)vfile_cur(mesh_vf);
 
-        for (u32 i = 0; i < num_entries; i++) {
-            std::string entry_label;
-            str_format_append(entry_label, "%d##%p", i, entries);
-            if (ImGui::Selectable(entry_label.c_str())) {
-                selection.mesh = i;
-                active_type = TYPE_MESH;
+        while (vert_chunk.size > 0) {
+            for (u32 i = 0; i < num_entries; i++) {
+                std::string entry_label;
+                str_format_append(entry_label, "%X:%X##%p", vert_chunk.offset, i, entries);
+                if (ImGui::Selectable(entry_label.c_str())) {
+                    selected_vertbuf = i;
+                    selected_vert_chunk_offset = vert_chunk.offset;
+                    active_type = TYPE_MESH;
+                }
             }
+
+            vert_chunk = first_chunk_in_range(0x16, vert_chunk.offset + 1, alr_size);
         }
     }
 }
@@ -240,7 +245,7 @@ void resource::draw() noexcept {
     case TYPE_TEXTURE: {
         ImGui::BeginTabBar("Texture content tabs");
         if (ImGui::BeginTabItem("Texture View")) {
-            gl_obj texture = tex_manager.get(*this, selection.texture);
+            gl_obj texture = tex_manager.get(*this, selected_texture);
             ImGui::draw_image(texture, 512, 512, &tex_auto_scale, &tex_manual_scale, "Active Texture");
             ImGui::EndTabItem();
         }
@@ -250,10 +255,10 @@ void resource::draw() noexcept {
 
             const u32 num_textures = VFILE_READ(u32, &tex_vf);
             auto* entries = (texture_entry*)vfile_cur(tex_vf);
-            if (selection.texture >= num_textures) {
-                ImGui::Text("Selected texture %d is out of bounds (there are only %d entries)", selection.texture, num_textures);
+            if (selected_texture >= num_textures) {
+                ImGui::Text("Selected texture %d is out of bounds (there are only %d entries)", selected_texture, num_textures);
             } else {
-                al::edit_texture_entry(entries[selection.texture]);
+                al::edit_texture_entry(entries[selected_texture]);
             }
             ImGui::EndTabItem();
         }
@@ -278,29 +283,35 @@ void resource::draw() noexcept {
             auto* tex_entries = (atlas_tex_entry*)vfile_cur(vf);
 
             bool in_bounds = true;
-            if (selection.atlas >= header.atlas_count) {
-                ImGui::Text("Atlas %d is out of bounds (max = %d)", selection.atlas, header.atlas_count);
+            if (selected_atlas >= header.atlas_count) {
+                ImGui::Text("Atlas %d is out of bounds (max = %d)", selected_atlas, header.atlas_count);
                 in_bounds = false;
             }
 
-            if (selection.atlas_entry >= header.texture_count) {
-                ImGui::Text("Atlas entry %d is out of bounds (max = %d)", selection.atlas_entry, header.texture_count);
+            if (selected_atlas_entry >= header.texture_count) {
+                ImGui::Text("Atlas entry %d is out of bounds (max = %d)", selected_atlas_entry, header.texture_count);
                 in_bounds = false;
             }
 
             if (in_bounds) {
-                al::edit_atlas_entry(atlas_entries[selection.atlas], atlas_names[selection.atlas]);
+                al::edit_atlas_entry(atlas_entries[selected_atlas], atlas_names[selected_atlas]);
                 ImGui::Spacing();
                 ImGui::Separator();
                 ImGui::Spacing();
-                al::edit_atlas_texture(tex_entries[selection.atlas_entry]);
+                al::edit_atlas_texture(tex_entries[selected_atlas_entry]);
             }
         }
         break;
     }
-    case TYPE_MESH:
-        ImGui::Text("Unimplemented mesh content view");
+    case TYPE_MESH: {
+        const chunk c = first_chunk_in_range(0x16, selected_vert_chunk_offset, alr_size);
+        vfile vf = vf_from_chunk(c, true);
+        const u32 num_entries = VFILE_READ(u32, &vf);
+        auto* entries = (vertbuf_entry*)vfile_cur(vf);
+        al::edit_vertbuf_entry(entries[selected_vertbuf]);
+
         break;
+    }
     }
 }
 
