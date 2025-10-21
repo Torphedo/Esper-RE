@@ -275,13 +275,14 @@ void resource::draw() noexcept {
             auto* atlas_entries = (atlas_entry*)vfile_cur(vf);
             vfile_seek(&vf, sizeof(*atlas_entries) * header.atlas_count);
 
-            auto* tex_entries = (texture_entry*)vfile_cur(vf);
+            auto* tex_entries = (atlas_tex_entry*)vfile_cur(vf);
 
             bool in_bounds = true;
             if (selection.atlas >= header.atlas_count) {
                 ImGui::Text("Atlas %d is out of bounds (max = %d)", selection.atlas, header.atlas_count);
                 in_bounds = false;
             }
+
             if (selection.atlas_entry >= header.texture_count) {
                 ImGui::Text("Atlas entry %d is out of bounds (max = %d)", selection.atlas_entry, header.texture_count);
                 in_bounds = false;
@@ -289,6 +290,10 @@ void resource::draw() noexcept {
 
             if (in_bounds) {
                 al::edit_atlas_entry(atlas_entries[selection.atlas], atlas_names[selection.atlas]);
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                al::edit_atlas_texture(tex_entries[selection.atlas_entry]);
             }
         }
         break;
