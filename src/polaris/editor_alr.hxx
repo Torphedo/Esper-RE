@@ -101,7 +101,7 @@ public:
 
         // Dedicated editing windows for each chunk type
         void chunk_0x1(const al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x2(const al::resource& alr, viewport_t& viewport) noexcept;
+        void chunk_0x2(al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x3(const al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x5(const al::resource& alr, viewport_t& viewport) noexcept;
         void chunk_0x7(const al::resource& alr, viewport_t& viewport) noexcept;

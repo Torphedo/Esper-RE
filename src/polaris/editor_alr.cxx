@@ -61,8 +61,12 @@ void resource::chunk::chunk_0x1(const resource& alr, viewport_t& viewport) noexc
     hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)alr.data);
 }
 
-void resource::chunk::chunk_0x2(const resource& alr, viewport_t& viewport) noexcept {
+void resource::chunk::chunk_0x2(resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x2);
+
+    if (ImGui::Button("Shift From Here")) {
+        alr.shift_chunks(this->offset, 0x100);
+    }
 
     if (ImGui::Button("Export to OBJ")) {
         // Display the file picker
