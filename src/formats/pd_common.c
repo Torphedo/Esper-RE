@@ -49,7 +49,7 @@ void decode_single32(char* output, u32 encoded_val) {
 }
 
 decoded_text decode_double(u32 text1, u32 text2) {
-    decoded_text name = {};
+    decoded_text name = {0};
     decode_single32(name.data, text1);
     decode_single32(&name.data[6], text2);
 

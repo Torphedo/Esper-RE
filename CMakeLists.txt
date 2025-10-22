@@ -14,6 +14,7 @@ include_directories(
     ext/glad/include
     ext/cglm/include
     ext/imgui
+    lib/coregui/lib/glfw/include
     ext/bobtail
     ${Esper-RE_SOURCE_DIR}/src
 )

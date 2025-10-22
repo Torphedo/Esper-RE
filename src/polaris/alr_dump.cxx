@@ -331,10 +331,10 @@ void fprintf_anim_data_start(FILE* f, anim_key_type type, char axis, const char*
     switch (axis) {
     case 'Z':
         attr_idx++;
-        fallthrough;
+        [[fallthrough]];
     case 'Y':
         attr_idx++;
-        fallthrough;
+        [[fallthrough]];
     case 'X':
         attr_idx++;
     default:

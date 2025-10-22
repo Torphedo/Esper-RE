@@ -21,7 +21,7 @@ struct index_buffer {
 
 // We need a forward declaration, since a class in this file is a member of polaris.
 namespace al {
-    struct resource;
+    class resource;
 }
 
 struct mesh_view {
