@@ -955,7 +955,9 @@ bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
     vfile vf = vf_from_chunk(header);
     auto* layout = (chunk_layout*)vfile_cur(vf);
     for (u32 i = 0; i < layout->offset_array_size; i++) {
-        layout->offsets[i] += shift_amount;
+        if (layout->offsets[i] > begin_offset) {
+            layout->offsets[i] += shift_amount;
+        }
     }
 
     return true;
