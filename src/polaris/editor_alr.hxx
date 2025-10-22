@@ -7,6 +7,7 @@
 
 #include <common/image.h>
 #include <common/int.h>
+#include <common/vfile.h>
 
 #include <formats/alr.h>
 
@@ -171,10 +172,20 @@ public:
     [[nodiscard]] chunk prev_chunk_by_id(u32 id, u32 high, u32 low = 0) const noexcept;
     [[nodiscard]] chunk first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept;
 
+    /// @brief Shift all chunks at/after the starting offset forward.
+    ///
+    /// This also fixes some offsets in the header to account for the change.
+    /// This function will fail if the resource buffer gets in the way.
+    bool shift_chunks(u32 begin_offset, s32 shift_amount) noexcept;
+
     void draw(viewport_t& viewport) noexcept;
 
     u8* resource_buffer() const noexcept {
         return this->data + this->resbuf_offset;
+    }
+
+    vfile vf_from_chunk(chunk c) {
+        return vfile_open(this->data + c.offset, c.size);
     }
 
     void expand_reservation(s64 new_size) noexcept;

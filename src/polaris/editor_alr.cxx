@@ -660,14 +660,12 @@ resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     // this switch statement.
     switch (id) {
         case 0x2:
-            window_0x2 = {};
             break;
         case 0x3:
             window_0x3 = {};
             hex_edit.PreviewDataType = ImGuiDataType_Float;
             break;
         case 0x5:
-            window_0x5 = {};
             hex_edit.PreviewDataType = ImGuiDataType_Float;
             hex_chunk.PreviewDataType = ImGuiDataType_Float;
             break;
@@ -909,6 +907,54 @@ resource::chunk resource::first_chunk_in_range(u32 id, u32 low, u32 high) const 
     }
 
     return chunk(0, 0, 0); // Nothin...
+}
+
+bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
+    const chunk last_chunk = chunks.back();
+    const u32 end_of_chunks = last_chunk.offset + last_chunk.size;
+    if (end_of_chunks + shift_amount >= resbuf_offset) {
+        LOG_MSG(error, "Shifting chunks by %d would hit the resource buffer. This case is unimplemented.\n", shift_amount);
+        return false;
+    }
+
+    if (last_chunk.offset < begin_offset) {
+        LOG_MSG(error, "Your starting offset %u is past the last chunk (offset %u)\n", begin_offset, last_chunk.offset);
+        return false;
+    }
+    const u32 region_size = end_of_chunks - begin_offset;
+
+    // Round beginning offset up to the next chunk in case it's off
+    chunk last_before_shift = chunks[0];
+    for (const auto& c : chunks) {
+        if (c.offset < begin_offset) {
+            last_before_shift = c;
+            continue;
+        }
+        begin_offset = c.offset;
+        break;
+    }
+
+    {
+        vfile temp = vf_from_chunk(last_before_shift);
+        auto* header = (chunk_generic*)vfile_cur(temp);
+        if (shift_amount > 0) {
+            header->size += shift_amount;
+        }
+    }
+
+    const void* source = data + begin_offset;
+    void* target = (void*)(s64(source) + shift_amount);
+    memmove(target, source, region_size);
+
+    chunk header = chunks[0];
+    assert(header.id == 0x11);
+    vfile vf = vf_from_chunk(header);
+    auto* layout = (chunk_layout*)vfile_cur(vf);
+    for (u32 i = 0; i < layout->offset_array_size; i++) {
+        layout->offsets[i] += shift_amount;
+    }
+
+    return true;
 }
 
 void resource::draw(viewport_t& viewport) noexcept {
