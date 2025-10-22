@@ -101,6 +101,17 @@ bool mesh_view::update_vertex_buf(const u8* buf, u32 size) const noexcept {
     return true;
 }
 
+bool mesh_view::add_alr_vertbuf(const vertbuf_entry& entry, const u8* resbuf) noexcept {
+    const u8* vertbuf = resbuf + entry.data_ptr;
+    bool res = update_vertex_buf(vertbuf, entry.vertex_size * entry.vertex_count);
+    if (!res) {
+        return res;
+    }
+
+    memcpy(attributes, alr_vert_formats[entry.format].attributes, sizeof(attributes));
+    return res;
+}
+
 bool mesh_view::add_index_buf(const u8* alr_data, u32 alr_size, index_buffer buf) noexcept {
     if (!initialized) {
         return false;

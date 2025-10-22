@@ -52,6 +52,8 @@ struct mesh_view {
     /// @param size The size of the vertex buffer
     bool update_vertex_buf(const u8* buf, u32 size) const noexcept;
 
+    bool add_alr_vertbuf(const vertbuf_entry& entry, const u8* resbuf) noexcept;
+
     /// @brief Upload an index buffer to the GPU for this mesh
     ///
     /// @param alr_data Get from al::resource.data

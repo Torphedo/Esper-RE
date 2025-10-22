@@ -308,7 +308,14 @@ void resource::draw() noexcept {
         vfile vf = vf_from_chunk(c, true);
         const u32 num_entries = VFILE_READ(u32, &vf);
         auto* entries = (vertbuf_entry*)vfile_cur(vf);
-        al::edit_vertbuf_entry(entries[selected_vertbuf]);
+        vertbuf_entry& entry = entries[selected_vertbuf];
+
+        al::edit_vertbuf_entry(entry);
+
+        if (ImGui::Button("Send to Viewport")) {
+            mesh_view mesh;
+            mesh.add_alr_vertbuf(entry, resource_buffer());
+        }
 
         break;
     }

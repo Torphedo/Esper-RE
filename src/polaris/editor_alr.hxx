@@ -7,11 +7,11 @@
 
 #include <common/image.h>
 #include <common/int.h>
+#include <common/vfile.h>
 
 #include <formats/alr.h>
 
 #include "alr_texture.hxx"
-#include "common/vfile.h"
 
 namespace al {
 
