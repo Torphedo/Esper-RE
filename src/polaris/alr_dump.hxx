@@ -5,6 +5,7 @@
 #include <cglm/struct.h>
 
 #include <common/vfile.h>
+#include <common/file.h>
 #include <formats/alr.h>
 #include "editor_alr.hxx"
 
@@ -32,6 +33,31 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 void dump_vertex_buf(const al::resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
 
 bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, const char* bone_name);
-// bool dump_animation_maya(const al::resource& alr, al::resource::chunk anim_chunk, const char* outpath, const char* bone_override);
+
+// PINT == Polaris INTermediate file
+struct pint_header {
+    enum class content_type : u8 {
+        NONE,
+        // The file has a vertex buffer entry and a vertex buffer
+        VERTEX_BUFFER,
+        // The file just has ALR chunks in it
+        CHUNKS,
+    };
+
+    u32 magic = MAGIC('P', 'I', 'N', 'T');
+    u16 version = 1;
+    content_type type = content_type::NONE;
+    u8 reserved[24] = {};
+};
+static_assert(sizeof(pint_header) == 0x20);
+
+struct pint_content {
+    struct vertex_buffer {
+        vertbuf_entry entry = {};
+        u32 buf_size = 0;
+        u8 vertex_buf[];
+    };
+    static_assert(sizeof(vertex_buffer) == 0x20);
+};
 
 } // namespace al
