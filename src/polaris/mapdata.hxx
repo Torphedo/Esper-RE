@@ -11,6 +11,7 @@ struct mapdata : public fileclass {
 public:
     MemoryEditor hex_edit;
     u32 selected_chunk = 0;
+    const char* filepath = nullptr;
 
     bool initialized = false;
 

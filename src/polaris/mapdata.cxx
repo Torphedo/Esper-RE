@@ -11,13 +11,13 @@
 bool mapdata::load_verify() const noexcept {
     const u32 magic = *(u32*)data;
     if (magic != st00_magic) {
-        LOG_MSG(error, "\"%s\" doesn't seem to be a .dat map file (invalid magic 0x%x)\n", magic);
+        LOG_MSG(error, "\"%s\" doesn't seem to be a .dat map file (invalid magic 0x%x)\n", filepath, magic);
         return false;
     }
     return true;
 }
 
-mapdata::mapdata(const char* filepath) {
+mapdata::mapdata(const char* filepath) : filepath(filepath) {
     initialized = load(filepath);
 }
 
