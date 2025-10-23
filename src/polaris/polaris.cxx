@@ -9,6 +9,7 @@
 
 #include "polaris.hxx"
 #include "scope_timer.hxx"
+#include "mkak.hxx"
 
 void polaris::do_menu_bar() noexcept {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -20,6 +21,7 @@ void polaris::do_menu_bar() noexcept {
     bool save_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_S, false);
 
     bool load_layout = false;
+    bool extract_mkak = false;
 
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
@@ -27,6 +29,7 @@ void polaris::do_menu_bar() noexcept {
                 load_alr |= ImGui::MenuItem("Load ALR", "Ctrl-L");
                 save_alr |= ImGui::MenuItem("Save ALR", "Ctrl-S");
                 load_layout |= ImGui::MenuItem("Load .dat");
+                extract_mkak |= ImGui::MenuItem("Extract .mk / .ak");
                 ImGui::EndMenu();
             }
 
@@ -80,6 +83,19 @@ void polaris::do_menu_bar() noexcept {
             this->map = mapdata(path);
         }
         free(path);
+    }
+
+    if (extract_mkak) {
+        nfdu8filteritem_t filters[] = { { "More Kamera", "mk"}, { "Also Kits", "ak"} };
+        char* path = nullptr;
+        nfdresult_t result_in = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        char* out_dir = nullptr;
+        nfdresult_t result_out = NFD_PickFolderU8(&out_dir, nullptr);
+        if (result_in == NFD_OKAY && result_out == NFD_OKAY && path && out_dir) {
+            mkak::dump_to_folder(path, out_dir);
+        }
+        free(path);
+        free(out_dir);
     }
 }
 
