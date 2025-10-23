@@ -7,6 +7,29 @@
 #include <cstdio>
 
 namespace mkak {
+
+std::vector<std::string> list_files(const char* path) {
+    std::vector<std::string> output;
+    u32 size = file_size(path);
+    u8* data = file_load(path);
+    if (!data) {
+        LOG_MSG(error, "Failed to load input file '%s'\n", path);
+        return output;
+    }
+
+    vfile vf = vfile_open(data, size);
+    auto* header = (ak_header*)vfile_cur(vf);
+    vfile_seek(&vf, sizeof(ak_header) + (header->file_count * 4));
+
+    for (u32 i = 0; i < header->file_count; i++) {
+        const char* filename = (const char*) vfile_cur(vf);
+        vfile_seek(&vf, strlen(filename) + 1);
+        output.emplace_back(filename);
+    }
+
+    return output;
+}
+
 bool dump_to_folder(const char* path, const char* output_dir) {
     const bool output_exists = file_exists(output_dir);
 
