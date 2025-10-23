@@ -86,7 +86,7 @@ void polaris::do_menu_bar() noexcept {
     }
 
     if (extract_mkak) {
-        nfdu8filteritem_t filters[] = { { "More Kamera", "mk"}, { "Also Kits", "ak"} };
+        nfdu8filteritem_t filters[] = { { "Phantom Dust MK archive", "mk"}, { "Phantom Dust AK archive", "ak"} };
         char* path = nullptr;
         nfdresult_t result_in = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         char* out_dir = nullptr;
