@@ -46,6 +46,19 @@ typedef struct {
 // Flexible array member isn't counted in size
 static_assert(sizeof(cp00_t) == 0x8, "Wrong CP00 header size!");
 
+typedef struct {
+    u16 unk[4];
+    vec3f pos;
+}oc00_entry;
+static_assert(sizeof(oc00_entry) == 0x14, "Wrong OC00 entry size!");
+
+typedef struct {
+    u32 magic; // 'OC00'
+    u8 unk_bytes[0xC];
+    float unk_pos[10];
+    u16 unk2[4];
+}oc00_t;
+
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
 // in that file. In st00, they're set to 0 instead.
 // Some offsets point to things that only exist in st09 area files, and are set
