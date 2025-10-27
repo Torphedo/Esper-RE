@@ -54,8 +54,8 @@ void mapdata::do_gui() noexcept {
             st00_t header = VFILE_READ(st00_t, &vf);
 
             ImGui::BeginChildFitContent("Chunk Selection", 0.3f);
-            for (s32 i = 0; i < ARRAY_SIZE(header.unk7); i++) {
-                const s32 offset = header.unk7[i];
+            for (s32 i = 0; i < ARRAY_SIZE(header.unk9); i++) {
+                const s32 offset = header.unk9[i];
                 if (offset <= 0 && offset >= this->size) {
                     continue;
                 }
@@ -71,7 +71,7 @@ void mapdata::do_gui() noexcept {
             ImGui::SameLine();
 
             ImGui::BeginChildFitContent("Chunk Hex Editor", 0.3f);
-            const s32 selected_offset = header.unk7[selected_chunk];
+            const s32 selected_offset = header.unk9[selected_chunk];
             hex_edit.DrawContents(data + selected_offset, 0x100);
             ImGui::EndChild();
             ImGui::EndTabItem();
