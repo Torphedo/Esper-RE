@@ -30,7 +30,7 @@ void fileclass::unload() noexcept {
 }
 
 bool fileclass::save(const char* path) const noexcept {
-    FILE* f = fopen(path, "rb");
+    FILE* f = fopen(path, "wb");
     if (!f) {
         LOG_MSG(error, "Couldn't open new file \"%s\"", path);
         return false;

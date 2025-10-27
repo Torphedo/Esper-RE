@@ -21,6 +21,7 @@ void polaris::do_menu_bar() noexcept {
     bool save_alr = ctrl_pressed && ImGui::IsKeyPressed(ImGuiKey_S, false);
 
     bool load_layout = false;
+    bool save_layout = false;
     bool extract_mkak = false;
 
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
@@ -29,6 +30,7 @@ void polaris::do_menu_bar() noexcept {
                 load_alr |= ImGui::MenuItem("Load ALR", "Ctrl-L");
                 save_alr |= ImGui::MenuItem("Save ALR", "Ctrl-S");
                 load_layout |= ImGui::MenuItem("Load .dat");
+                save_layout |= ImGui::MenuItem("Save .dat");
                 extract_mkak |= ImGui::MenuItem("Extract .mk / .ak");
                 ImGui::EndMenu();
             }
@@ -81,6 +83,17 @@ void polaris::do_menu_bar() noexcept {
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
             this->map = mapdata(path);
+        }
+        free(path);
+    }
+
+    if (save_layout) {
+        // Display the file picker and load if a file is picked
+        nfdu8filteritem_t filters[] = { { "AL Layout", "dat"} };
+        char* path = nullptr;
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+        if (result == NFD_OKAY && path != nullptr) {
+            map.save(path);
         }
         free(path);
     }
