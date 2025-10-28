@@ -21,6 +21,22 @@ mapdata::mapdata(const char* filepath) : filepath(filepath) {
     initialized = load(filepath);
 }
 
+const char* mapdata::name_at_idx(u32 idx) const noexcept {
+    const auto* header = (st00_t*)data;
+    if (idx >= header->nm00_count) {
+        return "";
+    }
+
+    u32 i = 0;
+    const char* txt = (const char*)(data + header->nm00_offset);
+    while (idx > i) {
+        txt += strlen(txt) + 1;
+        i++;
+    }
+
+    return txt;
+}
+
 // Move assignment operator (when assigning with a temp value)
 mapdata& mapdata::operator=(mapdata&& other) {
     if (this != &other) {
@@ -37,13 +53,25 @@ mapdata::~mapdata() {
     initialized = false;
 }
 
-void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) {
+void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     ImGui::ScopedIndent indent(ImGui::CharWidth(2));
     std::string label;
-    str_format_append(label, "Object ID##%d", idx);
+    str_format_append(label, "Object Type##%d", idx);
 
-    ImGui::SetNextItemWidth(ImGui::CharWidth(10));
-    ImGui::InputS32(label.c_str(), &entry->object_id);
+    std::string cur_name = name_at_idx(entry->object_id);
+    if (cur_name.empty()) {
+        str_format_append(cur_name, "missing name [ID 0x%X]", entry->object_id);
+    }
+
+    if (ImGui::BeginCombo(label.c_str(), cur_name.c_str())) {
+        st00_t* header = get_header();
+        for (s32 i = 0; i < header->nm00_count; i++) {
+            if (ImGui::Selectable(name_at_idx(i))) {
+                entry->object_id = i;
+            }
+        }
+        ImGui::EndCombo();
+    }
 
     // Don't allow invalid IDs, wrap around both ways
     if (entry->object_id < 0) {

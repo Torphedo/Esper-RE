@@ -14,10 +14,6 @@ public:
     bool initialized = false;
 
     MemoryEditor hex_edit;
-    u32 selected_ps00 = 0;
-    u32 selected_ps01 = 0;
-    s32 selected_offset = -1;
-    u64 selected_size = 0;
 
     // fileclass overrides
     virtual bool load_verify() const noexcept override;
@@ -27,9 +23,11 @@ public:
     mapdata& operator=(mapdata&& other);
     ~mapdata();
 
+    const char* name_at_idx(u32 idx) const noexcept;
     st00_t* get_header() {
         return (st00_t*)data;
     }
+    void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept;
 
     void draw_custom_editor();
 
