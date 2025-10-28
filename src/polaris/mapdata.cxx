@@ -37,13 +37,19 @@ mapdata::~mapdata() {
     initialized = false;
 }
 
-void edit_ps01_entry(u32 idx, ps01_entry* entry) {
+void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) {
     ImGui::ScopedIndent indent(ImGui::CharWidth(2));
     std::string label;
     str_format_append(label, "Object ID##%d", idx);
 
     ImGui::SetNextItemWidth(ImGui::CharWidth(10));
-    ImGui::InputU32(label.c_str(), &entry->object_id);
+    ImGui::InputS32(label.c_str(), &entry->object_id);
+
+    // Don't allow invalid IDs, wrap around both ways
+    if (entry->object_id < 0) {
+        entry->object_id += max_id;
+    }
+    entry->object_id %= max_id;
 
     label = "";
     str_format_append(label, "Position##%d", idx);
@@ -68,7 +74,7 @@ void mapdata::draw_custom_editor() {
         u32 offset = header->chunk_size;
         for (u32 i = 0; i < header->ps00_count; i++) {
             ImGui::Text("@ 0x%X: ", offset);
-            edit_ps01_entry(i, &ps00_entries[i]);
+            edit_ps01_entry(i, &ps00_entries[i], header->nm00_count);
             ImGui::Spacing();
             offset += sizeof(*ps00_entries);
         }
@@ -79,9 +85,20 @@ void mapdata::draw_custom_editor() {
         u32 offset = header->ps01_offset;
         for (u32 i = 0; i < header->ps01_count; i++) {
             ImGui::Text("@ 0x%X: ", offset);
-            edit_ps01_entry(i, &ps01_entries[i]);
+            edit_ps01_entry(i, &ps01_entries[i], header->nm00_count);
             ImGui::Spacing();
             offset += sizeof(*ps01_entries);
+        }
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("NM01") && header->nm00_offset > 0) {
+        char* txt = (char*)(data + header->nm00_offset);
+        for (s32 i = 0; i < header->nm00_count; i++) {
+            const s32 len = strlen(txt) + 1;
+            std::string label = "Object " + std::to_string(i);
+            ImGui::InputText(label.c_str(), txt, len);
+            txt += len;
         }
         ImGui::EndTabItem();
     }
