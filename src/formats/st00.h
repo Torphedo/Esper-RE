@@ -10,7 +10,7 @@ static const u32 ps01_magic = MAGIC('P', 'S', '0', '1');
 static const u32 cp00_magic = MAGIC('C', 'P', '0', '0');
 
 typedef struct {
-    u32 object_id;
+    s32 object_id;
     u32 unk1;
     u32 pad;
     // Object position
@@ -51,11 +51,12 @@ static_assert(sizeof(oc00_entry) == 0x14, "Wrong OC00 entry size!");
 
 typedef struct {
     u32 magic; // 'OC00'
-    u32 unk1;
-    u32 num_entries;
+    u8 unk1[4];
+    u32 size;
     u32 pad;
     float unk_pos[10];
-    u16 unk2[4];
+    u16 num_entries;
+    u16 unk2[3];
 }oc00_t;
 static_assert(sizeof(oc00_t) == 0x40);
 
@@ -87,15 +88,33 @@ typedef struct {
     s32 ps01_count;
     // Usually points to the end of the file (== file size), or -1.
     // Has some other unrelated value in st00 and st24.
-    s32 unk7;
-    s32 unk8[7];
+    s32 unk5;
+    s32 unk6[7];
     s32 nm00_offset;
-    s32 string_count;
+    s32 nm00_count;
 
     // These all seem to be offsets to chunks of data
     s32 OC00_offset;
     s32 OC01_offset;
     s32 OC02_offset;
-    s32 unk9[51];
+
+    s32 OE00_offset;
+    s32 EF00_offset;
+
+    s32 OE02_offset;
+    s32 OA00_offset;
+    s32 OA01_offset;
+
+    s32 OA02_offset;
+    s32 unk7[2];
+    s32 OB00_offset;
+    s32 unk8[4];
+    s32 CP00_offset1;
+    s32 CP00_offset2;
+    s32 CP00_offset3;
+    s32 unk9[2];
+    s32 CP00_offset4;
+    s32 CP00_offset5;
+    s32 unkA[31];
 }st00_t;
 static_assert(sizeof(st00_t) == 0x13C, "Map header size is wrong!");

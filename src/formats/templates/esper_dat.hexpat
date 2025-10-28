@@ -34,7 +34,7 @@ struct st00_t {
     s32 unk7 [[color("FF0000")]];
     s32 unk8[7] [[color("FF0000")]];
     s32 nm00_offset [[color("00FFFF")]];
-    s32 string_count [[color("00FFFF")]];
+    s32 nm00_count [[color("00FFFF")]];
 
     // These all seem to be offsets to chunks of data
     s32 OC00_offset [[color("00AF00")]];
@@ -97,7 +97,7 @@ st00_t header @0x0;
 ps01_entry ps00_entries[header.ps00_count] @ header.chunk_size;
 ps01_entry ps01_entries[header.ps01_count] @ header.ps01_offset;
 
-String names[header.string_count] @ header.nm00_offset [[color("5050FF")]];
+String names[header.nm00_count] @ header.nm00_offset [[color("5050FF")]];
 
 oc00_t oc00 @ header.OC00_offset - 4;
 oc00_entry oc00_entries[oc00.unk2[0]] @ $;
