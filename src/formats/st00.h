@@ -10,16 +10,13 @@ static const u32 ps01_magic = MAGIC('P', 'S', '0', '1');
 static const u32 cp00_magic = MAGIC('C', 'P', '0', '0');
 
 typedef struct {
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-    u8 unk4;
+    u32 object_id;
+    u32 unk1;
     u32 pad;
     // Usually whole numbers, probably an object's position
     vec3f pos;
     // Possibly Euler rotation in radians, I've seen (pi / 2) a few times.
     vec3f unk_vec;
-    u32 unk5;
 }ps01_entry;
 static_assert(sizeof(ps01_entry) == 0x24, "Wrong PS01 entry size!");
 
@@ -54,10 +51,13 @@ static_assert(sizeof(oc00_entry) == 0x14, "Wrong OC00 entry size!");
 
 typedef struct {
     u32 magic; // 'OC00'
-    u8 unk_bytes[0xC];
+    u32 unk1;
+    u32 num_entries;
+    u32 pad;
     float unk_pos[10];
     u16 unk2[4];
 }oc00_t;
+static_assert(sizeof(oc00_t) == 0x40);
 
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
 // in that file. In st00, they're set to 0 instead.
