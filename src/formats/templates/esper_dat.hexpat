@@ -71,10 +71,10 @@ struct ps01_entry {
     u32 object_id [[color("FF0000")]];
     u32 unk2 [[color("FF0000")]];
     u32 pad [[color("000000")]];
-    // Usually whole numbers, probably an object's position
+    // Object position
     vec3f pos [[color("0000FF")]];
-    // Possibly Euler rotation in radians, I've seen (pi / 2) a few times.
-    vec3f unk_vec [[color("00FF00")]];
+    // Euler rotation in radians
+    vec3f rotation [[color("00FF00")]];
 };
 
 struct oc00_t {

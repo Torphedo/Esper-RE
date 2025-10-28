@@ -37,43 +37,72 @@ mapdata::~mapdata() {
     initialized = false;
 }
 
+void edit_ps01_entry(u32 idx, ps01_entry* entry) {
+    ImGui::ScopedIndent indent(ImGui::CharWidth(2));
+    std::string label;
+    str_format_append(label, "Object ID##%d", idx);
+
+    ImGui::SetNextItemWidth(ImGui::CharWidth(10));
+    ImGui::InputU32(label.c_str(), &entry->object_id);
+
+    label = "";
+    str_format_append(label, "Position##%d", idx);
+
+    ImGui::SetNextItemWidth(ImGui::CharWidth(30));
+    ImGui::InputFloat3(label.c_str(), &entry->pos.x);
+
+    label = "";
+    str_format_append(label, "Rotation##%d", idx);
+    ImGui::SetNextItemWidth(ImGui::CharWidth(30));
+    ImGui::InputFloat3(label.c_str(), &entry->rotation.x);
+}
+
+void mapdata::draw_custom_editor() {
+    if (!ImGui::BeginTabBar("")) {
+        return;
+    }
+    st00_t* header = get_header();
+    auto* ps00_entries = (ps01_entry*)(data + header->chunk_size);
+    auto* ps01_entries = (ps01_entry*)(data + header->ps01_offset);
+    if (ImGui::BeginTabItem("PS0/")) {
+        u32 offset = header->chunk_size;
+        for (u32 i = 0; i < header->ps00_count; i++) {
+            ImGui::Text("@ 0x%X: ", offset);
+            edit_ps01_entry(i, &ps00_entries[i]);
+            ImGui::Spacing();
+            offset += sizeof(*ps00_entries);
+        }
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("PS01")) {
+        u32 offset = header->ps01_offset;
+        for (u32 i = 0; i < header->ps01_count; i++) {
+            ImGui::Text("@ 0x%X: ", offset);
+            edit_ps01_entry(i, &ps01_entries[i]);
+            ImGui::Spacing();
+            offset += sizeof(*ps01_entries);
+        }
+        ImGui::EndTabItem();
+    }
+
+    ImGui::EndTabBar();
+}
+
 void mapdata::do_gui() noexcept {
     if (!this->initialized) {
         return; // Ignore if not initialized
     }
 
     ImGui::Begin(".dat Data");
+
     if (ImGui::BeginTabBar("Chunk Tabs")) {
         if (ImGui::BeginTabItem("Raw file data")) {
             hex_edit.DrawContents((void *) this->data, this->size);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Chunks")) {
-
-            vfile vf = vfile_open(data, size);
-            st00_t header = VFILE_READ(st00_t, &vf);
-
-            ImGui::BeginChildFitContent("Chunk Selection", 0.3f);
-            for (s32 i = 0; i < ARRAY_SIZE(header.unk9); i++) {
-                const s32 offset = header.unk9[i];
-                if (offset <= 0 && offset >= this->size) {
-                    continue;
-                }
-
-                char label[0x20] = {0};
-                snprintf(label, sizeof(label) - 1, "Chunk %d", i);
-                if (ImGui::Selectable(label)) {
-                    selected_chunk = i;
-                }
-            }
-
-            ImGui::EndChild();
-            ImGui::SameLine();
-
-            ImGui::BeginChildFitContent("Chunk Hex Editor", 0.3f);
-            const s32 selected_offset = header.unk9[selected_chunk];
-            hex_edit.DrawContents(data + selected_offset, 0x100);
-            ImGui::EndChild();
+            draw_custom_editor();
             ImGui::EndTabItem();
         }
 

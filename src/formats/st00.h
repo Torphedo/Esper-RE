@@ -13,10 +13,10 @@ typedef struct {
     u32 object_id;
     u32 unk1;
     u32 pad;
-    // Usually whole numbers, probably an object's position
+    // Object position
     vec3f pos;
-    // Possibly Euler rotation in radians, I've seen (pi / 2) a few times.
-    vec3f unk_vec;
+    // Euler rotation in radians
+    vec3f rotation;
 }ps01_entry;
 static_assert(sizeof(ps01_entry) == 0x24, "Wrong PS01 entry size!");
 
@@ -81,10 +81,10 @@ typedef struct {
     s32 unk_area3;
     // Only used in st00, where the 2nd value points to the end of the file
     s32 unk3[4];
-    s32 entry_count; // Each entry is 0x24 bytes (the count may be -1)
+    s32 ps00_count; // Each entry is 0x24 bytes (the count may be -1)
     // Only used in st00
     s32 unk4;
-    s32 unk_count;
+    s32 ps01_count;
     // Usually points to the end of the file (== file size), or -1.
     // Has some other unrelated value in st00 and st24.
     s32 unk7;
