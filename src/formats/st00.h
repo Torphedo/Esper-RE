@@ -99,7 +99,7 @@ typedef struct {
     s32 OC02_offset;
 
     s32 OE00_offset;
-    s32 EF00_offset;
+    s32 EF00_offset1;
 
     s32 OE02_offset;
     s32 OA00_offset;
@@ -108,7 +108,11 @@ typedef struct {
     s32 OA02_offset;
     s32 unk7[2];
     s32 OB00_offset;
-    s32 unk8[4];
+    s32 unk8;
+    s32 EF00_offset2;
+    s32 SP00_offset;
+    s32 MD00_offset;
+
     s32 CP00_offset1;
     s32 CP00_offset2;
     s32 CP00_offset3;

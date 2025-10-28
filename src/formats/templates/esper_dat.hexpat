@@ -31,8 +31,8 @@ struct st00_t {
     s32 ps01_count [[color("FFFF00")]];
     // Usually points to the end of the file (== file size), or -1.
     // Has some other unrelated value in st00 and st24.
-    s32 unk7 [[color("FF0000")]];
-    s32 unk8[7] [[color("FF0000")]];
+    s32 unk5 [[color("FF0000")]];
+    s32 unk6[7] [[color("FF0000")]];
     s32 nm00_offset [[color("00FFFF")]];
     s32 nm00_count [[color("00FFFF")]];
 
@@ -41,24 +41,27 @@ struct st00_t {
     s32 OC01_offset [[color("00AF00")]];
     s32 OC02_offset [[color("00AF00")]];
 	s32 OE00_offset [[color("0000FF")]];
-	s32 EF00_offset;
+	s32 EF00_offset1;
 	
 	s32 OE02_offset [[color("0000FF")]];
 	s32 OA00_offset;
 	s32 OA01_offset;
 	
 	s32 OA02_offset;
-	s32 unk9[2];
+	s32 unk7[2];
 	
 	s32 OB00_offset;
-    s32 unkA[4] [[color("FF0000")]];
+    s32 unk8 [[color("FF0000")]];
+	s32 EF00_offset2;
+	s32 SP00_offset;
+	s32 MD00_offset;
     s32 CP00_offset1 [[color("CF00CF")]];
     s32 CP00_offset2 [[color("CF00CF")]];
     s32 CP00_offset3 [[color("CF00CF")]];
-    s32 unkB[2] [[color("FF0000")]];
+    s32 unk9[2] [[color("FF0000")]];
     s32 CP00_offset4 [[color("CF00CF")]];
     s32 CP00_offset5 [[color("CF00CF")]];
-    s32 unkC[31] [[color("FF0000")]];
+    s32 unkA[31] [[color("FF0000")]];
 };
 
 struct vec3f {
@@ -108,4 +111,4 @@ oc00_entry oc01_entries[oc01.unk2[0]] @ $;
 
 
 oc00_t oc02 @ header.OC02_offset - 4;
-// oc00_entry oc02_entries[oc02.num_entries] @ $;
+oc00_entry oc02_entries[oc02.unk2[0]] @ $;
