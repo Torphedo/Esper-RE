@@ -55,14 +55,14 @@ mapdata::~mapdata() {
 
 void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     ImGui::ScopedIndent indent(ImGui::CharWidth(2));
-    std::string label;
-    str_format_append(label, "Object Type##%d", idx);
 
     std::string cur_name = name_at_idx(entry->object_id);
     if (cur_name.empty()) {
         str_format_append(cur_name, "missing name [ID 0x%X]", entry->object_id);
     }
 
+    std::string label;
+    str_format_append(label, "Object Type##%d", idx);
     if (ImGui::BeginCombo(label.c_str(), cur_name.c_str())) {
         st00_t* header = get_header();
         for (s32 i = 0; i < header->nm00_count; i++) {
@@ -89,6 +89,35 @@ void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     str_format_append(label, "Rotation##%d", idx);
     ImGui::SetNextItemWidth(ImGui::CharWidth(30));
     ImGui::InputFloat3(label.c_str(), &entry->rotation.x);
+}
+
+void mapdata::edit_cp00_entries(s32 offset) noexcept {
+    if (offset < 0) {
+        ImGui::Text("No CP00 entry (offset %d)", offset);
+        return;
+    }
+
+    cp00_t* header = (cp00_t*)(data + offset);
+    ImGui::PushItemWidth(ImGui::CharWidth(30));
+    for (u32 i = 0; i < header->num_entries; i++) {
+        cp00_entry* entry = &header->entries[i];
+        ImGui::Text("Spawn Point %d:", i);
+        ImGui::ScopedIndent indent(ImGui::CharWidth(2));
+
+        std::string label;
+        str_format_append(label, "Player Spawn Point##%d", i);
+        ImGui::InputFloat3(label.c_str(), &entry->player_pos.x);
+
+        for (u32 j = 0; j < ARRAY_SIZE(entry->capsules); j++) {
+            label = "";
+            str_format_append(label, "Capsule %d##%d", j, i);
+            ImGui::InputFloat3(label.c_str(), &entry->capsules[j].x);
+        }
+        for (u32 j = 0; j < 3; j++) {
+            ImGui::Spacing();
+        }
+    }
+    ImGui::PopItemWidth();
 }
 
 void mapdata::draw_custom_editor() {
@@ -120,7 +149,7 @@ void mapdata::draw_custom_editor() {
         ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("NM01") && header->nm00_offset > 0) {
+    if (ImGui::BeginTabItem("NM00") && header->nm00_offset > 0) {
         char* txt = (char*)(data + header->nm00_offset);
         for (s32 i = 0; i < header->nm00_count; i++) {
             const s32 len = strlen(txt) + 1;
@@ -128,6 +157,31 @@ void mapdata::draw_custom_editor() {
             ImGui::InputText(label.c_str(), txt, len);
             txt += len;
         }
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("CP00 (1)")) {
+        edit_cp00_entries(header->CP00_offset1);
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("CP00 (2)")) {
+        edit_cp00_entries(header->CP00_offset2);
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("CP00 (3)")) {
+        edit_cp00_entries(header->CP00_offset3);
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("CP00 (4)")) {
+        edit_cp00_entries(header->CP00_offset4);
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("CP00 (5)")) {
+        edit_cp00_entries(header->CP00_offset5);
         ImGui::EndTabItem();
     }
 

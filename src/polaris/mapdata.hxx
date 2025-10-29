@@ -28,6 +28,7 @@ public:
         return (st00_t*)data;
     }
     void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept;
+    void edit_cp00_entries(s32 offset) noexcept;
 
     void draw_custom_editor();
 
