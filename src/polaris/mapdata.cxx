@@ -17,7 +17,7 @@ bool mapdata::load_verify() const noexcept {
     return true;
 }
 
-mapdata::mapdata(const char* filepath) : filepath(filepath) {
+mapdata::mapdata(const char* filepath, polaris& pol) : pol(pol), filepath(filepath) {
     initialized = load(filepath);
 }
 

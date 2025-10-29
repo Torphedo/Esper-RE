@@ -3,11 +3,12 @@
 #include <imgui.h>
 #include "imgui_utils.hxx"
 
-#include "mesh_view.hxx"
-#include "polaris.hxx"
-
 #include <common/vfile.h>
 #include <common/logging.h>
+
+#include "mesh_view.hxx"
+#include "polaris.hxx"
+#include "selector_ray.hxx"
 
 extern "C" {
     #include <common/gl/shader.h>
@@ -197,6 +198,9 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 1000.0f);
 
 
+    ImGui::SameLine();
+    ImGui::Checkbox("Enable raycast test", &raycast_test);
+
     ImVec2 image_size = ImVec2(fbo.width, fbo.height);
     const float scale = ImGui::ImageScaleForWindow(fbo.width, fbo.height);
     image_size *= scale;
@@ -224,7 +228,20 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     if (cursor_lock) {
         ImGui::GetIO().WantCaptureMouse = false;
         ImGui::GetIO().WantCaptureKeyboard = false;
-        cam.update(delta_time);
+        if (raycast_test) {
+            double x, y;
+            int width = 0;
+            int height = 0;
+            glfwGetCursorPos(window, &x, &y);
+            glfwGetFramebufferSize(window, &width, &height);
+            const vec4s viewport = {.z = float(width), .w = float(height)};
+            const vec2s mouse_pos = {float(x), float(y)};
+            ray_t ray = screen_to_ray(mouse_pos, cam, viewport);
+            cam.target = glms_vec3_add(cam.target, ray.dir);
+            cam.pos = glms_vec3_add(cam.pos, ray.dir);
+        } else {
+            cam.update(delta_time);
+        }
     }
 
     ImGui::End();

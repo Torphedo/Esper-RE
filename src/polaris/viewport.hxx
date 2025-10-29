@@ -19,6 +19,7 @@ struct viewport_t : gui_layer {
 
     // Whether the viewport editor window should render.
     bool editor_enabled = false;
+    bool raycast_test = false;
 
     framebuffer fbo;
 

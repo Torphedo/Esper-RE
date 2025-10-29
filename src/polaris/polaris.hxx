@@ -21,7 +21,7 @@ struct polaris : gui_layer {
     al::resource alr;
 
     // State for accompanying .dat file for a stage ALR.
-    mapdata map;
+    mapdata map = mapdata(*this);
 
     // 3D viewport
     viewport_t viewport;

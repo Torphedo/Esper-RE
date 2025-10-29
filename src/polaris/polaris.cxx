@@ -82,7 +82,7 @@ void polaris::do_menu_bar() noexcept {
         char* path = nullptr;
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            this->map = mapdata(path);
+            this->map = mapdata(path, *this);
         }
         free(path);
     }

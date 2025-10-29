@@ -7,9 +7,12 @@
 #include "fileclass.hxx"
 #include <formats/st00.h>
 
+struct polaris;
+
 // This class represents ".dat" map files in memory
 struct mapdata : public fileclass {
 public:
+    polaris& pol;
     const char* filepath = nullptr;
     bool initialized = false;
 
@@ -18,8 +21,10 @@ public:
     // fileclass overrides
     virtual bool load_verify() const noexcept override;
 
-    mapdata() = default;
-    mapdata(const char* filepath);
+    mapdata(polaris& pol) : pol(pol) {
+        return;
+    }
+    mapdata(const char* filepath, polaris& pol);
     mapdata& operator=(mapdata&& other);
     ~mapdata();
 
