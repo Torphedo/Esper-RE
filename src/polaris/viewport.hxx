@@ -11,7 +11,7 @@
 
 // We need a forward declaration instead of a header include, since a class
 // in this file is a member of polaris.
-class polaris;
+struct polaris;
 
 struct viewport_t : gui_layer {
     // Whether the viewport has been set up and can be rendered to.

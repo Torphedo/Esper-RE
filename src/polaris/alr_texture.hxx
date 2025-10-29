@@ -17,7 +17,7 @@ texture convert_tex(u8* resbuf, texture_entry entry);
 void update_gl_tex(texture img, gl_obj texture_id);
 
 namespace al {
-    struct resource;
+    class resource;
 }
 
 struct texture_manager {

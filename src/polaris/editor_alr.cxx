@@ -1018,7 +1018,7 @@ void resource::draw(viewport_t& viewport) noexcept {
             // selectable column because it's unique
             ImGui::TableSetColumnIndex(1);
             char buf[0x10] = {0};
-            snprintf(buf, sizeof(buf), "0x%02lX", chunk.offset);
+            snprintf(buf, sizeof(buf), "0x%02llX", chunk.offset);
             // The extra flag makes the selection highlight go across the whole table
             const u32 select_flags = ImGuiSelectableFlags_SpanAllColumns;
             if (ImGui::Selectable(buf, chunk.active, select_flags)) {
@@ -1072,7 +1072,7 @@ void resource::draw(viewport_t& viewport) noexcept {
         }
         char buf[0x30] = {0};
         // Each window needs a unique ID, but "##x" isn't shown
-        snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%lX", chunk.id, known_name, chunk.offset);
+        snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%llX", chunk.id, known_name, chunk.offset);
 
         if (ImGui::Begin(buf, &chunk.active)) {
             chunk.draw(*this, viewport);
