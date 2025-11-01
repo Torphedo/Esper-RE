@@ -7,6 +7,10 @@
 
 #include "formats/st00.h"
 #include "imgui_utils.hxx"
+#include "editor_alr.hxx"
+#include "alr_resources.hxx"
+#include "polaris.hxx"
+#include "mesh_view.hxx"
 
 bool mapdata::load_verify() const noexcept {
     const u32 magic = *(u32*)data;
@@ -89,6 +93,19 @@ void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     str_format_append(label, "Rotation##%d", idx);
     ImGui::SetNextItemWidth(ImGui::CharWidth(30));
     ImGui::InputFloat3(label.c_str(), &entry->rotation.x);
+
+    label = "";
+    str_format_append(label, "Send to viewport##%d", idx);
+    if (ImGui::Button(label.c_str())) {
+        const al::resource& alr = pol.alr;
+        mesh_view mesh = mesh_at_idx(alr, 8 + entry->object_id, 0);
+        for (index_buffer& idxbuf : mesh.idx_buffers) {
+            mat4s xform = glms_euler_xyz(*(vec3s*)&entry->rotation.x);
+            xform = glms_translate(xform, *(vec3s*)&entry->pos.x);
+            idxbuf.transform = glms_mul(idxbuf.transform, xform);
+        }
+        pol.viewport.meshes.push_back(mesh);
+    }
 }
 
 void mapdata::edit_cp00_entries(s32 offset) noexcept {
