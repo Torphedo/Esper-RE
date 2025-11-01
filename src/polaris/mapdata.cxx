@@ -57,6 +57,17 @@ mapdata::~mapdata() {
     initialized = false;
 }
 
+void map_obj_to_viewport(viewport_t& viewport, al::resource& alr, const ps01_entry* entry) noexcept {
+    mesh_view mesh = mesh_at_idx(alr, 8 + entry->object_id, 0);
+    for (index_buffer& idxbuf : mesh.idx_buffers) {
+        mat4s rot_xform = glms_euler_zyx(*(vec3s*)&entry->rotation.x);
+        mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY, *(vec3s*)&entry->pos.x);
+        mat4s xform = glms_mat4_mul(pos_xform, rot_xform);
+        idxbuf.transform = glms_mat4_mul(idxbuf.transform, xform);
+    }
+    viewport.meshes.push_back(mesh);
+}
+
 void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     ImGui::ScopedIndent indent(ImGui::CharWidth(2));
 
@@ -97,14 +108,7 @@ void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     label = "";
     str_format_append(label, "Send to viewport##%d", idx);
     if (ImGui::Button(label.c_str())) {
-        const al::resource& alr = pol.alr;
-        mesh_view mesh = mesh_at_idx(alr, 8 + entry->object_id, 0);
-        for (index_buffer& idxbuf : mesh.idx_buffers) {
-            mat4s xform = glms_euler_xyz(*(vec3s*)&entry->rotation.x);
-            xform = glms_translate(xform, *(vec3s*)&entry->pos.x);
-            idxbuf.transform = glms_mul(idxbuf.transform, xform);
-        }
-        pol.viewport.meshes.push_back(mesh);
+        map_obj_to_viewport(pol.viewport, pol.alr, entry);
     }
 }
 
@@ -145,8 +149,12 @@ void mapdata::draw_custom_editor() {
     auto* ps00_entries = (ps01_entry*)(data + header->chunk_size);
     auto* ps01_entries = (ps01_entry*)(data + header->ps01_offset);
     if (ImGui::BeginTabItem("PS0/")) {
+        const bool all_to_viewport = ImGui::Button("Send all to viewport");
         u32 offset = header->chunk_size;
         for (u32 i = 0; i < header->ps00_count; i++) {
+            if (all_to_viewport) {
+                map_obj_to_viewport(pol.viewport, pol.alr, &ps00_entries[i]);
+            }
             ImGui::Text("@ 0x%X: ", offset);
             edit_ps01_entry(i, &ps00_entries[i], header->nm00_count);
             ImGui::Spacing();
