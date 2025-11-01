@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 
 #include <common/vfile.h>
-#include "alr_texture.hxx"
+#include "alr_resources.hxx"
 #include "editor_alr.hxx"
 
 const char* texformat_str(alr_pixel_format format) {

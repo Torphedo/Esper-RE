@@ -44,7 +44,7 @@ add_executable(polaris
     src/polaris/fileclass.cxx
     src/polaris/editor_alr.cxx
     src/polaris/validation.cxx
-    src/polaris/alr_texture.cxx
+    src/polaris/alr_resources.cxx
     src/polaris/mapdata.cxx
     src/polaris/pd_mesh.cxx
     src/formats/pd_common.c

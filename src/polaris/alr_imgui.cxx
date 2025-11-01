@@ -1,6 +1,6 @@
 #include "alr_imgui.hxx"
 
-#include "alr_texture.hxx"
+#include "alr_resources.hxx"
 #include "alr_dump.hxx"
 #include "imgui_utils.hxx"
 #include "common/crc32.h"

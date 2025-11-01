@@ -11,7 +11,7 @@
 
 #include <formats/alr.h>
 
-#include "alr_texture.hxx"
+#include "alr_resources.hxx"
 
 // State for 0x1 (material) window
 struct window_state_0x1 {
@@ -187,7 +187,7 @@ public:
         return this->data + this->resbuf_offset;
     }
 
-    vfile vf_from_chunk(chunk c) {
+    vfile vf_from_chunk(chunk c) noexcept {
         return vfile_open(this->data + c.offset, c.size);
     }
 

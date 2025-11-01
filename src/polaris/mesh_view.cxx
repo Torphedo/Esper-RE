@@ -108,7 +108,8 @@ bool mesh_view::add_index_buf(const u8* alr_data, u32 alr_size, index_buffer buf
     // We cast away const here but don't write to the buffer
     vfile vf = vfile_open((u8*)alr_data, alr_size);
     vf.pos = buf.idx_chunk_offset;
-    vfile_seek(&vf, sizeof(chunk_generic));
+    const auto genheader = VFILE_READ(chunk_generic, &vf);
+    assert(genheader.id == 0x2);
     const auto header = VFILE_READ(idxbuf_header, &vf);
     const auto* data = (u16*)vfile_cur(vf);
 

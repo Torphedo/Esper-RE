@@ -10,7 +10,7 @@
 
 #include "formats/alr.h"
 #include "polaris.hxx"
-#include "alr_texture.hxx"
+#include "alr_resources.hxx"
 #include "validation.hxx"
 #include "version.h"
 

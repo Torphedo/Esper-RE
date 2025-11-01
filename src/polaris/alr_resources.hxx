@@ -1,4 +1,7 @@
 #pragma once
+/// @file alr_resources.hxx
+/// Helpers for managing ALR textures and meshes
+
 #include <map>
 
 #include <common/image.h>
