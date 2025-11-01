@@ -284,7 +284,7 @@ void viewport_t::render(GLFWwindow* window) noexcept {
             if (!idx_buf.enabled) {
                 continue; // This index buffer is hidden
             }
-            mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.transform);
+            mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform());
             glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
             // We cast away const here but don't write to the buffer

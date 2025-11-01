@@ -60,10 +60,9 @@ mapdata::~mapdata() {
 void map_obj_to_viewport(viewport_t& viewport, al::resource& alr, const ps01_entry* entry) noexcept {
     mesh_view mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id, 0);
     for (index_buffer& idxbuf : mesh.idx_buffers) {
-        mat4s rot_xform = glms_euler_zyx(*(vec3s*)&entry->rotation.x);
-        mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY, *(vec3s*)&entry->pos.x);
-        mat4s xform = glms_mat4_mul(pos_xform, rot_xform);
-        idxbuf.transform = glms_mat4_mul(idxbuf.transform, xform);
+        idxbuf.is_precalc_transform = false;
+        idxbuf.position = (vec3s*)&entry->pos;
+        idxbuf.rotation = (vec3s*)&entry->rotation;
     }
     viewport.meshes.push_back(mesh);
 }

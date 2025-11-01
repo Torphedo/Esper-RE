@@ -57,6 +57,16 @@ void edit_menu(vertex_attribute& attr) {
     attr.type = gl_type_table[current_type].gl_type;
 }
 
+mat4s index_buffer::get_transform() const noexcept {
+    if (is_precalc_transform) {
+        return this->transform;
+    } else {
+        mat4s rot_xform = glms_euler_zyx(*rotation);
+        mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY, *position);
+        return glms_mat4_mul(pos_xform, rot_xform);
+    }
+}
+
 bool mesh_view::setup() noexcept {
     if (initialized) {
         return true; // Don't setup twice and leak OpenGL objects
@@ -189,14 +199,6 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
 
         snprintf(label, sizeof(label) - 1, "Render ##%d", i);
         ImGui::Checkbox(label, &buf.enabled);
-
-        snprintf(label, sizeof(label) - 1, "Show transform ##%d", i);
-        if (ImGui::CollapsingHeader(label)) {
-            for (u32 j = 0; j < ARRAY_SIZE(buf.transform.col); j++) {
-                snprintf(label, sizeof(label) - 1, "##%d%d", i, j);
-                ImGui::InputFloat4(label, buf.transform.col[j].raw);
-            }
-        }
 
         // We cast away const here but don't write to the buffer
         vfile vf = vfile_open(alr.data, alr.alr_size);

@@ -15,8 +15,27 @@ struct index_buffer {
     u32 idx_chunk_offset = 0;
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
+
+    // If true, we're using a transform calculated from an 0x3 chunk
+    // (and updating it won't affect the file's data)
+    // If false, we're referencing a position/rotation from a .dat file in memory.
+    bool is_precalc_transform = false;
     mat4s transform = glms_mat4_identity();
+    vec3s* position = nullptr;
+    vec3s* rotation = nullptr;
+
     bool enabled = true; // Whether to render this index buffer
+
+    mat4s get_transform() const noexcept;
+    index_buffer() = default;
+    index_buffer(u32 offset, mat4s transform) noexcept
+        : idx_chunk_offset(offset), transform(transform) {
+        is_precalc_transform = true;
+    }
+    index_buffer(u32 offset, vec3s* position, vec3s* rotation) noexcept
+        : idx_chunk_offset(offset), position(position), rotation(rotation) {
+        return;
+    }
 };
 
 // We need a forward declaration, since a class in this file is a member of polaris.

@@ -365,10 +365,7 @@ mesh_view mesh_at_idx(const al::resource& alr, u32 idx, u32 vertbuf_idx) {
             } while (true);
 
             // Setup & add index buffer
-            const index_buffer idx_buf = {
-                .idx_chunk_offset = u32(cur_offset),
-                .transform = obj_transform,
-            };
+            const index_buffer idx_buf(cur_offset, obj_transform);
             out.add_index_buf(alr.data, alr.alr_size, idx_buf);
         }
 
