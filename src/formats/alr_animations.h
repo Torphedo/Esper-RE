@@ -15,6 +15,11 @@
  * capsule agains the grorund at the start of the match)
  */
 
+enum {
+    // Number of animations found in a player ALR.
+    ALR_NUM_PLAYER_ANIMATIONS = 129,
+};
+
 const char* animation_names[] = {
     "bas01::WAIT0",
     "bas16::WAIT1",

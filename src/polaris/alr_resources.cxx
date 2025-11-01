@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 
 #include <common/vfile.h>
+#include <formats/alr_animations.h>
 #include "alr_resources.hxx"
 #include "editor_alr.hxx"
 #include "pd_mesh.hxx"
@@ -293,6 +294,11 @@ mesh_view mesh_at_idx(const al::resource& alr, u32 idx, u32 vertbuf_idx) {
     vf.pos = header_chunk.offset;
 
     const auto* header = (chunk_layout*)vfile_cur(vf);
+    if (header->offset_array_size > ALR_NUM_PLAYER_ANIMATIONS) {
+        // This is a player file, so all the animation offsets come before the
+        // model offsets, and we need to skip past them.
+        idx += ALR_NUM_PLAYER_ANIMATIONS;
+    }
     if (idx >= header->offset_array_size) {
         LOG_MSG(error, "Mesh index %d is out of bounds (max = %d)\n", idx, header->offset_array_size);
         return out;
