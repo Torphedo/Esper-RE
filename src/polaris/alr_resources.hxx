@@ -6,6 +6,7 @@
 
 #include <common/image.h>
 #include <formats/alr.h>
+#include "mesh_view.hxx"
 
 /// @brief Gets a human-readable description of the pixel format
 const char* texformat_str(alr_pixel_format format);
@@ -41,3 +42,5 @@ struct texture_manager {
 
     ~texture_manager() noexcept;
 };
+
+mesh_view mesh_at_idx(const al::resource& alr, u32 idx, u32 vertbuf_idx);

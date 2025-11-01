@@ -13,7 +13,7 @@
 #include <formats/pd_common.h>
 #include <formats/alr.h>
 
-#include "alr_texture.hxx"
+#include "alr_resources.hxx"
 #include "alr_dump.hxx"
 #include "pd_mesh.hxx"
 
@@ -455,88 +455,18 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
 void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
-    // We use the vfile API to handle the chunk data
-    vfile vf = vfile_open(alr.data + offset, size);
-
-    // Skip to entries
-    vfile_seek(&vf, sizeof(chunk_generic));
-    const u32 num_entries = VFILE_READ(u32, &vf);
-    auto* entries = (vertbuf_entry*)vfile_cur(vf);
-
-    const vertbuf_entry entry = entries[window_0x16.selected_vertex_buf];
-
-    // Open ALR buffer
-    vf = vfile_open(alr.data, alr.alr_size);
-
-    // Jump to the appropriate data in the resource buffer
-    vfile_seek(&vf, alr.resbuf_offset + entry.data_ptr);
-
-    // Setup mesh data
-    mesh_view mesh;
-    mesh.setup();
-
-    // Upload vertex buffer
-    const u8* vertex_buf = (u8*)vfile_cur(vf);
-    mesh.update_vertex_buf(vertex_buf, entry.vertex_size * entry.vertex_count);
-
-    get_vert_attribute(&mesh, entry);
-    mesh.apply_attributes();
-
-    bool has_strips = false;
-    const chunk_0x1_entry* texinfo_entries = nullptr;
-    const joint_t* transform_entries = nullptr;
-    // Upload the index buffers
+    // Find out what index we are
+    s32 idx = -1;
     for (chunk c : alr.chunks) {
-        if (c.offset < this->offset) {
-            if (c.id == 0x1) {
-                // Skip to chunk and get header
-                vf.pos = c.offset;
-                const chunk_0x1_header header = VFILE_READ(chunk_0x1_header, &vf);
-                texinfo_entries = (chunk_0x1_entry *) vfile_cur(vf);
-            }
-            if (c.id == 0x3) {
-                // Skip to chunk and get header
-                vf.pos = c.offset;
-                const auto genheader = VFILE_READ(chunk_generic, &vf);
-                const chunk_armature header = VFILE_READ(chunk_armature, &vf);
-                transform_entries = (joint_t*)vfile_cur(vf);
-            }
-        }
-
-        if (c.id == this->id && c.offset > this->offset) {
-            // We've hit a mesh metadata chunk past our own, so any
-            // further index buffers will be garbage data to us. Quit.
+        if (c.offset > this->offset) {
             break;
         }
-
-        // We only want index buffer chunks for the current mesh
-        if (c.id == 0x2 && c.offset >= offset) {
-            // Skip to chunk and get header
-            vf.pos = c.offset + sizeof(chunk_generic);
-            const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
-            // We only want index buffers meant for this vertex buffer
-            if (idx_header.vertex_buf != window_0x16.selected_vertex_buf) {
-                continue;
-            }
-
-            const bool tri_strip = (idx_header.primitive_type == IDX_TYPE_STRIP);
-            has_strips |= tri_strip;
-            const joint_t* joint = &transform_entries[idx_header.transform_idx];
-            mat4s obj_transform = transform_from_joint(*joint);
-            while (joint->parent_idx > 0) {
-                joint = &transform_entries[joint->parent_idx];
-                obj_transform = glms_mul(obj_transform, transform_from_joint(*joint));
-            }
-
-            const index_buffer idx_buf = {
-                .idx_chunk_offset = u32(c.offset),
-                .transform = obj_transform,
-            };
-
-            mesh.add_index_buf(alr.data, alr.alr_size, idx_buf);
+        if (c.id == 0x1) {
+            idx++;
         }
     }
 
+    mesh_view mesh = mesh_at_idx(alr, idx, window_0x16.selected_vertex_buf);
     viewport.meshes.push_back(mesh);
 }
 
