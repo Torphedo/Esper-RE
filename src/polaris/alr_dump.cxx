@@ -71,9 +71,9 @@ const char* DAE_FOOTER = R"(
 
 mat4s transform_from_joint(const joint_t & joint) {
     const mat4s pos = glms_translate_make(*(vec3s*)&joint.position);
-    const mat4s rot = glms_euler_xyz(*(vec3s*)&joint.rotation);
+    const mat4s rot = glms_euler_zyx(*(vec3s*)&joint.rotation);
 
-    mat4s transform = glms_mul(rot, pos);
+    mat4s transform = glms_mat4_mul(pos, rot);
     transform = glms_scale(transform, *(vec3s*)&joint.scale);
 
     return transform;

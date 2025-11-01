@@ -348,11 +348,15 @@ mesh_view mesh_at_idx(const al::resource& alr, u32 idx, u32 vertbuf_idx) {
         if (idx_header.vertex_buf == vertbuf_idx) {
             // Calculate the object's xform by applying all of its parent xforms
             const joint_t* joint = &transform_entries[idx_header.transform_idx];
-            mat4s obj_transform = al::transform_from_joint(*joint);
-            while (joint->parent_idx > 0) {
+            mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
+            do {
+                mat4s joint_xform = al::transform_from_joint(*joint);
+                obj_transform = glms_mat4_mul(joint_xform, obj_transform);
+                if (joint->parent_idx < 0) {
+                    break;
+                }
                 joint = &transform_entries[joint->parent_idx];
-                obj_transform = glms_mul(obj_transform, al::transform_from_joint(*joint));
-            }
+            } while (true);
 
             // Setup & add index buffer
             const index_buffer idx_buf = {
