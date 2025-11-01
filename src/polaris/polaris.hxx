@@ -18,7 +18,7 @@ extern "C" {
 // State for the overall editor
 struct polaris : gui_layer {
     // State for a loaded ALR file
-    al::resource alr;
+    al::resource alr = al::resource(*this);
 
     // State for accompanying .dat file for a stage ALR.
     mapdata map = mapdata(*this);

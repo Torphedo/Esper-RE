@@ -801,6 +801,13 @@ bool resource::load(const char* path) noexcept {
         this->expand_reservation(reserve_size + size);
     }
 
+    // Clear state that references this ALR's data, before we overwrite it.
+    this->tex_manager.destroy();
+    for (mesh_view& mesh : pol.viewport.meshes) {
+        mesh.destroy();
+    }
+    pol.viewport.meshes.clear();
+
     // Load the file into the buffer.
     if (!file_load_existing(path, data, size)) {
         // Some loading failure, an error message should've been printed
@@ -1108,7 +1115,7 @@ void resource::expand_reservation(s64 new_size) noexcept {
     reserve_size = new_size;
 }
 
-resource::resource() noexcept {
+resource::resource(polaris& pol) noexcept :pol(pol) {
     // "Expand" our reservation from 0 bytes to... not 0.
     this->expand_reservation(reserve_size);
 }

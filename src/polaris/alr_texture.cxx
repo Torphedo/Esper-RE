@@ -264,11 +264,15 @@ bool texture_manager::get_material(al::resource& alr, u32 material_header_offset
     return true;
 }
 
-texture_manager::~texture_manager() noexcept {
+void texture_manager::destroy() noexcept {
     for (const auto& pair : gl_tex_map) {
         gl_obj tex = pair.second;
         glDeleteTextures(1, &tex);
     }
 
     gl_tex_map.clear();
+}
+
+texture_manager::~texture_manager() noexcept {
+    destroy();
 }
