@@ -1,7 +1,7 @@
 #include "selector_ray.hxx"
 
 vec3s screen_to_world(vec2s mouse_pos, vec4s viewport, mat4s view_proj_xform) {
-    const vec3s window_pos = {mouse_pos.x, viewport.w - mouse_pos.y, 0.0f};
+    const vec3s window_pos = {mouse_pos.x, mouse_pos.y, 0.0f};
     return glms_unproject(window_pos, view_proj_xform, viewport);
 }
 
