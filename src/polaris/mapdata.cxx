@@ -58,7 +58,7 @@ mapdata::~mapdata() {
 }
 
 void map_obj_to_viewport(viewport_t& viewport, al::resource& alr, const ps01_entry* entry) noexcept {
-    mesh_view mesh = mesh_at_idx(alr, 8 + entry->object_id, 0);
+    mesh_view mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id, 0);
     for (index_buffer& idxbuf : mesh.idx_buffers) {
         mat4s rot_xform = glms_euler_zyx(*(vec3s*)&entry->rotation.x);
         mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY, *(vec3s*)&entry->pos.x);
@@ -164,8 +164,12 @@ void mapdata::draw_custom_editor() {
     }
 
     if (ImGui::BeginTabItem("PS01")) {
+        const bool all_to_viewport = ImGui::Button("Send all to viewport");
         u32 offset = header->ps01_offset;
         for (u32 i = 0; i < header->ps01_count; i++) {
+            if (all_to_viewport) {
+                map_obj_to_viewport(pol.viewport, pol.alr, &ps00_entries[i]);
+            }
             ImGui::Text("@ 0x%X: ", offset);
             edit_ps01_entry(i, &ps01_entries[i], header->nm00_count);
             ImGui::Spacing();

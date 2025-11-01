@@ -4,6 +4,8 @@
 #include <common/file.h>
 #include "alr.h" // For vector struct
 
+// Object ID 0 is the mesh at this index in the ALR file
+static const u32 FIRST_OBJ_IDX = 8;
 static const u32 st00_magic = MAGIC('S', 'T', '0', '0');
 static const u32 nm00_magic = MAGIC('N', 'M', '0', '0');
 static const u32 ps01_magic = MAGIC('P', 'S', '0', '1');
