@@ -1,6 +1,10 @@
 struct String {
-    char txt[while($[$] != 0)];
-    char nullterm [[color("000000")]];
+    char txt[while($[$] != 0)]; // Null terminated string
+    char nullterm [[color("000000")]]; // The null terminator
+};
+
+struct vec3f {
+	float x, y, z;
 };
 
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
@@ -64,12 +68,6 @@ struct st00_t {
     s32 unkA[31] [[color("FF0000")]];
 };
 
-struct vec3f {
-	float x;
-	float y;
-	float z;
-};
-
 struct ps01_entry {
     u32 object_id [[color("FF0000")]];
     u32 unk2 [[color("FF0000")]];
@@ -105,10 +103,8 @@ String names[header.nm00_count] @ header.nm00_offset [[color("5050FF")]];
 oc00_t oc00 @ header.OC00_offset - 4;
 oc00_entry oc00_entries[oc00.unk2[0]] @ $;
 
-
 oc00_t oc01 @ header.OC01_offset - 4;
 oc00_entry oc01_entries[oc01.unk2[0]] @ $;
-
 
 oc00_t oc02 @ header.OC02_offset - 4;
 oc00_entry oc02_entries[oc02.unk2[0]] @ $;

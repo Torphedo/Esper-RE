@@ -9,7 +9,7 @@
 #include <formats/alr.h>
 #include <formats/pd_common.h>
 
-#include <polaris/pd_mesh.hxx>
+#include <polaris/mesh_view.hxx>
 #include <polaris/version.h>
 #include "editor_alr.hxx"
 

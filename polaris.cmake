@@ -46,7 +46,6 @@ add_executable(polaris
     src/polaris/validation.cxx
     src/polaris/alr/alr_resources.cxx
     src/polaris/mapdata.cxx
-    src/polaris/pd_mesh.cxx
     src/formats/pd_common.c
 
     src/polaris/scope_timer.cxx

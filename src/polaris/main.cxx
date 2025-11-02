@@ -14,12 +14,11 @@
 #include "validation.hxx"
 #include "version.h"
 
-static const char* url = "https://github.com/Torphedo/Esper-RE";
 const char* dump_textures_flag = "--dump-textures";
 const char* validate_flag = "--validate";
 
 void print_usage() {
-    printf("Usage: polaris [ALR filename] [%s]\n", dump_textures_flag);
+    printf("Usage: polaris [ALR filename] [%s | %s]\n", dump_textures_flag, validate_flag);
 }
 
 int dump_all_textures(const polaris& pol) {
@@ -41,11 +40,11 @@ int dump_all_textures(const polaris& pol) {
     // Skip over the ID and size fields we already have
     vfile_seek(&vf, sizeof(chunk_generic));
     const u32 num_entries = VFILE_READ(u32, &vf);
-    texture_entry* tex_entries = (texture_entry*)vfile_cur(vf);
+    const texture_entry* tex_entries = (texture_entry*)vfile_cur(vf);
 
     // Read atlas chunk data
-    atlas_entry* atlas_entries = nullptr;
-    atlas_name* atlas_names = nullptr;
+    const atlas_entry* atlas_entries = nullptr;
+    const atlas_name* atlas_names = nullptr;
     atlas_header header_atlas = {0};
     if (atlas_chunk.size > 0) {
         vf = vfile_open(pol.alr.data + atlas_chunk.offset, atlas_chunk.size);
@@ -73,7 +72,7 @@ int dump_all_textures(const polaris& pol) {
         char* name = decoded_name;
 
         if (atlas_entries != nullptr && header_atlas.atlas_count > i) {
-            atlas_entry entry = atlas_entries[i];
+            const atlas_entry entry = atlas_entries[i];
             // We get better dimension info from the atlas headers, so use it!
             // Dimensions from the atlas headers are almost always more
             // accurate, so we always use them unless they're obviously wrong.
@@ -109,10 +108,6 @@ int dump_all_textures(const polaris& pol) {
     return EXIT_SUCCESS;
 }
 
-// In main() we only "kick off" the program, and gui_main() handles the
-// setup/main loop/teardown.
-// It feels a little silly to have one main() that basically just calls
-// another, but I want to keep all the GUI bootstrapping out of main().
 int main(int argc, char** argv) {
     // Enable ANSI escape codes (for printing in color) on Windows
     enable_win_ansi();
@@ -120,7 +115,7 @@ int main(int argc, char** argv) {
     gui_app app;
     app.layers.emplace_back(std::make_unique<layer_imgui>());
     app.layers.emplace_back(std::make_unique<polaris>());
-    polaris* pol = dynamic_cast<polaris*>(app.layers[1].get());
+    polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
     
     if (argc >= 2) {
         // We have an argument, it should be a filepath.
@@ -133,10 +128,8 @@ int main(int argc, char** argv) {
     if (argc < 3) {
         pol->headless = false;
         // No special arguments, run in normal graphical mode.
-        // polaris::do_gui() has the real UI code, and is basically the real entry
-        // point. Sorry for the kind of unintuitive structure.
-        if (!app.run("Polaris " POLARIS_VERSION)) {
-            // Actual error message is reported at the failure point
+        if (!app.run("Polaris v" POLARIS_VERSION)) {
+            // Actual error message printed for us
             LOG_MSG(error, "Failed to start up!\n");
             return EXIT_FAILURE;
         } else {
@@ -152,8 +145,8 @@ int main(int argc, char** argv) {
         LOG_MSG(info, "Dumping textures for %s\n", path);
         return dump_all_textures(*pol);
     } else if (strcmp(flag, validate_flag) == 0) {
-        LOG_MSG(info, "Validating \"%s\"...\n", path);
-        std::string message = "";
+        LOG_MSG(info, "Validating '%s'...\n", path);
+        std::string message;
         const bool result = alr_validate(message, *pol);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");
@@ -166,9 +159,9 @@ int main(int argc, char** argv) {
     } else if (strcmp(flag, "--help") == 0) {
         print_usage();
     } else if (strcmp(flag, "--version") == 0) {
-        printf("Polaris (Esper-RE tools) v%s", POLARIS_VERSION);
-        printf("Open-source @ %s\n", url);
-        printf("Written by Torphedo [w/ help from fleevoid, blasianblazy, & Nuion]\n");
+        printf("Polaris (Esper-RE tools) v" POLARIS_VERSION);
+        printf("Open-source @ " POLARIS_URL "\n");
+        printf("Written by Torphedo [w/ help from fleevoid, blasianblazy, Vu & Nuion]\n");
     } else {
         LOG_MSG(error, "I didn't find any known arguments, I'm not sure what you want me to do with the file.\n");
         print_usage();
