@@ -160,5 +160,5 @@ void camera::proj_view(mat4 out) const noexcept {
     // Camera matrix
     mat4 view = {0};
     this->view_matrix(view);
-    glm_mat4_mul(projection, view, (vec4*)out);
+    glm_mat4_mul(projection, view, out);
 }

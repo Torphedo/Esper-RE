@@ -98,10 +98,11 @@ void mesh_view::destroy() noexcept {
     }
 }
 
-bool mesh_view::update_vertex_buf(const u8* buf, u32 size) const noexcept {
+bool mesh_view::update_vertex_buf(const u8* buf, u32 size) noexcept {
     if (!initialized) {
         return false;
     }
+    vertices = buf;
 
     // TODO: Use glBufferSubData() when the size hasn't increased
     glBindBuffer(GL_ARRAY_BUFFER, vbo);

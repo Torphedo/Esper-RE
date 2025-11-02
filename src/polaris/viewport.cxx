@@ -128,7 +128,6 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     if (editor_enabled) {
         if (ImGui::Begin("Viewport Editor", &this->active)) {
 
-            static u16 selected_mesh = 0;
             ImGui::InputU16("Selected Mesh", &selected_mesh);
             selected_mesh %= meshes.size();
 
@@ -160,6 +159,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     if (ImGui::Checkbox("Back-face culling", &backface_cull)) {
         fbo.set_backface_cull(backface_cull);
     }
+    fbo.unbind();
 
     ImGui::SameLine();
     bool temp_render_texcoords = shader_flags.render_texcoords;
@@ -230,23 +230,53 @@ void viewport_t::update(GLFWwindow* window) noexcept {
         ImGui::GetIO().WantCaptureKeyboard = false;
         if (raycast_test) {
             double x, y;
-            int width = 0;
-            int height = 0;
             glfwGetCursorPos(window, &x, &y);
-            glfwGetFramebufferSize(window, &width, &height);
-            const vec4s viewport = {.z = float(width), .w = float(height)};
+
+            int viewportVals[4] = {0};
+            glGetIntegerv(GL_VIEWPORT, viewportVals);
+
+            vec4s viewport = {0};
+            for (u32 i = 0; i < ARRAY_SIZE(viewportVals); i++) {
+                viewport.raw[i] = float(viewportVals[i]);
+            }
             const vec2s mouse_pos = {float(x), float(y)};
             ray_t ray = screen_to_ray(mouse_pos, cam, viewport);
-            cam.target = glms_vec3_add(cam.target, ray.dir);
-            cam.pos = glms_vec3_add(cam.pos, ray.dir);
+
+            for (u32 i = 0; i < meshes.size(); i++) {
+                const mesh_view& mesh = meshes[i];
+                if (!mesh.active) {
+                    continue;
+                }
+                bool got_selected = false;
+                for (const index_buffer& idxbuf : mesh.idx_buffers) {
+                    if (!idxbuf.enabled) {
+                        continue;
+                    }
+                    vfile vf = vfile_open(alr->data, alr->alr_size);
+                    vf.pos = idxbuf.idx_chunk_offset;
+                    const auto generic_0x2 = VFILE_READ(chunk_generic, &vf);
+                    assert(generic_0x2.id == 2);
+                    const auto* alr_idxbuf = (idxbuf_header*)vfile_cur(vf);
+                    if (raycast(ray, mesh.vertices, mesh.vertex_size, idxbuf.get_transform(), alr_idxbuf)) {
+                        got_selected = true;
+                        break;
+                    }
+                }
+                if (got_selected) {
+                    selected_mesh = i;
+                    break;
+                }
+            }
+
+            // ray.dir = glms_vec3_scale(ray.dir, 0.1f);
+            // cam.target = glms_vec3_add(cam.target, ray.dir);
+            // cam.pos = glms_vec3_add(cam.pos, ray.dir);
         } else {
             cam.update(delta_time);
         }
     }
 
     ImGui::End();
-
-    fbo.unbind();
 }
 
 void viewport_t::render(GLFWwindow* window) noexcept {
@@ -272,10 +302,12 @@ void viewport_t::render(GLFWwindow* window) noexcept {
     glUniform1i(uniform_sampler_normal, 1);
 
     // Render all index buffers of all known meshes
-    for (const mesh_view& mesh : meshes) {
+    for (u32 i = 0; i < meshes.size(); i++) {
+        const mesh_view& mesh = meshes[i];
         if (!mesh.active) {
             continue; // This mesh is hidden
         }
+        fbo.set_wireframe((i == selected_mesh) || wireframe);
 
         glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
 
@@ -284,6 +316,7 @@ void viewport_t::render(GLFWwindow* window) noexcept {
             if (!idx_buf.enabled) {
                 continue; // This index buffer is hidden
             }
+
             mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform());
             glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 

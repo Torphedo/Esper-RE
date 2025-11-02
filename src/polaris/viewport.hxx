@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <common/int.h>
+#include <formats/alr.h>
 #include <layer.hxx>
 
 #include "camera.hxx"
@@ -20,6 +21,7 @@ struct viewport_t : gui_layer {
     // Whether the viewport editor window should render.
     bool editor_enabled = false;
     bool raycast_test = false;
+    u16 selected_mesh = 0;
 
     framebuffer fbo;
 

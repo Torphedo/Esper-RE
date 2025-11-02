@@ -46,7 +46,9 @@ namespace al {
 struct mesh_view {
     std::vector<index_buffer> idx_buffers;
 
+    const u8* vertices = nullptr;
     vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {0};
+    // The offset of the *entry*, not of the 0x16 chunk.
     u16 vertex_size = 0;
     gl_obj vbo = 0;
     gl_obj vao = 0;
@@ -69,7 +71,7 @@ struct mesh_view {
     ///
     /// @param buf The vertex buffer to upload
     /// @param size The size of the vertex buffer
-    bool update_vertex_buf(const u8* buf, u32 size) const noexcept;
+    bool update_vertex_buf(const u8* buf, u32 size) noexcept;
 
     /// @brief Upload an index buffer to the GPU for this mesh
     ///
