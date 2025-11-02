@@ -1,7 +1,7 @@
 #include "selector_ray.hxx"
 
 vec3s screen_to_world(vec2s mouse_pos, vec4s viewport, mat4s view_proj_xform) {
-    const vec3s window_pos = {mouse_pos.x, mouse_pos.y, 1.0f};
+    const vec3s window_pos = {mouse_pos.x, mouse_pos.y, 0.0f};
     return glms_unproject(window_pos, view_proj_xform, viewport);
 }
 
@@ -26,11 +26,6 @@ bool raycast_aabb(ray_t ray, vec3s min, vec3s max) {
 
     const vec3s center = glms_aabb_center(box);
     const vec3s dir_to_box = glms_vec3_sub(center, ray.origin);
-    if (glms_vec3_dot(dir_to_box, ray.dir) <= 0.0f) {
-        // We are facing away from the box, no matter how far we go down the ray
-        // we'll never hit it
-        return false;
-    }
 
     vec4s sphere = {0};
     glms_aabb_sphere(box, sphere);
@@ -56,7 +51,8 @@ bool raycast(ray_t ray, const u8* vertbuf, u32 vertex_size, mat4s transform, con
     const vec3s box_min = *(vec3s*)&idxbuf->aabb_min;
     const vec3s box_max = *(vec3s*)&idxbuf->aabb_max;
     if (!raycast_aabb(ray, box_min, box_max)) {
-        return false;
+        // TODO: Make AABB test work properly
+        // return false;
     }
 
     const u16* indices = (u16*)&idxbuf[1]; // Indices begin when header ends

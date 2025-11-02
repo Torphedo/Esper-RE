@@ -201,9 +201,21 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     ImGui::SameLine();
     ImGui::Checkbox("Enable raycast test", &raycast_test);
 
+    ImVec2 fb_start = ImGui::GetCursorScreenPos();
+    vec2s mouse_pos = {};
+    {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        mouse_pos = {float(x), float(y)};
+
+        const vec2s fb_pos = {fb_start.x, fb_start.y};
+        mouse_pos = glms_vec2_sub(mouse_pos, fb_pos);
+    };
+
     ImVec2 image_size = ImVec2(fbo.width, fbo.height);
     const float scale = ImGui::ImageScaleForWindow(fbo.width, fbo.height);
     image_size *= scale;
+    glms_vec2_scale(mouse_pos, scale);
 
     ImGui::Image(fbo.color_tex, image_size);
     if (ImGui::IsMouseClicked(0)) {
@@ -229,18 +241,11 @@ void viewport_t::update(GLFWwindow* window) noexcept {
         ImGui::GetIO().WantCaptureMouse = false;
         ImGui::GetIO().WantCaptureKeyboard = false;
         if (raycast_test) {
-            double x, y;
-            glfwGetCursorPos(window, &x, &y);
-
-            int viewportVals[4] = {0};
-            glGetIntegerv(GL_VIEWPORT, viewportVals);
-
-            vec4s viewport = {0};
-            for (u32 i = 0; i < ARRAY_SIZE(viewportVals); i++) {
-                viewport.raw[i] = float(viewportVals[i]);
-            }
-            const vec2s mouse_pos = {float(x), float(y)};
-            ray_t ray = screen_to_ray(mouse_pos, cam, viewport);
+            const vec4s fb_viewport = {
+                // .x = fb_start.x, .y = fb_start.y,
+                .z = image_size.x, .w = image_size.y,
+            };
+            ray_t ray = screen_to_ray(mouse_pos, cam, fb_viewport);
 
             for (u32 i = 0; i < meshes.size(); i++) {
                 const mesh_view& mesh = meshes[i];
