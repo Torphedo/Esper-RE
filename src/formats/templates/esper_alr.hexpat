@@ -23,6 +23,10 @@ struct ssb_text {
 } [[format_read("formatSSBText")]];
 
 fn decode_ssb_text(u32 encoded_val) {
+    if (encoded_val == 0xFFFFFFFF) {
+        return "[empty]";
+    }
+
     const str char_lookup = "\x000123456789abcdefghijklmnopqrstuvwxyz_";
     const u32 ENCODING_BASE = 40;
     const u32 ENCODED_CHAR_COUNT = 6;
@@ -70,7 +74,7 @@ struct chunk_layout {
     u32 resbuf_offset;     // Offset of resource buffer at end of file
     u32 offset_array_size; // Number of offsets in the array
     u32 resbuf_size;       // Total size of resource buffer at end of the file
-    u64 pad;
+    padding[8];
     u32 offsets[offset_array_size];
 };
 
@@ -100,14 +104,13 @@ struct material_entry {
     // of the lightmap texture, and the next value is the index of the normal map.
     u16 normal_idx;
     u16 normal_backup_idx;
-    padding[2];
-    u32 pad[4];
+    padding[18];
     u8 unk10[4];
     u8 unk11[4];
-    u32 pad2;
+    padding[4];
     u32 unk12;
     u16 unk13[2];
-    u32 pad3[2];
+    padding[8];
 };
 
 // ID 0x1
@@ -167,6 +170,10 @@ struct joint_t {
     s16 parent_idx;
     u32 name;
     padding[0x10];
+} [[format_read("format_joint_t")]];
+
+fn format_joint_t(joint_t joint) {
+    return std::format("{}", decode_ssb_text(joint.name));
 };
 
 // ID 0x3
@@ -233,10 +240,10 @@ struct vertbuf_entry {
     u8 unknown1;
     u32 unknown2;
     u32 vertex_count;
-    u32 pad;
+    padding[4];
     u32 unknown3;
     u8* data_ptr: u32 [[pointer_base("resbuf_ptr")]];
-    u32 pad2;
+    padding[4];
 };
 
 // ID 0x16
