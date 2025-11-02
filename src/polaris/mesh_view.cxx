@@ -104,7 +104,6 @@ bool mesh_view::update_vertex_buf(const u8* buf, u32 size) noexcept {
     }
     vertices = buf;
 
-    // TODO: Use glBufferSubData() when the size hasn't increased
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, size, buf, GL_DYNAMIC_DRAW); 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -166,6 +165,7 @@ bool mesh_view::apply_attributes() const noexcept {
 void mesh_view::edit_menu(al::resource& alr) noexcept {
     ImGui::Checkbox("Render mesh", &active);
     ImGui::InputU16("Vertex size", &this->vertex_size);
+    ImGui::InputU32("Custom UV Divisor", &this->uv_divisor);
 
     // Edit menus per attribute
     ImGui::Text("Vertex Attributes:");
@@ -175,8 +175,6 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
         snprintf(label, sizeof(label) - 1, "##%d", i);
         ImGui::Text("%s:", attribute_names[i]);
         ImGui::BeginChild(label, ImVec2(0, 0), ImGuiChildFlags_AutoResizeY);
-
-        ImGui::InputU32("Custom Divisor", &this->uv_divisor);
 
         ::edit_menu(attributes[i]);
 
