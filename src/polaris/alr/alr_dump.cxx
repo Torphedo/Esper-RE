@@ -1,6 +1,5 @@
 #include "alr_dump.hxx"
 #include <vector>
-#include <set>
 #include <cglm/struct.h>
 #include <imgui_internal.h>
 
@@ -9,9 +8,10 @@
 
 #include <formats/alr.h>
 #include <formats/pd_common.h>
+
+#include <polaris/pd_mesh.hxx>
+#include <polaris/version.h>
 #include "editor_alr.hxx"
-#include "pd_mesh.hxx"
-#include "version.h"
 
 namespace al {
 

@@ -3,7 +3,6 @@
 
 #include <cglm/struct.h>
 #include <common/int.h>
-#include <formats/alr.h>
 #include "mesh_view.hxx"
 
 // Standardized vertex format that can express all known Phantom Dust vertex
@@ -28,5 +27,3 @@ struct std_vertex {
 std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id);
 
 void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header);
-
-u32 gl_type_max(u16 type);

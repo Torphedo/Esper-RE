@@ -2,13 +2,10 @@
 #include <cstdlib>
 
 #include <common/file.h>
-#include <common/vfile.h>
 #include <common/logging.h>
 
 #include "formats/st00.h"
 #include "imgui_utils.hxx"
-#include "editor_alr.hxx"
-#include "alr_resources.hxx"
 #include "polaris.hxx"
 #include "mesh_view.hxx"
 

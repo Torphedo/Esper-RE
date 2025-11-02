@@ -8,9 +8,9 @@
 #include <common/logging.h>
 #include <common/vfile.h>
 
-#include "formats/alr.h"
+#include <formats/alr.h>
 #include "polaris.hxx"
-#include "alr_resources.hxx"
+#include "alr/alr_resources.hxx"
 #include "validation.hxx"
 #include "version.h"
 

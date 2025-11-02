@@ -42,9 +42,9 @@ add_executable(polaris
 
     src/polaris/polaris.cxx
     src/polaris/fileclass.cxx
-    src/polaris/editor_alr.cxx
+    src/polaris/alr/editor_alr.cxx
     src/polaris/validation.cxx
-    src/polaris/alr_resources.cxx
+    src/polaris/alr/alr_resources.cxx
     src/polaris/mapdata.cxx
     src/polaris/pd_mesh.cxx
     src/formats/pd_common.c
@@ -60,10 +60,10 @@ add_executable(polaris
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
     src/polaris/validation.cxx
-    src/polaris/alr_dump.cxx
-    src/polaris/alr_imgui.cxx
+    src/polaris/alr/alr_dump.cxx
+    src/polaris/alr/alr_imgui.cxx
     src/polaris/framebuffer.cxx
-    src/polaris/mkak.cxx
+    src/polaris/alr/mkak.cxx
     src/polaris/selector_ray.cxx
 )
 

@@ -7,9 +7,9 @@
 
 #include <common/int.h>
 
-#include "polaris.hxx"
+#include "alr/mkak.hxx"
 #include "scope_timer.hxx"
-#include "mkak.hxx"
+#include "polaris.hxx"
 
 void polaris::do_menu_bar() noexcept {
     ImGuiViewport* viewport = ImGui::GetMainViewport();

@@ -7,7 +7,7 @@
 #include <formats/alr.h>
 #include <layer.hxx>
 
-#include "editor_alr.hxx"
+#include "alr/editor_alr.hxx"
 #include "mapdata.hxx"
 #include "viewport.hxx"
 

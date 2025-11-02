@@ -2,9 +2,9 @@
 
 #include <common/vfile.h>
 #include <formats/alr_animations.h>
+#include <polaris/pd_mesh.hxx>
 #include "alr_resources.hxx"
 #include "editor_alr.hxx"
-#include "pd_mesh.hxx"
 #include "alr_dump.hxx"
 
 const char* texformat_str(alr_pixel_format format) {
