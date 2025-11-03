@@ -171,6 +171,7 @@ void update_gl_tex(texture img, gl_obj texture_id) {
 
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, img.width, img.height, 0, format, gl_size, img.data);
     }
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     // Reset state
     glBindTexture(GL_TEXTURE_2D, 0);
