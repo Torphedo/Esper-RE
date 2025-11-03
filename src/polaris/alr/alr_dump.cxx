@@ -170,6 +170,7 @@ void fprint_obj_idx(FILE* out, bool uv, bool normal, u16 idx) {
     if (normal) {
         fprintf(out, "/%hu", idx);
     }
+    fprintf(out, " ");
 }
 
 void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
@@ -195,9 +196,9 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
         }
 
         fprintf(out, "f ");
-        fprint_obj_idx(out, idx1, has_uvs, false);
-        fprint_obj_idx(out, idx2, has_uvs, false);
-        fprint_obj_idx(out, idx3, has_uvs, false);
+        fprint_obj_idx(out, has_uvs, false, idx1);
+        fprint_obj_idx(out, has_uvs, false, idx2);
+        fprint_obj_idx(out, has_uvs, false, idx3);
         fprintf(out, "\n");
 
         if (header.primitive_type != IDX_TYPE_STRIP) {
