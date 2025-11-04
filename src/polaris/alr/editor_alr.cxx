@@ -514,7 +514,7 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
         if (result == NFD_OKAY && path != nullptr) {
             char* obj_data = (char*)file_load(path);
             if (obj_data) {
-                obj_import(obj_data, alr, entry);
+                obj_import(obj_data, alr, offset, window_0x16.selected_vertex_buf);
                 free(obj_data);
             }
         }

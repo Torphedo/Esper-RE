@@ -38,8 +38,9 @@ bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, con
 ///
 /// @param txt OBJ text data
 /// @param alr The ALR to import into
-/// @param entry The vertex buffer that will be overwritten
-bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry);
+/// @param vertbuf_chunk_offset Offset of the 0x16 chunk to import into
+/// @param entry_idx The index of the vertex buffer to replace within the chunk
+bool obj_import(const char* txt, al::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
 
 // PINT == Polaris INTermediate file
 struct pint_header {

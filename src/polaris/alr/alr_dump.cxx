@@ -488,11 +488,36 @@ void obj_get_info(const char* txt, u32& out_vert_count, u32& out_idx_count, bool
     out_idx_count = idx_count;
 }
 
-bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry) {
+bool obj_import(const char* txt, al::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
     bool has_uvs = false;
     u32 vert_count = 0;
     u32 idx_count = 0;
     obj_get_info(txt, vert_count, idx_count, has_uvs);
+
+    vfile vf = vfile_open(alr.data, alr.reserve_size);
+
+    // Parse vertex buffer chunk
+    vfile_seek(&vf, vertbuf_chunk_offset);
+    const chunk_generic genheader = VFILE_READ(chunk_generic, &vf);
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    auto* entries = (vertbuf_entry*)vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*entries) * num_entries);
+
+    // Parse first index buffer chunk
+    const u32 idxbuf_offset = vf.pos;
+    const auto idxbuf_genheader = VFILE_READ(chunk_generic, &vf);
+    auto* idx_header = (idxbuf_header*)vfile_cur(vf);
+    vfile_seek(&vf, sizeof(*idx_header)); // Skip header
+    u16* indices = (u16*)vfile_cur(vf);
+
+    vf.pos = idxbuf_offset + idxbuf_genheader.size; // Skip to next chunk
+    if (idx_count > idx_header->num_indices) {
+        // Not enough space, need to push the next index buffer forwards
+        const u32 diff = idx_count - idx_header->num_indices;
+        alr.shift_chunks(vf.pos, diff * sizeof(u16));
+    }
+
+    vertbuf_entry* entry = &entries[entry_idx];
     if (vert_count > entry->vertex_count) {
         // Make space for the extra data
         const u32 diff = vert_count - entry->vertex_count;
@@ -501,8 +526,10 @@ bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry) {
         }
     }
 
-    u32 vert_pos = 0;
+    vertex_format_t vert_format = format_by_id(entry->format);
+
     u8* vertices = alr.resource_buffer() + entry->data_ptr;
+    const u8* vertices_end = vertices + ((entry->vertex_count + 1) * entry->vertex_size);
     const char* line = txt;
     while (*line != 0x00) {
         // Find end of line (NUL or newline)
@@ -514,6 +541,14 @@ bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry) {
         if (line[0] != '#') {
             // Faces
             if (strncmp(line, "f ", 2) == 0) {
+                u16 idx_temp[3] = {};
+                sscanf(line, "f %hd %hd %hd", &idx_temp[0], &idx_temp[1], &idx_temp[2]);
+
+                for (u16 idx : idx_temp) {
+                    // OBJ indices start @ 1
+                    *indices = idx - 1;
+                    indices++;
+                }
             }
 
             // Vertex position
@@ -522,7 +557,6 @@ bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry) {
                 sscanf(line, "v %f %f %f", &pos.x, &pos.y, &pos.z);
                 memcpy(vertices, &pos.raw, sizeof(pos.raw));
                 vertices += entry->vertex_size;
-                vert_pos++;
             }
 
             // vt == vertex texture coordinate
@@ -534,7 +568,9 @@ bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry) {
         line = line_end + 1;
     }
 
-    for (u32 i = vert_pos; i < entry->vertex_count; i++) {
+    idx_header->num_indices = idx_count;
+    idx_header->vertex_buf = entry_idx;
+    while (vertices < vertices_end) {
         // Wipe vertex position data
         memset(vertices, 0, sizeof(vec3s));
         vertices += entry->vertex_size;
