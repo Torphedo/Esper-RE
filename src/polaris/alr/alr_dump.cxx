@@ -449,4 +449,98 @@ bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, con
     return true;
 }
 
+void obj_get_info(const char* txt, u32& out_vert_count, u32& out_idx_count, bool& out_has_uvs) {
+    assert(txt != nullptr);
+    u16 vert_count = 0;
+    u16 idx_count = 0;
+    bool has_uvs = false;
+
+    const char* line = txt;
+    while (*line != 0x00) {
+        // Find end of line (NUL or newline)
+        const char* line_end = strchr(line, '\n');
+        if (!line_end) {
+            break;
+        }
+
+        if (line[0] != '#') {
+            // Faces
+            if (strncmp(line, "f ", 2) == 0) {
+                // Each face requires 3 indices
+                idx_count += 3;
+            }
+            // Vertex position
+            if (strncmp(line, "v ", 2) == 0) {
+                vert_count++;
+            }
+            // vt == vertex texture coordinate
+            if (strncmp(line, "vt ", 3) == 0) {
+                has_uvs = true;
+            }
+        }
+
+        // Advance to next line
+        line = line_end + 1;
+    }
+
+    out_has_uvs = has_uvs;
+    out_vert_count = vert_count;
+    out_idx_count = idx_count;
+}
+
+bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry) {
+    bool has_uvs = false;
+    u32 vert_count = 0;
+    u32 idx_count = 0;
+    obj_get_info(txt, vert_count, idx_count, has_uvs);
+    if (vert_count > entry->vertex_count) {
+        // Make space for the extra data
+        const u32 diff = vert_count - entry->vertex_count;
+        if (!alr.shift_vertbuf(entry->data_ptr, diff * entry->vertex_size)) {
+            return false;
+        }
+    }
+
+    u32 vert_pos = 0;
+    u8* vertices = alr.resource_buffer() + entry->data_ptr;
+    const char* line = txt;
+    while (*line != 0x00) {
+        // Find end of line (NUL or newline)
+        const char* line_end = strchr(line, '\n');
+        if (!line_end) {
+            break;
+        }
+
+        if (line[0] != '#') {
+            // Faces
+            if (strncmp(line, "f ", 2) == 0) {
+            }
+
+            // Vertex position
+            if (strncmp(line, "v ", 2) == 0) {
+                vec3s pos = {};
+                sscanf(line, "v %f %f %f", &pos.x, &pos.y, &pos.z);
+                memcpy(vertices, &pos.raw, sizeof(pos.raw));
+                vertices += entry->vertex_size;
+                vert_pos++;
+            }
+
+            // vt == vertex texture coordinate
+            if (strncmp(line, "vt ", 3) == 0) {
+            }
+        }
+
+        // Advance to next line
+        line = line_end + 1;
+    }
+
+    for (u32 i = vert_pos; i < entry->vertex_count; i++) {
+        // Wipe vertex position data
+        memset(vertices, 0, sizeof(vec3s));
+        vertices += entry->vertex_size;
+    }
+
+    return true;
+}
+
 } // namespace al

@@ -34,6 +34,13 @@ void dump_vertex_buf(const al::resource& alr, const char* path, u32 vertchunk_of
 
 bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, const char* bone_name);
 
+/// @brief Import a mesh into the ALR
+///
+/// @param txt OBJ text data
+/// @param alr The ALR to import into
+/// @param entry The vertex buffer that will be overwritten
+bool obj_import(const char* txt, al::resource& alr, vertbuf_entry* entry);
+
 // PINT == Polaris INTermediate file
 struct pint_header {
     enum class content_type : u8 {

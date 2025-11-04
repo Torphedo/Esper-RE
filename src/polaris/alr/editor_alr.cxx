@@ -506,6 +506,20 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
         }
         free(path);
     }
+    if (ImGui::Button("Import OBJ")) {
+        // Display the file picker
+        nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
+        char* path = nullptr;
+        nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        if (result == NFD_OKAY && path != nullptr) {
+            char* obj_data = (char*)file_load(path);
+            if (obj_data) {
+                obj_import(obj_data, alr, entry);
+                free(obj_data);
+            }
+        }
+        free(path);
+    }
 
     if (ImGui::Button("Send to Viewport")) {
         this->send_vertbuf_to_viewport(alr, viewport);
