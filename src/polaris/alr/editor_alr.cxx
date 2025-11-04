@@ -941,7 +941,17 @@ bool resource::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
     // Adjust resource buffer offsets
     for (chunk c : chunks) {
         vfile vf = vf_from_chunk(c);
-        if (c.id == 0x15) {
+        if (c.id == 0x11) {
+            auto* header = (chunk_layout*) vfile_cur(vf);
+            header->texbuf_size += shift_amount;
+            if (data_offset == 0) {
+                // Since the start has moved, the other offsets don't need to move.
+                header->texbuf_offset += shift_amount;
+                resbuf_offset += shift_amount;
+                break;
+            }
+        }
+        else if (c.id == 0x15) {
             vfile_seek(&vf, sizeof(chunk_generic));
             const u32 num_entries = VFILE_READ(u32, &vf);
             auto* entries = (texture_entry*)vfile_cur(vf);
