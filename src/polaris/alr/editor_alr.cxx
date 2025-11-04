@@ -943,12 +943,13 @@ bool resource::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
         vfile vf = vf_from_chunk(c);
         if (c.id == 0x11) {
             auto* header = (chunk_layout*) vfile_cur(vf);
-            header->texbuf_size += shift_amount;
             if (data_offset == 0) {
-                // Since the start has moved, the other offsets don't need to move.
                 header->texbuf_offset += shift_amount;
                 resbuf_offset += shift_amount;
+                // Since the start has moved, the other offsets don't need to move.
                 break;
+            } else {
+                header->texbuf_size += shift_amount;
             }
         }
         else if (c.id == 0x15) {
