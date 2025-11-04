@@ -874,8 +874,9 @@ bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
     const chunk last_chunk = chunks.back();
     const u32 end_of_chunks = last_chunk.offset + last_chunk.size;
     if (end_of_chunks + shift_amount >= resbuf_offset) {
-        LOG_MSG(error, "Shifting chunks by %d would hit the resource buffer. This case is unimplemented.\n", shift_amount);
-        return false;
+        if (!shift_vertbuf(0, shift_amount)) {
+            return false;
+        }
     }
 
     if (last_chunk.offset < begin_offset) {
