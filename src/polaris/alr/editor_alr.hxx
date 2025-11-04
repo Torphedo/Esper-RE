@@ -56,6 +56,7 @@ struct window_state_0x15 {
 struct window_state_0x16 {
     u32 selected_vertex_buf = 0;
     MemoryEditor hex_vertbuf;
+    s32 shift_amount = 0;
 };
 
 struct viewport_t;
@@ -180,6 +181,12 @@ public:
     /// This also fixes some offsets in the header to account for the change.
     /// This function will fail if the resource buffer gets in the way.
     bool shift_chunks(u32 begin_offset, s32 shift_amount) noexcept;
+
+    /// @brief Shift a vertex buffer forwards by some amount
+    ///
+    /// @param data_offset Offset of the vertex buffer within the larger resource buffer
+    /// @param shift_amount The amount to shift forward by
+    bool shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept;
 
     void draw(viewport_t& viewport) noexcept;
 

@@ -511,6 +511,13 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
         this->send_vertbuf_to_viewport(alr, viewport);
     }
 
+    if (ImGui::CollapsingHeader("Shift Buffer")) {
+        ImGui::InputS32("Shift Amount", &window_0x16.shift_amount);
+        if (ImGui::Button("Go!")) {
+            alr.shift_vertbuf(entry->data_ptr, window_0x16.shift_amount);
+        }
+    }
+
     al::edit_vertbuf_entry(*entry);
     ImGui::EndChild();
 
@@ -882,9 +889,11 @@ bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
         }
     }
 
-    const void* source = data + begin_offset;
+    void* source = data + begin_offset;
     void* target = (void*)(s64(source) + shift_amount);
     memmove(target, source, region_size);
+    // Wipe the now unused space
+    memset(source, 0, shift_amount);
 
     chunk header = chunks[0];
     assert(header.id == 0x11);
@@ -897,6 +906,47 @@ bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
     }
 
     return true;
+}
+
+bool resource::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
+    s64 remaining_size = alr_size - (resbuf_offset + data_offset);
+    alr_size += shift_amount;
+    if (alr_size > reserve_size) {
+        LOG_MSG(error, "Unimplemented case: not enough reserved space to expand resource buffer.\n");
+        return false;
+    }
+
+    u8* source = resource_buffer() + data_offset;
+    u8* target = source + shift_amount;
+
+    // Shift forward and wipe unused space
+    memmove(target, source, remaining_size);
+    memset(source, 0, shift_amount);
+
+    // Adjust resource buffer offsets
+    for (chunk c : chunks) {
+        vfile vf = vf_from_chunk(c);
+        if (c.id == 0x15) {
+            vfile_seek(&vf, sizeof(chunk_generic));
+            const u32 num_entries = VFILE_READ(u32, &vf);
+            auto* entries = (texture_entry*)vfile_cur(vf);
+            for (u32 i = 0; i < num_entries; i++) {
+                if (entries[i].data_ptr >= data_offset) {
+                    entries[i].data_ptr += shift_amount;
+                }
+            }
+        }
+        else if (c.id == 0x16) {
+            vfile_seek(&vf, sizeof(chunk_generic));
+            const u32 num_entries = VFILE_READ(u32, &vf);
+            auto* entries = (vertbuf_entry*)vfile_cur(vf);
+            for (u32 i = 0; i < num_entries; i++) {
+                if (entries[i].data_ptr >= data_offset) {
+                    entries[i].data_ptr += shift_amount;
+                }
+            }
+        }
+    }
 }
 
 void resource::draw(viewport_t& viewport) noexcept {
