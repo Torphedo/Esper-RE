@@ -62,7 +62,7 @@ mat4s index_buffer::get_transform() const noexcept {
         return this->transform;
     } else {
         mat4s rot_xform = glms_euler_zyx(*rotation);
-        mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY, *position);
+        mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *position);
         return glms_mat4_mul(pos_xform, rot_xform);
     }
 }

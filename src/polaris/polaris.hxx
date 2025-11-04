@@ -11,10 +11,6 @@
 #include "mapdata.hxx"
 #include "viewport.hxx"
 
-extern "C" {
-    #include <common/gl/input.h>
-}
-
 // State for the overall editor
 struct polaris : gui_layer {
     // State for a loaded ALR file
