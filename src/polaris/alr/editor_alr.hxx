@@ -145,6 +145,7 @@ public:
     u8* data = nullptr;
     s64 alr_size = 0;
     ptrdiff_t resbuf_offset = 0;
+    bool loaded = false;
 
     // If we guess the texture format wrong, we might accidentally read beyond
     // the filesize. Because a mistake will inevitably happen, we reserve a

@@ -5,13 +5,15 @@
 #include "scope_timer.hxx"
 #include "imgui_utils.hxx"
 
-bool alr_validate(std::string& msg, const polaris& pol) noexcept {
-    const scope_timer draw_timer(pol.timer_map, "polaris_validate");
+bool alr_validate(std::string& msg, const al::resource& alr, bool headless) noexcept {
+    if (!alr.loaded) {
+        return true; // Not a failure, just not loaded
+    }
 
     bool result = true;
     std::optional<al::resource::chunk> header_chunk;
-    for (const al::resource::chunk& chunk : pol.alr.chunks) {
-        result &= alr_chunk_validate(pol.alr, chunk, msg, pol.headless);
+    for (const al::resource::chunk& chunk : alr.chunks) {
+        result &= alr_chunk_validate(alr, chunk, msg, headless);
         if (chunk.id == 0x11) {
             header_chunk = chunk;
         }
@@ -29,16 +31,16 @@ bool alr_validate(std::string& msg, const polaris& pol) noexcept {
     }
 
     // Get vfile for header offsets
-    vfile alr_vf = vfile_open(pol.alr.data, pol.alr.alr_size);
+    vfile alr_vf = vfile_open(alr.data, alr.alr_size);
     vfile header_vf = alr_vf;
     const auto header = VFILE_READ(chunk_layout, &header_vf);
     const s32* offsets = (s32*)vfile_cur(header_vf);
 
-    const s64 size_mismatch = pol.alr.alr_size - (header.texbuf_offset + header.texbuf_size);
+    const s64 size_mismatch = alr.alr_size - (header.texbuf_offset + header.texbuf_size);
     if (size_mismatch < 0) {
         str_format_append(msg,
                           "Header claims resbuf is 0x%X bytes @ 0x%X, but ALR is only 0x%X bytes (off by 0x%X)\n",
-                          header.texbuf_size, header.texbuf_offset, pol.alr.alr_size, abs(size_mismatch));
+                          header.texbuf_size, header.texbuf_offset, alr.alr_size, abs(size_mismatch));
         result = false;
     } else if (size_mismatch > 0) {
         str_format_append(msg,
@@ -63,8 +65,8 @@ bool alr_validate(std::string& msg, const polaris& pol) noexcept {
         al::resource::chunk last(0xFF, 0, 0);
 
         // Skip up to the last chunk before the current offset
-        while (chunk_idx < pol.alr.chunks.size()) {
-            const al::resource::chunk chunk = pol.alr.chunks.at(chunk_idx);
+        while (chunk_idx < alr.chunks.size()) {
+            const al::resource::chunk chunk = alr.chunks.at(chunk_idx);
 
             // Save the first 0x00 chunk we find
             if (chunk.id == 0x00 && !terminator.has_value()) {
@@ -316,4 +318,15 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
         msg.append("\n");
     }
     return result;
+}
+
+bool mapdata_validate(const mapdata& map, std::string& msg) noexcept {
+    if (!map.data) {
+        return true; // Not a failure, just not loaded
+    }
+    if (!map.load_verify()) {
+        return false;
+    }
+
+    return true;
 }

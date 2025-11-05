@@ -767,6 +767,7 @@ bool resource::load(const char* path) noexcept {
     chunks = shatter_alr(data, alr_size);
     tex_manager.atlasheader_offset = first_chunk_by_id(0x10).offset;
     tex_manager.texheader_offset = first_chunk_by_id(0x15).offset;
+    loaded = true;
     return true;
 }
 
@@ -973,6 +974,8 @@ bool resource::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
             }
         }
     }
+
+    return true;
 }
 
 void resource::draw(viewport_t& viewport) noexcept {

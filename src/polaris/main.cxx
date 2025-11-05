@@ -6,9 +6,11 @@
 #include <gui_bootstrap.hxx>
 #include <layer_imgui.hxx>
 #include <common/logging.h>
+#include <common/path.h>
 #include <common/vfile.h>
 
 #include <formats/alr.h>
+#include <formats/st00.h>
 #include "polaris.hxx"
 #include "alr/alr_resources.hxx"
 #include "validation.hxx"
@@ -116,12 +118,21 @@ int main(int argc, char** argv) {
     app.layers.emplace_back(std::make_unique<layer_imgui>());
     app.layers.emplace_back(std::make_unique<polaris>());
     polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
-    
+
+    const char* path = argv[1];
     if (argc >= 2) {
         // We have an argument, it should be a filepath.
-        if (!pol->alr.load(argv[1])) {
-            // An error message will be printed for us down the chain, just exit
-            return EXIT_FAILURE;
+        if (file_has_magic(path, 0x11)) {
+            if (!pol->alr.load(path)) {
+                // An error message will be printed for us down the chain, just exit
+                return EXIT_FAILURE;
+            }
+        }
+        else if (file_has_magic(path, st00_magic)) {
+            if (!pol->map.load(path)) {
+                // An error message will be printed for us down the chain, just exit
+                return EXIT_FAILURE;
+            }
         }
     }
 
@@ -138,7 +149,6 @@ int main(int argc, char** argv) {
     }
 
     // Parse arguments
-    const char* path = argv[1];
     const char* flag = argv[2];
 
     if (strcmp(flag, dump_textures_flag) == 0) {
@@ -147,7 +157,8 @@ int main(int argc, char** argv) {
     } else if (strcmp(flag, validate_flag) == 0) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
-        const bool result = alr_validate(message, *pol);
+        bool result = alr_validate(message, pol->alr, true);
+        result &= mapdata_validate(pol->map, message);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");
         } else {

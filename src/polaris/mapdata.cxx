@@ -10,6 +10,9 @@
 #include "mesh_view.hxx"
 
 bool mapdata::load_verify() const noexcept {
+    if (!data) {
+        return false;
+    }
     const u32 magic = *(u32*)data;
     if (magic != st00_magic) {
         LOG_MSG(error, "\"%s\" doesn't seem to be a .dat map file (invalid magic 0x%x)\n", filepath, magic);
