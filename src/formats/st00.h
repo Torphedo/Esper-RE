@@ -13,7 +13,9 @@ static const u32 cp00_magic = MAGIC('C', 'P', '0', '0');
 
 typedef struct {
     s32 object_id;
-    u32 unk1;
+    u8 unk1;
+    u8 unk2;
+    u16 unk3;
     u32 pad;
     // Object position
     vec3f pos;

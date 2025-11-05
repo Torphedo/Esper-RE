@@ -1,8 +1,8 @@
 #include "validation.hxx"
+#include <string.h>
 
 #include <common/vfile.h>
 
-#include "scope_timer.hxx"
 #include "imgui_utils.hxx"
 
 bool alr_validate(std::string& msg, const al::resource& alr, bool headless) noexcept {
@@ -320,6 +320,30 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
     return result;
 }
 
+bool ps01_validate(const void* data, u32 offset, u32 num_entries, u32 nm00_count, std::string& msg) noexcept {
+    const ps01_entry* entries = (ps01_entry*)data;
+
+    bool result = false;
+    for (u32 i = 0; i < num_entries; i++) {
+        const ps01_entry& entry = entries[i];
+        const u32 cur_offset = offset + i * sizeof(*entries);
+
+        if (entry.object_id >= nm00_count) {
+            str_format_append(msg, "Object ID @ 0x%X %d is out of bounds (max %d)", cur_offset, entry.object_id, nm00_count);
+            result = false;
+        }
+        AL_ASSERT(entry.pad == 0, "Apparent PS01 padding @ 0x%X != 0 (0x%X)", cur_offset, entry.pad);
+
+        // Only values 1-4 have been observed
+        if (entry.unk1 < 1 || entry.unk1 > 4) {
+            str_format_append(msg, "PS01 unk1 @ 0x%X has unknown value 0x%X", cur_offset, entry.unk1);
+            result = false;
+        }
+    }
+
+    return result;
+}
+
 bool mapdata_validate(const mapdata& map, std::string& msg) noexcept {
     if (!map.data) {
         return true; // Not a failure, just not loaded
@@ -327,6 +351,36 @@ bool mapdata_validate(const mapdata& map, std::string& msg) noexcept {
     if (!map.load_verify()) {
         return false;
     }
+
+    bool result = true;
+    vfile vf = vfile_open(map.data, map.size);
+    const st00_t& header = VFILE_READ(st00_t, &vf);
+    // Area file magic has the form "AR0x" (e.g. "AR02", "AR05", etc.)
+    const bool is_area = strncmp("AR0", (const char*)&header.magic, 3) == 0;
+    if (header.magic != st00_magic && !is_area) {
+        str_format_append(msg, "Bad stage magic 0x%X ('%04s')", header.magic, (const char*)&header.magic);
+        result = false;
+    }
+
+    // Check for new values in areas where only a few values are known
+    if (header.unk1 != 1 && header.unk1 != 2 && header.unk1 != 3 && header.unk1 != 9 && header.unk1 != -1) {
+        str_format_append(msg, "Header unk1 has unknown value %d!", header.unk1);
+    }
+    if (header.unk2 != -1 && header.unk2 != 0x140) {
+        str_format_append(msg, "Header unk2 has unknown value %d!", header.unk2);
+    }
+
+    if (header.chunk_size > 0) {
+        const auto* ps00 = (ps01_entry*)(map.data + header.chunk_size);
+        ps01_validate(ps00, header.chunk_size, header.ps00_count, header.nm00_count, msg);
+    }
+    if (header.ps01_offset > 0) {
+        const auto* ps01 = (ps01_entry*)(map.data + header.ps01_offset);
+        ps01_validate(ps01, header.chunk_size, header.ps01_count, header.nm00_count, msg);
+    }
+
+    // TODO: Verify that none of the regions overlap
+    // TODO: Verify that area-only fields are unused in normal stages
 
     return true;
 }
