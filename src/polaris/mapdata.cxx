@@ -9,6 +9,13 @@
 #include "polaris.hxx"
 #include "mesh_view.hxx"
 
+bool mapdata::offset_is_reasonable(s32 offset) noexcept {
+    if (offset <= 0 || offset > size) {
+        return false;
+    }
+    return true;
+}
+
 bool mapdata::load_verify() const noexcept {
     if (!data) {
         return false;
@@ -113,6 +120,22 @@ void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     }
 }
 
+void mapdata::edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept {
+    if (header->ps00_count > 0) {
+        const bool all_to_viewport = ImGui::Button("Send all to viewport");
+        u32 offset = header->chunk_size;
+        for (u32 i = 0; i < header->ps00_count; i++) {
+            if (all_to_viewport) {
+                map_obj_to_viewport(pol.viewport, pol.alr, &entries[i]);
+            }
+            ImGui::Text("@ 0x%X: ", offset);
+            edit_ps01_entry(i, &entries[i], header->nm00_count);
+            ImGui::Spacing();
+            offset += sizeof(*entries);
+        }
+    }
+}
+
 void mapdata::edit_cp00_entries(s32 offset) noexcept {
     if (offset < 0) {
         ImGui::Text("No CP00 entry (offset %d)", offset);
@@ -150,68 +173,60 @@ void mapdata::draw_custom_editor() {
     auto* ps00_entries = (ps01_entry*)(data + header->chunk_size);
     auto* ps01_entries = (ps01_entry*)(data + header->ps01_offset);
     if (ImGui::BeginTabItem("PS0/")) {
-        const bool all_to_viewport = ImGui::Button("Send all to viewport");
-        u32 offset = header->chunk_size;
-        for (u32 i = 0; i < header->ps00_count; i++) {
-            if (all_to_viewport) {
-                map_obj_to_viewport(pol.viewport, pol.alr, &ps00_entries[i]);
-            }
-            ImGui::Text("@ 0x%X: ", offset);
-            edit_ps01_entry(i, &ps00_entries[i], header->nm00_count);
-            ImGui::Spacing();
-            offset += sizeof(*ps00_entries);
-        }
+        edit_ps01_entries(header, ps00_entries);
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("PS01")) {
-        const bool all_to_viewport = ImGui::Button("Send all to viewport");
-        u32 offset = header->ps01_offset;
-        for (u32 i = 0; i < header->ps01_count; i++) {
-            if (all_to_viewport) {
-                map_obj_to_viewport(pol.viewport, pol.alr, &ps00_entries[i]);
-            }
-            ImGui::Text("@ 0x%X: ", offset);
-            edit_ps01_entry(i, &ps01_entries[i], header->nm00_count);
-            ImGui::Spacing();
-            offset += sizeof(*ps01_entries);
-        }
+        edit_ps01_entries(header, ps01_entries);
         ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("NM00") && header->nm00_offset > 0) {
-        char* txt = (char*)(data + header->nm00_offset);
-        for (s32 i = 0; i < header->nm00_count; i++) {
-            const s32 len = strlen(txt) + 1;
-            std::string label = "Object " + std::to_string(i);
-            ImGui::InputText(label.c_str(), txt, len);
-            txt += len;
+    if (ImGui::BeginTabItem("NM00")) {
+        if (offset_is_reasonable(header->nm00_offset)) {
+            char* txt = (char*)(data + header->nm00_offset);
+            for (s32 i = 0; i < header->nm00_count; i++) {
+                const s32 len = strlen(txt) + 1;
+                std::string label = "Object " + std::to_string(i);
+                ImGui::InputText(label.c_str(), txt, len);
+                txt += len;
+            }
         }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (1)")) {
-        edit_cp00_entries(header->CP00_offset1);
+        if (offset_is_reasonable(header->CP00_offset1)) {
+            edit_cp00_entries(header->CP00_offset1);
+        }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (2)")) {
-        edit_cp00_entries(header->CP00_offset2);
+        if (offset_is_reasonable(header->CP00_offset2)) {
+            edit_cp00_entries(header->CP00_offset2);
+        }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (3)")) {
-        edit_cp00_entries(header->CP00_offset3);
+        if (offset_is_reasonable(header->CP00_offset3)) {
+            edit_cp00_entries(header->CP00_offset3);
+        }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (4)")) {
-        edit_cp00_entries(header->CP00_offset4);
+        if (offset_is_reasonable(header->CP00_offset4)) {
+            edit_cp00_entries(header->CP00_offset4);
+        }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (5)")) {
-        edit_cp00_entries(header->CP00_offset5);
+        if (offset_is_reasonable(header->CP00_offset5)) {
+            edit_cp00_entries(header->CP00_offset5);
+        }
         ImGui::EndTabItem();
     }
 

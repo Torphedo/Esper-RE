@@ -32,7 +32,10 @@ public:
     st00_t* get_header() {
         return (st00_t*)data;
     }
+    bool offset_is_reasonable(s32 offset) noexcept;
+
     void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept;
+    void edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept;
     void edit_cp00_entries(s32 offset) noexcept;
 
     void draw_custom_editor();
