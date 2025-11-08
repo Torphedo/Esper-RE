@@ -14,7 +14,9 @@ bool mapdata::load_verify() const noexcept {
         return false;
     }
     const u32 magic = *(u32*)data;
-    if (magic != st00_magic) {
+    const bool is_st00 = (magic == st00_magic);
+    const bool is_area = strncmp((char*)data, "AR0", 3) == 0;
+    if (!is_st00 && !is_area) {
         LOG_MSG(error, "\"%s\" doesn't seem to be a .dat map file (invalid magic 0x%x)\n", filepath, magic);
         return false;
     }
