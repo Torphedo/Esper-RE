@@ -55,7 +55,7 @@ const char* DAE_HEADER = R"(<?xml version="1.0" encoding="utf-8"?>
       <authoring_tool>Polaris</authoring_tool>
     </contributor>
     <unit name="meter" meter="1"/>
-    <up_axis>Z_UP</up_axis>
+    <up_axis>Y_UP</up_axis>
   </asset>
   <library_images/>
   <library_controllers/>
@@ -104,7 +104,7 @@ void xml_dump_joint(FILE* f, const joint_tree* joints, u32 idx) {
 
     // 3D software wants the inverse bind pose transform
     // We transpose because DAE is row-major, and we're column-major
-    const mat4s inv_bind_xform = glms_mat4_transpose(glms_mat4_inv(xform));
+    const mat4s inv_bind_xform = glms_mat4_transpose(xform);
     fprintf(f, "<matrix sid=\"transform\">");
     const float* raw = (float*)&inv_bind_xform;
     for (u32 i = 0; i < (sizeof(mat4s) / sizeof(float)); i++) {
@@ -365,7 +365,7 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
     anim_key_info(key_size, frame_type, component_type, num_components);
     const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
     const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
-    const char* axes = "XZY";
+    const char* axes = "XYZ";
 
     vfile vf = vfile_open((void*)keydata, num_keys * key_size);
     for (u32 i = 0; i < num_components; i++) {
@@ -396,14 +396,14 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
                 case ImGuiDataType_Float:
                     component = VFILE_READ(float, &vf);
                     if (type == KEY_ROTATE) {
-                        component = glm_deg(component); // Convert to degrees
+                        component = glm_deg(component);
                     }
                     break;
                 case ImGuiDataType_U16:
                     component = VFILE_READ(s16, &vf);
                     component /= float(INT16_MAX);
                     if (type == KEY_ROTATE) {
-                        component *= 180.0f; // Convert to degrees
+                        component = glm_deg(component);
                     }
                     break;
                 default:
