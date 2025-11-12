@@ -293,9 +293,10 @@ const char *anim_boilerplate = R"(animVersion 1.1;
 mayaVersion %s; # This is actually the Polaris version
 timeUnit film; # Frames
 linearUnit m;
-angularUnit deg;
+angularUnit rad;
 startTime 0;
 endTime %d;
+
 )";
 
 void fprint_anim_boilerplate(FILE* f, const char* polaris_version, float anim_length) {
@@ -395,16 +396,10 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
             switch (component_type) {
                 case ImGuiDataType_Float:
                     component = VFILE_READ(float, &vf);
-                    if (type == KEY_ROTATE) {
-                        component = glm_deg(component);
-                    }
                     break;
                 case ImGuiDataType_U16:
                     component = VFILE_READ(s16, &vf);
                     component /= float(INT16_MAX);
-                    if (type == KEY_ROTATE) {
-                        component = glm_deg(component);
-                    }
                     break;
                 default:
                     LOG_MSG(warning, "Unknown key format with size %d!\n", key_size);
