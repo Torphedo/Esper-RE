@@ -56,7 +56,7 @@ typedef struct {
     u32 offset_array_size; // Number of offsets in the array
     u32 texbuf_size;       // Total size of resource buffer at end of the file
     u64 pad;
-    u32 offsets[]; // This takes up 0 bytes in C
+    s32 offsets[]; // This takes up 0 bytes in C
 }chunk_layout;
 static_assert(sizeof(chunk_layout) == 0x20, "Wrong layout chunk header size!");
 
@@ -404,7 +404,7 @@ typedef struct {
     u32 id; // 0x5
     u32 size;
     float length; // How many frames the animation lasts
-    u16 unknown_settings1;
+    u16 joint_idx;
     u16 rotation_key_size;
     u32 translation_key_count; // Name from 0x000DDFF3 in pdpxb20031024saito_d.xbe (offset 0xCDFF3 in the file)
     u32 rotation_key_count;    // Name from 0x000DE04E in pdpxb20031024saito_d.xbe (offset 0xCE04E in the file)

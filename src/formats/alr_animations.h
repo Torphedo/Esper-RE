@@ -20,7 +20,7 @@ enum {
     ALR_NUM_PLAYER_ANIMATIONS = 129,
 };
 
-const char* animation_names[] = {
+static const char* animation_names[] = {
     "bas01::WAIT0",
     "bas16::WAIT1",
     "bas17::WAIT1IN",

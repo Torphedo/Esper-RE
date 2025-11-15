@@ -194,9 +194,9 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
                 const chunk_armature skull = VFILE_READ(chunk_armature, &skel_vf);
                 const u32 joint_slots = (skel_vf.size - skel_vf.pos) / sizeof(joint_t);
 
-                if (header.unknown_settings1 > skull.joint_count) {
-                    str_format_append(msg, "Joint index (0x%x) < joint count (0x%x)", header.unknown_settings1, skull.joint_count);
-                    if (header.unknown_settings1 < joint_slots) {
+                if (header.joint_idx > skull.joint_count) {
+                    str_format_append(msg, "Joint index (0x%x) < joint count (0x%x)", header.joint_idx, skull.joint_count);
+                    if (header.joint_idx < joint_slots) {
                         str_format_append(msg, "\t(but still under the actual array size (0x%x)", joint_slots);
                     } else {
                         result = false;

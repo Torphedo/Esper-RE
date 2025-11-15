@@ -19,7 +19,7 @@ namespace al {
             for (u32 i = 0; i < layout.offset_array_size; i++) {
                 std::string label;
                 str_format_append(label, "##%d", i);
-                ImGui::InputU32(label.c_str(), &layout.offsets[i], hex_flags);
+                ImGui::InputS32(label.c_str(), &layout.offsets[i], hex_flags);
             }
         }
 

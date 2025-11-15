@@ -169,7 +169,7 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
         const auto armature_header = VFILE_READ(chunk_armature, &armature_vf);
         const auto* joints = (joint_t*)vfile_cur(armature_vf);
 
-        const u32 joint_idx = header->unknown_settings1;
+        const u32 joint_idx = header->joint_idx;
         const joint_t joint = joints[joint_idx];
 
         decoded_text decoded = {};
@@ -193,7 +193,7 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
         ImGui::InputU32("# scale keys", &header->scale_key_count);
 
         ImGui::NewLine();
-        ImGui::InputU16("Unknown 1", &header->unknown_settings1);
+        ImGui::InputU16("Unknown 1", &header->joint_idx);
         ImGui::InputU8("Unknown 2", &header->unknown_settings2);
         ImGui::InputU8("Unknown 3", &header->unknown_settings3);
     }
