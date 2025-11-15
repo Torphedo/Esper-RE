@@ -238,8 +238,8 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
     ImGui::NewLine();
 
     for (u32 i = 0; i < idx_buffers.size(); i++) {
-        ImGui::Text("Index buffer %d", i);
         index_buffer& buf = idx_buffers.at(i);
+        ImGui::Text("Index buffer %d (@ 0x%X)", i, buf.idx_chunk_offset);
         char label[32] = {0};
 
         snprintf(label, sizeof(label) - 1, "Render ##%d", i);

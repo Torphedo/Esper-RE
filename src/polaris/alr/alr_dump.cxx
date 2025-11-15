@@ -438,7 +438,6 @@ linearUnit m;
 angularUnit rad;
 startTime 0;
 endTime %d;
-
 )";
 
 void fprint_anim_boilerplate(FILE* f, const char* polaris_version, float anim_length) {
