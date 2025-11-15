@@ -26,7 +26,7 @@ void split_generic_chunk(void* ctx, chunk_generic chunk, u8* chunk_buf, u32 idx)
     fclose(dump);
 }
 
-void split_resource(void* ctx, u8* buf, u32 size, u32 idx) {
+void split_resource(void* ctx, u8* buf, u32 size, char* name, u32 idx) {
     if (!path_is_dir("resources")) {
         system("mkdir resources");
     }
