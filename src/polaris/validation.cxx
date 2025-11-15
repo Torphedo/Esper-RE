@@ -176,9 +176,25 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
             break;
         }
         case 0x3: {
-            const u16 num_joints = VFILE_READ(u16, &chunkvf);
-            // We don't validate the entry count since the value in the header
-            // doesn't actually indicate entry count
+            const auto joint_header = VFILE_READ(chunk_armature, &chunkvf);
+            const joint_t* joints = VFILE_READ_PTR(joint_t, &chunkvf);
+
+            for (u32 i = 0; i < joint_header.joint_count; i++) {
+                const joint_t& joint = joints[i];
+                AL_ASSERT(joint.idx == i, "Joint %d had the wrong index (%d)!", i, joint.idx);
+                AL_ASSERT(joint.pad1 == 0, "Joint %d pad1 was 0x%hX, not 0!", i, joint.pad1);
+            }
+
+            const u32 size_left = chunk.size - sizeof(chunk_generic) - sizeof(u16);
+            const u16 num_entries = size_left / sizeof(joint_t);
+
+            for (u32 i = joint_header.joint_count; i < num_entries; i++) {
+                const joint_t& joint = joints[i];
+                mat4s identity = GLMS_MAT4_IDENTITY;
+                if (memcmp(&joint, identity.raw, sizeof(joint_t)) != 0) {
+                    AL_ASSERT(false, "Joint %d had a non-identity matrix!", i);
+                }
+            }
             break;
         }
         case 0x5: {

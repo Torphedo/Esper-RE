@@ -433,11 +433,11 @@ typedef struct {
     vec3f scale;
     u8 unk1;
     u8 unk2;
-    u16 unk3;
-    u16 unk4;
+    u16 idx;
+    u16 pad1;
     s16 parent_idx;
     u32 name;
-    u8 pad[0x10];
+    u8 pad2[0x10];
 }joint_t;
 static_assert(sizeof(joint_t) == 0x40, "Wrong joint size!");
 

@@ -151,10 +151,9 @@ namespace al {
 
         ImGui::InputPDString("Joint Name", &joint.name);
         ImGui::Text("Parent index: %d", joint.parent_idx);
+        ImGui::InputU16("Current Index", &joint.idx);
         ImGui::InputU8("Unknown 1", &joint.unk1);
         ImGui::InputU8("Unknown 2", &joint.unk2);
-        ImGui::InputU16("Unknown 3", &joint.unk3);
-        ImGui::InputU16("Unknown 4", &joint.unk4);
         if (ImGui::Button("Dump to file")) {
             FILE* f = fopen("bones.dae", "wb");
             if (f != nullptr) {
