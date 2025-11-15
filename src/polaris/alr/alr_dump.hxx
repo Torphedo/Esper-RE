@@ -13,6 +13,31 @@ namespace al {
 
 void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& component_type, u32& num_components);
 
+/// Generically read an animation key
+/// @param key Pointer to key data
+/// @param key_size Size of a single animation key, as given in the ALR data
+/// @param frame_out Optional output location to receive the key's frame value
+/// @param next_key_out Optional output location to receive pointer to next key
+/// @return Key converted to floating point. Unused components are left as 0.
+vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** next_key_out);
+
+/// Find an animation chunk for the specified joint in the specified animation
+/// @param alr ALR data to parse
+/// @param alr_size Size of ALR buffer
+/// @param idx Internal animation ID
+/// @param joint_idx Index of the joint to find the animation for
+/// @return Offset to the animation chunk, or -1 on failure
+s32 animation_by_idx(const u8* alr, u32 alr_size, u32 idx, u32 joint_idx);
+
+/// Get a transform of a joint at a specific frame of the specified animation
+/// @param alr ALR data to parse
+/// @param alr_size Size of ALR buffer
+/// @param anim_id Internal animation ID (within the ALR)
+/// @param joint_idx Index of joint being animated
+/// @param cur_frame Current animation frame
+/// @return Transform to right-multiply with joint transform
+mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, float cur_frame);
+
 void dump_armature_dae(FILE* f, vfile armature_data);
 mat4s transform_from_joint(const joint_t & joint);
 

@@ -7,6 +7,7 @@
 #include <common/file.h>
 
 #include <formats/alr.h>
+#include <formats/alr_animations.h>
 #include <formats/pd_common.h>
 
 #include <polaris/mesh_view.hxx>
@@ -42,6 +43,146 @@ void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& compo
 
     // We know component and frame value size, so we can find out the # of components
     num_components = (key_size - frame_size) / component_size;
+}
+
+vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** next_key_out) {
+    vfile vf = vfile_open(const_cast<u8*>(key), key_size);
+
+    u32 num_components = 0;
+    ImGuiDataType frame_type = ImGuiDataType_COUNT;
+    ImGuiDataType component_type = ImGuiDataType_COUNT;
+    anim_key_info(key_size, frame_type, component_type, num_components);
+
+    float frame = 0.0f;
+    switch (frame_type) {
+        case ImGuiDataType_Float:
+            frame = VFILE_READ(float, &vf);
+            break;
+        case ImGuiDataType_U8:
+            frame = VFILE_READ(u8, &vf);
+            break;
+        default:
+            LOG_MSG(warning, "Unknown key format with size %d!\n", key_size);
+            break;
+    }
+
+    vec3s out = {};
+    assert(num_components <= ARRAY_SIZE(out.raw));
+    for (u32 i = 0; i < num_components; i++) {
+        float component = 0.0f;
+        switch (component_type) {
+            case ImGuiDataType_Float:
+                component = VFILE_READ(float, &vf);
+                break;
+            case ImGuiDataType_U16:
+                component = VFILE_READ(s16, &vf);
+                // Map into [0, 1] range
+                component /= float(INT16_MAX);
+                // Convert to radians
+                component *= 2.0f * M_PI;
+                break;
+            default:
+                LOG_MSG(warning, "Unknown key format with size %d!\n", key_size);
+                break;
+        }
+        out.raw[i] = component;
+    }
+
+    if (next_key_out) {
+        *next_key_out = &key[key_size];
+    }
+    if (frame_out) {
+        *frame_out = frame;
+    }
+    return out;
+}
+
+s32 animation_by_idx(const u8* alr, u32 alr_size, u32 idx, u32 joint_idx) {
+    vfile vf = vfile_open(const_cast<u8*>(alr), alr_size);
+
+    const auto* layout = VFILE_READ_PTR(chunk_layout, &vf);
+
+    const bool invalid_anim_id = (idx >= ALR_NUM_PLAYER_ANIMATIONS);
+    const bool no_anims = (layout->offset_array_size < ALR_NUM_PLAYER_ANIMATIONS);
+    const bool out_of_bounds = (layout->offset_array_size <= idx);
+    if (invalid_anim_id || no_anims || out_of_bounds) {
+        return -1;
+    }
+
+    s32 offset = layout->offsets[idx];
+    if (offset < 0) {
+        // Animation doesn't exist
+        return -1;
+    }
+
+    vf.pos = offset;
+    while (true) {
+        s32 cur_offset = vf.pos;
+        auto* animation_header = VFILE_READ_PTR(anim_header, &vf);
+        if (animation_header->id != 0x5) {
+            break; // We hit the end of the animation
+        }
+
+        if (animation_header->joint_idx == joint_idx) {
+            return cur_offset;
+        }
+        vf.pos = cur_offset + animation_header->size;
+    }
+
+    return -1;
+}
+
+mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, float cur_frame) {
+    s32 anim_offset = al::animation_by_idx(alr, alr_size, anim_id, joint_idx);
+    if (anim_offset <= 0) {
+        return GLMS_MAT4_IDENTITY;
+    }
+
+    vfile afile = vfile_open(alr + anim_offset, alr_size);
+    const auto* aheader = VFILE_READ_PTR(anim_header, &afile);
+
+    vec3s position = {};
+    vec3s rotation = {};
+    const u32 transkey_offset = afile.pos;
+    for (u32 i = 0; i < aheader->translation_key_count; i++) {
+        float frame = 0.0f;
+        const u8* keydata = (const u8*)vfile_cur(afile);
+        vec3s key = al::anim_read_key(keydata, aheader->translation_key_size, &frame, nullptr);
+        if (frame > cur_frame) {
+            break;
+        }
+        vfile_seek(&afile, aheader->translation_key_size);
+
+        position = key;
+    }
+    // Skip all translation keys
+    afile.pos = transkey_offset + (aheader->translation_key_count * aheader->translation_key_size);
+
+    const u32 rotkey_offset = afile.pos;
+    for (u32 i = 0; i < aheader->rotation_key_count; i++) {
+        float frame = 0.0f;
+        const u8* keydata = (const u8*)vfile_cur(afile);
+        vec3s key = al::anim_read_key(keydata, aheader->rotation_key_size, &frame, nullptr);
+        if (frame > cur_frame) {
+            break;
+        }
+        vfile_seek(&afile, aheader->rotation_key_size);
+
+        rotation = key;
+    }
+    // Skip all rotation keys
+    afile.pos = rotkey_offset + (aheader->rotation_key_count * aheader->rotation_key_size);
+
+    for (u32 i = 0; i < ARRAY_SIZE(rotation.raw); i++) {
+        // rotation.raw[i] = glm_rad(rotation.raw[i]);
+        // rotation.raw[i] *= (1.0f * M_PI);
+        // rotation.raw[i] *= (2.0f * 180.0f);
+    }
+
+    mat4s rot_xform = glms_euler_zyx(rotation);
+    mat4s pos_xform = glms_translate_make(position);
+    mat4s anim_xform = glms_mat4_mul(pos_xform, rot_xform);
+    return rot_xform;
 }
 
 // IMPORTANT: If Blender complains and won't import the DAE, make sure you

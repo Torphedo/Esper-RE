@@ -3,6 +3,8 @@
 #include <imgui.h>
 
 #include <common/vfile.h>
+#include <formats/alr_animations.h>
+
 #include "polaris.hxx"
 #include "imgui_utils.hxx"
 #include "alr/alr_dump.hxx"
@@ -59,35 +61,46 @@ void edit_menu(vertex_attribute& attr) {
 }
 
 mat4s index_buffer::get_transform(const al::resource& alr) const noexcept {
-    if (is_skele_transform) {
-        vfile vf = vfile_open(alr.data, alr.alr_size);
-        vf.pos = armature_chunk_offset;
-        vfile_seek(&vf, sizeof(chunk_generic));
-        const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
-        const auto* joints = VFILE_READ_PTR(joint_t, &vf);
-
-        vf.pos = idx_chunk_offset;
-        vfile_seek(&vf, sizeof(chunk_generic));
-        const auto* idx_header = VFILE_READ_PTR(idxbuf_header, &vf);
-
-        // Calculate the object's xform by applying all of its parent xforms
-        const joint_t* joint = &joints[idx_header->transform_idx];
-        mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
-        do {
-            mat4s joint_xform = al::transform_from_joint(*joint);
-            obj_transform = glms_mat4_mul(joint_xform, obj_transform);
-            if (joint->parent_idx < 0 || joint->parent_idx >= joint_header->joint_count) {
-                break;
-            }
-            joint = &joints[joint->parent_idx];
-        } while (true);
-
-        return obj_transform;
-    } else {
+    if (!is_skele_transform) {
+        assert(position);
+        assert(rotation);
         mat4s rot_xform = glms_euler_zyx(*rotation);
         mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *position);
         return glms_mat4_mul(pos_xform, rot_xform);
     }
+
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vf.pos = armature_chunk_offset;
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
+    const auto* joints = VFILE_READ_PTR(joint_t, &vf);
+
+    vf.pos = idx_chunk_offset;
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const auto* idx_header = VFILE_READ_PTR(idxbuf_header, &vf);
+
+    const u32 anim_id = BAS01_WAIT0;
+    float cur_frame = 0.0f;
+    // cur_frame = alr.cur_frame;
+
+    // Calculate the object's xform by applying all of its parent xforms
+    s32 joint_idx = idx_header->transform_idx;
+    const joint_t* joint = &joints[joint_idx];
+    mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
+    do {
+        mat4s joint_xform = al::transform_from_joint(*joint);
+        mat4s anim_xform = al::anim_xform_for_joint(alr.data, alr.alr_size, anim_id, joint_idx, cur_frame);
+
+        joint_xform = glms_mat4_mul(joint_xform, anim_xform);
+        obj_transform = glms_mat4_mul(joint_xform, obj_transform);
+        if (joint->parent_idx < 0 || joint->parent_idx >= joint_header->joint_count) {
+            break;
+        }
+        joint_idx = joint->parent_idx;
+        joint = &joints[joint_idx];
+    } while (true);
+
+    return obj_transform;
 }
 
 bool mesh_view::setup() noexcept {
