@@ -78,6 +78,7 @@ vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** ne
                 component = VFILE_READ(s16, &vf);
                 // Map into [0, 1] range
                 component /= float(INT16_MAX);
+
                 // Convert to radians
                 component *= 2.0f * M_PI;
                 break;
@@ -540,7 +541,11 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
                     break;
                 case ImGuiDataType_U16:
                     component = VFILE_READ(s16, &vf);
+                    // Map into [0, 1] range
                     component /= float(INT16_MAX);
+
+                    // Convert to radians
+                    component *= 2.0f * M_PI;
                     break;
                 default:
                     LOG_MSG(warning, "Unknown key format with size %d!\n", key_size);

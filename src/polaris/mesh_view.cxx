@@ -88,8 +88,17 @@ mat4s index_buffer::get_transform(const al::resource& alr) const noexcept {
     const joint_t* joint = &joints[joint_idx];
     mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
     do {
+        mat4s identity = GLMS_MAT4_IDENTITY;
         mat4s joint_xform = al::transform_from_joint(*joint);
         mat4s anim_xform = al::anim_xform_for_joint(alr.data, alr.alr_size, anim_id, joint_idx, cur_frame);
+        if (memcmp(identity.raw, anim_xform.raw, sizeof(identity)) != 0) {
+            // HACK: There's an animation for this joint, discard joint rotation to fix broken limbs.
+            vec4s translation = {};
+            mat4s rotation = {};
+            vec3s scale = {};
+            glms_decompose(joint_xform, &translation, &rotation, &scale);
+            joint_xform = glms_translate_make(glms_vec3(translation));
+        }
 
         joint_xform = glms_mat4_mul(joint_xform, anim_xform);
         obj_transform = glms_mat4_mul(joint_xform, obj_transform);
