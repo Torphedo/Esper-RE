@@ -318,11 +318,13 @@ mesh_view mesh_at_idx(const al::resource& alr, u32 idx, u32 vertbuf_idx) {
 
     // Get joint array from 0x3 chunk
     u32 next_chunk_off = vf.pos;
+    const u32 armature_chunk_offset = vf.pos;
     const auto generic_0x3 = VFILE_READ(chunk_generic, &vf);
     next_chunk_off += generic_0x3.size;
 
-    const chunk_armature armature_header = VFILE_READ(chunk_armature, &vf);
-    const joint_t* transform_entries = (joint_t*)vfile_cur(vf);
+    // Unused but we read them anyway
+    const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
+    const joint_t* joints = (joint_t*)vfile_cur(vf);
 
     // Skip to the 0x16 chunk
     vf.pos = next_chunk_off;
@@ -353,20 +355,8 @@ mesh_view mesh_at_idx(const al::resource& alr, u32 idx, u32 vertbuf_idx) {
     while (cur_chunk.id == 0x2) {
         const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
         if (idx_header.vertex_buf == vertbuf_idx) {
-            // Calculate the object's xform by applying all of its parent xforms
-            const joint_t* joint = &transform_entries[idx_header.transform_idx];
-            mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
-            do {
-                mat4s joint_xform = al::transform_from_joint(*joint);
-                obj_transform = glms_mat4_mul(joint_xform, obj_transform);
-                if (joint->parent_idx < 0) {
-                    break;
-                }
-                joint = &transform_entries[joint->parent_idx];
-            } while (true);
-
             // Setup & add index buffer
-            const index_buffer idx_buf(cur_offset, obj_transform);
+            const index_buffer idx_buf(cur_offset, armature_chunk_offset);
             out.add_index_buf(alr.data, alr.alr_size, idx_buf);
         }
 

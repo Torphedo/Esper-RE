@@ -5,6 +5,7 @@
 #include <common/vfile.h>
 #include "polaris.hxx"
 #include "imgui_utils.hxx"
+#include "alr/alr_dump.hxx"
 
 typedef struct {
     const char* string;
@@ -57,9 +58,31 @@ void edit_menu(vertex_attribute& attr) {
     attr.type = gl_type_table[current_type].gl_type;
 }
 
-mat4s index_buffer::get_transform() const noexcept {
-    if (is_precalc_transform) {
-        return this->transform;
+mat4s index_buffer::get_transform(const al::resource& alr) const noexcept {
+    if (is_skele_transform) {
+        vfile vf = vfile_open(alr.data, alr.alr_size);
+        vf.pos = armature_chunk_offset;
+        vfile_seek(&vf, sizeof(chunk_generic));
+        const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
+        const auto* joints = VFILE_READ_PTR(joint_t, &vf);
+
+        vf.pos = idx_chunk_offset;
+        vfile_seek(&vf, sizeof(chunk_generic));
+        const auto* idx_header = VFILE_READ_PTR(idxbuf_header, &vf);
+
+        // Calculate the object's xform by applying all of its parent xforms
+        const joint_t* joint = &joints[idx_header->transform_idx];
+        mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
+        do {
+            mat4s joint_xform = al::transform_from_joint(*joint);
+            obj_transform = glms_mat4_mul(joint_xform, obj_transform);
+            if (joint->parent_idx < 0 || joint->parent_idx >= joint_header->joint_count) {
+                break;
+            }
+            joint = &joints[joint->parent_idx];
+        } while (true);
+
+        return obj_transform;
     } else {
         mat4s rot_xform = glms_euler_zyx(*rotation);
         mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *position);

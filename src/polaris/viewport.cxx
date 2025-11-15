@@ -262,7 +262,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
                     const auto generic_0x2 = VFILE_READ(chunk_generic, &vf);
                     assert(generic_0x2.id == 2);
                     const auto* alr_idxbuf = (idxbuf_header*)vfile_cur(vf);
-                    if (raycast(ray, mesh.vertices, mesh.vertex_size, idxbuf.get_transform(), alr_idxbuf)) {
+                    if (raycast(ray, mesh.vertices, mesh.vertex_size, idxbuf.get_transform(*alr), alr_idxbuf)) {
                         got_selected = true;
                         break;
                     }
@@ -322,7 +322,7 @@ void viewport_t::render(GLFWwindow* window) noexcept {
                 continue; // This index buffer is hidden
             }
 
-            mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform());
+            mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform(*alr));
             glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
             // We cast away const here but don't write to the buffer
