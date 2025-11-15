@@ -431,9 +431,10 @@ typedef struct {
     // X/Y/Z Euler rotation
     vec3f rotation;
     vec3f scale;
-    u16 unk1;
-    u16 unk2;
+    u8 unk1;
+    u8 unk2;
     u16 unk3;
+    u16 unk4;
     s16 parent_idx;
     u32 name;
     u8 pad[0x10];
