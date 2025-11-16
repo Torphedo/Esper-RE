@@ -276,6 +276,17 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
         .attributes = {
             ALR_STD_POS,
             ALR_STD_UV_DEF(12, INT16_MAX),
+            // 0x10 - 0x14 are 16-bit ints, probably unsigned.
+
+            // In pc00a.alr:
+            // The first value is mostly 0, but higher around the joints (knees, elbows, neck, etc.)
+            // The second value is more or less constant, but notably zero at
+            // the bottom of the shoes and under the coat.
+
+            // 0x14 - 0x18 are 16-bit ints, definitely unsigned.
+            // Values range from 90 - 170 on both. This is within the array size
+            // of 203 on the joint chunk for this file, but there are only 103
+            // bones (the rest are identity transforms).
         },
     },
     {   .id = 0x15,
