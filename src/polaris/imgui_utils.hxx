@@ -7,6 +7,15 @@
 /// Also appends a newline after the message.
 void str_format_append(std::string& output, const char* format_str, ...);
 
+/// @brief Define an explcitly sized variant of ImGui::InputScalar()
+/// @param T Type name to use in the function and enum name (e.g. U8)
+/// @param U Type name to use for arguments (e.g. uint8_t)
+#define IMPL_IMGUI_SCALAR_INPUT(T, U)                                                            \
+static bool Input##T(const char* label, U* data, U step = 1, U step_fast = 5,                    \
+                     const char* format = nullptr, ImGuiInputTextFlags flags = 0) {              \
+    return ImGui::InputScalar(label, ImGuiDataType_##T, data, &step, &step_fast, format, flags); \
+}                                                                                                \
+
 namespace ImGui {
     struct ScopedIndent {
         const float indent;
@@ -53,33 +62,34 @@ namespace ImGui {
     /// @return Whether the text was edited
     bool InputPDString(const char* label, u32* text1, u32* text2 = nullptr);
 
+    /// @brief Combo box (dropdown) input for a compressed texture format
+    ///
+    /// This uses the format enums from the bobtail library.
+    /// @param fmt Compressed texture format enum to edit
+    /// @param label User-facing label for the input
+    /// @return Whether the user changed the format value
     bool InputCompressedFormat(img_fmt_compressed& fmt, const char* label);
 
     bool EditTexture(texture& tex) noexcept;
 
+    /// @brief Get a scale factor that will make an image fill the available space
+    ///
+    /// This is a *uniform* scale factor to be applied on both axes.
+    /// @param width Image width
+    /// @param height Image height
+    /// @return Uniform scale factor
     float ImageScaleForWindow(u16 width, u16 height);
     ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, float* scale_factor, const char* id, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) noexcept;
 
-    // These are just less verbose wrappers around ImGui::InputScalar.
-    // I don't want to duplicate all the ImGui docs here, so just check
-    // ImGui::InputScalar for docs.
-    // Sorry for the extremely long function signatures :( - Torph
-
-    bool InputU8(const char* label, u8* data, u8 step = 1, u8 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
-
-    bool InputS8(const char* label, s8* data, s8 step = 1, s8 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
-
-    bool InputU16(const char* label, u16* data, u16 step = 1, u16 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
-
-    bool InputS16(const char* label, s16* data, s16 step = 1, s16 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
-
-    bool InputU32(const char* label, u32* data, u32 step = 1, u32 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
-
-    bool InputS32(const char* label, s32* data, s32 step = 1, s32 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
-
-    bool InputU64(const char* label, u64* data, u64 step = 1, u64 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
-
-    bool InputS64(const char* label, s64* data, s64 step = 1, s64 step_fast = 5, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+    // These are ImGui::InputScalar wrappers, check that function for docs.
+    IMPL_IMGUI_SCALAR_INPUT(U8, u8)
+    IMPL_IMGUI_SCALAR_INPUT(S8, s8)
+    IMPL_IMGUI_SCALAR_INPUT(U16, u16)
+    IMPL_IMGUI_SCALAR_INPUT(S16, s16)
+    IMPL_IMGUI_SCALAR_INPUT(U32, u32)
+    IMPL_IMGUI_SCALAR_INPUT(S32, s32)
+    IMPL_IMGUI_SCALAR_INPUT(U64, u64)
+    IMPL_IMGUI_SCALAR_INPUT(S64, s64)
 
     struct graph_info {
         void* data;

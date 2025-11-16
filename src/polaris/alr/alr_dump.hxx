@@ -11,6 +11,11 @@
 
 namespace al {
 
+/// Extract information about an animation key based on its size
+/// @param key_size The size of the animation keys you're working with
+/// @param frame_type Output to receive the data type of the frame value.
+/// @param component_type Output to receive the data type of the components
+/// @param num_components Output to receive the number of components in the key
 void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& component_type, u32& num_components);
 
 /// Generically read an animation key
@@ -38,8 +43,18 @@ s32 animation_by_idx(const u8* alr, u32 alr_size, u32 idx, u32 joint_idx);
 /// @return Transform to right-multiply with joint transform
 mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, float cur_frame);
 
+/// Export an armature chunk to a COLLADA (.dae) file
+/// @param f File stream to output to
+/// @param armature_data Buffer view pointing to an armature (ID 0x3) chunk
 void dump_armature_dae(FILE* f, vfile armature_data);
-mat4s transform_from_joint(const joint_t & joint);
+
+/// @brief Calculate transformation matrix from a joint's position/rotation/scale
+///
+/// This function only considers the single joint. To place the joint correctly,
+/// all transforms up the chain of parents need to be applied.
+/// @param joint The joint to calculate the transform from
+/// @return 4x4 transformation matrix
+mat4s transform_from_joint(const joint_t& joint);
 
 /// @brief Dump index buffer in OBJ format
 ///
@@ -57,6 +72,15 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 /// @param vert_entry_idx Index of the vertex buffer entry in the 0x16 chunk
 void dump_vertex_buf(const al::resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
 
+/// Export an animation chunk to an Autodesk Maya (.anim) animation file
+///
+/// These files are usable outside of Maya, you can find a Blender plugin here:
+/// https://github.com/PositionWizard/Blender_io-scene-ANIM
+/// Thanks to Czarpos for the plugin.
+/// @param anim_chunk
+/// @param outpath
+/// @param bone_name
+/// @return
 bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, const char* bone_name);
 
 /// @brief Import a mesh into the ALR

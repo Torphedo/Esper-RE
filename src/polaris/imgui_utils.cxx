@@ -185,40 +185,6 @@ ImVec2 draw_image(gl_obj tex_id, u16 width, u16 height, bool* scale_to_window, f
     return image_pos;
 }
 
-// Beyond this point are lots of InputScalar wrappers for common integer sizes
-
-bool InputU8(const char* label, u8* data, u8 step, u8 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_U8, data, &step, &step_fast, format, flags);
-}
-
-bool InputS8(const char* label, s8* data, s8 step, s8 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_S8, data, &step, &step_fast, format, flags);
-}
-
-bool InputU16(const char* label, u16* data, u16 step, u16 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_U16, data, &step, &step_fast, format, flags);
-}
-
-bool InputS16(const char* label, s16* data, s16 step, s16 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_S16, data, &step, &step_fast, format, flags);
-}
-
-bool InputU32(const char* label, u32* data, u32 step, u32 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_U32, data, &step, &step_fast, format, flags);
-}
-
-bool InputS32(const char* label, s32* data, s32 step, s32 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_S32, data, &step, &step_fast, format, flags);
-}
-
-bool InputU64(const char* label, u64* data, u64 step, u64 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_U64, data, &step, &step_fast, format, flags);
-}
-
-bool InputS64(const char* label, s64* data, s64 step, s64 step_fast, const char* format, ImGuiInputTextFlags flags) {
-    return ImGui::InputScalar(label, ImGuiDataType_S64, data, &step, &step_fast, format, flags);
-}
-
 void GraphData(const graph_info& info) {
     const float scale = 10.0f;
 

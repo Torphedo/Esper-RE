@@ -112,4 +112,7 @@ struct std_vertex {
 /// @return A vertex in standard format
 std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id);
 
+/// Fill in vertex attributes on a mesh based on vertex format
+/// @param out Mesh to receive vertex attribute info
+/// @param vert_header ALR vertex buffer header w/ format information
 void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header);
