@@ -184,6 +184,34 @@ struct chunk_joints {
     joint_t joints[num_joints];
 };
 
+struct animation_key<auto size> {
+    match (size) {
+        (3):  {u8 frame; u16 x;}
+        (5):  {u8 frame; u16 x; u16 y;}
+        (7):  {u8 frame; u16 x; u16 y; u16 z;}
+        (8):  {float frame; float x;}
+        (12): {float frame; float x; float y;}
+        (16): {float frame; float x; float y; float z;}
+    }
+};
+
+// ID 0x5
+struct chunk_animation {
+    float length;
+    u16 joint_idx;
+    u16 rotation_key_size;
+    u32 translation_key_count;
+    u32 rotation_key_count;
+    u32 scale_key_count;
+    u8 unk1;
+    u8 unk2;
+    u16 translation_key_size;
+
+    animation_key<translation_key_size> translation_keys[translation_key_count];
+    animation_key<rotation_key_size> rotation_keys[rotation_key_count];
+    // animation_key<translation_key_size> scale_keys[scale_key_count];
+};
+
 enum pixel_fmt_t : u8 {
     // These are all the same(?)
     FORMAT_RGBA8 =   0b00000110,
@@ -261,6 +289,7 @@ struct chunk_generic {
         (0x1): chunk_material materials;
         (0x2): chunk_index idx_buffer;
         (0x3): chunk_joints joints;
+        (0x5): chunk_animation animations;
         (0x00 | 0xD): padding[0];
         // Do nothing
         (_): padding[header.size] [[color("FF0000")]];
