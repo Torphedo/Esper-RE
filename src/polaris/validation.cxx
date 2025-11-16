@@ -200,7 +200,7 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
 
             const al::resource::chunk skel_chunk = alr.first_chunk_in_range(3, chunk.offset, alr.alr_size);
             if (skel_chunk.offset == 0) {
-                str_format_append(msg, "Couldn't find matching skeleton chunk for animation @%x", chunk.offset);
+                str_format_append(msg, "Couldn't find matching skeleton chunk for animation @ 0x%X", chunk.offset);
             } else {
                 vfile skel_vf = vfile_open(alr.data + skel_chunk.offset, skel_chunk.size);
                 vfile_seek(&skel_vf, sizeof(chunk_generic));

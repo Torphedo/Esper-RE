@@ -208,6 +208,9 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
         edit_keyframes(header->rotation_key_size, header->rotation_key_count, vfile_cur(vf), "rot");
     }
     vfile_seek(&vf, header->rotation_key_size * header->rotation_key_count);
+    if (header->scale_key_count > 0 && ImGui::CollapsingHeader("Scale Keys")) {
+        edit_keyframes(header->unknown_settings2, header->scale_key_count, vfile_cur(vf), "scale");
+    }
 }
 
 void resource::chunk::chunk_0x7(const resource& alr, viewport_t& viewport) noexcept {
