@@ -119,8 +119,25 @@ int main(int argc, char** argv) {
     app.layers.emplace_back(std::make_unique<polaris>());
     polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
 
-    const char* path = argv[1];
-    if (argc >= 2) {
+    const char* path = "";
+    const char* flag = "";
+
+    switch (argc) {
+    case 3:
+        flag = argv[2];
+        [[fallthrough]];
+    case 2:
+        if (argv[1][0] == '-') {
+            flag = argv[1];
+        } else {
+            path = argv[1];
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (strlen(path) > 0) {
         // We have an argument, it should be a filepath.
         if (file_has_magic(path, 0x11)) {
             if (!pol->alr.load(path)) {
@@ -136,7 +153,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (argc < 3) {
+    if (strlen(flag) == 0) {
         pol->headless = false;
         // No special arguments, run in normal graphical mode.
         if (!app.run("Polaris v" POLARIS_VERSION)) {
@@ -147,9 +164,6 @@ int main(int argc, char** argv) {
             return EXIT_SUCCESS;
         }
     }
-
-    // Parse arguments
-    const char* flag = argv[2];
 
     if (strcmp(flag, dump_textures_flag) == 0) {
         LOG_MSG(info, "Dumping textures for %s\n", path);
@@ -170,9 +184,23 @@ int main(int argc, char** argv) {
     } else if (strcmp(flag, "--help") == 0) {
         print_usage();
     } else if (strcmp(flag, "--version") == 0) {
-        printf("Polaris (Esper-RE tools) v" POLARIS_VERSION);
+        printf("Polaris (Esper-RE tools) v" POLARIS_VERSION "\n");
         printf("Open-source @ " POLARIS_URL "\n");
-        printf("Written by Torphedo [w/ help from fleevoid, blasianblazy, Vu & Nuion]\n");
+        printf("Written by Torphedo\n");
+        const char* special_thanks[] = {
+            "fleevoid (Almost everything early on, brainstorming, etc.)",
+            "blasianblazy (Early ALR layout info, cubemap info, map object IDs/transforms, etc.)",
+            "NerdyMiner (Early ALR research, texture & model research)",
+            "Toaf (indirect animation & SSB info via releasing a development build)",
+            "Vu (SSB research, decoding for ALR texture and bone names)",
+            "Nuion (texture dumper testing)",
+            "Czarpos (Autodesk Maya .anim Blender plugin)",
+        };
+
+        printf("Special Thanks:\n");
+        for (const char* txt : special_thanks) {
+            printf("\t%s\n", txt);
+        }
     } else {
         LOG_MSG(error, "I didn't find any known arguments, I'm not sure what you want me to do with the file.\n");
         print_usage();
