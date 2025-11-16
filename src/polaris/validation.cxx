@@ -186,7 +186,7 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
 
             for (u32 i = joint_header.joint_count; i < num_entries; i++) {
                 const joint_t& joint = joints[i];
-                mat4s identity = GLMS_MAT4_IDENTITY;
+                mat4s identity = GLMS_MAT4_IDENTITY_INIT;
                 if (memcmp(&joint, identity.raw, sizeof(joint_t)) != 0) {
                     AL_ASSERT(false, "Joint %d had a non-identity matrix!", i);
                 }

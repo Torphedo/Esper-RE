@@ -136,7 +136,7 @@ s32 animation_by_idx(const u8* alr, u32 alr_size, u32 idx, u32 joint_idx) {
 mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, float cur_frame) {
     s32 anim_offset = al::animation_by_idx(alr, alr_size, anim_id, joint_idx);
     if (anim_offset <= 0) {
-        return GLMS_MAT4_IDENTITY;
+        return GLMS_MAT4_IDENTITY_INIT;
     }
 
     vfile afile = vfile_open(alr + anim_offset, alr_size);

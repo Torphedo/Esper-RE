@@ -92,7 +92,7 @@ mat4s index_buffer::get_transform(const al::resource& alr) const noexcept {
         mat4s anim_xform = al::anim_xform_for_joint(alr.data, alr.alr_size, anim_id, joint_idx, cur_frame);
 
         // HACK: If there's an animation for this joint, discard joint rotation to fix broken limbs.
-        mat4s identity = GLMS_MAT4_IDENTITY;
+        mat4s identity = GLMS_MAT4_IDENTITY_INIT;
         if (memcmp(identity.raw, anim_xform.raw, sizeof(identity)) != 0) {
             vec4s translation = {};
             mat4s rot_xform = {};
