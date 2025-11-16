@@ -198,7 +198,10 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
             break;
         }
         case 0x5: {
+            chunkvf.pos -= sizeof(chunk_generic);
             const anim_header header = VFILE_READ(anim_header, &chunkvf);
+            AL_ASSERT(header.scale_key_count == 0, "Scale keys are used!");
+
             const al::resource::chunk skel_chunk = alr.first_chunk_in_range(3, chunk.offset, alr.alr_size);
             if (skel_chunk.offset == 0) {
                 str_format_append(msg, "Couldn't find matching skeleton chunk for animation @%x", chunk.offset);
