@@ -5,6 +5,7 @@
 #include <cglm/struct.h>
 
 #include <common/int.h>
+#include <common/vfile.h>
 #include <formats/alr.h>
 
 /// @brief Dear ImGui menu to edit an attribute
@@ -111,6 +112,12 @@ struct std_vertex {
 /// @param vert_size The format ID found in the vertex buffer entry
 /// @return A vertex in standard format
 std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id);
+
+/// Read data from a vertex based on the format in the vertex attribute
+/// @param vf Buffer view to use
+/// @param attr Vertex attribute specifying the format
+/// @return Up to 4 components read from the vertex
+vec4s read_attr(vfile& vf, vertex_attribute attr);
 
 /// Fill in vertex attributes on a mesh based on vertex format
 /// @param out Mesh to receive vertex attribute info

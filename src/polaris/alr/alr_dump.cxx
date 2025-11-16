@@ -628,6 +628,81 @@ void obj_get_info(const char* txt, u32& out_vert_count, u32& out_idx_count, bool
     out_idx_count = idx_count;
 }
 
+parsed_obj obj_load(const char* text) {
+    parsed_obj out;
+    obj_get_info(text, out.vert_count, out.idx_count, out.has_uvs);
+
+    u16* indices = (u16*)calloc(1, out.idx_count * sizeof(*indices));
+    vec3s* positions = (vec3s*)calloc(1, out.vert_count * sizeof(*positions));
+    vec2s* texcoords = (vec2s*)calloc(1, out.vert_count * sizeof(*texcoords));
+    if (!positions || !indices) {
+        free(indices);
+        free(positions);
+        free(texcoords);
+        return out;
+    }
+
+    u32 idx_i = 0; // Pos in index buffer
+    u32 pos_i = 0; // Pos in positions array
+    u32 uv_i = 0;  // Pos in UV array
+    const char* line = text;
+    while (*line != 0x00) {
+        // Find end of line (NUL or newline)
+        const char* line_end = strchr(line, '\n');
+        if (!line_end) {
+            break;
+        }
+
+        if (line[0] != '#') {
+            // Faces
+            if (strncmp(line, "f ", 2) == 0) {
+
+                u16 slash_count = 0;
+                for (const char* temp = line; temp < line_end; temp++) {
+                    slash_count += (*temp == '/');
+                }
+
+                u16 idx_temp[3] = {};
+                if (slash_count > 0 && slash_count <= 3) {
+                    u16 temp[3] = {};
+                    sscanf(line, "f %hd/%hd %hd/%hd %hd/%hd",
+                        &idx_temp[0], &temp[0], &idx_temp[1], &temp[1], &idx_temp[2], &temp[2]);
+                }
+
+                sscanf(line, "f %hd %hd %hd", &idx_temp[0], &idx_temp[1], &idx_temp[2]);
+
+                for (u16 idx : idx_temp) {
+                    // OBJ indices start @ 1
+                    indices[idx_i++] = idx - 1;
+                }
+            }
+
+            // Vertex position
+            if (strncmp(line, "v ", 2) == 0) {
+                vec3s pos = {};
+                sscanf(line, "v %f %f %f", &pos.x, &pos.y, &pos.z);
+                positions[pos_i] = pos;
+            }
+
+            // vt == vertex texture coordinate
+            if (strncmp(line, "vt ", 3) == 0) {
+                vec2s uv = {};
+                sscanf(line, "vt %f %f", &uv.x, &uv.y);
+                texcoords[uv_i] = uv;
+            }
+        }
+
+        // Advance to next line
+        line = line_end + 1;
+    }
+
+    out.indices = indices;
+    out.positions = positions;
+    out.texcoords = texcoords;
+
+    return out;
+}
+
 bool obj_import(const char* txt, al::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
     bool has_uvs = false;
     u32 vert_count = 0;

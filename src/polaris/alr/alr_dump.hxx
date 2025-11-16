@@ -117,4 +117,14 @@ struct pint_content {
     static_assert(sizeof(vertex_buffer) == 0x20);
 };
 
+typedef struct {
+    bool has_uvs;
+    u32 vert_count;
+    u32 idx_count;
+
+    u16* indices;
+    vec3s* positions;
+    vec2s* texcoords;
+}parsed_obj;
+
 } // namespace al
