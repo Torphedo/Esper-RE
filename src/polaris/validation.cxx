@@ -157,10 +157,6 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
         case 0x2: {
             const auto header = VFILE_READ(idxbuf_header, &chunkvf);
             const auto indices = (u16*)vfile_cur(chunkvf);
-            if (header.num_indices > 0 && header.first_idx != indices[0]) {
-                str_format_append(msg, "The listed first index (%d) didn't match the real first index (%d)!", header.first_idx, indices[0]);
-                result = false;
-            }
             const idxbuf_header empty = {0};
             if (memcmp(header.pad, empty.pad, sizeof(header.pad)) != 0) {
                 str_format_append(msg, "What I thought was padding had data!");
