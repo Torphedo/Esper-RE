@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
+
+#include <common/vfile.h>
+#include <common/file.h>
+#include <formats/sth2.h>
 
 // The first character is NUL, so that an index of 0 or sizeof(char_lookup) - 1
 // gives a NUL. This lets us clamp the value instead of doing a bounds check.
@@ -89,4 +94,32 @@ u32 encode_single32(char* input) {
     }
 
     return encoded_val; // All done encoding!
+}
+
+void extract_sth2(const u8* data, u32 size, const char* outpath) {
+    FILE* f = fopen(outpath, "wb");
+    if (!f) {
+        return;
+    }
+
+    vfile vf = vfile_open(data, size);
+    sth2_header header = VFILE_READ(sth2_header, &vf);
+
+    vf.pos = header.wave_offset;
+
+    sth2_wave_header pd_wave_header = VFILE_READ(sth2_wave_header, &vf);
+    const u32 offsets_size = pd_wave_header.num_offsets * sizeof(*pd_wave_header.offsets);
+    vfile_seek(&vf, offsets_size);
+
+    const u32 header_size = sizeof(pd_wave_header) + offsets_size;
+    const u32 audio_size = pd_wave_header.size - header_size;
+
+    wav_header wav_header = wav_header_default(audio_size);
+    fwrite(&wav_header, sizeof(wav_header), 1, f);
+
+    wav_fmt_header fmt_header = pd_wav_format_header(audio_size);
+    fwrite(&fmt_header, sizeof(fmt_header), 1, f);
+
+    fwrite(vfile_cur(vf), audio_size, 1, f);
+    fclose(f);
 }

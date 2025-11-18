@@ -23,6 +23,7 @@ void polaris::do_menu_bar() noexcept {
     bool load_layout = false;
     bool save_layout = false;
     bool extract_mkak = false;
+    bool extract_audio = false;
 
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
@@ -32,6 +33,7 @@ void polaris::do_menu_bar() noexcept {
                 load_layout |= ImGui::MenuItem("Load .dat");
                 save_layout |= ImGui::MenuItem("Save .dat");
                 extract_mkak |= ImGui::MenuItem("Extract .mk / .ak");
+                extract_audio |= ImGui::MenuItem("Extract .bin / STH2");
                 ImGui::EndMenu();
             }
 
@@ -109,6 +111,24 @@ void polaris::do_menu_bar() noexcept {
         }
         free(path);
         free(out_dir);
+    }
+
+    if (extract_audio) {
+        nfdu8filteritem_t filters[] = { { "Phantom Dust Sound File", "bin"} };
+        nfdu8filteritem_t outfilters[] = { { "Waveform (WAV)", "wav"} };
+        char* path = nullptr;
+        nfdresult_t result_in = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+        char* outpath = nullptr;
+        nfdresult_t result_out = NFD_SaveDialogU8(&outpath, outfilters, ARRAY_SIZE(outfilters), nullptr, nullptr);
+        if (result_in == NFD_OKAY && result_out == NFD_OKAY && path && outpath) {
+            u8* data = file_load(path);
+            if (data) {
+                extract_sth2(data, file_size(path), outpath);
+                free(data);
+            }
+        }
+        free(path);
+        free(outpath);
     }
 }
 
