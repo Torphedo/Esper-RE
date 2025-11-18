@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
+
+#include <common/vfile.h>
+#include <common/file.h>
+#include <formats/sth2.h>
+#include <formats/wav.h>
 
 // The first character is NUL, so that an index of 0 or sizeof(char_lookup) - 1
 // gives a NUL. This lets us clamp the value instead of doing a bounds check.
@@ -89,4 +95,27 @@ u32 encode_single32(char* input) {
     }
 
     return encoded_val; // All done encoding!
+}
+
+void extract_sth2(const u8* data, u32 size, const char* outpath) {
+    FILE* f = fopen(outpath, "wb");
+    if (!f) {
+        LOG_MSG(error, "I couldn't open the WAV output file '%s'\n", outpath);
+        return;
+    }
+
+    vfile vf = vfile_open(data, size);
+    sth2_header header = VFILE_READ(sth2_header, &vf);
+
+    vf.pos = header.wave_offset;
+    const sth2_wave_header pd_wave_header = VFILE_READ(sth2_wave_header, &vf);
+    const u32 offsets_size = pd_wave_header.num_offsets * sizeof(*pd_wave_header.offsets);
+    vfile_seek(&vf, offsets_size);
+
+    const u32 header_size = sizeof(pd_wave_header) + offsets_size;
+    const u32 audio_size = pd_wave_header.size - header_size;
+    const u8* audio = vfile_cur(vf);
+
+    wav_write_audio(PD_SAMPLE_RATE_UWP, 1, sizeof(u16), WAV_FMT_PCM, audio, audio_size, f);
+    fclose(f);
 }
