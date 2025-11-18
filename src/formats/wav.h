@@ -4,6 +4,10 @@
 #include <common/int.h>
 #include <common/file.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum {
     WAV_HEADER_SIZE = 0x2C,
     RIFF_MAGIC = MAGIC('R', 'I', 'F', 'F'),
@@ -35,3 +39,7 @@ typedef struct {
 }wav_fmt_header;
 
 void wav_write_audio(u32 sample_rate, u8 channels, u16 sample_size, u16 format, const void* audio, u32 audio_size, FILE* outfile);
+
+#ifdef __cplusplus
+}
+#endif

@@ -123,7 +123,7 @@ void polaris::do_menu_bar() noexcept {
         if (result_in == NFD_OKAY && result_out == NFD_OKAY && path && outpath) {
             u8* data = file_load(path);
             if (data) {
-                extract_sth2(data, file_size(path), outpath);
+                extract_sth2(data, file_size(path), outpath, PD_SAMPLE_RATE_UWP);
                 free(data);
             }
         }

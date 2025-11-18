@@ -33,7 +33,7 @@ decoded_text decode_double(u32 text1, u32 text2);
 /// @return encoded value representing the input string
 u32 encode_single32(char* text);
 
-void extract_sth2(const u8* data, u32 size, const char* outpath);
+void extract_sth2(const u8* data, u32 size, const char* outpath, u32 sample_rate);
 
 #ifdef __cplusplus
 }
