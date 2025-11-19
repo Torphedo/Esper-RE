@@ -1,4 +1,5 @@
 #pragma once
+#include "shut_up_msvc.h"
 #include <common/int.h>
 #include <assert.h>
 
