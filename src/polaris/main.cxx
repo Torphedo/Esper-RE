@@ -18,6 +18,7 @@
 
 const char* dump_textures_flag = "--dump-textures";
 const char* validate_flag = "--validate";
+const char* extract_audio_flag = "--extract-audio";
 
 void print_usage() {
     printf("Usage: polaris [ALR filename] [%s | %s]\n", dump_textures_flag, validate_flag);
@@ -126,14 +127,14 @@ int main(int argc, char** argv) {
     case 3:
         flag = argv[2];
         [[fallthrough]];
+    default:
     case 2:
         if (argv[1][0] == '-') {
             flag = argv[1];
         } else {
             path = argv[1];
         }
-        break;
-    default:
+    case 1:
         break;
     }
 
@@ -168,7 +169,34 @@ int main(int argc, char** argv) {
     if (strcmp(flag, dump_textures_flag) == 0) {
         LOG_MSG(info, "Dumping textures for %s\n", path);
         return dump_all_textures(*pol);
-    } else if (strcmp(flag, validate_flag) == 0) {
+    }
+    else if (strcmp(flag, extract_audio_flag) == 0) {
+        LOG_MSG(info, "Extracting audio...\n");
+        if (argc < 4) {
+            LOG_MSG(info, "The %s option needs at least 4 arguments, like this:\n", extract_audio_flag);
+            printf("\t%s %s ./output_folder Assets/Data/Sound/Title_Logo.bin", argv[0], extract_audio_flag);
+            return EXIT_FAILURE;
+        }
+
+        const u32 out_dir_idx = 2;
+        const u32 files_idx = 3;
+        const char* out_dir = argv[out_dir_idx];
+        char* const * files = &argv[files_idx];
+        for (u32 i = 0; i < argc - files_idx; i++) {
+            audio_tool audioTool;
+            audioTool.load(files[i]);
+
+            std::string prefix = files[i];
+            if (path_has_slashes(prefix.c_str())) {
+                path_get_filename(files[i], prefix.data());
+            }
+            prefix.replace(prefix.find(".bin"), 4, "");
+            audioTool.dump_clips_to_wav(out_dir, prefix.c_str());
+
+            LOG_MSG(info, "Extracted '%s' to '%s'\n", files[i], out_dir);
+        }
+    }
+    else if (strcmp(flag, validate_flag) == 0) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
         bool result = alr_validate(message, pol->alr, true);
