@@ -58,14 +58,16 @@ add_executable(polaris
 
     ext/glad/src/glad.c
 
-    # Adding the GLSL headers here auto-generates them during the build
-    ${glsl_headers}
     src/polaris/validation.cxx
     src/polaris/alr/alr_dump.cxx
     src/polaris/alr/alr_imgui.cxx
     src/polaris/framebuffer.cxx
     src/polaris/alr/mkak.cxx
     src/polaris/selector_ray.cxx
+    src/polaris/tool_audio.cxx
+
+    # Adding the GLSL headers here auto-generates them during the build
+    ${glsl_headers}
 )
 
 target_link_libraries(polaris PRIVATE coregui imgui bobtail nfd)

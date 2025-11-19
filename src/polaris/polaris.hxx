@@ -10,6 +10,7 @@
 #include "alr/editor_alr.hxx"
 #include "mapdata.hxx"
 #include "viewport.hxx"
+#include "tool_audio.hxx"
 
 // State for the overall editor
 struct polaris : gui_layer {
@@ -18,6 +19,8 @@ struct polaris : gui_layer {
 
     // State for accompanying .dat file for a stage ALR.
     mapdata map = mapdata(*this);
+
+    audio_tool audioTool;
 
     // 3D viewport
     viewport_t viewport;
