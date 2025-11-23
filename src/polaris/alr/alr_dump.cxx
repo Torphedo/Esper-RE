@@ -507,7 +507,7 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
     anim_key_info(key_size, frame_type, component_type, num_components);
     const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
     const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
-    const char* axes = "XYZ";
+    const char* axes = "ZYX";
 
     vfile vf = vfile_open((void*)keydata, num_keys * key_size);
     for (u32 i = 0; i < num_components; i++) {

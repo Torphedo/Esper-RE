@@ -193,7 +193,7 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
         ImGui::InputU32("# scale keys", &header->scale_key_count);
 
         ImGui::NewLine();
-        ImGui::InputU16("Unknown 1", &header->joint_idx);
+        ImGui::InputU16("Joint Index", &header->joint_idx);
         ImGui::InputU8("Unknown 2", &header->unknown_settings2);
         ImGui::InputU8("Unknown 3", &header->unknown_settings3);
     }

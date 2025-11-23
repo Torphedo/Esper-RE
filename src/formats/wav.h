@@ -10,10 +10,10 @@ extern "C" {
 
 enum {
     WAV_HEADER_SIZE = 0x2C,
-    RIFF_MAGIC = MAGIC('R', 'I', 'F', 'F'),
-    WAVE_MAGIC = MAGIC('W', 'A', 'V', 'E'),
-    WAV_FMT_MAGIC = MAGIC('f', 'm', 't', ' '),
-    WAV_DATA_MAGIC = MAGIC('d', 'a', 't', 'a'),
+    RIFF_MAGIC = MAGIC('R','I','F','F'),
+    WAVE_MAGIC = MAGIC('W','A','V','E'),
+    WAV_FMT_MAGIC = MAGIC('f','m','t',' '),
+    WAV_DATA_MAGIC = MAGIC('d','a','t','a'),
 
     WAV_FMT_PCM = 1,
     WAV_FMT_FLOAT = 3,
