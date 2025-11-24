@@ -1,6 +1,6 @@
 #include "wav.h"
 
-void wav_write_audio(u32 sample_rate, u8 channels, u16 sample_size, u16 format, const void* audio, u32 audio_size, FILE* outfile) {
+void wav_write_headers(u32 sample_rate, u8 channels, u16 sample_size, u16 format, u32 audio_size, FILE* outfile) {
     const wav_header header = {
         .magic = RIFF_MAGIC,
         .size = sizeof(wav_header) + sizeof(wav_fmt_header) + audio_size,
@@ -23,6 +23,9 @@ void wav_write_audio(u32 sample_rate, u8 channels, u16 sample_size, u16 format, 
 
     fwrite(&header, sizeof(header), 1, outfile);
     fwrite(&format_header, sizeof(format_header), 1, outfile);
-    fwrite(audio, audio_size, 1, outfile);
 }
 
+void wav_write_audio(u32 sample_rate, u8 channels, u16 sample_size, u16 format, const void* audio, u32 audio_size, FILE* outfile) {
+    wav_write_headers(sample_rate, channels, sample_size, format, audio_size, outfile);
+    fwrite(audio, audio_size, 1, outfile);
+}

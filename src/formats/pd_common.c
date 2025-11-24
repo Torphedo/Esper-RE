@@ -131,7 +131,8 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
     vfile vf = vfile_open((u8*)data, size);
 
     const stx_first_block* header = VFILE_READ_PTR(stx_first_block, &vf);
-    wav_write_audio(header->channels[0].sample_rate / 2, 2, sizeof(u16), WAV_FMT_PCM, header, 0, f);
+    const u16 sample_rate = header->channels[0].sample_rate / 2;
+    wav_write_headers(sample_rate, 2, sizeof(u16), WAV_FMT_PCM, 0, f);
 
     u32 audio_size = 0;
     for (u32 i = 0; i < 2; i++) {
@@ -168,12 +169,8 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
     }
 
     // Update WAV sizes
-    fseek(f, offsetof(wav_header, size), SEEK_SET);
-    const u32 wavfile_size = audio_size + 0x2C;
-    fwrite(&wavfile_size, sizeof(wavfile_size), 1, f);
-
-    fseek(f, sizeof(wav_header) + offsetof(wav_fmt_header, sample_chunk_size), SEEK_SET);
-    fwrite(&audio_size, sizeof(audio_size), 1, f);
+    fseek(f, 0, SEEK_SET);
+    wav_write_headers(sample_rate, 2, sizeof(u16), WAV_FMT_PCM, audio_size, f);
 
     fclose(f);
     return true;

@@ -38,6 +38,7 @@ typedef struct {
     u32 sample_chunk_size;
 }wav_fmt_header;
 
+void wav_write_headers(u32 sample_rate, u8 channels, u16 sample_size, u16 format, u32 audio_size, FILE* outfile);
 void wav_write_audio(u32 sample_rate, u8 channels, u16 sample_size, u16 format, const void* audio, u32 audio_size, FILE* outfile);
 
 #ifdef __cplusplus
