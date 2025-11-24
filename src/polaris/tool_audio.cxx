@@ -5,13 +5,14 @@
 #include <nfd.h>
 #include <common/vfile.h>
 #include <common/platform.h>
+#include <common/path.h>
 
 #include <formats/pd_common.h>
 #include <formats/sth2.h>
 #include <formats/wav.h>
 #include "imgui_utils.hxx"
 
-static const nfdu8filteritem_t sound_filter[] = { { "Phantom Dust Sound File", "bin"} };
+static const nfdu8filteritem_t sound_filter[] = { { "Phantom Dust Sound", "bin,stx"} };
 static const nfdu8filteritem_t wave_filter[] = { { "Waveform Audio File (WAV)", "wav"} };
 
 void audio_tool::do_gui() noexcept {
@@ -32,6 +33,9 @@ void audio_tool::do_gui() noexcept {
             nfdresult_t result_in = NFD_OpenDialogU8(&path, sound_filter, ARRAY_SIZE(sound_filter), nullptr);
             if (result_in == NFD_OKAY && path) {
                 this->load(path);
+                if (path_has_extension(path, ".stx")) {
+                    is_stx = true;
+                }
             }
             free(path);
         }
@@ -39,21 +43,31 @@ void audio_tool::do_gui() noexcept {
         return;
     }
 
-    ImGui::InputU32("Sample Rate (Hz)", &sample_rate);
-
-    if (ImGui::Button("Dump to WAV")) {
-        char* path = nullptr;
-        nfdresult_t result_out = NFD_SaveDialogU8(&path, wave_filter, ARRAY_SIZE(wave_filter), nullptr, nullptr);
-        if (result_out == NFD_OKAY && path) {
-            extract_sth2(this->data, this->size, path, sample_rate);
+    if (is_stx) {
+        if (ImGui::Button("Dump STX")) {
+            char *path = nullptr;
+            nfdresult_t result_out = NFD_SaveDialogU8(&path, wave_filter, ARRAY_SIZE(wave_filter), nullptr, nullptr);
+            if (result_out == NFD_OKAY && path) {
+                dump_stx(path, data, size);
+            }
         }
-    }
+    } else {
+        ImGui::InputU32("Sample Rate (Hz)", &sample_rate);
 
-    if (ImGui::Button("Dump clips to WAV")) {
-        char* path = nullptr;
-        nfdresult_t result = NFD_PickFolderU8(&path, nullptr);
-        if (result == NFD_OKAY && path) {
-            dump_clips_to_wav(path, "clip");
+        if (ImGui::Button("Dump all audio to WAV")) {
+            char* path = nullptr;
+            nfdresult_t result_out = NFD_SaveDialogU8(&path, wave_filter, ARRAY_SIZE(wave_filter), nullptr, nullptr);
+            if (result_out == NFD_OKAY && path) {
+                extract_sth2(this->data, this->size, path, sample_rate);
+            }
+        }
+
+        if (ImGui::Button("Dump clips to WAV")) {
+            char* path = nullptr;
+            nfdresult_t result = NFD_PickFolderU8(&path, nullptr);
+            if (result == NFD_OKAY && path) {
+                dump_clips_to_wav(path, "clip");
+            }
         }
     }
 
