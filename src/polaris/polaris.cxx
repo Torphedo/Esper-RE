@@ -42,7 +42,7 @@ void polaris::do_menu_bar() noexcept {
 
             if (ImGui::BeginMenu("Windows")) {
                 ImGui::MenuItem("Viewport", nullptr, &this->viewport.active);
-                ImGui::MenuItem("Viewport Editor", nullptr, &this->viewport.editor_enabled);
+                ImGui::MenuItem("Render Settings", nullptr, &this->viewport.editor_enabled);
                 ImGui::MenuItem("Performance Timers", nullptr, &this->show_timers);
                 ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
                 ImGui::EndMenu();

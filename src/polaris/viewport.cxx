@@ -126,16 +126,17 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     }
 
     if (editor_enabled) {
-        if (ImGui::Begin("Viewport Editor", &this->editor_enabled)) {
-
+        if (ImGui::Begin("Render Settings", &this->editor_enabled)) {
             ImGui::InputU16("Selected Mesh", &selected_mesh);
-            selected_mesh %= meshes.size();
+            selected_mesh = CLAMP(0, selected_mesh, meshes.size());
 
-            // If you make this loop over all meshes in the future, make sure not to
-            // use the for loop style with a colon (or make sure you get a reference),
-            // otherwise it'll run the menu on a copy and not modify the data
-            mesh_view &mesh = meshes.at(selected_mesh);
-            mesh.edit_menu(*alr);
+            if (selected_mesh < meshes.size()) {
+                // If you make this loop over all meshes in the future, make sure not to
+                // use the for loop style with a colon (or make sure you get a reference),
+                // otherwise it'll run the menu on a copy and not modify the data
+                mesh_view &mesh = meshes.at(selected_mesh);
+                mesh.edit_menu(*alr);
+            }
 
         }
         ImGui::End();
