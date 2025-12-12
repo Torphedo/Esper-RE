@@ -124,10 +124,43 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     if (!active || !initialized) {
         return;
     }
+    // Calculate delta time every time we render
+    static double prev_time = glfwGetTime();
+    const double cur_time = glfwGetTime();
+    const double delta_time = cur_time - prev_time;
+    prev_time = cur_time;
 
     if (editor_enabled) {
-        if (ImGui::Begin("Render Settings", &this->editor_enabled)) {
-            ImGui::InputU16("Selected Mesh", &selected_mesh);
+        ImGui::Begin("Render Settings", &this->editor_enabled);
+        ImGui::InputU16("Selected Model", &selected_mesh);
+
+        fbo.bind();
+        if (ImGui::Checkbox("Wireframe", &wireframe)) {
+            fbo.set_wireframe(wireframe);
+        }
+
+        if (ImGui::Checkbox("Back-face culling", &backface_cull)) {
+            fbo.set_backface_cull(backface_cull);
+        }
+        fbo.unbind();
+
+        bool temp_render_texcoords = shader_flags.render_texcoords;
+        ImGui::Checkbox("Visualize UVs", &temp_render_texcoords);
+        shader_flags.render_texcoords = temp_render_texcoords;
+
+        bool temp_render_normals = shader_flags.render_normals;
+        ImGui::Checkbox("Visualize normals", &temp_render_normals);
+        shader_flags.render_normals = temp_render_normals;
+
+        bool temp_force_disable_normals = shader_flags.has_normal;
+        ImGui::Checkbox("Use normal maps", &temp_force_disable_normals);
+        shader_flags.has_normal = temp_force_disable_normals;
+
+        ImGui::Checkbox("Enable raycast test", &raycast_test);
+        ImGui::Checkbox("Render selection in wireframe", &wireframe_selection);
+
+
+        if (ImGui::CollapsingHeader("Model properties")) {
             selected_mesh = CLAMP(0, selected_mesh, meshes.size());
 
             if (selected_mesh < meshes.size()) {
@@ -143,39 +176,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     }
 
     ImGui::Begin("Viewport");
-    // Calculate delta time every time we render
-    static double prev_time = glfwGetTime();
-    const double cur_time = glfwGetTime();
-    const double delta_time = cur_time - prev_time;
-    prev_time = cur_time;
     const float padding = ImGui::GetStyle().FramePadding.x * 2;
-
-    // Wireframe toggle
-    fbo.bind();
-    if (ImGui::Checkbox("Wireframe", &wireframe)) {
-        fbo.set_wireframe(wireframe);
-    }
-
-    ImGui::SameLine();
-    if (ImGui::Checkbox("Back-face culling", &backface_cull)) {
-        fbo.set_backface_cull(backface_cull);
-    }
-    fbo.unbind();
-
-    ImGui::SameLine();
-    bool temp_render_texcoords = shader_flags.render_texcoords;
-    ImGui::Checkbox("Visualize UVs", &temp_render_texcoords);
-    shader_flags.render_texcoords = temp_render_texcoords;
-
-    ImGui::SameLine();
-    bool temp_render_normals = shader_flags.render_normals;
-    ImGui::Checkbox("Visualize normals", &temp_render_normals);
-    shader_flags.render_normals = temp_render_normals;
-
-    ImGui::SameLine();
-    bool temp_force_disable_normals = shader_flags.has_normal;
-    ImGui::Checkbox("Use normals", &temp_force_disable_normals);
-    shader_flags.has_normal = temp_force_disable_normals;
 
     // Need this ridiculous workaround to make sure options don't take up
     // like half the horizontal screen space
@@ -197,10 +198,6 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     const char *move_speed_label = "Move Speed";
     ImGui::SetNextItemWidth(ImGui::CalcTextSize(move_speed_label).x + 20.0f + padding);
     ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 1000.0f);
-
-
-    ImGui::SameLine();
-    ImGui::Checkbox("Enable raycast test", &raycast_test);
 
     ImVec2 fb_start = ImGui::GetCursorScreenPos();
     vec2s mouse_pos = {};
@@ -313,7 +310,8 @@ void viewport_t::render(GLFWwindow* window) noexcept {
         if (!mesh.active) {
             continue; // This mesh is hidden
         }
-        fbo.set_wireframe((i == selected_mesh) || wireframe);
+        const bool do_wireframe = wireframe || (wireframe_selection && (i == selected_mesh));
+        fbo.set_wireframe(do_wireframe);
 
         glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
 

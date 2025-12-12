@@ -28,9 +28,7 @@ void edit_menu(vertex_attribute& attr) {
     const u8 min_components = 1;
     const u8 max_components = 4;
     ImGui::SliderScalar("# Components", ImGuiDataType_U8, &attr.components, &min_components, &max_components);
-
     ImGui::InputU16("Offset", &attr.offset);
-    ImGui::Checkbox("Enable attribute", &attr.exists);
 
     // Find the index of our current type in the lookup table
     u16 current_type = 0;
@@ -55,6 +53,7 @@ void edit_menu(vertex_attribute& attr) {
         }
         ImGui::EndCombo();
     }
+    ImGui::Checkbox("Enable attribute", &attr.exists);
 
     // Update current type if needed.
     attr.type = gl_type_table[current_type].gl_type;
@@ -209,102 +208,118 @@ bool mesh_view::apply_attributes() const noexcept {
 }
 
 void mesh_view::edit_menu(al::resource& alr) noexcept {
+    const char* format_settings_help = "These may help if a model looks corrupted, or textures are applied wrong.";
+    const char* idxbuf_help = "The individual objects within the model";
+
     ImGui::Checkbox("Render mesh", &active);
-    ImGui::InputU16("Vertex size", &this->vertex_size);
-    ImGui::InputU32("Custom UV Divisor", &this->uv_divisor);
 
-    // Edit menus per attribute
-    ImGui::Text("Vertex Attributes:");
-    for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
-        // Give child window a unique name to avoid ImGui errors
-        char label[32] = {0};
-        snprintf(label, sizeof(label) - 1, "##%d", i);
-        ImGui::Text("%s:", attribute_names[i]);
-        ImGui::BeginChild(label, ImVec2(0, 0), ImGuiChildFlags_AutoResizeY);
+    const bool format_settings = ImGui::CollapsingHeader("Vertex Format Settings");
+    // Tooltip is placed on header, even if collapsed
+    ImGui::SetItemTooltip(format_settings_help);
 
-        ::edit_menu(attributes[i]);
+    if (format_settings) {
+        ImGui::ScopedIndent indent(ImGui::CharWidth(2));
+        ImGui::InputU16("Vertex size", &this->vertex_size);
+        ImGui::InputU32("UV Divisor", &this->uv_divisor);
 
-        ImGui::NewLine();
+        // Edit menus per attribute
+        if (ImGui::CollapsingHeader("Vertex Attributes")) {
+            ImGui::ScopedIndent indent2(ImGui::CharWidth(2));
 
-        ImGui::EndChild();
-    }
+            for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
+                // Give child window a unique name to avoid ImGui errors
+                char label[32] = {0};
+                snprintf(label, sizeof(label) - 1, "##%d", i);
+                ImGui::Text("%s:", attribute_names[i]);
+                ImGui::BeginChild(label, ImVec2(0, 0), ImGuiChildFlags_AutoResizeY);
 
-    if (ImGui::Button("Apply attribute changes")) {
-        this->apply_attributes();
-    }
-    ImGui::Spacing();
+                ::edit_menu(attributes[i]);
 
-    ImGui::Text("Index buffers");
-    ImGui::NewLine();
+                ImGui::NewLine();
 
-    for (u32 i = 0; i < idx_buffers.size(); i++) {
-        index_buffer& buf = idx_buffers.at(i);
-        ImGui::Text("Index buffer %d (@ 0x%X)", i, buf.idx_chunk_offset);
-        char label[32] = {0};
+                ImGui::EndChild();
+            }
 
-        snprintf(label, sizeof(label) - 1, "Render ##%d", i);
-        ImGui::Checkbox(label, &buf.enabled);
-
-        // We cast away const here but don't write to the buffer
-        vfile vf = vfile_open(alr.data, alr.alr_size);
-        vf.pos = buf.idx_chunk_offset;
-        vfile_seek(&vf, sizeof(chunk_generic));
-        const auto header = VFILE_READ(idxbuf_header, &vf);
-        const auto mat_chunk = alr.prev_chunk_by_id(0x1, buf.idx_chunk_offset);
-        chunk_0x1_entry* tex_entry = nullptr;
-        alr.tex_manager.get_material(alr, mat_chunk.offset, header.texture_idx, &tex_entry);
-
-        snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
-        ImGui::InputU16(label, &tex_entry->texture_idx);
-
-        snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
-        ImGui::InputU16(label, &tex_entry->normal_idx);
-        // buf.albedo_tex_idx %= pol->alr.tex_manager.
-        // buf.normal_tex_idx %= pol->gl_textures.size();
-
-        snprintf(label, sizeof(label) - 1, "Show textures ##%d", i);
-        if (ImGui::CollapsingHeader(label)) {
-            ImGui::Image(alr.tex_manager.get(alr, tex_entry->texture_idx), ImVec2(512, 512));
-            ImGui::Image(alr.tex_manager.get(alr, tex_entry->normal_idx), ImVec2(512, 512));
-        }
-
-        // TODO: Bring back primitive override
-        /*
-        // Edit triangle mode
-        const char* gl_type_strings[] = {
-            "GL_TRIANGLES", "GL_TRIANGLE_STRIP", "GL_TRIANGLE_FAN", "GL_POINTS", "GL_LINES", "GL_LINE_STRIP",
-        };
-
-        const u16 gl_types[] = {
-            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_POINTS, GL_LINES, GL_LINE_STRIP,
-        };
-
-        // Find index of the selected primitive type in the lookup table
-        u16 current_type = 0;
-        for (u32 i = 0; i < ARRAY_SIZE(gl_types); i++) {
-            if (buf.draw_mode == gl_types[i]) {
-                current_type = i;
-                break;
+            if (ImGui::Button("Apply attribute changes")) {
+                this->apply_attributes();
             }
         }
+    }
 
-        if (ImGui::BeginCombo("Primitive type", gl_type_strings[current_type])) {
+    const bool idx_buf = ImGui::CollapsingHeader("Index buffers");
+    ImGui::SetItemTooltip(idxbuf_help);
+    if (idx_buf) {
+        ImGui::ScopedIndent indent(ImGui::CharWidth(2));
+
+        for (u32 i = 0; i < idx_buffers.size(); i++) {
+            index_buffer &buf = idx_buffers.at(i);
+            ImGui::Text("Index buffer %d (@ 0x%X)", i, buf.idx_chunk_offset);
+            char label[32] = {0};
+
+            snprintf(label, sizeof(label) - 1, "Render ##%d", i);
+            ImGui::Checkbox(label, &buf.enabled);
+
+            // We cast away const here but don't write to the buffer
+            vfile vf = vfile_open(alr.data, alr.alr_size);
+            vf.pos = buf.idx_chunk_offset;
+            vfile_seek(&vf, sizeof(chunk_generic));
+            const auto header = VFILE_READ(idxbuf_header, &vf);
+            const auto mat_chunk = alr.prev_chunk_by_id(0x1, buf.idx_chunk_offset);
+            chunk_0x1_entry *tex_entry = nullptr;
+            alr.tex_manager.get_material(alr, mat_chunk.offset, header.texture_idx, &tex_entry);
+
+            snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
+            ImGui::InputU16(label, &tex_entry->texture_idx);
+
+            snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
+            ImGui::InputU16(label, &tex_entry->normal_idx);
+            // buf.albedo_tex_idx %= pol->alr.tex_manager.
+            // buf.normal_tex_idx %= pol->gl_textures.size();
+
+            snprintf(label, sizeof(label) - 1, "Show textures ##%d", i);
+            if (ImGui::CollapsingHeader(label)) {
+                ImGui::Image(alr.tex_manager.get(alr, tex_entry->texture_idx), ImVec2(512, 512));
+                ImGui::Image(alr.tex_manager.get(alr, tex_entry->normal_idx), ImVec2(512, 512));
+            }
+
+            // TODO: Bring back primitive override
+            /*
+            // Edit triangle mode
+            const char* gl_type_strings[] = {
+                "GL_TRIANGLES", "GL_TRIANGLE_STRIP", "GL_TRIANGLE_FAN", "GL_POINTS", "GL_LINES", "GL_LINE_STRIP",
+            };
+
+            const u16 gl_types[] = {
+                GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_POINTS, GL_LINES, GL_LINE_STRIP,
+            };
+
+            // Find index of the selected primitive type in the lookup table
+            u16 current_type = 0;
             for (u32 i = 0; i < ARRAY_SIZE(gl_types); i++) {
-                const bool selected = current_type == i;
-                if (ImGui::Selectable(gl_type_strings[i], selected)) {
-                    // Save new primitive type if needed
+                if (buf.draw_mode == gl_types[i]) {
                     current_type = i;
-                    buf.draw_mode = gl_types[current_type];
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
+                    break;
                 }
             }
-            ImGui::EndCombo();
-        }
-        */
 
-        ImGui::NewLine();
+            if (ImGui::BeginCombo("Primitive type", gl_type_strings[current_type])) {
+                for (u32 i = 0; i < ARRAY_SIZE(gl_types); i++) {
+                    const bool selected = current_type == i;
+                    if (ImGui::Selectable(gl_type_strings[i], selected)) {
+                        // Save new primitive type if needed
+                        current_type = i;
+                        buf.draw_mode = gl_types[current_type];
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            */
+
+            ImGui::NewLine();
+        }
     }
 }
 
