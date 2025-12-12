@@ -175,6 +175,7 @@ typedef enum {
 static const char* attribute_names[] = {
     "Position",
     "Texture Coordinates",
+    "Lighting Texture Coordinates",
     "Vertex Normal",
     "Weight",
     "[Invalid]",
