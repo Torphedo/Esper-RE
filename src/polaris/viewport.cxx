@@ -126,7 +126,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     }
 
     if (editor_enabled) {
-        if (ImGui::Begin("Viewport Editor", &this->active)) {
+        if (ImGui::Begin("Viewport Editor", &this->editor_enabled)) {
 
             ImGui::InputU16("Selected Mesh", &selected_mesh);
             selected_mesh %= meshes.size();
