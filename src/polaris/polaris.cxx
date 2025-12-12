@@ -31,7 +31,6 @@ void polaris::do_menu_bar() noexcept {
                 save_alr |= ImGui::MenuItem("Save ALR", "Ctrl-S");
                 load_layout |= ImGui::MenuItem("Load .dat");
                 save_layout |= ImGui::MenuItem("Save .dat");
-                extract_mkak |= ImGui::MenuItem("Extract .mk / .ak");
                 ImGui::EndMenu();
             }
 
@@ -51,6 +50,7 @@ void polaris::do_menu_bar() noexcept {
 
             if (ImGui::BeginMenu("Tools")) {
                 ImGui::MenuItem("Audio Analyzer (.bin / STH2)", nullptr, &audioTool.enabled);
+                ImGui::MenuItem("Extract .mk / .ak", nullptr, &extract_mkak);
                 ImGui::EndMenu();
             }
 
@@ -108,9 +108,11 @@ void polaris::do_menu_bar() noexcept {
         char* path = nullptr;
         nfdresult_t result_in = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         char* out_dir = nullptr;
-        nfdresult_t result_out = NFD_PickFolderU8(&out_dir, nullptr);
-        if (result_in == NFD_OKAY && result_out == NFD_OKAY && path && out_dir) {
-            mkak::dump_to_folder(path, out_dir);
+        if (result_in == NFD_OKAY && path) {
+            nfdresult_t result_out = NFD_PickFolderU8(&out_dir, nullptr);
+            if (result_out == NFD_OKAY && out_dir) {
+                mkak::dump_to_folder(path, out_dir);
+            }
         }
         free(path);
         free(out_dir);
