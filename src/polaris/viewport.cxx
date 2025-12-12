@@ -132,6 +132,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
 
     if (editor_enabled) {
         ImGui::Begin("Render Settings", &this->editor_enabled);
+        ImGui::SetNextItemWidth(ImGui::CharWidth(20));
         ImGui::InputU16("Selected Model", &selected_mesh);
 
         fbo.bind();
@@ -184,7 +185,6 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     const char *label = "Camera Mode";
     const float combo_width = ImGui::CalcTextSize(options[1]).x * 1.5f + padding;
     ImGui::SetNextItemWidth(combo_width);
-    ImGui::SameLine();
 
     camera_mode cur_mode = cam.mode;
     ImGui::Combo(label, (int *) &cur_mode, options, CAMERA_MODE_ENUM_MAX);

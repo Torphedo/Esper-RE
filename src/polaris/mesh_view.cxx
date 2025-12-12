@@ -27,6 +27,8 @@ type_lookup_entry gl_type_table[] = {
 void edit_menu(vertex_attribute& attr) {
     const u8 min_components = 1;
     const u8 max_components = 4;
+    ImGui::ScopedWidth width(20);
+
     ImGui::SliderScalar("# Components", ImGuiDataType_U8, &attr.components, &min_components, &max_components);
     ImGui::InputU16("Offset", &attr.offset);
 
@@ -219,6 +221,8 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
 
     if (format_settings) {
         ImGui::ScopedIndent indent(ImGui::CharWidth(2));
+        ImGui::ScopedWidth width(20);
+
         ImGui::InputU16("Vertex size", &this->vertex_size);
         ImGui::InputU32("UV Divisor", &this->uv_divisor);
 
@@ -236,7 +240,6 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
                 ::edit_menu(attributes[i]);
 
                 ImGui::NewLine();
-
                 ImGui::EndChild();
             }
 
@@ -250,6 +253,7 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
     ImGui::SetItemTooltip(idxbuf_help);
     if (idx_buf) {
         ImGui::ScopedIndent indent(ImGui::CharWidth(2));
+        ImGui::ScopedWidth width(20);
 
         for (u32 i = 0; i < idx_buffers.size(); i++) {
             index_buffer &buf = idx_buffers.at(i);
@@ -268,15 +272,15 @@ void mesh_view::edit_menu(al::resource& alr) noexcept {
             chunk_0x1_entry *tex_entry = nullptr;
             alr.tex_manager.get_material(alr, mat_chunk.offset, header.texture_idx, &tex_entry);
 
-            snprintf(label, sizeof(label) - 1, "Albedo Texture Index ##%d", i);
+            snprintf(label, sizeof(label) - 1, "Albedo Texture##%d", i);
             ImGui::InputU16(label, &tex_entry->texture_idx);
 
-            snprintf(label, sizeof(label) - 1, "Normal texture Index ##%d", i);
+            snprintf(label, sizeof(label) - 1, "Normal Texture##%d", i);
             ImGui::InputU16(label, &tex_entry->normal_idx);
             // buf.albedo_tex_idx %= pol->alr.tex_manager.
             // buf.normal_tex_idx %= pol->gl_textures.size();
 
-            snprintf(label, sizeof(label) - 1, "Show textures ##%d", i);
+            snprintf(label, sizeof(label) - 1, "Show textures##%d", i);
             if (ImGui::CollapsingHeader(label)) {
                 ImGui::Image(alr.tex_manager.get(alr, tex_entry->texture_idx), ImVec2(512, 512));
                 ImGui::Image(alr.tex_manager.get(alr, tex_entry->normal_idx), ImVec2(512, 512));
