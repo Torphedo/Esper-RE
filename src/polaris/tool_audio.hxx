@@ -1,5 +1,5 @@
 #pragma once
-#include "fileclass.hxx"
+#include "util/fileclass.hxx"
 
 #include <formats/stx.h>
 #include <formats/sth2.h>

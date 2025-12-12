@@ -2,13 +2,13 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_internal.h>
-#include "imgui_utils.hxx"
+#include "util/imgui_utils.hxx"
 #include <nfd.h> // Cross-platform native file dialog
 
 #include <common/int.h>
 
 #include "alr/mkak.hxx"
-#include "scope_timer.hxx"
+#include "util/scope_timer.hxx"
 #include "polaris.hxx"
 
 void polaris::do_menu_bar() noexcept {

@@ -5,7 +5,7 @@
 #include <common/logging.h>
 
 #include "formats/st00.h"
-#include "imgui_utils.hxx"
+#include "util/imgui_utils.hxx"
 #include "polaris.hxx"
 #include "mesh_view.hxx"
 

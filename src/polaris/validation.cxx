@@ -3,7 +3,7 @@
 
 #include <common/vfile.h>
 
-#include "imgui_utils.hxx"
+#include "util/imgui_utils.hxx"
 
 bool alr_validate(std::string& msg, const al::resource& alr, bool headless) noexcept {
     if (!alr.loaded) {

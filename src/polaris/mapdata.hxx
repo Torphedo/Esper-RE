@@ -4,7 +4,7 @@
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 
-#include "fileclass.hxx"
+#include "util/fileclass.hxx"
 #include <formats/st00.h>
 
 struct polaris;

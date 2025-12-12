@@ -1,9 +1,9 @@
 #include "alr_imgui.hxx"
 
-#include <polaris/imgui_utils.hxx>
+#include <common/crc32.h>
+#include "polaris/util/imgui_utils.hxx"
 #include "alr_resources.hxx"
 #include "alr_dump.hxx"
-#include "common/crc32.h"
 #include "imgui_internal.h"
 
 namespace al {

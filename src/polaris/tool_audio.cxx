@@ -10,7 +10,7 @@
 #include <formats/pd_common.h>
 #include <formats/sth2.h>
 #include <formats/wav.h>
-#include "imgui_utils.hxx"
+#include "util/imgui_utils.hxx"
 
 static const nfdu8filteritem_t sound_filter[] = { { "Phantom Dust Sound", "bin,stx"} };
 static const nfdu8filteritem_t wave_filter[] = { { "Waveform Audio File (WAV)", "wav"} };

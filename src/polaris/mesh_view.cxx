@@ -6,7 +6,7 @@
 #include <formats/alr_animations.h>
 
 #include "polaris.hxx"
-#include "imgui_utils.hxx"
+#include "util/imgui_utils.hxx"
 #include "alr/alr_dump.hxx"
 
 typedef struct {

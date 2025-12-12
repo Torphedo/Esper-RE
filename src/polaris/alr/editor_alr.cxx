@@ -14,7 +14,7 @@
 #include <formats/alr.h>
 
 #include <polaris/mesh_view.hxx>
-#include <polaris/imgui_utils.hxx>
+#include "polaris/util/imgui_utils.hxx"
 #include <polaris/validation.hxx>
 
 #include "alr_dump.hxx"

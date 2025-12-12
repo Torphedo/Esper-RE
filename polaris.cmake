@@ -39,32 +39,31 @@ endforeach()
 
 add_executable(polaris
     src/polaris/main.cxx
-
     src/polaris/polaris.cxx
-    src/polaris/fileclass.cxx
-    src/polaris/alr/editor_alr.cxx
     src/polaris/validation.cxx
-    src/polaris/alr/alr_resources.cxx
     src/polaris/mapdata.cxx
+    src/polaris/viewport.cxx
+    src/polaris/mesh_view.cxx
+    src/polaris/camera.cxx
+    src/polaris/validation.cxx
+    src/polaris/framebuffer.cxx
+    src/polaris/selector_ray.cxx
+    src/polaris/tool_audio.cxx
+
+    src/polaris/alr/editor_alr.cxx
+    src/polaris/alr/alr_resources.cxx
+    src/polaris/alr/alr_dump.cxx
+    src/polaris/alr/alr_imgui.cxx
+    src/polaris/alr/mkak.cxx
 
     src/formats/pd_common.c
     src/formats/wav.c
 
-    src/polaris/scope_timer.cxx
-    src/polaris/viewport.cxx
-    src/polaris/mesh_view.cxx
-    src/polaris/camera.cxx
-    src/polaris/imgui_utils.cxx
+    src/polaris/util/fileclass.cxx
+    src/polaris/util/scope_timer.cxx
+    src/polaris/util/imgui_utils.cxx
 
     ext/glad/src/glad.c
-
-    src/polaris/validation.cxx
-    src/polaris/alr/alr_dump.cxx
-    src/polaris/alr/alr_imgui.cxx
-    src/polaris/framebuffer.cxx
-    src/polaris/alr/mkak.cxx
-    src/polaris/selector_ray.cxx
-    src/polaris/tool_audio.cxx
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
