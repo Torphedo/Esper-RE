@@ -21,16 +21,19 @@ const char* vertex_shader = R"(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_texcoord;
+layout (location = 3) in vec3 a_normal;
 
 uniform mat4 pvm;
 uniform uint uv_divisor;
 out vec2 texcoord;
+out vec3 normal;
 
 void main() {
     gl_Position = pvm * vec4(a_pos, 1.0);
 
     // We map the large integer value into the [0, 1] range for texture lookups
     texcoord = a_texcoord / uv_divisor;
+    normal = a_normal / uv_divisor;
 }
 )";
 
@@ -39,6 +42,7 @@ const char* fragment_shader = R"(
 out vec4 fragment_rgba;
 
 in vec2 texcoord;
+in vec3 normal;
 uniform sampler2D albedo_texture;
 uniform sampler2D normal_texture;
 uniform vec3 cam_dir;
@@ -61,9 +65,13 @@ void main() {
     }
 
     vec3 normal_vec = cam_dir;
+    if (has_normal || render_normal_colors) {
+        normal_vec = normal;
+    }
     if (has_normal) {
-        normal_vec = texture(normal_texture, texcoord).rgb;
-        normal_vec = (normal_vec * 2.0) - 1.0;
+        vec3 normal_sample = texture(normal_texture, texcoord).rgb;
+        normal_sample = (normal_sample * 2.0) - 1.0;
+        normal_vec += normal_sample;
     }
     const float ambient = 0.3f;
     float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
@@ -72,7 +80,7 @@ void main() {
     fragment_rgba.a = 1.0;
 
     if (render_normal_colors) {
-        fragment_rgba = vec4(normal_vec, 1.0);
+        fragment_rgba = vec4(normal, 1.0);
     }
 }
 )";

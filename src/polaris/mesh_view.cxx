@@ -82,7 +82,6 @@ mat4s index_buffer::get_transform(const al::resource& alr) const noexcept {
 
     const u32 anim_id = BAS01_WAIT0;
     float cur_frame = 0.0f;
-    // cur_frame = alr.cur_frame;
 
     // Calculate the object's xform by applying all of its parent xforms
     s32 joint_idx = idx_header->transform_idx;
