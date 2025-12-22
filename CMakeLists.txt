@@ -36,6 +36,7 @@ add_executable(alr
     src/alr/images.c
 
     src/formats/pd_common.c
+    src/formats/wav.c
 )
 
 add_executable(deck_reader
@@ -46,6 +47,7 @@ add_executable(ssb
     src/ssb/main.c
     src/ssb/ssb.c
     src/formats/pd_common.c
+    src/formats/wav.c
 )
 
 # Link everything to the common library
