@@ -8,7 +8,7 @@
 #include <common/vfile.h>
 #include <common/file.h>
 #include <formats/alr.h>
-#include "al_resource.hxx"
+#include "alr_file.hxx"
 
 namespace alr {
 
@@ -71,7 +71,7 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 /// @param path Path to save the OBJ file
 /// @param vertchunk_offset Offset of the 0x16 chunk in the ALR
 /// @param vert_entry_idx Index of the vertex buffer entry in the 0x16 chunk
-void dump_vertex_buf(const alr::resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
+void dump_vertex_buf(const alr::file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
 
 /// Export an animation chunk to an Autodesk Maya (.anim) animation file
 ///
@@ -90,7 +90,7 @@ bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, con
 /// @param alr The ALR to import into
 /// @param vertbuf_chunk_offset Offset of the 0x16 chunk to import into
 /// @param entry_idx The index of the vertex buffer to replace within the chunk
-bool obj_import(const char* txt, alr::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
+bool obj_import(const char* txt, alr::file& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
 
 // PINT == Polaris INTermediate file
 struct pint_header {

@@ -345,7 +345,7 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
     }
 }
 
-void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx) {
+void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx) {
     // Dump to OBJ
     FILE *out = fopen(path, "wb");
     if (out != nullptr) {
@@ -388,7 +388,7 @@ void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset
         }
 
         // Vertices are dumped, now for indices
-        for (alr::resource::chunk idx_chunk : alr.chunks) {
+        for (alr::file::chunk idx_chunk : alr.chunks) {
             if (idx_chunk.id == 0x16 && idx_chunk.offset > vertchunk_offset) {
                 // We've hit a mesh metadata chunk past our own, so any
                 // further index buffers will be garbage data to us. Quit.
@@ -697,7 +697,7 @@ parsed_obj obj_load(const char* text) {
     return out;
 }
 
-bool obj_import(const char* txt, alr::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
+bool obj_import(const char* txt, alr::file& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
     bool has_uvs = false;
     u32 vert_count = 0;
     u32 idx_count = 0;

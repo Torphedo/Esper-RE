@@ -29,9 +29,9 @@ struct texture_manager {
 
     std::map<u32, gl_obj> gl_tex_map;
 
-    gl_obj get(alr::resource& alr, u32 idx) noexcept;
-    bool get_material(alr::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept;
-    bool get_material(alr::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry* entry_out) const noexcept;
+    gl_obj get(alr::file& alr, u32 idx) noexcept;
+    bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept;
+    bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry* entry_out) const noexcept;
 
     void invalidate(u32 idx) noexcept;
     void destroy() noexcept;
@@ -39,4 +39,4 @@ struct texture_manager {
     ~texture_manager() noexcept;
 };
 
-mesh_view mesh_at_idx(const alr::resource& alr, u32 idx, u32 vertbuf_idx);
+mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx);

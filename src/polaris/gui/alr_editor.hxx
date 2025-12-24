@@ -12,7 +12,7 @@
 #include <formats/alr.h>
 
 #include <alr/alr_assets.hxx>
-#include "al_resource.hxx"
+#include "alr_file.hxx"
 
 // State for 0x1 (material) window
 struct window_state_0x1 {
@@ -92,24 +92,24 @@ public:
         bool active = true;
 
         void draw(editor& ed, viewport_t& viewport) noexcept;
-        void draw_chunk_0x1(const resource& alr, resource::chunk& chunk) noexcept;
-        void draw_chunk_0x2(resource& alr, resource::chunk& chunk) noexcept;
-        void draw_chunk_0x3(const resource& alr, resource::chunk& chunk) noexcept;
-        void draw_chunk_0x5(const resource& alr, resource::chunk& chunk) noexcept;
-        void draw_chunk_0x7(const resource& alr, resource::chunk& chunk) noexcept;
-        void draw_chunk_0x10(resource& alr, resource::chunk& chunk) noexcept;
-        void draw_chunk_0x11(const resource& alr, resource::chunk& chunk) const noexcept;
-        void draw_chunk_0x15(editor& ed, resource::chunk& chunk) noexcept;
-        void draw_chunk_0x16(resource& ed, resource::chunk& chunk, viewport_t& viewport) noexcept;
+        void draw_chunk_0x1(const file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_0x2(file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_0x3(const file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_0x5(const file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_0x7(const file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_0x10(file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_0x11(const file& alr, file::chunk& chunk) const noexcept;
+        void draw_chunk_0x15(editor& ed, file::chunk& chunk) noexcept;
+        void draw_chunk_0x16(file& alr, file::chunk& chunk, viewport_t& viewport) noexcept;
 
-        void import_dds_0x15(const resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
-        void send_vertbuf_to_viewport(resource& alr, viewport_t& viewport) noexcept;
+        void import_dds_0x15(const file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
+        void send_vertbuf_to_viewport(file& alr, viewport_t& viewport) noexcept;
 
         window_state();
         window_state(u32 chunk_idx, u32 chunk_id);
     };
 
-    alr::resource res;
+    alr::file alr;
 
     // This matches the order/size of the ALR's chunk vector
     std::vector<window_state> states;

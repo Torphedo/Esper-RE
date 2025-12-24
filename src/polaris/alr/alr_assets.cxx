@@ -3,7 +3,7 @@
 #include <common/vfile.h>
 #include <formats/alr_animations.h>
 #include "alr_assets.hxx"
-#include <al_resource.hxx>
+#include <alr_file.hxx>
 
 const char* texformat_str(alr_pixel_format format) {
     const char* out = "[UNKNOWN]";
@@ -181,7 +181,7 @@ void texture_manager::invalidate(u32 idx) noexcept {
     gl_tex_map.erase(idx);
 }
 
-gl_obj texture_manager::get(alr::resource& alr, u32 idx) noexcept {
+gl_obj texture_manager::get(alr::file& alr, u32 idx) noexcept {
     if (gl_tex_map.contains(idx)) {
         return gl_tex_map[idx];
     }
@@ -241,7 +241,7 @@ gl_obj texture_manager::get(alr::resource& alr, u32 idx) noexcept {
     return gl_tex_id;
 }
 
-bool texture_manager::get_material(alr::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept {
+bool texture_manager::get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept {
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = material_header_offset;
     const auto header = VFILE_READ(chunk_0x1_header, &vf);
@@ -255,7 +255,7 @@ bool texture_manager::get_material(alr::resource& alr, u32 material_header_offse
     return false;
 }
 
-bool texture_manager::get_material(alr::resource& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry* entry_out) const noexcept {
+bool texture_manager::get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry* entry_out) const noexcept {
     chunk_0x1_entry* entryptr = nullptr;
     bool result = get_material(alr, material_header_offset, idx, &entryptr);
     if (!result || !entryptr) {
@@ -279,10 +279,10 @@ texture_manager::~texture_manager() noexcept {
     destroy();
 }
 
-mesh_view mesh_at_idx(const alr::resource& alr, u32 idx, u32 vertbuf_idx) {
+mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
     mesh_view out = {};
 
-    const alr::resource::chunk header_chunk = alr.chunks[0];
+    const alr::file::chunk header_chunk = alr.chunks[0];
     if (header_chunk.id != 0x11) {
         LOG_MSG(error, "Header chunk ID != 0x11, something is seriously wrong!\n");
         return out;

@@ -4,7 +4,7 @@
 #include <alr/alr_assets.hxx>
 
 namespace alr {
-    class resource {
+    class file {
     public:
         /// State for each ALR chunk
         struct chunk {
@@ -75,8 +75,8 @@ namespace alr {
         }
 
         void expand_reservation(s64 new_size) noexcept;
-        resource() noexcept;
-        ~resource() noexcept;
+        file() noexcept;
+        ~file() noexcept;
     };
 
 } // namespace al

@@ -61,7 +61,7 @@ void edit_menu(vertex_attribute& attr) {
     attr.type = gl_type_table[current_type].gl_type;
 }
 
-mat4s index_buffer::get_transform(const alr::resource& alr) const noexcept {
+mat4s index_buffer::get_transform(const alr::file& alr) const noexcept {
     if (!is_skele_transform) {
         assert(position);
         assert(rotation);
@@ -208,7 +208,7 @@ bool mesh_view::apply_attributes() const noexcept {
     return true;
 }
 
-void mesh_view::edit_menu(alr::resource& alr) noexcept {
+void mesh_view::edit_menu(alr::file& alr) noexcept {
     const char* format_settings_help = "These may help if a model looks corrupted, or textures are applied wrong.";
     const char* idxbuf_help = "The individual objects within the model";
 

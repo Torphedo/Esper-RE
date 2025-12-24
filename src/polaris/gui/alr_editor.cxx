@@ -35,7 +35,7 @@ do {                                 \
 
 namespace alr {
 
-void editor::window_state::draw_chunk_0x1(const resource& alr, resource::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_0x1(const file& alr, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(0x1);
 
     vfile vf = vfile_open(alr.data, alr.alr_size);
@@ -62,7 +62,7 @@ void editor::window_state::draw_chunk_0x1(const resource& alr, resource::chunk& 
     hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)alr.data);
 }
 
-void editor::window_state::draw_chunk_0x2(resource& alr, resource::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_0x2(file& alr, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     if (ImGui::Button("Shift From Here")) {
@@ -131,7 +131,7 @@ void editor::window_state::draw_chunk_0x2(resource& alr, resource::chunk& chunk)
     ImGui::PopItemWidth();
 }
 
-void editor::window_state::draw_chunk_0x3(const resource& alr, resource::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_0x3(const file& alr, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(0x3);
 
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
@@ -159,13 +159,13 @@ void editor::window_state::draw_chunk_0x3(const resource& alr, resource::chunk& 
     alr::edit_joint_t(joint, vf, hex_edit);
 }
 
-void editor::window_state::draw_chunk_0x5(const resource& alr, resource::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_0x5(const file& alr, file::chunk& chunk) noexcept {
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
     if (ImGui::Button("Dump animation")) {
-        resource::chunk armature_chunk = alr.first_chunk_in_range(0x3, chunk.offset, alr.resbuf_offset);
+        file::chunk armature_chunk = alr.first_chunk_in_range(0x3, chunk.offset, alr.resbuf_offset);
         vfile armature_vf = vfile_open(alr.data + armature_chunk.offset, armature_chunk.size);
         vfile_seek(&armature_vf, sizeof(chunk_generic));
         const auto armature_header = VFILE_READ(chunk_armature, &armature_vf);
@@ -215,7 +215,7 @@ void editor::window_state::draw_chunk_0x5(const resource& alr, resource::chunk& 
     }
 }
 
-void editor::window_state::draw_chunk_0x7(const resource& alr, resource::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_0x7(const file& alr, file::chunk& chunk) noexcept {
     // This is the same as normal animation frames, but seems to ignore the
     // existing keyframe size fields.
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
@@ -240,7 +240,7 @@ void editor::window_state::draw_chunk_0x7(const resource& alr, resource::chunk& 
     vfile_seek(&vf, key_size * header->rotation_key_count);
 }
 
-void editor::window_state::draw_chunk_0x10(resource& alr, resource::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_0x10(file& alr, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(0x10);
 
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
@@ -261,7 +261,7 @@ void editor::window_state::draw_chunk_0x10(resource& alr, resource::chunk& chunk
 
     // We have to look up texture entries to find out where each texture is
     texture_entry* entries = nullptr;
-    resource::chunk c = alr.first_chunk_by_id(0x15);
+    file::chunk c = alr.first_chunk_by_id(0x15);
     if (c.size == 0) {
         // This should never happen
         ImGui::PlsReportIf(true, "Couldn't find an 0x15 chunk!\n");
@@ -356,7 +356,7 @@ void editor::window_state::draw_chunk_0x10(resource& alr, resource::chunk& chunk
     ImGui::draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
-void editor::window_state::draw_chunk_0x11(const resource& alr, resource::chunk& chunk) const noexcept {
+void editor::window_state::draw_chunk_0x11(const file& alr, file::chunk& chunk) const noexcept {
     CHUNK_ID_ASSERT(0x11);
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
@@ -364,8 +364,8 @@ void editor::window_state::draw_chunk_0x11(const resource& alr, resource::chunk&
     alr::edit_chunk_layout(*layout);
 }
 
-void editor::window_state::import_dds_0x15(const resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
-    const resource::chunk chunk = alr.chunks[chunk_idx];
+void editor::window_state::import_dds_0x15(const file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
+    const file::chunk chunk = alr.chunks[chunk_idx];
     CHUNK_ID_ASSERT(0x15);
 
     const texture_entry cur = entries[window_0x15.selected_texture];
@@ -400,9 +400,9 @@ void editor::window_state::import_dds_0x15(const resource& alr, const char* path
     window_0x15.tex.height = window_0x15.tex.width = exponent(2, power);
 }
 
-void editor::window_state::draw_chunk_0x15(editor& ed, resource::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_0x15(editor& ed, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(0x15);
-    resource& alr = ed.res;
+    file& alr = ed.alr;
 
     // We use the vfile API to handle the chunk data
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
@@ -458,13 +458,13 @@ void editor::window_state::draw_chunk_0x15(editor& ed, resource::chunk& chunk) n
     ImGui::EndGroup();
 }
 
-void editor::window_state::send_vertbuf_to_viewport(resource& alr, viewport_t& viewport) noexcept {
-    const resource::chunk chunk = alr.chunks[chunk_idx];
+void editor::window_state::send_vertbuf_to_viewport(file& alr, viewport_t& viewport) noexcept {
+    const file::chunk chunk = alr.chunks[chunk_idx];
     CHUNK_ID_ASSERT(0x16);
 
     // Find out what index we are
     s32 idx = -1;
-    for (resource::chunk c : alr.chunks) {
+    for (file::chunk c : alr.chunks) {
         if (c.offset > chunk.offset) {
             break;
         }
@@ -477,7 +477,7 @@ void editor::window_state::send_vertbuf_to_viewport(resource& alr, viewport_t& v
     viewport.meshes.push_back(mesh);
 }
 
-void editor::window_state::draw_chunk_0x16(resource& alr, resource::chunk& chunk, viewport_t& viewport) noexcept {
+void editor::window_state::draw_chunk_0x16(file& alr, file::chunk& chunk, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // We use the vfile API to handle the chunk data
@@ -552,48 +552,48 @@ void editor::window_state::draw_chunk_0x16(resource& alr, resource::chunk& chunk
 }
 
 void editor::window_state::draw(editor& ed, viewport_t& viewport) noexcept {
-    if (!ed.res.data || ed.res.alr_size == 0) {
+    if (!ed.alr.data || ed.alr.alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
         return;
     }
 
-    resource::chunk& chunk = ed.res.chunks[chunk_idx];
+    file::chunk& chunk = ed.alr.chunks[chunk_idx];
 
     // Sanity check some of our assumptions & show warning messages if they fail
     std::string msg;
 
-    const bool valid = alr_chunk_validate(ed.res, chunk, msg, false);
+    const bool valid = alr_chunk_validate(ed.alr, chunk, msg, false);
     ImGui::PlsReportIf(msg.length() > 0, msg.c_str());
 
     if (ImGui::BeginTabBar("Chunk Tabs")) {
         if (ImGui::BeginTabItem("Specialized Chunk Editor")) {
             switch (chunk.id) {
                 case 0x1:
-                    draw_chunk_0x1(ed.res, chunk);
+                    draw_chunk_0x1(ed.alr, chunk);
                     break;
                 case 0x2:
-                    draw_chunk_0x2(ed.res, chunk);
+                    draw_chunk_0x2(ed.alr, chunk);
                     break;
                 case 0x3:
-                    draw_chunk_0x3(ed.res, chunk);
+                    draw_chunk_0x3(ed.alr, chunk);
                     break;
                 case 0x5:
-                    draw_chunk_0x5(ed.res, chunk);
+                    draw_chunk_0x5(ed.alr, chunk);
                     break;
                 case 0x7:
-                    draw_chunk_0x7(ed.res, chunk);
+                    draw_chunk_0x7(ed.alr, chunk);
                     break;
                 case 0x10:
-                    draw_chunk_0x10(ed.res, chunk);
+                    draw_chunk_0x10(ed.alr, chunk);
                     break;
                 case 0x11:
-                    draw_chunk_0x11(ed.res, chunk);
+                    draw_chunk_0x11(ed.alr, chunk);
                     break;
                 case 0x15:
                     draw_chunk_0x15(ed, chunk);
                     break;
                 case 0x16:
-                    draw_chunk_0x16(ed.res, chunk, viewport);
+                    draw_chunk_0x16(ed.alr, chunk, viewport);
                     break;
                 default:
                     // Unimplemented window
@@ -604,7 +604,7 @@ void editor::window_state::draw(editor& ed, viewport_t& viewport) noexcept {
 
         if (ImGui::BeginTabItem("Raw Chunk Data")) {
             // Hex editor for the entire chunk, displayed with correct file offsets
-            hex_chunk.DrawContents(ed.res.data + chunk.offset, chunk.size, chunk.offset);
+            hex_chunk.DrawContents(ed.alr.data + chunk.offset, chunk.size, chunk.offset);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -635,7 +635,7 @@ void editor::tex_edit_state_t::draw(editor& ed) noexcept {
     if (!tex_export_active) {
         return;
     }
-    resource& alr = ed.res;
+    file& alr = ed.alr;
 
     if (!offset_0x10) {
         offset_0x10 = alr.first_chunk_by_id(0x10).offset;
@@ -764,8 +764,8 @@ void editor::draw(viewport_t& viewport) noexcept {
         // Draw a row for each chunk. It'd be nice to use an ImGui::Clipper
         // here, but it triggers asserts in debug mode when there's an active
         // filter and we skip drawing some chunks.
-        for (u32 i = 0; i < res.chunks.size(); i++) {
-            resource::chunk& chunk = res.chunks[i];
+        for (u32 i = 0; i < alr.chunks.size(); i++) {
+            file::chunk& chunk = alr.chunks[i];
 
             if (chunk_filter.has_value()) {
                 if (chunk_filter.value() != chunk.id) {
@@ -815,7 +815,7 @@ void editor::draw(viewport_t& viewport) noexcept {
 
     // Draw window for all chunks being displayed right now
     for (window_state& state : states) {
-        resource::chunk& chunk = res.chunks[state.chunk_idx];
+        file::chunk& chunk = alr.chunks[state.chunk_idx];
         if (!state.active) {
             continue;
         }

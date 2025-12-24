@@ -25,9 +25,9 @@ void print_usage() {
 }
 
 int dump_all_textures(const polaris& pol) {
-    const alr::resource& alr = pol.editor.res;
-    alr::resource::chunk texture_chunk = alr.first_chunk_by_id(0x15);
-    alr::resource::chunk atlas_chunk = alr.first_chunk_by_id(0x10);
+    const alr::file& alr = pol.editor.alr;
+    alr::file::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    alr::file::chunk atlas_chunk = alr.first_chunk_by_id(0x10);
     if (texture_chunk.size == 0 && atlas_chunk.size == 0) {
         LOG_MSG(warning, "I couldn't find any textures to dump.\n");
         return EXIT_FAILURE;
@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     if (strlen(path) > 0) {
         // We have an argument, it should be a filepath.
         if (file_has_magic(path, 0x11)) {
-            if (!pol->editor.res.load(path)) {
+            if (!pol->editor.alr.load(path)) {
                 // An error message will be printed for us down the chain, just exit
                 return EXIT_FAILURE;
             }
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
     else if (strcmp(flag, validate_flag) == 0) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
-        bool result = alr_validate(message, pol->editor.res, true);
+        bool result = alr_validate(message, pol->editor.alr, true);
         result &= mapdata_validate(pol->map, message);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");

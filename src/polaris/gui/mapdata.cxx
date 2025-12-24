@@ -66,7 +66,7 @@ mapdata::~mapdata() {
     initialized = false;
 }
 
-void map_obj_to_viewport(viewport_t& viewport, const alr::resource& alr, const ps01_entry* entry) noexcept {
+void map_obj_to_viewport(viewport_t& viewport, const alr::file& alr, const ps01_entry* entry) noexcept {
     mesh_view mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id, 0);
     for (index_buffer& idxbuf : mesh.idx_buffers) {
         idxbuf.is_skele_transform = false;
@@ -116,7 +116,7 @@ void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     label = "";
     str_format_append(label, "Send to viewport##%d", idx);
     if (ImGui::Button(label.c_str())) {
-        map_obj_to_viewport(pol.viewport, pol.editor.res, entry);
+        map_obj_to_viewport(pol.viewport, pol.editor.alr, entry);
     }
 }
 
@@ -126,7 +126,7 @@ void mapdata::edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept {
         u32 offset = header->chunk_size;
         for (u32 i = 0; i < header->ps00_count; i++) {
             if (all_to_viewport) {
-                map_obj_to_viewport(pol.viewport, pol.editor.res, &entries[i]);
+                map_obj_to_viewport(pol.viewport, pol.editor.alr, &entries[i]);
             }
             ImGui::Text("@ 0x%X: ", offset);
             edit_ps01_entry(i, &entries[i], header->nm00_count);

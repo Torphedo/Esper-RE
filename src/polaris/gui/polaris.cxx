@@ -72,7 +72,7 @@ void polaris::do_menu_bar() noexcept {
                 mesh.destroy();
             }
             this->viewport.meshes.clear();
-            editor.res.load(path);
+            editor.alr.load(path);
             editor.states.clear(); // UI state doesn't transfer between files
         }
         free(path);
@@ -84,7 +84,7 @@ void polaris::do_menu_bar() noexcept {
         char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            editor.res.save(path);
+            editor.alr.save(path);
         }
         free(path);
     }
@@ -146,7 +146,7 @@ void polaris::do_menu_bar() noexcept {
 void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
     viewport.init(window);
-    viewport.alr = &editor.res;
+    viewport.alr = &editor.alr;
 }
 
 void polaris::update(GLFWwindow* window) noexcept {

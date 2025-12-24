@@ -1,10 +1,10 @@
-#include "al_resource.hxx"
+#include "alr_file.hxx"
 #include <common/file.h>
 #include <common/vmem.h>
 
 namespace alr {
 
-bool resource::load(const char* path) noexcept {
+bool file::load(const char* path) noexcept {
     if (!file_exists(path)) {
         LOG_MSG(error, "I couldn't find an ALR file named \"%s\".\n", path);
         return false;
@@ -40,7 +40,7 @@ bool resource::load(const char* path) noexcept {
     return true;
 }
 
-bool resource::save(const char* path) const noexcept {
+bool file::save(const char* path) const noexcept {
     FILE* out = fopen(path, "wb");
     if (out == nullptr) {
         return false;
@@ -56,11 +56,11 @@ bool resource::save(const char* path) const noexcept {
     return result;
 }
 
-    std::vector<resource::chunk> resource::shatter_alr(const u8* buf, s64 size) noexcept {
+    std::vector<file::chunk> file::shatter_alr(const u8* buf, s64 size) noexcept {
         // Technically we cast away const here, but we don't write any data so it's
         // fine.
         vfile vf = vfile_open((void*)buf, size);
-        std::vector<resource::chunk> out;
+        std::vector<file::chunk> out;
 
         // Loop until we exhaust the buffer or exit early
         u32 prev_id = -1;
@@ -70,7 +70,7 @@ bool resource::save(const char* path) const noexcept {
             const uintptr_t offset = vf.pos; // It's important to save offset before reading
             const u32 id = VFILE_READ(u32, &vf);
             const s32 chunk_size = VFILE_READ(s32, &vf);
-            resource::chunk chunk(id, chunk_size, offset);
+            file::chunk chunk(id, chunk_size, offset);
 
             if (chunk.id == 0 && prev_id == 0) {
                 // There's never multiple consecutive chunks with ID 0. This means
@@ -99,11 +99,11 @@ bool resource::save(const char* path) const noexcept {
         return out;
     }
 
-    resource::chunk resource::first_chunk_by_id(u32 id) const noexcept {
+    file::chunk file::first_chunk_by_id(u32 id) const noexcept {
         return first_chunk_in_range(id, 0, alr_size);
     }
 
-    resource::chunk resource::prev_chunk_by_id(u32 id, u32 high, u32 low) const noexcept {
+    file::chunk file::prev_chunk_by_id(u32 id, u32 high, u32 low) const noexcept {
         assert(low < high && "Low bound must be < high bound!");
         for (s64 i = chunks.size() - 1; i > 0; i--) {
             const chunk& c = chunks[i];
@@ -121,7 +121,7 @@ bool resource::save(const char* path) const noexcept {
         return chunk(0, 0, 0); // Nothin...
     }
 
-    resource::chunk resource::first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept {
+    file::chunk file::first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept {
         // TODO: Add an overload to find a chunk within an offset range. Since the list is sorted we can do a sort of binary search by starting @ the middle
         assert(low < high && "Low bound must be < high bound!");
 
@@ -140,7 +140,7 @@ bool resource::save(const char* path) const noexcept {
         return chunk(0, 0, 0); // Nothin...
     }
 
-    bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
+    bool file::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
         const chunk last_chunk = chunks.back();
         const u32 end_of_chunks = last_chunk.offset + last_chunk.size;
         if (end_of_chunks + shift_amount >= resbuf_offset) {
@@ -193,7 +193,7 @@ bool resource::save(const char* path) const noexcept {
         return true;
     }
 
-    bool resource::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
+    bool file::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
         s64 remaining_size = alr_size - (resbuf_offset + data_offset);
         alr_size += shift_amount;
         if (alr_size > reserve_size) {
@@ -247,7 +247,7 @@ bool resource::save(const char* path) const noexcept {
         return true;
     }
 
-    void resource::expand_reservation(s64 new_size) noexcept {
+    void file::expand_reservation(s64 new_size) noexcept {
         if (new_size < reserve_size) {
             LOG_MSG(error, "No reason to shrink reservation from 0x%X -> 0x%X, ignoring!\n", reserve_size, new_size);
             return;
@@ -271,12 +271,12 @@ bool resource::save(const char* path) const noexcept {
         reserve_size = new_size;
     }
 
-    resource::resource() noexcept {
+    file::file() noexcept {
         // "Expand" our reservation from 0 bytes to... not 0.
         this->expand_reservation(reserve_size);
     }
 
-    resource::~resource() noexcept {
+    file::~file() noexcept {
         vmem_free(data, reserve_size);
     }
 } // namespace al

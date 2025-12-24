@@ -9,7 +9,7 @@
 #include <formats/alr.h>
 
 namespace alr {
-    class resource;
+    class file;
 };
 
 /// @brief Dear ImGui menu to edit an attribute
@@ -34,7 +34,7 @@ struct index_buffer {
     vec3s* position = nullptr;
     vec3s* rotation = nullptr;
 
-    mat4s get_transform(const alr::resource& alr) const noexcept;
+    mat4s get_transform(const alr::file& alr) const noexcept;
     index_buffer() = default;
     index_buffer(u32 idx_offset, u32 skele_offset) noexcept
         : idx_chunk_offset(idx_offset), armature_chunk_offset(skele_offset) {
@@ -89,7 +89,7 @@ struct mesh_view {
     bool apply_attributes() const noexcept;
 
     /// @brief ImGui menu to edit the mesh properties
-    void edit_menu(alr::resource& alr) noexcept;
+    void edit_menu(alr::file& alr) noexcept;
 };
 
 // Standardized vertex format that can express all known Phantom Dust vertex
