@@ -140,13 +140,12 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
         vf.pos = header->header.offset.start;
 
         for (u32 j = 0; j < header->header.block_count - 1; j++) {
-            const u32 block_offset = vf.pos;
             const stx_block_header* block = VFILE_READ_PTR(stx_block_header, &vf);
             u16 channel_size = block->channel_size;
             channel_size = 1008;
 
             const u16 block_size = channel_size * block->channel_count;
-            const u32 next_block = vf.pos + block_size;
+            const u64 next_block = vf.pos + block_size;
             audio_size += block_size;
 
             if (block->magic != STX_MAGIC) {

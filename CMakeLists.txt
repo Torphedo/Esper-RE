@@ -23,6 +23,12 @@ set(BOBTAIL_OPENGL ON)
 add_subdirectory(ext/bobtail)
 add_subdirectory(ext/nfde)
 
+add_library(pd_common STATIC
+    src/formats/pd_common.c
+    src/formats/stx.c
+    src/formats/wav.c
+)
+
 # Build Polaris
 include(polaris.cmake)
 
@@ -34,9 +40,6 @@ add_executable(alr
     src/alr/split.c
     src/alr/replace.c
     src/alr/images.c
-
-    src/formats/pd_common.c
-    src/formats/wav.c
 )
 
 add_executable(deck_reader
@@ -46,14 +49,12 @@ add_executable(deck_reader
 add_executable(ssb
     src/ssb/main.c
     src/ssb/ssb.c
-    src/formats/pd_common.c
-    src/formats/wav.c
 )
 
 # Link everything to the common library
-target_link_libraries(alr PRIVATE bobtail)
+target_link_libraries(alr PRIVATE bobtail pd_common)
 target_link_libraries(deck_reader PRIVATE bobtail)
-target_link_libraries(ssb PRIVATE bobtail)
+target_link_libraries(ssb PRIVATE bobtail pd_common)
 # Polaris handles its own linking
 
 # Copy test files to [build]/src/bin/ so they can be accessed while debugging

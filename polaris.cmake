@@ -56,9 +56,6 @@ add_executable(polaris
     src/polaris/alr/alr_imgui.cxx
     src/polaris/alr/mkak.cxx
 
-    src/formats/pd_common.c
-    src/formats/wav.c
-
     src/polaris/util/fileclass.cxx
     src/polaris/util/scope_timer.cxx
     src/polaris/util/imgui_utils.cxx
@@ -69,4 +66,4 @@ add_executable(polaris
     ${glsl_headers}
 )
 
-target_link_libraries(polaris PRIVATE coregui imgui bobtail nfd)
+target_link_libraries(polaris PRIVATE bobtail pd_common coregui imgui nfd)
