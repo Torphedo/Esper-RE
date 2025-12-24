@@ -2,7 +2,7 @@
 
 #include <common/vfile.h>
 #include <formats/alr_animations.h>
-#include "alr_resources.hxx"
+#include "alr_assets.hxx"
 #include <al_resource.hxx>
 
 const char* texformat_str(alr_pixel_format format) {

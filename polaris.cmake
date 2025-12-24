@@ -43,7 +43,7 @@ add_executable(polaris
     src/polaris/validation.cxx
     src/polaris/selector_ray.cxx
 
-    src/polaris/alr/alr_resources.cxx
+    src/polaris/alr/alr_assets.cxx
     src/polaris/alr/alr_dump.cxx
     src/polaris/alr/mkak.cxx
     src/polaris/al_resource.cxx

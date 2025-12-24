@@ -11,7 +11,7 @@
 
 #include <formats/alr.h>
 
-#include <alr/alr_resources.hxx>
+#include <alr/alr_assets.hxx>
 #include "al_resource.hxx"
 
 // State for 0x1 (material) window

@@ -18,7 +18,7 @@
 #include <validation.hxx>
 
 #include "alr/alr_dump.hxx"
-#include "alr/alr_resources.hxx"
+#include "alr/alr_assets.hxx"
 #include "gui/alr_imgui.hxx"
 
 #include "alr_editor.hxx"

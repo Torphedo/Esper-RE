@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <formats/alr.h>
-#include <alr/alr_resources.hxx>
+#include <alr/alr_assets.hxx>
 
 namespace alr {
     class resource {
