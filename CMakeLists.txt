@@ -51,10 +51,15 @@ add_executable(ssb
     src/ssb/ssb.c
 )
 
+add_executable(ddsx
+    src/ddsx/main.c
+)
+
 # Link everything to the common library
 target_link_libraries(alr PRIVATE bobtail pd_common)
 target_link_libraries(deck_reader PRIVATE bobtail)
 target_link_libraries(ssb PRIVATE bobtail pd_common)
+target_link_libraries(ddsx PRIVATE bobtail)
 # Polaris handles its own linking
 
 # Copy test files to [build]/src/bin/ so they can be accessed while debugging
