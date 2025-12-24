@@ -50,7 +50,8 @@ add_executable(polaris
     src/polaris/gui/polaris.cxx
     src/polaris/gui/alr_imgui.cxx
     src/polaris/gui/tool_audio.cxx
-    src/polaris/gui/editor_alr.cxx
+
+    src/polaris/gui/alr_editor.cxx
     src/polaris/gui/mapdata.cxx
     src/polaris/gui/mesh_view.cxx
     src/polaris/gui/framebuffer.cxx

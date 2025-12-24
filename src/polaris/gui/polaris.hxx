@@ -8,14 +8,14 @@
 #include <layer.hxx>
 
 #include "mapdata.hxx"
-#include "gui/editor_alr.hxx"
+#include "gui/alr_editor.hxx"
 #include "gui/viewport.hxx"
 #include "gui/tool_audio.hxx"
 
 // State for the overall editor
 struct polaris : gui_layer {
     // State for a loaded ALR file
-    al::resource alr;
+    al::editor alr;
 
     // State for accompanying .dat file for a stage ALR.
     mapdata map = mapdata(*this);

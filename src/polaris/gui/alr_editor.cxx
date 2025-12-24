@@ -1,6 +1,6 @@
 // Need this define to use operators on ImGui vector types
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "editor_alr.hxx"
+#include "alr_editor.hxx"
 #include <imgui_internal.h>
 #include <nfd.h>
 
@@ -33,7 +33,7 @@ do {                                 \
 
 namespace al {
 
-void resource::chunk::chunk_0x1(const resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x1(const editor& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x1);
 
     vfile vf = vfile_open(alr.data, alr.alr_size);
@@ -60,7 +60,7 @@ void resource::chunk::chunk_0x1(const resource& alr, viewport_t& viewport) noexc
     hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)alr.data);
 }
 
-void resource::chunk::chunk_0x2(resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x2(editor& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x2);
 
     if (ImGui::Button("Shift From Here")) {
@@ -129,7 +129,7 @@ void resource::chunk::chunk_0x2(resource& alr, viewport_t& viewport) noexcept {
     ImGui::PopItemWidth();
 }
 
-void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x3(const editor& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x3);
 
     vfile vf = vfile_open(alr.data + offset, size);
@@ -157,13 +157,13 @@ void resource::chunk::chunk_0x3(const resource& alr, viewport_t& viewport) noexc
     al::edit_joint_t(joint, vf, hex_edit);
 }
 
-void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x5(const editor& alr, viewport_t& viewport) noexcept {
     vfile vf = vfile_open(alr.data + offset, size);
     anim_header* header = (anim_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*header));
 
     if (ImGui::Button("Dump animation")) {
-        resource::chunk armature_chunk = alr.first_chunk_in_range(0x3, this->offset, alr.resbuf_offset);
+        editor::chunk armature_chunk = alr.first_chunk_in_range(0x3, this->offset, alr.resbuf_offset);
         vfile armature_vf = vfile_open(alr.data + armature_chunk.offset, armature_chunk.size);
         vfile_seek(&armature_vf, sizeof(chunk_generic));
         const auto armature_header = VFILE_READ(chunk_armature, &armature_vf);
@@ -213,7 +213,7 @@ void resource::chunk::chunk_0x5(const resource& alr, viewport_t& viewport) noexc
     }
 }
 
-void resource::chunk::chunk_0x7(const resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x7(const editor& alr, viewport_t& viewport) noexcept {
     // This is the same as normal animation frames, but seems to ignore the
     // existing keyframe size fields.
     vfile vf = vfile_open(alr.data + offset, size);
@@ -238,7 +238,7 @@ void resource::chunk::chunk_0x7(const resource& alr, viewport_t& viewport) noexc
     vfile_seek(&vf, key_size * header->rotation_key_count);
 }
 
-void resource::chunk::chunk_0x10(resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x10(editor& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x10);
 
     vfile vf = vfile_open(alr.data + offset, size);
@@ -259,7 +259,7 @@ void resource::chunk::chunk_0x10(resource& alr, viewport_t& viewport) noexcept {
 
     // We have to look up texture entries to find out where each texture is
     texture_entry* entries = nullptr;
-    resource::chunk c = alr.first_chunk_by_id(0x15);
+    editor::chunk c = alr.first_chunk_by_id(0x15);
     if (c.size == 0) {
         // This should never happen
         ImGui::PlsReportIf(true, "Couldn't find an 0x15 chunk!\n");
@@ -354,7 +354,7 @@ void resource::chunk::chunk_0x10(resource& alr, viewport_t& viewport) noexcept {
     ImGui::draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
-void resource::chunk::chunk_0x11(const resource& alr, viewport_t& viewport) const noexcept {
+void editor::chunk::chunk_0x11(const editor& alr, viewport_t& viewport) const noexcept {
     CHUNK_ID_ASSERT(0x11);
     vfile vf = vfile_open(alr.data + offset, size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
@@ -362,7 +362,7 @@ void resource::chunk::chunk_0x11(const resource& alr, viewport_t& viewport) cons
     al::edit_chunk_layout(*layout);
 }
 
-void resource::chunk::import_dds_0x15(const resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
+void editor::chunk::import_dds_0x15(const editor& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
     CHUNK_ID_ASSERT(0x15);
 
     const texture_entry cur = entries[window_0x15.selected_texture];
@@ -397,7 +397,7 @@ void resource::chunk::import_dds_0x15(const resource& alr, const char* path, u32
     window_0x15.tex.height = window_0x15.tex.width = exponent(2, power);
 }
 
-void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x15(editor& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x15);
 
     // We use the vfile API to handle the chunk data
@@ -454,7 +454,7 @@ void resource::chunk::chunk_0x15(resource& alr, viewport_t& viewport) noexcept {
     ImGui::EndGroup();
 }
 
-void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::send_vertbuf_to_viewport(editor& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // Find out what index we are
@@ -472,7 +472,7 @@ void resource::chunk::send_vertbuf_to_viewport(resource& alr, viewport_t& viewpo
     viewport.meshes.push_back(mesh);
 }
 
-void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::chunk_0x16(editor& alr, viewport_t& viewport) noexcept {
     CHUNK_ID_ASSERT(0x16);
 
     // We use the vfile API to handle the chunk data
@@ -546,7 +546,7 @@ void resource::chunk::chunk_0x16(resource& alr, viewport_t& viewport) noexcept {
     ImGui::EndChild();
 }
 
-void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
+void editor::chunk::draw(editor& alr, viewport_t& viewport) noexcept {
     if (alr.data == nullptr || alr.alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
         return;
@@ -604,7 +604,7 @@ void resource::chunk::draw(resource& alr, viewport_t& viewport) noexcept {
     }
 }
 
-resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
+editor::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     this->id = id;
     this->size = size;
     this->offset = offset;
@@ -640,7 +640,7 @@ resource::chunk::chunk(u32 id, s32 size, uintptr_t offset) noexcept {
     }
 }
 
-void resource::tex_edit_state_t::draw(resource& alr) noexcept {
+void editor::tex_edit_state_t::draw(editor& alr) noexcept {
     if (!tex_export_active) {
         return;
     }
@@ -733,7 +733,7 @@ void resource::tex_edit_state_t::draw(resource& alr) noexcept {
     ImGui::End();
 }
 
-bool resource::load(const char* path) noexcept {
+bool editor::load(const char* path) noexcept {
     if (!file_exists(path)) {
         LOG_MSG(error, "I couldn't find an ALR file named \"%s\".\n", path);
         return false;
@@ -767,7 +767,7 @@ bool resource::load(const char* path) noexcept {
     return true;
 }
 
-bool resource::save(const char* path) const noexcept {
+bool editor::save(const char* path) const noexcept {
     FILE* out = fopen(path, "wb");
     if (out == nullptr) {
         return false;
@@ -783,11 +783,11 @@ bool resource::save(const char* path) const noexcept {
     return result;
 }
 
-std::vector<resource::chunk> resource::shatter_alr(const u8* buf, s64 size) noexcept {
+std::vector<editor::chunk> editor::shatter_alr(const u8* buf, s64 size) noexcept {
     // Technically we cast away const here, but we don't write any data so it's
     // fine.
     vfile vf = vfile_open((void*)buf, size);
-    std::vector<resource::chunk> out;
+    std::vector<editor::chunk> out;
 
     // Loop until we exhaust the buffer or exit early
     u32 prev_id = -1;
@@ -797,7 +797,7 @@ std::vector<resource::chunk> resource::shatter_alr(const u8* buf, s64 size) noex
         const uintptr_t offset = vf.pos; // It's important to save offset before reading
         const u32 id = VFILE_READ(u32, &vf);
         const s32 chunk_size = VFILE_READ(s32, &vf);
-        resource::chunk chunk(id, chunk_size, offset);
+        editor::chunk chunk(id, chunk_size, offset);
 
         if (chunk.id == 0 && prev_id == 0) {
             // There's never multiple consecutive chunks with ID 0. This means
@@ -826,11 +826,11 @@ std::vector<resource::chunk> resource::shatter_alr(const u8* buf, s64 size) noex
     return out;
 }
 
-resource::chunk resource::first_chunk_by_id(u32 id) const noexcept {
+editor::chunk editor::first_chunk_by_id(u32 id) const noexcept {
     return first_chunk_in_range(id, 0, alr_size);
 }
 
-resource::chunk resource::prev_chunk_by_id(u32 id, u32 high, u32 low) const noexcept {
+editor::chunk editor::prev_chunk_by_id(u32 id, u32 high, u32 low) const noexcept {
     assert(low < high && "Low bound must be < high bound!");
     for (s64 i = chunks.size() - 1; i > 0; i--) {
         const chunk& c = chunks[i];
@@ -848,7 +848,7 @@ resource::chunk resource::prev_chunk_by_id(u32 id, u32 high, u32 low) const noex
     return chunk(0, 0, 0); // Nothin...
 }
 
-resource::chunk resource::first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept {
+editor::chunk editor::first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept {
     // TODO: Add an overload to find a chunk within an offset range. Since the list is sorted we can do a sort of binary search by starting @ the middle
     assert(low < high && "Low bound must be < high bound!");
 
@@ -867,7 +867,7 @@ resource::chunk resource::first_chunk_in_range(u32 id, u32 low, u32 high) const 
     return chunk(0, 0, 0); // Nothin...
 }
 
-bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
+bool editor::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
     const chunk last_chunk = chunks.back();
     const u32 end_of_chunks = last_chunk.offset + last_chunk.size;
     if (end_of_chunks + shift_amount >= resbuf_offset) {
@@ -920,7 +920,7 @@ bool resource::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
     return true;
 }
 
-bool resource::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
+bool editor::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
     s64 remaining_size = alr_size - (resbuf_offset + data_offset);
     alr_size += shift_amount;
     if (alr_size > reserve_size) {
@@ -974,7 +974,7 @@ bool resource::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
     return true;
 }
 
-void resource::draw(viewport_t& viewport) noexcept {
+void editor::draw(viewport_t& viewport) noexcept {
     ImGui::Begin("ALR Chunks");
 
     const char* filter_label = "ID Filter";
@@ -1013,7 +1013,7 @@ void resource::draw(viewport_t& viewport) noexcept {
         // here, but it triggers asserts in debug mode when there's an active
         // filter and we skip drawing some chunks.
         for (u32 i = 0; i < chunks.size(); i++) {
-            resource::chunk &chunk = chunks[i];
+            editor::chunk &chunk = chunks[i];
             if (this->chunk_filter.has_value()) {
                 if (this->chunk_filter.value() != chunk.id) {
                     // Only show chunks that match the ID filter
@@ -1049,7 +1049,7 @@ void resource::draw(viewport_t& viewport) noexcept {
 
 
     // Draw window for all chunks being displayed right now
-    for (resource::chunk& chunk : chunks) {
+    for (editor::chunk& chunk : chunks) {
         if (!chunk.active) {
             continue;
         }
@@ -1095,7 +1095,7 @@ void resource::draw(viewport_t& viewport) noexcept {
     tex_edit.draw(*this);
 }
 
-void resource::expand_reservation(s64 new_size) noexcept {
+void editor::expand_reservation(s64 new_size) noexcept {
     if (new_size < reserve_size) {
         LOG_MSG(error, "No reason to shrink reservation from 0x%X -> 0x%X, ignoring!\n", reserve_size, new_size);
         return;
@@ -1119,12 +1119,12 @@ void resource::expand_reservation(s64 new_size) noexcept {
     reserve_size = new_size;
 }
 
-resource::resource() noexcept {
+editor::editor() noexcept {
     // "Expand" our reservation from 0 bytes to... not 0.
     this->expand_reservation(reserve_size);
 }
 
-resource::~resource() noexcept {
+editor::~editor() noexcept {
     vmem_free(data, reserve_size);
 }
 

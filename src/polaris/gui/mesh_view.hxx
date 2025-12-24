@@ -15,7 +15,7 @@ void edit_menu(vertex_attribute& attr);
 
 // We need a forward declaration, since a class in this file is a member.
 namespace al {
-    class resource;
+    class editor;
 }
 
 
@@ -36,7 +36,7 @@ struct index_buffer {
     vec3s* position = nullptr;
     vec3s* rotation = nullptr;
 
-    mat4s get_transform(const al::resource& alr) const noexcept;
+    mat4s get_transform(const al::editor& alr) const noexcept;
     index_buffer() = default;
     index_buffer(u32 idx_offset, u32 skele_offset) noexcept
         : idx_chunk_offset(idx_offset), armature_chunk_offset(skele_offset) {
@@ -80,8 +80,8 @@ struct mesh_view {
 
     /// @brief Upload an index buffer to the GPU for this mesh
     ///
-    /// @param alr_data Get from al::resource.data
-    /// @param alr_size Get from al::resource.alr_size
+    /// @param alr_data Get from al::editor.data
+    /// @param alr_size Get from al::editor.alr_size
     /// @param buf Index buffer structure to upload
     bool add_index_buf(const u8* alr_data, u32 alr_size, index_buffer buf) noexcept;
 
@@ -91,7 +91,7 @@ struct mesh_view {
     bool apply_attributes() const noexcept;
 
     /// @brief ImGui menu to edit the mesh properties
-    void edit_menu(al::resource& alr) noexcept;
+    void edit_menu(al::editor& alr) noexcept;
 };
 
 // Standardized vertex format that can express all known Phantom Dust vertex

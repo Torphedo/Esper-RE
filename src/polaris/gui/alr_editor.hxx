@@ -64,7 +64,7 @@ struct polaris;
 
 namespace al {
 
-class resource {
+class editor {
 public:
     /// State for each ALR chunk
     struct chunk {
@@ -99,16 +99,16 @@ public:
 
         /// Render and update the chunk's editing window.
         /// This always draws, and doesn't check the @ref active flag
-        void draw(al::resource& alr, viewport_t& viewport) noexcept;
+        void draw(al::editor& alr, viewport_t& viewport) noexcept;
 
         // Dedicated editing windows for each chunk type
-        void chunk_0x1(const al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x2(al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x3(const al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x5(const al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x7(const al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x10(al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x11(const al::resource& alr, viewport_t& viewport) const noexcept;
+        void chunk_0x1(const al::editor& alr, viewport_t& viewport) noexcept;
+        void chunk_0x2(al::editor& alr, viewport_t& viewport) noexcept;
+        void chunk_0x3(const al::editor& alr, viewport_t& viewport) noexcept;
+        void chunk_0x5(const al::editor& alr, viewport_t& viewport) noexcept;
+        void chunk_0x7(const al::editor& alr, viewport_t& viewport) noexcept;
+        void chunk_0x10(al::editor& alr, viewport_t& viewport) noexcept;
+        void chunk_0x11(const al::editor& alr, viewport_t& viewport) const noexcept;
 
         /// Replace the selected texture with a DDS file from disk, updating the
         /// metadata in the 0x15 chunk. Does nothing if not called on an 0x15 chunk.
@@ -116,11 +116,11 @@ public:
         /// @param path The filepath of the DDS to load
         /// @param num_entries The number of texture entries in the 0x15 chunk
         /// @param entries Texture entries to be modified
-        void import_dds_0x15(const al::resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
-        void chunk_0x15(al::resource& alr, viewport_t& viewport) noexcept;
+        void import_dds_0x15(const al::editor& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
+        void chunk_0x15(al::editor& alr, viewport_t& viewport) noexcept;
 
-        void send_vertbuf_to_viewport(al::resource& alr, viewport_t& viewport) noexcept;
-        void chunk_0x16(al::resource& alr, viewport_t& viewport) noexcept;
+        void send_vertbuf_to_viewport(al::editor& alr, viewport_t& viewport) noexcept;
+        void chunk_0x16(al::editor& alr, viewport_t& viewport) noexcept;
     };
 
     // State for texture editor, which pulls information from 0x15 and 0x16 chunks
@@ -134,7 +134,7 @@ public:
         bool guess_atlas = true;
         bool override_buf = false;
 
-        void draw(resource& alr) noexcept;
+        void draw(editor& alr) noexcept;
     };
 
     tex_edit_state_t tex_edit;
@@ -198,8 +198,8 @@ public:
     }
 
     void expand_reservation(s64 new_size) noexcept;
-    resource() noexcept;
-    ~resource() noexcept;
+    editor() noexcept;
+    ~editor() noexcept;
 };
 
 } // namespace al

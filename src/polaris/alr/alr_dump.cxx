@@ -12,7 +12,7 @@
 
 #include <gui/mesh_view.hxx>
 #include <version.h>
-#include "gui/editor_alr.hxx"
+#include "gui/alr_editor.hxx"
 
 namespace al {
 
@@ -351,7 +351,7 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
     }
 }
 
-void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx) {
+void dump_vertex_buf(const editor& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx) {
     // Dump to OBJ
     FILE *out = fopen(path, "wb");
     if (out != nullptr) {
@@ -394,7 +394,7 @@ void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset
         }
 
         // Vertices are dumped, now for indices
-        for (al::resource::chunk idx_chunk : alr.chunks) {
+        for (al::editor::chunk idx_chunk : alr.chunks) {
             if (idx_chunk.id == 0x16 && idx_chunk.offset > vertchunk_offset) {
                 // We've hit a mesh metadata chunk past our own, so any
                 // further index buffers will be garbage data to us. Quit.
@@ -703,7 +703,7 @@ parsed_obj obj_load(const char* text) {
     return out;
 }
 
-bool obj_import(const char* txt, al::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
+bool obj_import(const char* txt, al::editor& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
     bool has_uvs = false;
     u32 vert_count = 0;
     u32 idx_count = 0;
