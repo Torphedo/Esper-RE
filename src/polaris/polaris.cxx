@@ -3,7 +3,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "util/imgui_utils.hxx"
-#include <nfd.h> // Cross-platform native file dialog
+#include "util/nfde_wrapper.hxx"
 
 #include <common/int.h>
 
@@ -23,6 +23,7 @@ void polaris::do_menu_bar() noexcept {
     bool load_layout = false;
     bool save_layout = false;
     bool extract_mkak = false;
+    bool create_mkak = false;
 
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
@@ -51,6 +52,7 @@ void polaris::do_menu_bar() noexcept {
             if (ImGui::BeginMenu("Tools")) {
                 ImGui::MenuItem("Audio Analyzer (.bin / STH2)", nullptr, &audioTool.enabled);
                 ImGui::MenuItem("Extract .mk / .ak", nullptr, &extract_mkak);
+                ImGui::MenuItem("Create .mk / .ak", nullptr, &create_mkak);
                 ImGui::EndMenu();
             }
 
@@ -116,6 +118,22 @@ void polaris::do_menu_bar() noexcept {
         }
         free(path);
         free(out_dir);
+    }
+
+    if (create_mkak) {
+        const nfdu8filteritem_t filters[] = { { "Phantom Dust MK archive", "mk"}, { "Phantom Dust AK archive", "ak"} };
+
+        std::vector<std::string> input_paths;
+        nfdresult_t result_in = NFD_OpenDialogMultipleAutoFree(input_paths, nullptr, 0, nullptr);
+        if (result_in == NFD_OKAY) {
+            char* outpath = nullptr;
+            nfdresult_t result_out = NFD_SaveDialogU8(&outpath, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+
+            if (result_out == NFD_OKAY && outpath) {
+                mkak::create_pack(input_paths, outpath);
+            }
+            free(outpath);
+        }
     }
 }
 

@@ -59,6 +59,7 @@ add_executable(polaris
     src/polaris/util/fileclass.cxx
     src/polaris/util/scope_timer.cxx
     src/polaris/util/imgui_utils.cxx
+    src/polaris/util/nfde_wrapper.cxx
 
     ext/glad/src/glad.c
 

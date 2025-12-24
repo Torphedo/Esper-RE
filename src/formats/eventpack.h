@@ -1,5 +1,6 @@
 #pragma once
 #include <common/int.h>
+#include "shut_up_msvc.h"
 
 #ifdef __cplusplus
 extern "C" {
