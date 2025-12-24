@@ -6,7 +6,7 @@
 
 #include <common/image.h>
 #include <formats/alr.h>
-#include <polaris/mesh_view.hxx>
+#include <gui/mesh_view.hxx>
 
 /// @brief Gets a human-readable description of the pixel format
 const char* texformat_str(alr_pixel_format format);

@@ -2,7 +2,7 @@
 #include <cglm/struct.h>
 
 #include <formats/alr.h>
-#include "camera.hxx"
+#include "gui/camera.hxx"
 
 struct ray_t {
     vec3s origin;

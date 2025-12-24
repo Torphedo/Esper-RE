@@ -8,7 +8,7 @@
 #include <layer.hxx>
 
 #include "camera.hxx"
-#include "framebuffer.hxx"
+#include "gui/framebuffer.hxx"
 
 // We need a forward declaration instead of a header include, since a class
 // in this file is a member of polaris.

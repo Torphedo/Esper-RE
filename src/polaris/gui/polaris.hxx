@@ -7,10 +7,10 @@
 #include <formats/alr.h>
 #include <layer.hxx>
 
-#include "alr/editor_alr.hxx"
 #include "mapdata.hxx"
-#include "viewport.hxx"
-#include "tool_audio.hxx"
+#include "gui/editor_alr.hxx"
+#include "gui/viewport.hxx"
+#include "gui/tool_audio.hxx"
 
 // State for the overall editor
 struct polaris : gui_layer {

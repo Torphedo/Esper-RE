@@ -39,22 +39,23 @@ endforeach()
 
 add_executable(polaris
     src/polaris/main.cxx
-    src/polaris/polaris.cxx
     src/polaris/validation.cxx
-    src/polaris/mapdata.cxx
-    src/polaris/viewport.cxx
-    src/polaris/mesh_view.cxx
-    src/polaris/camera.cxx
     src/polaris/validation.cxx
-    src/polaris/framebuffer.cxx
     src/polaris/selector_ray.cxx
-    src/polaris/tool_audio.cxx
 
-    src/polaris/alr/editor_alr.cxx
     src/polaris/alr/alr_resources.cxx
     src/polaris/alr/alr_dump.cxx
-    src/polaris/alr/alr_imgui.cxx
     src/polaris/alr/mkak.cxx
+
+    src/polaris/gui/polaris.cxx
+    src/polaris/gui/alr_imgui.cxx
+    src/polaris/gui/tool_audio.cxx
+    src/polaris/gui/editor_alr.cxx
+    src/polaris/gui/mapdata.cxx
+    src/polaris/gui/mesh_view.cxx
+    src/polaris/gui/framebuffer.cxx
+    src/polaris/gui/viewport.cxx
+    src/polaris/gui/camera.cxx
 
     src/polaris/util/fileclass.cxx
     src/polaris/util/scope_timer.cxx
@@ -68,3 +69,4 @@ add_executable(polaris
 )
 
 target_link_libraries(polaris PRIVATE bobtail pd_common coregui imgui nfd)
+target_include_directories(polaris PRIVATE ${Esper-RE_SOURCE_DIR}/src/polaris)

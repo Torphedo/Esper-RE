@@ -5,7 +5,7 @@
 #include <common/vfile.h>
 #include <formats/alr_animations.h>
 
-#include "polaris.hxx"
+#include "gui/polaris.hxx"
 #include "util/imgui_utils.hxx"
 #include "alr/alr_dump.hxx"
 

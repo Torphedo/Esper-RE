@@ -6,7 +6,7 @@
 
 #include "formats/st00.h"
 #include "util/imgui_utils.hxx"
-#include "polaris.hxx"
+#include "gui/polaris.hxx"
 #include "mesh_view.hxx"
 
 bool mapdata::offset_is_reasonable(s32 offset) noexcept {

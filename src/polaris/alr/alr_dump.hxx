@@ -7,7 +7,7 @@
 #include <common/vfile.h>
 #include <common/file.h>
 #include <formats/alr.h>
-#include "editor_alr.hxx"
+#include "gui/editor_alr.hxx"
 
 namespace al {
 

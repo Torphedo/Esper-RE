@@ -2,10 +2,9 @@
 
 #include <common/vfile.h>
 #include <formats/alr_animations.h>
-#include <polaris/mesh_view.hxx>
+#include <gui/mesh_view.hxx>
 #include "alr_resources.hxx"
-#include "editor_alr.hxx"
-#include "alr_dump.hxx"
+#include "gui/editor_alr.hxx"
 
 const char* texformat_str(alr_pixel_format format) {
     const char* out = "[UNKNOWN]";

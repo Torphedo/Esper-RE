@@ -11,7 +11,7 @@
 
 #include <formats/alr.h>
 #include <formats/st00.h>
-#include "polaris.hxx"
+#include "gui/polaris.hxx"
 #include "alr/alr_resources.hxx"
 #include "validation.hxx"
 #include "version.h"

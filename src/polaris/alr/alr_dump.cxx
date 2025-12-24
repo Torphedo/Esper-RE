@@ -10,9 +10,9 @@
 #include <formats/alr_animations.h>
 #include <formats/pd_common.h>
 
-#include <polaris/mesh_view.hxx>
-#include <polaris/version.h>
-#include "editor_alr.hxx"
+#include <gui/mesh_view.hxx>
+#include <version.h>
+#include "gui/editor_alr.hxx"
 
 namespace al {
 
