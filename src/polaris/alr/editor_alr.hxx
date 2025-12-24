@@ -139,8 +139,6 @@ public:
 
     tex_edit_state_t tex_edit;
 
-    polaris& pol;
-
     // Currently loaded ALR & metadata for all its chunks
     u8* data = nullptr;
     s64 alr_size = 0;
@@ -200,7 +198,7 @@ public:
     }
 
     void expand_reservation(s64 new_size) noexcept;
-    resource(polaris& pol) noexcept;
+    resource() noexcept;
     ~resource() noexcept;
 };
 
