@@ -92,32 +92,6 @@ bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, con
 /// @param entry_idx The index of the vertex buffer to replace within the chunk
 bool obj_import(const char* txt, alr::file& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
 
-// PINT == Polaris INTermediate file
-struct pint_header {
-    enum class content_type : u8 {
-        NONE,
-        // The file has a vertex buffer entry and a vertex buffer
-        VERTEX_BUFFER,
-        // The file just has ALR chunks in it
-        CHUNKS,
-    };
-
-    u32 magic = MAGIC('P', 'I', 'N', 'T');
-    u16 version = 1;
-    content_type type = content_type::NONE;
-    u8 reserved[24] = {};
-};
-static_assert(sizeof(pint_header) == 0x20);
-
-struct pint_content {
-    struct vertex_buffer {
-        vertbuf_entry entry = {};
-        u32 buf_size = 0;
-        u8 vertex_buf[];
-    };
-    static_assert(sizeof(vertex_buffer) == 0x20);
-};
-
 typedef struct {
     bool has_uvs;
     u32 vert_count;

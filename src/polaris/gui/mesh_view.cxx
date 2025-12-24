@@ -5,23 +5,14 @@
 #include <common/vfile.h>
 #include <formats/alr_animations.h>
 
-#include "gui/polaris.hxx"
 #include "util/imgui_utils.hxx"
 #include "alr/alr_dump.hxx"
 
-typedef struct {
-    const char* string;
-    u16 gl_type;
-}type_lookup_entry;
-
-// Table mapping OpenGL type constants (stored in each vertex attribute) to a
-// less amiguous human-readable string.
-type_lookup_entry gl_type_table[] = {
-    { "float", GL_FLOAT },
-    { "u8", GL_UNSIGNED_BYTE },
-    { "s8", GL_BYTE },
-    { "u16", GL_UNSIGNED_SHORT },
-    { "s16", GL_SHORT },
+const u16 gl_type_table[DATA_TYPE_COUNT] = {
+    GL_BYTE, GL_UNSIGNED_BYTE,
+    GL_SHORT, GL_UNSIGNED_SHORT,
+    GL_INT, GL_UNSIGNED_INT,
+    GL_FLOAT, GL_DOUBLE,
 };
 
 void edit_menu(vertex_attribute& attr) {
@@ -32,21 +23,12 @@ void edit_menu(vertex_attribute& attr) {
     ImGui::SliderScalar("# Components", ImGuiDataType_U8, &attr.components, &min_components, &max_components);
     ImGui::InputU16("Offset", &attr.offset);
 
-    // Find the index of our current type in the lookup table
-    u16 current_type = 0;
-    for (u32 i = 0; i < ARRAY_SIZE(gl_type_table); i++) {
-        if (attr.type == gl_type_table[i].gl_type) {
-            current_type = i;
-            break;
-        }
-    }
-
-    if (ImGui::BeginCombo("Data Type", gl_type_table[current_type].string)) {
-        for (u32 i = 0; i < ARRAY_SIZE(gl_type_table); i++) {
+    if (ImGui::BeginCombo("Data Type", nameof_type(attr.type))) {
+        for (u32 i = 0; i < ARRAY_SIZE(data_type_names); i++) {
             // https://github.com/ocornut/imgui/issues/1658
-            const bool selected = current_type == i;
-            if (ImGui::Selectable(gl_type_table[i].string)) {
-                current_type = i; // Update selection
+            const bool selected = (attr.type == i);
+            if (ImGui::Selectable(data_type_names[i])) {
+                attr.type = data_type(i); // Update selection
             }
             if (selected) {
                 // Focus on the selected entry
@@ -56,9 +38,6 @@ void edit_menu(vertex_attribute& attr) {
         ImGui::EndCombo();
     }
     ImGui::Checkbox("Enable attribute", &attr.exists);
-
-    // Update current type if needed.
-    attr.type = gl_type_table[current_type].gl_type;
 }
 
 mat4s index_buffer::get_transform(const alr::file& alr) const noexcept {
@@ -198,9 +177,11 @@ bool mesh_view::apply_attributes() const noexcept {
             continue;
         }
 
+        const u16 gl_type = gl_type_table[attr.type];
+
         // Update vertex format w/ OpenGL
         glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i, attr.components, attr.type, GL_FALSE, this->vertex_size, (void*)(u64)attr.offset);
+        glVertexAttribPointer(i, attr.components, gl_type, GL_FALSE, this->vertex_size, (void*)(u64)attr.offset);
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -336,20 +317,23 @@ vec4s read_attr(vfile& vf, vertex_attribute attr) {
     for (u32 i = 0; i < attr.components; i++) {
         float val = 0.0f;
         switch (attr.type) {
-            case GL_FLOAT:
+            case DATA_TYPE_FLOAT:
                 val = VFILE_READ(float, &vf);
                 break;
-            case GL_BYTE:
+            case DATA_TYPE_S8:
                 val = VFILE_READ(s8, &vf);
                 break;
-            case GL_UNSIGNED_BYTE:
+            case DATA_TYPE_U8:
                 val = VFILE_READ(u8, &vf);
                 break;
-            case GL_SHORT:
+            case DATA_TYPE_S16:
                 val = VFILE_READ(s16, &vf);
                 break;
-            case GL_UNSIGNED_SHORT:
+            case DATA_TYPE_U16:
                 val = VFILE_READ(u16, &vf);
+                break;
+            default:
+                LOG_MSG(warning, "Unimplemented data type '%s'! (%d bytes)\n", nameof_type(attr.type), sizeof_type(attr.type));
                 break;
         }
         if (attr.divisor > 0) {

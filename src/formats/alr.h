@@ -3,10 +3,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <common/int.h>
-
-// Sorry about this dependency, I use OpenGL type enums (like GL_FLOAT) for the
-// vertex format definitons.
-#include <glad/glad.h>
+#include "data_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -183,7 +180,7 @@ static const char* attribute_names[] = {
 
 // Vertex attribute data for glVertexAttribPointer()
 typedef struct {
-    u16 type; // Data type like GL_FLOAT, GL_UNSIGNED_BYTE, etc.
+    data_type type;
     u16 offset;
     // A value to divide each component by before using it. Unused if 0
     u16 divisor;
@@ -208,15 +205,15 @@ typedef struct {
 }vertex_format_t;
 
 // Position is the same for all formats so far
-#define ALR_STD_POS   { \
-    .type = GL_FLOAT,   \
-    .offset = 0,        \
-    .components = 3,    \
-    .exists = true,     \
-}                       \
+#define ALR_STD_POS   {      \
+    .type = DATA_TYPE_FLOAT, \
+    .offset = 0,             \
+    .components = 3,         \
+    .exists = true,          \
+}                            \
 
 #define ALR_STD_UV_DEF(custom_offset, custom_divisor) { \
-    .type = GL_SHORT,                    \
+    .type = DATA_TYPE_S16,               \
     .offset = custom_offset,             \
     .divisor = custom_divisor,           \
     .components = 2,                     \

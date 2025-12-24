@@ -111,7 +111,7 @@ public:
 
     alr::file alr;
 
-    // This matches the order/size of the ALR's chunk vector
+    // Per-chunk UI state
     std::vector<window_state> states;
 
     // State for texture editor, which pulls information from 0x15 and 0x16 chunks

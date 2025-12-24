@@ -50,7 +50,7 @@ struct mesh_view {
     std::vector<index_buffer> idx_buffers;
 
     const u8* vertices = nullptr;
-    vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {0};
+    vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {};
     // The offset of the *entry*, not of the 0x16 chunk.
     u16 vertex_size = 0;
     gl_obj vbo = 0;
