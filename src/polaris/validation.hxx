@@ -11,7 +11,7 @@
 /// @param alr The ALR to validate
 /// @param headless Whether we're running in headless mode
 /// @return Whether the ALR data passed validation
-bool alr_validate(std::string& msg, const al::resource& alr, bool headless) noexcept;
+bool alr_validate(std::string& msg, const alr::resource& alr, bool headless) noexcept;
 
 /// @brief Check if a chunk meets all of our expectations
 /// @param alr A reference to the polaris instance with the relevant ALR data
@@ -19,7 +19,7 @@ bool alr_validate(std::string& msg, const al::resource& alr, bool headless) noex
 /// @param msg A text buffer for messages to be communicated to the user. A message might be added here even if the function succeeds.
 /// @param headless Whether we're running in headless mode
 /// @return Whether the chunk passed validation
-bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chunk,
+bool alr_chunk_validate(const alr::resource& alr, const alr::resource::chunk& chunk,
                         std::string& msg, bool headless) noexcept;
 
 bool mapdata_validate(const mapdata& map, std::string& msg) noexcept;

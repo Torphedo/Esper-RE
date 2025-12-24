@@ -26,7 +26,7 @@ struct viewport_t : gui_layer {
 
     framebuffer fbo;
 
-    al::resource* alr = nullptr;
+    alr::resource* alr = nullptr;
 
     // Shader program used to render the scene
     gl_obj shader = 0;

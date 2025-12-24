@@ -7,7 +7,7 @@
 
 /// @brief Stateless ImGui editor menus for ALR structures
 
-namespace al {
+namespace alr {
     enum {
         // The power of 2 to limit texture resolutions to
         // e.g. 2^12 = 4096

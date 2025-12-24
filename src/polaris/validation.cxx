@@ -5,14 +5,14 @@
 
 #include "util/imgui_utils.hxx"
 
-bool alr_validate(std::string& msg, const al::resource& alr, bool headless) noexcept {
+bool alr_validate(std::string& msg, const alr::resource& alr, bool headless) noexcept {
     if (!alr.loaded) {
         return true; // Not a failure, just not loaded
     }
 
     bool result = true;
-    std::optional<al::resource::chunk> header_chunk;
-    for (const al::resource::chunk& chunk : alr.chunks) {
+    std::optional<alr::resource::chunk> header_chunk;
+    for (const alr::resource::chunk& chunk : alr.chunks) {
         result &= alr_chunk_validate(alr, chunk, msg, headless);
         if (chunk.id == 0x11) {
             header_chunk = chunk;
@@ -60,13 +60,13 @@ bool alr_validate(std::string& msg, const al::resource& alr, bool headless) noex
         }
 
         // The first 0x00 chunk we find after the previous offset.
-        std::optional<al::resource::chunk> terminator;
+        std::optional<alr::resource::chunk> terminator;
         // The last chunk before we hit the current offset
-        al::resource::chunk last(0xFF, 0, 0);
+        alr::resource::chunk last(0xFF, 0, 0);
 
         // Skip up to the last chunk before the current offset
         while (chunk_idx < alr.chunks.size()) {
-            const al::resource::chunk chunk = alr.chunks.at(chunk_idx);
+            const alr::resource::chunk chunk = alr.chunks.at(chunk_idx);
 
             // Save the first 0x00 chunk we find
             if (chunk.id == 0x00 && !terminator.has_value()) {
@@ -134,7 +134,7 @@ bool validate_entry_sizes(std::string& msg, u32 total_size, u32 header_size, u32
 // added to if the condition fails.
 #define AL_ASSERT(cond, ...) result = (cond) ? result : (str_format_append(msg, __VA_ARGS__), false)
 
-bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chunk, std::string& msg, bool headless) noexcept {
+bool alr_chunk_validate(const alr::resource& alr, const alr::resource::chunk& chunk, std::string& msg, bool headless) noexcept {
     if (alr.data == nullptr || alr.alr_size == 0) {
         return false; // Something is already wrong...
     }
@@ -198,7 +198,7 @@ bool alr_chunk_validate(const al::resource& alr, const al::resource::chunk& chun
             const anim_header header = VFILE_READ(anim_header, &chunkvf);
             AL_ASSERT(header.scale_key_count == 0, "Scale keys are used!");
 
-            const al::resource::chunk skel_chunk = alr.first_chunk_in_range(3, chunk.offset, alr.alr_size);
+            const alr::resource::chunk skel_chunk = alr.first_chunk_in_range(3, chunk.offset, alr.alr_size);
             if (skel_chunk.offset == 0) {
                 str_format_append(msg, "Couldn't find matching skeleton chunk for animation @ 0x%X", chunk.offset);
             } else {

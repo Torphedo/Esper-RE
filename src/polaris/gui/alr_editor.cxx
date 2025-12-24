@@ -33,7 +33,7 @@ do {                                 \
     }                                \
 } while(0)
 
-namespace al {
+namespace alr {
 
 void editor::window_state::draw_chunk_0x1(const resource& alr, resource::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(0x1);
@@ -77,7 +77,7 @@ void editor::window_state::draw_chunk_0x2(resource& alr, resource::chunk& chunk)
         if (result == NFD_OKAY && path != nullptr) {
             FILE* out = fopen(path, "ab");
             if (out) {
-                al::dump_idx_buf(alr.data, chunk.offset, out, false);
+                alr::dump_idx_buf(alr.data, chunk.offset, out, false);
                 fclose(out);
             }
         }
@@ -156,7 +156,7 @@ void editor::window_state::draw_chunk_0x3(const resource& alr, resource::chunk& 
     window_0x3.selected_joint = CLAMP(min, window_0x3.selected_joint, max);
 
     joint_t& joint = joints[window_0x3.selected_joint];
-    al::edit_joint_t(joint, vf, hex_edit);
+    alr::edit_joint_t(joint, vf, hex_edit);
 }
 
 void editor::window_state::draw_chunk_0x5(const resource& alr, resource::chunk& chunk) noexcept {
@@ -331,7 +331,7 @@ void editor::window_state::draw_chunk_0x10(resource& alr, resource::chunk& chunk
     cur_tex.height = atlas->height;
     cur_tex.width = atlas->width;
     ImGui::Text("Atlas uses texture index %d, see 0x15 chunk for offset & format", window_0x10.selected_atlas);
-    if (al::edit_atlas_entry(*atlas, *aName)) {
+    if (alr::edit_atlas_entry(*atlas, *aName)) {
         // Texture settings have changed, trigger reload
         alr.tex_manager.invalidate(window_0x10.selected_atlas);
     }
@@ -352,7 +352,7 @@ void editor::window_state::draw_chunk_0x10(resource& alr, resource::chunk& chunk
     const ImVec2 end = image_pos + (atlas_drawn_size * uv1);
     ImGui::GetWindowDrawList()->AddRect(start, end, 0xFF00FF00);
 
-    al::edit_atlas_texture(*tex);
+    alr::edit_atlas_texture(*tex);
     ImGui::draw_image(window_0x10.gl_tex_id, tex->width, tex->height, &window_0x10.use_actual_size, &window_0x10.scale, "texture", uv0, uv1);
 }
 
@@ -361,7 +361,7 @@ void editor::window_state::draw_chunk_0x11(const resource& alr, resource::chunk&
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
 
-    al::edit_chunk_layout(*layout);
+    alr::edit_chunk_layout(*layout);
 }
 
 void editor::window_state::import_dds_0x15(const resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
@@ -431,7 +431,7 @@ void editor::window_state::draw_chunk_0x15(editor& ed, resource::chunk& chunk) n
     ImGui::BeginGroup();
     texture_entry& entry = entries[window_0x15.selected_texture];
 
-    al::edit_texture_entry(entry);
+    alr::edit_texture_entry(entry);
 
     if (ImGui::Button("Import DDS")) {
         // Display the file picker
@@ -510,7 +510,7 @@ void editor::window_state::draw_chunk_0x16(resource& alr, resource::chunk& chunk
         char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            al::dump_vertex_buf(alr, path, chunk.offset, window_0x16.selected_vertex_buf);
+            alr::dump_vertex_buf(alr, path, chunk.offset, window_0x16.selected_vertex_buf);
         }
         free(path);
     }
@@ -540,7 +540,7 @@ void editor::window_state::draw_chunk_0x16(resource& alr, resource::chunk& chunk
         }
     }
 
-    al::edit_vertbuf_entry(*entry);
+    alr::edit_vertbuf_entry(*entry);
     ImGui::EndChild();
 
     ImGui::BeginChild("Vertex Buffer Hex Editor", ImVec2(800, 500));

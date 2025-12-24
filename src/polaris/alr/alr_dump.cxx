@@ -8,7 +8,7 @@
 #include <gui/mesh_view.hxx>
 #include <version.h>
 
-namespace al {
+namespace alr {
 
 void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& component_type, u32& num_components) {
     frame_type = ImGuiDataType_COUNT;
@@ -128,7 +128,7 @@ s32 animation_by_idx(const u8* alr, u32 alr_size, u32 idx, u32 joint_idx) {
 }
 
 mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, float cur_frame) {
-    s32 anim_offset = al::animation_by_idx(alr, alr_size, anim_id, joint_idx);
+    s32 anim_offset = alr::animation_by_idx(alr, alr_size, anim_id, joint_idx);
     if (anim_offset <= 0) {
         return GLMS_MAT4_IDENTITY_INIT;
     }
@@ -142,7 +142,7 @@ mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, fl
     for (u32 i = 0; i < aheader->translation_key_count; i++) {
         float frame = 0.0f;
         const u8* keydata = (const u8*)vfile_cur(afile);
-        vec3s key = al::anim_read_key(keydata, aheader->translation_key_size, &frame, nullptr);
+        vec3s key = alr::anim_read_key(keydata, aheader->translation_key_size, &frame, nullptr);
         if (frame > cur_frame) {
             break;
         }
@@ -157,7 +157,7 @@ mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, fl
     for (u32 i = 0; i < aheader->rotation_key_count; i++) {
         float frame = 0.0f;
         const u8* keydata = (const u8*)vfile_cur(afile);
-        vec3s key = al::anim_read_key(keydata, aheader->rotation_key_size, &frame, nullptr);
+        vec3s key = alr::anim_read_key(keydata, aheader->rotation_key_size, &frame, nullptr);
         if (frame > cur_frame) {
             break;
         }
@@ -388,7 +388,7 @@ void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset
         }
 
         // Vertices are dumped, now for indices
-        for (al::resource::chunk idx_chunk : alr.chunks) {
+        for (alr::resource::chunk idx_chunk : alr.chunks) {
             if (idx_chunk.id == 0x16 && idx_chunk.offset > vertchunk_offset) {
                 // We've hit a mesh metadata chunk past our own, so any
                 // further index buffers will be garbage data to us. Quit.
@@ -417,7 +417,7 @@ void dump_vertex_buf(const resource& alr, const char* path, u32 vertchunk_offset
             }
 
             fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-            al::dump_idx_buf(alr.data, idx_chunk.offset, out, has_uvs);
+            alr::dump_idx_buf(alr.data, idx_chunk.offset, out, has_uvs);
         }
 
         // Cleanup
@@ -697,7 +697,7 @@ parsed_obj obj_load(const char* text) {
     return out;
 }
 
-bool obj_import(const char* txt, al::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
+bool obj_import(const char* txt, alr::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx) {
     bool has_uvs = false;
     u32 vert_count = 0;
     u32 idx_count = 0;

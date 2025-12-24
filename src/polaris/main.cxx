@@ -25,9 +25,9 @@ void print_usage() {
 }
 
 int dump_all_textures(const polaris& pol) {
-    const al::resource& alr = pol.editor.res;
-    al::resource::chunk texture_chunk = alr.first_chunk_by_id(0x15);
-    al::resource::chunk atlas_chunk = alr.first_chunk_by_id(0x10);
+    const alr::resource& alr = pol.editor.res;
+    alr::resource::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    alr::resource::chunk atlas_chunk = alr.first_chunk_by_id(0x10);
     if (texture_chunk.size == 0 && atlas_chunk.size == 0) {
         LOG_MSG(warning, "I couldn't find any textures to dump.\n");
         return EXIT_FAILURE;

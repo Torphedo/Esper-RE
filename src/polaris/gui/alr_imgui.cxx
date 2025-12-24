@@ -6,7 +6,7 @@
 #include <alr/alr_dump.hxx>
 #include "imgui_internal.h"
 
-namespace al {
+namespace alr {
     bool edit_chunk_layout(chunk_layout& layout) {
         const u32 hash = crc32fast((u8*)&layout, sizeof(layout));
         const int hex_flags = ImGuiInputTextFlags_CharsHexadecimal;

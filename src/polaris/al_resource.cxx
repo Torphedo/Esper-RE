@@ -2,7 +2,7 @@
 #include <common/file.h>
 #include <common/vmem.h>
 
-namespace al {
+namespace alr {
 
 bool resource::load(const char* path) noexcept {
     if (!file_exists(path)) {

@@ -63,7 +63,7 @@ struct window_state_0x16 {
 struct viewport_t;
 struct polaris;
 
-namespace al {
+namespace alr {
 
 class editor {
 public:
@@ -109,7 +109,7 @@ public:
         window_state(u32 chunk_idx, u32 chunk_id);
     };
 
-    al::resource res;
+    alr::resource res;
 
     // This matches the order/size of the ALR's chunk vector
     std::vector<window_state> states;

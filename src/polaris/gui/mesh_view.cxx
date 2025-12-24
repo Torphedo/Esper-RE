@@ -61,7 +61,7 @@ void edit_menu(vertex_attribute& attr) {
     attr.type = gl_type_table[current_type].gl_type;
 }
 
-mat4s index_buffer::get_transform(const al::resource& alr) const noexcept {
+mat4s index_buffer::get_transform(const alr::resource& alr) const noexcept {
     if (!is_skele_transform) {
         assert(position);
         assert(rotation);
@@ -88,8 +88,8 @@ mat4s index_buffer::get_transform(const al::resource& alr) const noexcept {
     const joint_t* joint = &joints[joint_idx];
     mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
     do {
-        mat4s joint_xform = al::transform_from_joint(*joint);
-        mat4s anim_xform = al::anim_xform_for_joint(alr.data, alr.alr_size, anim_id, joint_idx, cur_frame);
+        mat4s joint_xform = alr::transform_from_joint(*joint);
+        mat4s anim_xform = alr::anim_xform_for_joint(alr.data, alr.alr_size, anim_id, joint_idx, cur_frame);
 
         // HACK: If there's an animation for this joint, discard joint rotation to fix broken limbs.
         mat4s identity = GLMS_MAT4_IDENTITY_INIT;
@@ -208,7 +208,7 @@ bool mesh_view::apply_attributes() const noexcept {
     return true;
 }
 
-void mesh_view::edit_menu(al::resource& alr) noexcept {
+void mesh_view::edit_menu(alr::resource& alr) noexcept {
     const char* format_settings_help = "These may help if a model looks corrupted, or textures are applied wrong.";
     const char* idxbuf_help = "The individual objects within the model";
 

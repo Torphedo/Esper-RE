@@ -3,7 +3,7 @@
 #include <formats/alr.h>
 #include <alr/alr_resources.hxx>
 
-namespace al {
+namespace alr {
     class resource {
     public:
         /// State for each ALR chunk
