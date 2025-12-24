@@ -15,7 +15,7 @@
 // State for the overall editor
 struct polaris : gui_layer {
     // State for a loaded ALR file
-    al::editor alr;
+    al::editor editor;
 
     // State for accompanying .dat file for a stage ALR.
     mapdata map = mapdata(*this);

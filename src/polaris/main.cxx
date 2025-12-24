@@ -25,8 +25,9 @@ void print_usage() {
 }
 
 int dump_all_textures(const polaris& pol) {
-    al::editor::chunk texture_chunk = pol.alr.first_chunk_by_id(0x15);
-    al::editor::chunk atlas_chunk = pol.alr.first_chunk_by_id(0x10);
+    const al::resource& alr = pol.editor.res;
+    al::resource::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    al::resource::chunk atlas_chunk = alr.first_chunk_by_id(0x10);
     if (texture_chunk.size == 0 && atlas_chunk.size == 0) {
         LOG_MSG(warning, "I couldn't find any textures to dump.\n");
         return EXIT_FAILURE;
@@ -39,7 +40,7 @@ int dump_all_textures(const polaris& pol) {
     u32 textures_dumped = 0;
 
     // Read texture chunk data
-    vfile vf = vfile_open(pol.alr.data + texture_chunk.offset, texture_chunk.size);
+    vfile vf = vfile_open(alr.data + texture_chunk.offset, texture_chunk.size);
     // Skip over the ID and size fields we already have
     vfile_seek(&vf, sizeof(chunk_generic));
     const u32 num_entries = VFILE_READ(u32, &vf);
@@ -50,7 +51,7 @@ int dump_all_textures(const polaris& pol) {
     const atlas_name* atlas_names = nullptr;
     atlas_header header_atlas = {0};
     if (atlas_chunk.size > 0) {
-        vf = vfile_open(pol.alr.data + atlas_chunk.offset, atlas_chunk.size);
+        vf = vfile_open(alr.data + atlas_chunk.offset, atlas_chunk.size);
 
         // Skip over the ID and size fields we already have
         vfile_seek(&vf, sizeof(chunk_generic));
@@ -65,7 +66,7 @@ int dump_all_textures(const polaris& pol) {
 
     for (u32 i = 0; i < num_entries; i++) {
         // Convert the ALR texture data to our standard texture struct
-        texture cur_tex = convert_tex(pol.alr.resource_buffer(), tex_entries[i]);
+        texture cur_tex = convert_tex(alr.resource_buffer(), tex_entries[i]);
 
         // Decode the texture filename
         char decoded_name[0x20] = {0};
@@ -141,7 +142,7 @@ int main(int argc, char** argv) {
     if (strlen(path) > 0) {
         // We have an argument, it should be a filepath.
         if (file_has_magic(path, 0x11)) {
-            if (!pol->alr.load(path)) {
+            if (!pol->editor.res.load(path)) {
                 // An error message will be printed for us down the chain, just exit
                 return EXIT_FAILURE;
             }
@@ -199,7 +200,7 @@ int main(int argc, char** argv) {
     else if (strcmp(flag, validate_flag) == 0) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
-        bool result = alr_validate(message, pol->alr, true);
+        bool result = alr_validate(message, pol->editor.res, true);
         result &= mapdata_validate(pol->map, message);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");

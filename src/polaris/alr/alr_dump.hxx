@@ -3,11 +3,12 @@
 /// @brief Functions to export ("dump") data from an ALR data structure to standard files.
 #include <cstdio>
 #include <cglm/struct.h>
+#include <imgui.h>
 
 #include <common/vfile.h>
 #include <common/file.h>
 #include <formats/alr.h>
-#include "gui/alr_editor.hxx"
+#include "al_resource.hxx"
 
 namespace al {
 
@@ -70,7 +71,7 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 /// @param path Path to save the OBJ file
 /// @param vertchunk_offset Offset of the 0x16 chunk in the ALR
 /// @param vert_entry_idx Index of the vertex buffer entry in the 0x16 chunk
-void dump_vertex_buf(const al::editor& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
+void dump_vertex_buf(const al::resource& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
 
 /// Export an animation chunk to an Autodesk Maya (.anim) animation file
 ///
@@ -89,7 +90,7 @@ bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, con
 /// @param alr The ALR to import into
 /// @param vertbuf_chunk_offset Offset of the 0x16 chunk to import into
 /// @param entry_idx The index of the vertex buffer to replace within the chunk
-bool obj_import(const char* txt, al::editor& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
+bool obj_import(const char* txt, al::resource& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
 
 // PINT == Polaris INTermediate file
 struct pint_header {

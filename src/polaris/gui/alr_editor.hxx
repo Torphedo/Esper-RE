@@ -12,6 +12,7 @@
 #include <formats/alr.h>
 
 #include <alr/alr_resources.hxx>
+#include "al_resource.hxx"
 
 // State for 0x1 (material) window
 struct window_state_0x1 {
@@ -66,10 +67,8 @@ namespace al {
 
 class editor {
 public:
-    /// State for each ALR chunk
-    struct chunk {
-        chunk(u32 id, s32 size, uintptr_t offset) noexcept;
 
+    struct window_state {
         // Try to only store primitive data here that can be trivially
         // zero-initialized. Otherwise it's kind of a pain.
         // TODO: See if we can use std::variant or inheritance to make it harder to call functions on the wrong chunk type
@@ -86,42 +85,34 @@ public:
         // Generic hex editor used in every chunk's draw function
         MemoryEditor hex_chunk;
 
-        /// The ID determines what data the chunk should contain
-        u32 id = 0;
-
-        s32 size = 0; // Sizes are sometimes negative, not sure why.
-
-        /// The location of this chunk in the ALR file
-        uintptr_t offset = 0;
+        // Index of the chunk in the file / ALR chunk vector
+        u32 chunk_idx;
 
         /// Whether to show this chunk's editing window
-        bool active = false;
+        bool active = true;
 
-        /// Render and update the chunk's editing window.
-        /// This always draws, and doesn't check the @ref active flag
-        void draw(al::editor& alr, viewport_t& viewport) noexcept;
+        void draw(editor& ed, viewport_t& viewport) noexcept;
+        void draw_chunk_0x1(const resource& alr, resource::chunk& chunk) noexcept;
+        void draw_chunk_0x2(resource& alr, resource::chunk& chunk) noexcept;
+        void draw_chunk_0x3(const resource& alr, resource::chunk& chunk) noexcept;
+        void draw_chunk_0x5(const resource& alr, resource::chunk& chunk) noexcept;
+        void draw_chunk_0x7(const resource& alr, resource::chunk& chunk) noexcept;
+        void draw_chunk_0x10(resource& alr, resource::chunk& chunk) noexcept;
+        void draw_chunk_0x11(const resource& alr, resource::chunk& chunk) const noexcept;
+        void draw_chunk_0x15(editor& ed, resource::chunk& chunk) noexcept;
+        void draw_chunk_0x16(resource& ed, resource::chunk& chunk, viewport_t& viewport) noexcept;
 
-        // Dedicated editing windows for each chunk type
-        void chunk_0x1(const al::editor& alr, viewport_t& viewport) noexcept;
-        void chunk_0x2(al::editor& alr, viewport_t& viewport) noexcept;
-        void chunk_0x3(const al::editor& alr, viewport_t& viewport) noexcept;
-        void chunk_0x5(const al::editor& alr, viewport_t& viewport) noexcept;
-        void chunk_0x7(const al::editor& alr, viewport_t& viewport) noexcept;
-        void chunk_0x10(al::editor& alr, viewport_t& viewport) noexcept;
-        void chunk_0x11(const al::editor& alr, viewport_t& viewport) const noexcept;
+        void import_dds_0x15(const resource& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
+        void send_vertbuf_to_viewport(resource& alr, viewport_t& viewport) noexcept;
 
-        /// Replace the selected texture with a DDS file from disk, updating the
-        /// metadata in the 0x15 chunk. Does nothing if not called on an 0x15 chunk.
-        /// @param alr The rest of the program's state
-        /// @param path The filepath of the DDS to load
-        /// @param num_entries The number of texture entries in the 0x15 chunk
-        /// @param entries Texture entries to be modified
-        void import_dds_0x15(const al::editor& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
-        void chunk_0x15(al::editor& alr, viewport_t& viewport) noexcept;
-
-        void send_vertbuf_to_viewport(al::editor& alr, viewport_t& viewport) noexcept;
-        void chunk_0x16(al::editor& alr, viewport_t& viewport) noexcept;
+        window_state();
+        window_state(u32 chunk_idx, u32 chunk_id);
     };
+
+    al::resource res;
+
+    // This matches the order/size of the ALR's chunk vector
+    std::vector<window_state> states;
 
     // State for texture editor, which pulls information from 0x15 and 0x16 chunks
     struct tex_edit_state_t {
@@ -139,67 +130,10 @@ public:
 
     tex_edit_state_t tex_edit;
 
-    // Currently loaded ALR & metadata for all its chunks
-    u8* data = nullptr;
-    s64 alr_size = 0;
-    ptrdiff_t resbuf_offset = 0;
-    bool loaded = false;
-
-    // If we guess the texture format wrong, we might accidentally read beyond
-    // the filesize. Because a mistake will inevitably happen, we reserve a
-    // large chunk of address space to avoid crashes in this case.
-    s64 reserve_size = 1024 * 1024 * 32;
-    std::vector<chunk> chunks;
-
-    texture_manager tex_manager;
-
     // If present, only display chunks with this ID
     std::optional<u32> chunk_filter;
 
-    /// @brief Overwrite the loaded ALR with a new one
-    bool load(const char* path) noexcept;
-
-    /// @brief Save the ALR data in-memory to the specified path.
-    bool save(const char* path) const noexcept;
-
-    /// @brief "Shatter" an ALR into all its chunks
-    ///
-    /// This also modifies the resource buffer offset.
-    /// @param buf The ALR data
-    /// @param size The size of the ALR buffer
-    /// @return List of chunks
-    std::vector<chunk> shatter_alr(const u8* buf, s64 size) noexcept;
-
-    [[nodiscard]] chunk first_chunk_by_id(u32 id) const noexcept;
-    // Search backwards from an offset to find a chunk
-    [[nodiscard]] chunk prev_chunk_by_id(u32 id, u32 high, u32 low = 0) const noexcept;
-    [[nodiscard]] chunk first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept;
-
-    /// @brief Shift all chunks at/after the starting offset forward.
-    ///
-    /// This also fixes some offsets in the header to account for the change.
-    /// This function will fail if the resource buffer gets in the way.
-    bool shift_chunks(u32 begin_offset, s32 shift_amount) noexcept;
-
-    /// @brief Shift a vertex buffer forwards by some amount
-    ///
-    /// @param data_offset Offset of the vertex buffer within the larger resource buffer
-    /// @param shift_amount The amount to shift forward by
-    bool shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept;
-
     void draw(viewport_t& viewport) noexcept;
-
-    u8* resource_buffer() const noexcept {
-        return this->data + this->resbuf_offset;
-    }
-
-    vfile vf_from_chunk(chunk c) noexcept {
-        return vfile_open(this->data + c.offset, c.size);
-    }
-
-    void expand_reservation(s64 new_size) noexcept;
-    editor() noexcept;
-    ~editor() noexcept;
 };
 
 } // namespace al
