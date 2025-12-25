@@ -23,6 +23,17 @@ set(BOBTAIL_OPENGL ON)
 add_subdirectory(ext/bobtail)
 add_subdirectory(ext/nfde)
 
+add_library(miniaudio STATIC lib/miniaudio/miniaudio.c)
+target_include_directories(miniaudio PUBLIC lib/miniaudio)
+target_compile_definitions(miniaudio PUBLIC
+    MA_NO_DEVICE_IO MA_ENABLE_ONLY_SPECIFIC_BACKENDS
+    MA_NO_THREADING MA_NO_NODE_GRAPH MA_NO_RESOURCE_MANAGER
+    MA_NO_GENERATION MA_NO_ENCODING MA_NO_FLAC
+)
+
+add_library(ibxm STATIC lib/micromod/ibxm-ac/ibxm.c)
+target_include_directories(ibxm PUBLIC lib/micromod/ibxm-ac)
+
 add_library(pd_common STATIC
     src/formats/pd_common.c
     src/formats/stx.c

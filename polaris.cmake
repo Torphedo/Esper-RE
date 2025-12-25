@@ -68,7 +68,11 @@ add_executable(polaris
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
+
+    src/formats/miniaudio_ibxm.c
+    src/formats/stx_tools.c
+    src/formats/ibxm_reader.c
 )
 
-target_link_libraries(polaris PRIVATE bobtail pd_common coregui imgui nfd)
+target_link_libraries(polaris PRIVATE bobtail pd_common miniaudio ibxm coregui imgui nfd)
 target_include_directories(polaris PRIVATE ${Esper-RE_SOURCE_DIR}/src/polaris)

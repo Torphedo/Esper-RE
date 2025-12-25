@@ -6,6 +6,7 @@
 #include "util/nfde_wrapper.hxx"
 
 #include <common/int.h>
+#include <formats/stx_tools.h>
 
 #include "alr/mkak.hxx"
 #include "util/scope_timer.hxx"
@@ -24,6 +25,7 @@ void polaris::do_menu_bar() noexcept {
     bool save_layout = false;
     bool extract_mkak = false;
     bool create_mkak = false;
+    bool create_stx = false;
 
     if (ImGui::BeginViewportSideBar("MainMenu", viewport, ImGuiDir_Up, height, flags)) {
         if (ImGui::BeginMenuBar()) {
@@ -50,7 +52,8 @@ void polaris::do_menu_bar() noexcept {
             }
 
             if (ImGui::BeginMenu("Tools")) {
-                ImGui::MenuItem("Audio Analyzer (.bin / STH2)", nullptr, &audioTool.enabled);
+                ImGui::MenuItem("Audio Analyzer (.bin / STX)", nullptr, &audioTool.enabled);
+                ImGui::MenuItem("Generate STX", nullptr, &create_stx);
                 ImGui::MenuItem("Extract .mk / .ak", nullptr, &extract_mkak);
                 ImGui::MenuItem("Create .mk / .ak", nullptr, &create_mkak);
                 ImGui::EndMenu();
@@ -140,6 +143,30 @@ void polaris::do_menu_bar() noexcept {
             }
             free(outpath);
         }
+    }
+
+    if (create_stx) {
+        nfdu8filteritem_t infilters[] = {
+        { "Audio File", "wav,mp3,mod,xm,s3m"},
+        {"Raw Audio", "wav"},
+        {"MPEG-3", "mp3"},
+        {"ProTracker Module", "mod"},
+        {"FastTracker II Module", "xm"},
+        {"ScreamTracker 3 Module", "s3m"},
+       };
+        nfdu8filteritem_t outfilters[] = { { "Phantom Dust Music", "stx"} };
+
+        char* path = nullptr;
+        nfdresult_t result = NFD_OpenDialogU8(&path, infilters, ARRAY_SIZE(infilters), nullptr);
+        if (result == NFD_OKAY && path) {
+            char* outpath = nullptr;
+            nfdresult_t result_out = NFD_SaveDialogU8(&outpath, outfilters, ARRAY_SIZE(outfilters), nullptr, nullptr);
+            if (result_out == NFD_OKAY && outpath) {
+                generate_stx_from_file(path, outpath);
+            }
+            free(outpath);
+        }
+        free(path);
     }
 }
 
