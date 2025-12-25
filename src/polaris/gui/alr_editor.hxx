@@ -1,7 +1,4 @@
 #pragma once
-#include <vector>
-#include <optional>
-
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 
