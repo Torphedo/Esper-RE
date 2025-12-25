@@ -1,13 +1,6 @@
 #pragma once
 /// @author Torphedo
 /// @brief Functions to export ("dump") data from an ALR data structure to standard files.
-#include <cstdio>
-#include <cglm/struct.h>
-#include <imgui.h>
-
-#include <common/vfile.h>
-#include <common/file.h>
-#include <formats/alr.h>
 #include "alr_file.hxx"
 
 namespace alr {
@@ -17,7 +10,7 @@ namespace alr {
 /// @param frame_type Output to receive the data type of the frame value.
 /// @param component_type Output to receive the data type of the components
 /// @param num_components Output to receive the number of components in the key
-void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& component_type, u32& num_components);
+void anim_key_info(u32 key_size, data_type& frame_type, data_type& component_type, u32& num_components);
 
 /// Generically read an animation key
 /// @param key Pointer to key data
@@ -25,7 +18,7 @@ void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& compo
 /// @param frame_out Optional output location to receive the key's frame value
 /// @param next_key_out Optional output location to receive pointer to next key
 /// @return Key converted to floating point. Unused components are left as 0.
-vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** next_key_out);
+vec3s anim_read_key(const u8* key, u32 key_size, float& frame_out, const u8** next_key_out = nullptr);
 
 /// Find an animation chunk for the specified joint in the specified animation
 /// @param alr ALR data to parse

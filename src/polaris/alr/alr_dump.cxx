@@ -1,39 +1,37 @@
 #include "alr_dump.hxx"
 #include <vector>
-#include <imgui_internal.h>
+#include <common/file.h>
 
 #include <formats/alr_animations.h>
 #include <formats/pd_common.h>
-
-#include <gui/mesh_view.hxx>
 #include <version.h>
 
 namespace alr {
 
-void anim_key_info(u32 key_size, ImGuiDataType& frame_type, ImGuiDataType& component_type, u32& num_components) {
-    frame_type = ImGuiDataType_COUNT;
-    component_type = ImGuiDataType_COUNT;
+void anim_key_info(u32 key_size, data_type& frame_type, data_type& component_type, u32& num_components) {
+    frame_type = DATA_TYPE_COUNT;
+    component_type = DATA_TYPE_COUNT;
 
     switch (key_size) {
     // Integer keys
     case 3:
     case 5:
     case 7:
-        frame_type = ImGuiDataType_U8;
-        component_type = ImGuiDataType_U16;
+        frame_type = DATA_TYPE_U8;
+        component_type = DATA_TYPE_U16;
         break;
 
     // Floating point keys
     case 8:
     case 12:
     case 16:
-        frame_type = component_type = ImGuiDataType_Float;
+        frame_type = component_type = DATA_TYPE_FLOAT;
     default:
         break;
     }
 
-    const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
-    const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
+    const u32 component_size = sizeof_type(component_type);
+    const u32 frame_size = sizeof_type(frame_type);
 
     // We know component and frame value size, so we can find out the # of components
     num_components = (key_size - frame_size) / component_size;
@@ -43,16 +41,16 @@ vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** ne
     vfile vf = vfile_open(const_cast<u8*>(key), key_size);
 
     u32 num_components = 0;
-    ImGuiDataType frame_type = ImGuiDataType_COUNT;
-    ImGuiDataType component_type = ImGuiDataType_COUNT;
+    data_type frame_type = DATA_TYPE_COUNT;
+    data_type component_type = DATA_TYPE_COUNT;
     anim_key_info(key_size, frame_type, component_type, num_components);
 
     float frame = 0.0f;
     switch (frame_type) {
-        case ImGuiDataType_Float:
+        case DATA_TYPE_FLOAT:
             frame = VFILE_READ(float, &vf);
             break;
-        case ImGuiDataType_U8:
+        case DATA_TYPE_U8:
             frame = VFILE_READ(u8, &vf);
             break;
         default:
@@ -65,10 +63,10 @@ vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** ne
     for (u32 i = 0; i < num_components; i++) {
         float component = 0.0f;
         switch (component_type) {
-            case ImGuiDataType_Float:
+            case DATA_TYPE_FLOAT:
                 component = VFILE_READ(float, &vf);
                 break;
-            case ImGuiDataType_U16:
+            case DATA_TYPE_U16:
                 component = VFILE_READ(s16, &vf);
                 // Map into [0, 1] range
                 component /= float(INT16_MAX);
@@ -495,12 +493,12 @@ void fprintf_anim_data_end(FILE* f) {
 }
 
 void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f, anim_key_type type, const char* bone_name) {
-    ImGuiDataType frame_type = ImGuiDataType_COUNT;
-    ImGuiDataType component_type = ImGuiDataType_COUNT;
     u32 num_components = 0;
+    data_type frame_type = DATA_TYPE_COUNT;
+    data_type component_type = DATA_TYPE_COUNT;
     anim_key_info(key_size, frame_type, component_type, num_components);
-    const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
-    const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
+    const u32 frame_size = sizeof_type(frame_type);
+    const u32 component_size = sizeof_type(component_type);
     const char* axes = "ZYX";
 
     vfile vf = vfile_open((void*)keydata, num_keys * key_size);
@@ -514,10 +512,10 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
             const u32 next_key_pos = vf.pos + key_size;
             float frame = 0.0f;
             switch (frame_type) {
-                case ImGuiDataType_Float:
+                case DATA_TYPE_FLOAT:
                     frame = VFILE_READ(float, &vf);
                     break;
-                case ImGuiDataType_U8:
+                case DATA_TYPE_U8:
                     frame = VFILE_READ(u8, &vf);
                     break;
                 default:
@@ -529,10 +527,10 @@ void dump_anim_channel(u32 key_size, u32 num_keys, const void* keydata, FILE* f,
             float component = 0.0f;
             vfile_seek(&vf, component_size * i);
             switch (component_type) {
-                case ImGuiDataType_Float:
+                case DATA_TYPE_FLOAT:
                     component = VFILE_READ(float, &vf);
                     break;
-                case ImGuiDataType_U16:
+                case DATA_TYPE_U16:
                     component = VFILE_READ(s16, &vf);
                     // Map into [0, 1] range
                     component /= float(INT16_MAX);

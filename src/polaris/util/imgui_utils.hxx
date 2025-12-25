@@ -28,6 +28,15 @@ namespace ImGui {
         }
     };
 
+    // Table to convert our data type enum to ImGui's
+    static const ImGuiDataType type_table[] = {
+        ImGuiDataType_S8, ImGuiDataType_U8,
+        ImGuiDataType_S16, ImGuiDataType_U16,
+        ImGuiDataType_S32, ImGuiDataType_U32,
+        ImGuiDataType_Float, ImGuiDataType_Double,
+        ImGuiDataType_COUNT,
+    };
+
     float CharWidth(u32 num_chars = 1);
 
     // Be careful using this near ImGui::Begin()/End(), because it'll hit an

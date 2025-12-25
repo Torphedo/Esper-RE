@@ -1,6 +1,5 @@
 #include "mesh_view.hxx"
 #include <cstdio>
-#include <imgui.h>
 
 #include <common/vfile.h>
 #include <formats/alr_animations.h>

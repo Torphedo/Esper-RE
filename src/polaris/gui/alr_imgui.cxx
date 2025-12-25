@@ -62,7 +62,7 @@ namespace alr {
         // This limits resolution to 4096^2, which is plenty for our use case
         entry.resolution_pwr = MIN(entry.resolution_pwr, TEX_POWER_LIMIT);
 
-        const u64 res = 1 << entry.resolution_pwr;
+        const u64 res = u64(1) << entry.resolution_pwr;
         ImGui::Text("Resolution: %lux%lu", res, res);
         ImGui::Text("(1 << %u = 2^%u = %lu)", entry.resolution_pwr, entry.resolution_pwr, res);
         ImGui::Text("(0x15 texture entries don't capture rectangular textures well, check the atlas (0x10) chunk for more accurate dimensions)");
@@ -195,14 +195,14 @@ namespace alr {
             return;
         }
 
-        ImGuiDataType frame_type = ImGuiDataType_COUNT;
-        ImGuiDataType component_type = ImGuiDataType_COUNT;
+        data_type frame_type = DATA_TYPE_COUNT;
+        data_type component_type = DATA_TYPE_COUNT;
         u32 num_components = 0;
         anim_key_info(key_size, frame_type, component_type, num_components);
-        const u32 frame_size = ImGui::DataTypeGetInfo(frame_type)->Size;
-        const u32 component_size = ImGui::DataTypeGetInfo(component_type)->Size;
+        const u32 frame_size = sizeof_type(frame_type);
+        const u32 component_size = sizeof_type(component_type);
 
-        if (num_components == 0 || component_type == ImGuiDataType_COUNT || frame_type == ImGuiDataType_COUNT) {
+        if (num_components == 0 || component_type == DATA_TYPE_COUNT || frame_type == DATA_TYPE_COUNT) {
             // Something wasn't filled out, probably unknown format
             ImGui::Text("Unknown keyframe format (0x%X bytes)", key_size);
             return;
@@ -210,6 +210,9 @@ namespace alr {
 
         // Give our float inputs 12 characters width per component
         ImGui::PushItemWidth(ImGui::CharWidth() * num_components * 12);
+
+        const ImGuiDataType imgui_frame_type = ImGui::type_table[frame_type];
+        const ImGuiDataType imgui_component_type = ImGui::type_table[component_type];
 
         // Each keyframe has a frame value (when it happens) and components (for 3D
         // translation/rotation/scale, or weird stuff like brightness values).
@@ -224,17 +227,12 @@ namespace alr {
             snprintf(component_label, sizeof(component_label), "##component_%d_%s", i, label_extra);
 
             // Display the input fields
-            ImGui::InputScalar(frame_label, frame_type, vfile_cur(vf));
+            ImGui::InputScalar(frame_label, imgui_frame_type, vfile_cur(vf));
 
             // Skip over frame value
-            if (frame_type == ImGuiDataType_Float) {
-                vfile_seek(&vf, sizeof(float));
-            }
-            else if (frame_type == ImGuiDataType_U8) {
-                vfile_seek(&vf, sizeof(u8));
-            }
+            vfile_seek(&vf, (u32)ImGui::DataTypeGetInfo(imgui_frame_type)->Size);
 
-            ImGui::InputScalarN(component_label, component_type, vfile_cur(vf), num_components);
+            ImGui::InputScalarN(component_label, imgui_component_type, vfile_cur(vf), num_components);
 
             // Space between keys keeps things readable
             ImGui::Spacing();
@@ -256,7 +254,7 @@ namespace alr {
             const u16 component_offset = frame_size + (component_size * cur_component);
             const ImGui::graph_info info = {
                 keyframes, key_count, key_size,
-                0, component_offset, frame_type, component_type,
+                0, component_offset, imgui_frame_type, imgui_component_type,
                 ImVec2(0, 0), 1.0f,
             };
             ImGui::GraphData(info);
