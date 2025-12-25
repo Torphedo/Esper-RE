@@ -631,11 +631,10 @@ editor::window_state::window_state(u32 chunk_idx, u32 chunk_id) : chunk_idx(chun
     }
 }
 
-void editor::tex_edit_state_t::draw(editor& ed) noexcept {
+void editor::tex_edit_state_t::draw(file& alr) noexcept {
     if (!tex_export_active) {
         return;
     }
-    file& alr = ed.alr;
 
     if (!offset_0x10) {
         offset_0x10 = alr.first_chunk_by_id(0x10).offset;
@@ -858,7 +857,7 @@ void editor::draw(viewport_t& viewport) noexcept {
         ImGui::End();
     }
 
-    tex_edit.draw(*this);
+    tex_edit.draw(alr);
 }
 
 } // namespace al

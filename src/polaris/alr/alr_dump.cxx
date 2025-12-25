@@ -37,7 +37,7 @@ void anim_key_info(u32 key_size, data_type& frame_type, data_type& component_typ
     num_components = (key_size - frame_size) / component_size;
 }
 
-vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** next_key_out) {
+vec3s anim_read_key(const u8* key, u32 key_size, float& frame_out, const u8** next_key_out) {
     vfile vf = vfile_open(const_cast<u8*>(key), key_size);
 
     u32 num_components = 0;
@@ -84,9 +84,7 @@ vec3s anim_read_key(const u8* key, u32 key_size, float* frame_out, const u8** ne
     if (next_key_out) {
         *next_key_out = &key[key_size];
     }
-    if (frame_out) {
-        *frame_out = frame;
-    }
+    frame_out = frame;
     return out;
 }
 
@@ -140,7 +138,7 @@ mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, fl
     for (u32 i = 0; i < aheader->translation_key_count; i++) {
         float frame = 0.0f;
         const u8* keydata = (const u8*)vfile_cur(afile);
-        vec3s key = alr::anim_read_key(keydata, aheader->translation_key_size, &frame, nullptr);
+        vec3s key = alr::anim_read_key(keydata, aheader->translation_key_size, frame);
         if (frame > cur_frame) {
             break;
         }
@@ -155,7 +153,7 @@ mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, fl
     for (u32 i = 0; i < aheader->rotation_key_count; i++) {
         float frame = 0.0f;
         const u8* keydata = (const u8*)vfile_cur(afile);
-        vec3s key = alr::anim_read_key(keydata, aheader->rotation_key_size, &frame, nullptr);
+        vec3s key = alr::anim_read_key(keydata, aheader->rotation_key_size, frame);
         if (frame > cur_frame) {
             break;
         }

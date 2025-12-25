@@ -1,9 +1,8 @@
 #include <glad/glad.h>
-
-#include <common/vfile.h>
-#include <formats/alr_animations.h>
 #include "alr_assets.hxx"
-#include <alr_file.hxx>
+
+#include <formats/alr_animations.h>
+#include "alr_file.hxx"
 
 const char* texformat_str(alr_pixel_format format) {
     const char* out = "[UNKNOWN]";

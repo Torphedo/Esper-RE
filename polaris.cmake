@@ -46,7 +46,7 @@ add_executable(polaris
     src/polaris/alr/alr_assets.cxx
     src/polaris/alr/alr_dump.cxx
     src/polaris/alr/mkak.cxx
-    src/polaris/alr_file.cxx
+    src/polaris/alr/alr_file.cxx
 
     src/polaris/gui/polaris.cxx
     src/polaris/gui/alr_imgui.cxx

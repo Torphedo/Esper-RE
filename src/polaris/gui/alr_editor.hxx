@@ -12,7 +12,7 @@
 #include <formats/alr.h>
 
 #include <alr/alr_assets.hxx>
-#include "alr_file.hxx"
+#include <alr/alr_file.hxx>
 
 // State for 0x1 (material) window
 struct window_state_0x1 {
@@ -125,7 +125,7 @@ public:
         bool guess_atlas = true;
         bool override_buf = false;
 
-        void draw(editor& alr) noexcept;
+        void draw(file& alr) noexcept;
     };
 
     tex_edit_state_t tex_edit;

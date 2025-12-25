@@ -1,8 +1,7 @@
 #pragma once
 /// @file alr_resources.hxx
 /// Helpers for managing ALR textures and meshes
-
-#include <map>
+#include <unordered_map>
 
 #include <common/image.h>
 #include <formats/alr.h>
@@ -27,7 +26,7 @@ struct texture_manager {
     // Offset of the 0x10 chunk
     u32 atlasheader_offset = 0;
 
-    std::map<u32, gl_obj> gl_tex_map;
+    std::unordered_map<u32, gl_obj> gl_tex_map;
 
     gl_obj get(alr::file& alr, u32 idx) noexcept;
     bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept;
