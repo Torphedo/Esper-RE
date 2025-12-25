@@ -12,7 +12,7 @@
 #include <formats/alr.h>
 #include <formats/st00.h>
 #include "gui/polaris.hxx"
-#include "alr/alr_assets.hxx"
+#include "gui/alr_assets.hxx"
 #include "validation.hxx"
 #include "version.h"
 

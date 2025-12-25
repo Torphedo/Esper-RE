@@ -8,8 +8,8 @@
 
 #include <formats/alr.h>
 
-#include <alr/alr_assets.hxx>
 #include <alr/alr_file.hxx>
+#include <gui/alr_assets.hxx>
 
 // State for 0x1 (material) window
 struct window_state_0x1 {

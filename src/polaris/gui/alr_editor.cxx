@@ -18,10 +18,8 @@
 #include <validation.hxx>
 
 #include "alr/alr_dump.hxx"
-#include "alr/alr_assets.hxx"
+#include "gui/alr_assets.hxx"
 #include "gui/alr_imgui.hxx"
-
-#include "alr_editor.hxx"
 
 // Normally I'd make this a method, but by using a macro we can have LOG_MSG()
 // automatically log the name of the method that shouldn't have been called.

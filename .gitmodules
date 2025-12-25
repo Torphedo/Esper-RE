@@ -16,3 +16,9 @@
 [submodule "lib/coregui"]
 	path = lib/coregui
 	url = https://github.com/torphedo/coregui
+[submodule "lib/micromod"]
+	path = lib/micromod
+	url = https://github.com/torphedo/micromod
+[submodule "lib/miniaudio"]
+	path = lib/miniaudio
+	url = https://github.com/mackron/miniaudio

@@ -2,8 +2,8 @@
 
 #include <common/crc32.h>
 #include <util/imgui_utils.hxx>
-#include <alr/alr_assets.hxx>
 #include <alr/alr_dump.hxx>
+#include <gui/alr_assets.hxx>
 #include "imgui_internal.h"
 
 namespace alr {
