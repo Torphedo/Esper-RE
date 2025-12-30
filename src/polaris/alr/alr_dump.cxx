@@ -1,5 +1,6 @@
 #include "alr_dump.hxx"
 #include <vector>
+#include <string.h>
 #include <common/file.h>
 
 #include <formats/alr_animations.h>

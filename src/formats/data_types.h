@@ -5,7 +5,7 @@
 /// This is usually used to describe binary structures at runtime in your code.
 
 // Copied from ImGuiDataType, but with string and bool removed.
-enum data_type {
+typedef enum {
     DATA_TYPE_S8,
     DATA_TYPE_U8,
     DATA_TYPE_S16,
@@ -15,7 +15,7 @@ enum data_type {
     DATA_TYPE_FLOAT,
     DATA_TYPE_DOUBLE,
     DATA_TYPE_COUNT,
-};
+}data_type;
 
 static const u8 data_type_sizes[] = {
     sizeof(s8), sizeof(u8),

@@ -39,6 +39,7 @@ add_library(pd_common STATIC
     src/formats/stx.c
     src/formats/wav.c
 )
+target_link_libraries(pd_common PUBLIC bobtail)
 
 # Build Polaris
 include(polaris.cmake)
@@ -67,9 +68,9 @@ add_executable(ddsx
 )
 
 # Link everything to the common library
-target_link_libraries(alr PRIVATE bobtail pd_common)
+target_link_libraries(alr PRIVATE pd_common)
 target_link_libraries(deck_reader PRIVATE bobtail)
-target_link_libraries(ssb PRIVATE bobtail pd_common)
+target_link_libraries(ssb PRIVATE pd_common)
 target_link_libraries(ddsx PRIVATE bobtail)
 # Polaris handles its own linking
 

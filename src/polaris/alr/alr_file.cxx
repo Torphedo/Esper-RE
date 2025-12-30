@@ -1,4 +1,5 @@
 #include "alr_file.hxx"
+#include <string.h>
 #include <common/file.h>
 #include <common/vmem.h>
 

@@ -70,7 +70,7 @@ bool generate_stx(const u8* data, s64 size, void** stx_buf_out, u32* stx_size_ou
         return false;
     }
 
-    u64 sample_count = 0;
+    ma_uint64 sample_count = 0;
     ma_decoder_get_length_in_pcm_frames(&ma_decoder, &sample_count);
     sample_count *= 2;
 
