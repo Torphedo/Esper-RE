@@ -306,6 +306,32 @@ void fprint_obj_idx(FILE* out, bool uv, bool normal, u16 idx) {
     fprintf(out, " ");
 }
 
+void dump_materials_obj(FILE* f, const chunk_0x1_entry* materials, u32 num_mats, const decoded_text* texture_names, u32 num_names) {
+    for (u32 i = 0; i < num_mats; i++) {
+        const chunk_0x1_entry* mat = &materials[i];
+        // This swaps around in 1 specific vertex format that uses a baked light map
+        const u32 normal_idx = (mat->vertbuf_format == 0x1F) ? mat->normal_backup_idx : mat->normal_idx;
+        if (mat->texture_idx >= num_names) {
+            LOG_MSG(warning, "Got out-of-bounds texture ID %d, skipping material %d.\n", mat->texture_idx, i);
+            continue;
+        }
+
+        const char* diffuse_name = texture_names[mat->texture_idx].data;
+        fprintf(f, "newmtl mat_%d\n", i);
+        // Specify diffuse (base color)
+        fprintf(f, "map_Kd textures/%s.dds\n", diffuse_name);
+        // Also use this texture for alpha
+        fprintf(f, "map_d textures/%s.dds\n", diffuse_name);
+
+        // Specify normal map if needed
+        if (normal_idx != 0 && normal_idx < num_names) {
+            const char* normal_name = texture_names[normal_idx].data;
+            fprintf(f, "map_Bump -bm 1.0 textures/%s.dds\n", normal_name);
+        }
+        fprintf(f, "\n");
+    }
+}
+
 void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
     vfile vf = vfile_open((void*)(alr_data + offset), 0x10);
 
@@ -313,6 +339,7 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
     const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
     vf.size = generic_header.size; // This just sets the limit of how much we can read
     const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+    fprintf(out, "usemtl mat_%d\n", header.texture_idx);
 
     const u16* indices = (u16*)vfile_cur(vf);
     for (s32 i = 2; i < header.num_indices; i++) {

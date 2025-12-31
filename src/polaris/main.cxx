@@ -11,12 +11,14 @@
 
 #include <formats/alr.h>
 #include <formats/st00.h>
+#include "alr/alr_dump.hxx"
 #include "gui/polaris.hxx"
 #include "gui/alr_assets.hxx"
 #include "validation.hxx"
 #include "version.h"
 
 const char* dump_textures_flag = "--dump-textures";
+const char* dump_mats_flag = "--dump-materials";
 const char* validate_flag = "--validate";
 const char* extract_audio_flag = "--extract-audio";
 
@@ -112,6 +114,44 @@ int dump_all_textures(const polaris& pol) {
     return EXIT_SUCCESS;
 }
 
+int dump_all_materials(const alr::file& alr, const char* output_path) {
+    alr::file::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    alr::file::chunk material_chunk = alr.first_chunk_by_id(0x1);
+    if (texture_chunk.size == 0 && material_chunk.size == 0) {
+        LOG_MSG(warning, "I couldn't find any materials to dump.\n");
+        return EXIT_FAILURE;
+    }
+
+    FILE* f = fopen(output_path, "wb");
+    if (!f) {
+        LOG_MSG(error, "Failed to open output file '%s'\n", output_path);
+        return EXIT_FAILURE;
+    }
+
+    // Read texture chunk data
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vf.pos = texture_chunk.offset;
+    // Skip over the ID and size fields we already have
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    const auto* tex_entries = (texture_entry*)vfile_cur(vf);
+
+    std::vector<decoded_text> texture_names;
+    for (u32 i = 0; i < num_entries; i++) {
+        // Decode the texture filename
+        const texture_entry& tex = tex_entries[i];
+        texture_names.emplace_back(decode_double(tex.text1, tex.text2));
+    }
+
+    vf.pos = material_chunk.offset;
+    const auto material_header = VFILE_READ(chunk_0x1_header, &vf);
+    const auto* materials = (const chunk_0x1_entry*)vfile_cur(vf);
+
+    alr::dump_materials_obj(f, materials, material_header.num_entries, texture_names.data(), texture_names.size());
+    fclose(f);
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char** argv) {
     // Enable ANSI escape codes (for printing in color) on Windows
     enable_win_ansi();
@@ -123,8 +163,12 @@ int main(int argc, char** argv) {
 
     const char* path = "";
     const char* flag = "";
+    const char* outpath = "";
 
     switch (argc) {
+    case 4:
+        outpath = argv[3];
+        [[fallthrough]];
     case 3:
         flag = argv[2];
         [[fallthrough]];
@@ -170,6 +214,10 @@ int main(int argc, char** argv) {
     if (strcmp(flag, dump_textures_flag) == 0) {
         LOG_MSG(info, "Dumping textures for %s\n", path);
         return dump_all_textures(*pol);
+    }
+    if (strcmp(flag, dump_mats_flag) == 0) {
+        LOG_MSG(info, "Dumping materials for %s\n", path);
+        return dump_all_materials(pol->editor.alr, outpath);
     }
     else if (strcmp(flag, extract_audio_flag) == 0) {
         LOG_MSG(info, "Extracting audio...\n");

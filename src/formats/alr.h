@@ -518,7 +518,7 @@ typedef struct {
     u16 unk8;
     u16 unk9;
     u16 texture_idx;
-    // With specific texture formats (just 0x1F so far), this becomes the index
+    // With specific vertex formats (just 0x1F so far), this becomes the index
     // of the lightmap texture, and the next value is the index of the normal map.
     u16 normal_idx;
     u16 normal_backup_idx;

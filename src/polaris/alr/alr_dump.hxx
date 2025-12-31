@@ -2,6 +2,7 @@
 /// @author Torphedo
 /// @brief Functions to export ("dump") data from an ALR data structure to standard files.
 #include "alr_file.hxx"
+#include <formats/pd_common.h>
 
 namespace alr {
 
@@ -49,6 +50,14 @@ void dump_armature_dae(FILE* f, vfile armature_data);
 /// @param joint The joint to calculate the transform from
 /// @return 4x4 transformation matrix
 mat4s transform_from_joint(const joint_t& joint);
+
+/// @brief Dump materials to a file in MTL format (used with OBJ)
+/// @param f Standard C file to output to
+/// @param materials ALR material array
+/// @param num_mats Number of materials in the array
+/// @param texture_names List of all texture names (must be in same order as in the ALR)
+/// @param num_names Number of texture names in the array
+void dump_materials_obj(FILE* f, const chunk_0x1_entry* materials, u32 num_mats, const decoded_text* texture_names, u32 num_names);
 
 /// @brief Dump index buffer in OBJ format
 ///
