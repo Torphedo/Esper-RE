@@ -1,4 +1,3 @@
-#pragma once
 #include "miniaudio_ibxm.h"
 
 #include <string.h> /* For memset(). */
