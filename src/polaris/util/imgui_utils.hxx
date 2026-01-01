@@ -1,11 +1,6 @@
 #include <imgui.h>
 #include <common/int.h>
 #include <common/image.h>
-#include <string>
-
-/// std::string::append(), but with printf() formatting syntax.
-/// Also appends a newline after the message.
-void str_format_append(std::string& output, const char* format_str, ...);
 
 /// @brief Define an explcitly sized variant of ImGui::InputScalar()
 /// @param T Type name to use in the function and enum name (e.g. U8)

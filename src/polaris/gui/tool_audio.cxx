@@ -1,7 +1,7 @@
 #include "tool_audio.hxx"
 #include <stdlib.h>
+#include <string>
 
-#include <imgui.h>
 #include <nfd.h>
 #include <common/vfile.h>
 #include <common/platform.h>

@@ -41,7 +41,7 @@ add_executable(polaris
     src/polaris/main.cxx
     src/polaris/validation.cxx
     src/polaris/validation.cxx
-    src/polaris/selector_ray.cxx
+    src/polaris/gui/selector_ray.cxx
 
     src/polaris/alr/alr_dump.cxx
     src/polaris/alr/mkak.cxx
@@ -72,6 +72,7 @@ add_executable(polaris
     src/formats/miniaudio_ibxm.c
     src/formats/stx_tools.c
     src/formats/ibxm_reader.c
+    src/polaris/util/utils.cxx
 )
 
 target_link_libraries(polaris PRIVATE bobtail pd_common miniaudio ibxm coregui imgui nfd)

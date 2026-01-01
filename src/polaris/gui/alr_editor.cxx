@@ -1,7 +1,6 @@
 // Need this define to use operators on ImGui vector types
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "alr_editor.hxx"
-#include <imgui_internal.h>
 #include <nfd.h>
 
 #include <common/file.h>
@@ -13,13 +12,14 @@
 #include <formats/pd_common.h>
 #include <formats/alr.h>
 
-#include <gui/mesh_view.hxx>
-#include "util/imgui_utils.hxx"
 #include <validation.hxx>
+#include <alr/alr_dump.hxx>
+#include <util/imgui_utils.hxx>
 
-#include "alr/alr_dump.hxx"
-#include "gui/alr_assets.hxx"
-#include "gui/alr_imgui.hxx"
+#include "alr_assets.hxx"
+#include "alr_imgui.hxx"
+#include "mesh_view.hxx"
+#include "viewport.hxx"
 
 // Normally I'd make this a method, but by using a macro we can have LOG_MSG()
 // automatically log the name of the method that shouldn't have been called.

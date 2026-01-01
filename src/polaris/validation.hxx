@@ -3,7 +3,8 @@
 /// @author Torphedo
 /// created Jul 17 2025
 #include <string>
-#include "gui/polaris.hxx"
+#include "gui/mapdata.hxx"
+#include "alr/alr_file.hxx"
 
 /// @brief Check if an ALR meets all of our expectations
 /// @param msg A text buffer for user-facing messages. Even if the

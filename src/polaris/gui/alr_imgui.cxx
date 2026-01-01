@@ -1,10 +1,12 @@
 #include "alr_imgui.hxx"
+#include <string>
 
 #include <common/crc32.h>
-#include <util/imgui_utils.hxx>
+
 #include <alr/alr_dump.hxx>
 #include <gui/alr_assets.hxx>
-#include "imgui_internal.h"
+#include <util/imgui_utils.hxx>
+#include <util/utils.hxx>
 
 namespace alr {
     bool edit_chunk_layout(chunk_layout& layout) {
@@ -230,7 +232,7 @@ namespace alr {
             ImGui::InputScalar(frame_label, imgui_frame_type, vfile_cur(vf));
 
             // Skip over frame value
-            vfile_seek(&vf, (u32)ImGui::DataTypeGetInfo(imgui_frame_type)->Size);
+            vfile_seek(&vf, sizeof_type(frame_type));
 
             ImGui::InputScalarN(component_label, imgui_component_type, vfile_cur(vf), num_components);
 

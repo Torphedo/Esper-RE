@@ -4,9 +4,10 @@
 #include <common/file.h>
 #include <common/logging.h>
 
-#include "formats/st00.h"
-#include "util/imgui_utils.hxx"
+#include <formats/st00.h>
 #include "gui/polaris.hxx"
+#include "util/imgui_utils.hxx"
+#include "util/utils.hxx"
 #include "mesh_view.hxx"
 
 bool mapdata::offset_is_reasonable(s32 offset) noexcept {

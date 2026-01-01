@@ -1,7 +1,7 @@
 #pragma once
-#include <cglm/struct.h>
+#include "cglm/include/cglm/struct.h"
 
-#include <formats/alr.h>
+#include "formats/alr.h"
 #include "gui/camera.hxx"
 
 struct ray_t {
