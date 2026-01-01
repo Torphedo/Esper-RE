@@ -10,18 +10,18 @@ set(CMAKE_C_STANDARD 11)
 
 # Polaris needs a ton of extra dependencies
 include_directories(
-    ext
-    ext/glad/include
-    ext/cglm/include
-    ext/imgui
+    lib
+    lib/glad/include
+    lib/cglm/include
+    lib/imgui
     lib/coregui/lib/glfw/include
-    ext/bobtail
+    lib/bobtail
     ${Esper-RE_SOURCE_DIR}/src
 )
 
 set(BOBTAIL_OPENGL ON)
-add_subdirectory(ext/bobtail)
-add_subdirectory(ext/nfde)
+add_subdirectory(lib/bobtail)
+add_subdirectory(lib/nfde)
 
 add_library(miniaudio STATIC lib/miniaudio/miniaudio.c)
 target_include_directories(miniaudio PUBLIC lib/miniaudio)

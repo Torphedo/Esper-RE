@@ -8,19 +8,19 @@ set(CMAKE_CXX_STANDARD 20)
 
 # Add ImGui as a library
 add_library(imgui STATIC
-    ext/imgui/imgui.cpp
-    ext/imgui/imgui_demo.cpp
-    ext/imgui/imgui_draw.cpp
-    ext/imgui/imgui_tables.cpp
-    ext/imgui/imgui_widgets.cpp
-    ext/imgui/backends/imgui_impl_opengl3.cpp
-    ext/imgui/backends/imgui_impl_glfw.cpp
+    lib/imgui/imgui.cpp
+    lib/imgui/imgui_demo.cpp
+    lib/imgui/imgui_draw.cpp
+    lib/imgui/imgui_tables.cpp
+    lib/imgui/imgui_widgets.cpp
+    lib/imgui/backends/imgui_impl_opengl3.cpp
+    lib/imgui/backends/imgui_impl_glfw.cpp
 )
 set(COREGUI_USE_IMGUI ON)
 add_subdirectory(lib/coregui)
 
 # Internal build tool to generate headers for GLSL shaders
-add_executable(txt2h "ext/txt2h.c")
+add_executable(txt2h "lib/txt2h.c")
 
 # Autogenerate string constant headers for each GLSL source file using txt2h.c
 set(glsl_headers)
@@ -64,7 +64,7 @@ add_executable(polaris
     src/polaris/util/imgui_utils.cxx
     src/polaris/util/nfde_wrapper.cxx
 
-    ext/glad/src/glad.c
+    lib/glad/src/glad.c
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}

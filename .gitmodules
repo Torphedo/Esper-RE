@@ -1,17 +1,17 @@
 [submodule "ext/bobtail"]
-	path = ext/bobtail
+	path = lib/bobtail
 	url = https://github.com/Torphedo/bobtail
 [submodule "ext/cglm"]
-	path = ext/cglm
+	path = lib/cglm
 	url = https://github.com/recp/cglm
 [submodule "ext/imgui"]
-	path = ext/imgui
+	path = lib/imgui
 	url = https://github.com/ocornut/imgui
 [submodule "ext/glfw"]
-	path = ext/glfw
+	path = lib/glfw
 	url = https://github.com/glfw/glfw
 [submodule "ext/nfde"]
-	path = ext/nfde
+	path = lib/nfde
 	url = https://github.com/btzy/nativefiledialog-extended
 [submodule "lib/coregui"]
 	path = lib/coregui
