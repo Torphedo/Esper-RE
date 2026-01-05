@@ -73,7 +73,16 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 /// @param path Path to save the OBJ file
 /// @param vertchunk_offset Offset of the 0x16 chunk in the ALR
 /// @param vert_entry_idx Index of the vertex buffer entry in the 0x16 chunk
-void dump_vertex_buf(const alr::file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
+void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
+
+/// @brief Export all textures to DDS files in a "textures" folder in the current working directory.
+/// @param alr ALR to dump textures from
+bool dump_all_textures(const file& alr);
+
+/// @brief Export texture assignment information to a .mtl file for use with OBJ models
+/// @param alr ALR to dump materials from
+/// @param output_path Path where the .mtl file will be saved
+bool dump_all_materials(const file& alr, const char* output_path);
 
 /// Export an animation chunk to an Autodesk Maya (.anim) animation file
 ///
@@ -92,7 +101,7 @@ bool dump_animation_maya(const anim_header* anim_chunk, const char* outpath, con
 /// @param alr The ALR to import into
 /// @param vertbuf_chunk_offset Offset of the 0x16 chunk to import into
 /// @param entry_idx The index of the vertex buffer to replace within the chunk
-bool obj_import(const char* txt, alr::file& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
+bool obj_import(const char* txt, file& alr, u32 vertbuf_chunk_offset, u32 entry_idx);
 
 typedef struct {
     bool has_uvs;

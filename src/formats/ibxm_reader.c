@@ -1,7 +1,6 @@
 #include "ibxm_reader.h"
 #include <stdlib.h>
 #include <string.h>
-#include "stx_tools.h"
 
 u32 ibxm_reader_decode_internal(ibxm_reader* ctx) {
     if (!ctx->initialized) {

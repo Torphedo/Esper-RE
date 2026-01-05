@@ -22,7 +22,7 @@ typedef struct {
     u32 sample_rate;
     u32 length_samples;
     bool initialized;
-} ibxm_reader;
+}ibxm_reader;
 
 /// @brief Prepare to decode audio from an IBXM-supported file
 /// @param module_data Contents of the module file

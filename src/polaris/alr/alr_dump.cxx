@@ -449,6 +449,132 @@ void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u3
     }
 }
 
+bool dump_all_textures(const file& alr) {
+    file::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    file::chunk atlas_chunk = alr.first_chunk_by_id(0x10);
+    if (texture_chunk.size == 0 && atlas_chunk.size == 0) {
+        LOG_MSG(warning, "I couldn't find any textures to dump.\n");
+        return false;
+    }
+
+    system("mkdir textures"); // We need this folder for later
+
+    // Try to find texture and texture atlas metadata, we need both to make a
+    // good guess about dimensions.
+    u32 textures_dumped = 0;
+
+    // Read texture chunk data
+    vfile vf = vfile_open(alr.data + texture_chunk.offset, texture_chunk.size);
+    // Skip over the ID and size fields we already have
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    const texture_entry* tex_entries = (texture_entry*)vfile_cur(vf);
+
+    // Read atlas chunk data
+    const atlas_entry* atlas_entries = nullptr;
+    const atlas_name* atlas_names = nullptr;
+    atlas_header header_atlas = {0};
+    if (atlas_chunk.size > 0) {
+        vf = vfile_open(alr.data + atlas_chunk.offset, atlas_chunk.size);
+
+        // Skip over the ID and size fields we already have
+        vfile_seek(&vf, sizeof(chunk_generic));
+        header_atlas = VFILE_READ(atlas_header, &vf);
+
+        // Skip over names
+        atlas_names = (atlas_name*)vfile_cur(vf);
+        vfile_seek(&vf, sizeof(atlas_name) * header_atlas.atlas_count);
+
+        atlas_entries = (atlas_entry*)vfile_cur(vf);
+    }
+
+    for (u32 i = 0; i < num_entries; i++) {
+        // Convert the ALR texture data to our standard texture struct
+        texture cur_tex = convert_tex(alr.resource_buffer(), tex_entries[i]);
+
+        // Decode the texture filename
+        char decoded_name[0x20] = {0};
+        decode_single32(decoded_name, tex_entries[i].text1);
+        decode_single32(&decoded_name[ENCODED_CHAR_COUNT], tex_entries[i].text2);
+        strncat(decoded_name, ".dds", sizeof(decoded_name) - 1);
+        char* name = decoded_name;
+
+        if (atlas_entries != nullptr && header_atlas.atlas_count > i) {
+            const atlas_entry entry = atlas_entries[i];
+            // We get better dimension info from the atlas headers, so use it!
+            // Dimensions from the atlas headers are almost always more
+            // accurate, so we always use them unless they're obviously wrong.
+
+            const u32 too_small = 0;
+            const u32 too_big = 8192;
+            if (entry.width > too_small && entry.width < too_big) {
+                cur_tex.width = entry.width;
+            }
+            if (entry.height > too_small && entry.height < too_big) {
+                cur_tex.height = entry.height;
+            }
+
+            // Also use the name from the atlas for the filename, because it'll
+            // have correct capitalization
+            name = (char*)atlas_names[i].name;
+        }
+
+        char path[0x30] = {0};
+        snprintf(path, sizeof(path) - 1, "textures/%s", name);
+
+        // Save the texture
+        img_write(cur_tex, path);
+        LOG_MSG(info, "Dumped %s\n", name);
+        textures_dumped++;
+    }
+
+    if (textures_dumped == 0) {
+        // This isn't a *failure*, but might be confusing if we don't say
+        // anything and someone expects a texture file to appear.
+        LOG_MSG(warning, "I couldn't find any textures to dump.\n");
+    }
+    return true;
+}
+
+bool dump_all_materials(const file& alr, const char* output_path) {
+    file::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    file::chunk material_chunk = alr.first_chunk_by_id(0x1);
+    if (texture_chunk.size == 0 && material_chunk.size == 0) {
+        LOG_MSG(warning, "I couldn't find any materials to dump.\n");
+        return false;
+    }
+
+    FILE* f = fopen(output_path, "wb");
+    if (!f) {
+        LOG_MSG(error, "Failed to open output file '%s'\n", output_path);
+        return false;
+    }
+
+    // Read texture chunk data
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vf.pos = texture_chunk.offset;
+    // Skip over the ID and size fields we already have
+    vfile_seek(&vf, sizeof(chunk_generic));
+    const u32 num_entries = VFILE_READ(u32, &vf);
+    const auto* tex_entries = (texture_entry*)vfile_cur(vf);
+
+    std::vector<decoded_text> texture_names;
+    for (u32 i = 0; i < num_entries; i++) {
+        // Decode the texture filename
+        const texture_entry& tex = tex_entries[i];
+        texture_names.emplace_back(decode_double(tex.text1, tex.text2));
+    }
+
+    vf.pos = material_chunk.offset;
+    const auto material_header = VFILE_READ(chunk_0x1_header, &vf);
+    const auto* materials = (const chunk_0x1_entry*)vfile_cur(vf);
+
+    dump_materials_obj(f, materials, material_header.num_entries, texture_names.data(), texture_names.size());
+    fclose(f);
+    return true;
+}
+
+
 const char *anim_boilerplate = R"(animVersion 1.1;
 mayaVersion %s; # This is actually the Polaris version
 timeUnit film; # Frames
