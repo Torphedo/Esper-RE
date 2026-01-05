@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include <common/logging.h>
+#include <common/arguments.h>
 #include <common/path.h>
 
 #include <gui_bootstrap.hxx>
@@ -15,10 +16,10 @@
 #include "validation.hxx"
 #include "version.h"
 
-const char* dump_textures_flag = "--dump-textures";
-const char* dump_mats_flag = "--dump-materials";
+const char* dump_textures_flag = "dump-textures";
+const char* dump_mats_flag = "dump-materials";
 const char* validate_flag = "--validate";
-const char* extract_audio_flag = "--extract-audio";
+const char* extract_audio_flag = "extract-audio";
 
 void print_usage() {
     printf("Usage: polaris [ALR filename] [%s | %s]\n", dump_textures_flag, validate_flag);
@@ -28,76 +29,72 @@ int main(int argc, char** argv) {
     // Enable ANSI escape codes (for printing in color) on Windows
     enable_win_ansi();
 
-    gui_app app;
-    app.layers.emplace_back(std::make_unique<layer_imgui>());
-    app.layers.emplace_back(std::make_unique<polaris>());
-    polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
-
     const char* path = "";
     const char* flag = "";
     const char* outpath = "";
 
     switch (argc) {
-    case 4:
-        outpath = argv[3];
-        [[fallthrough]];
-    case 3:
-        flag = argv[2];
-        [[fallthrough]];
     default:
+        outpath = args_get_from_back(argc, argv, 0);
+        path = args_get_from_back(argc, argv, 1);
+        break;
     case 2:
-        if (argv[1][0] == '-') {
-            flag = argv[1];
-        } else {
-            path = argv[1];
-        }
+        path = args_get_from_back(argc, argv, 0);
+        break;
     case 1:
         break;
     }
 
+    if (*outpath == '-') {
+        // If this last arg was a flag, there are no paths.
+        path = outpath = "";
+    }
+
+    if (*path == '-') {
+        // This is a flag, not a path. This probably means we only have 1 path
+        // instead of 2, so swap them around.
+        path = "";
+        std::swap(path, outpath);
+
+        // This should've been checked earlier
+        assert(*path != '-');
+    }
+
+    // Setup GUI classes
+    gui_app app;
+    app.layers.emplace_back(std::make_unique<layer_imgui>());
+    app.layers.emplace_back(std::make_unique<polaris>());
+    polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
+
     if (strlen(path) > 0) {
-        // We have an argument, it should be a filepath.
+        // We have an argument, it should be a filepath. Try to load as an ALR or .dat file.
         if (file_has_magic(path, 0x11)) {
             if (!pol->editor.alr.load(path)) {
-                // An error message will be printed for us down the chain, just exit
                 return EXIT_FAILURE;
             }
         }
         else if (file_has_magic(path, st00_magic)) {
             if (!pol->map.load(path)) {
-                // An error message will be printed for us down the chain, just exit
                 return EXIT_FAILURE;
             }
         }
     }
 
-    if (strlen(flag) == 0) {
-        pol->headless = false;
-        // No special arguments, run in normal graphical mode.
-        if (!app.run("Polaris v" POLARIS_VERSION)) {
-            // Actual error message printed for us
-            LOG_MSG(error, "Failed to start up!\n");
-            return EXIT_FAILURE;
-        } else {
-            return EXIT_SUCCESS;
-        }
-    }
-
-    if (strcmp(flag, dump_textures_flag) == 0) {
+    if (args_getflag(argc, argv, dump_textures_flag, nullptr)) {
         LOG_MSG(info, "Dumping textures for %s\n", path);
         const bool res = alr::dump_all_textures(pol->editor.alr);
         return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
-    if (strcmp(flag, dump_mats_flag) == 0) {
+    if (args_getflag(argc, argv, dump_mats_flag, nullptr)) {
         LOG_MSG(info, "Dumping materials for %s\n", path);
         const bool res = alr::dump_all_materials(pol->editor.alr, outpath);
         return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
-    else if (strcmp(flag, extract_audio_flag) == 0) {
+    else if (args_getflag(argc, argv, extract_audio_flag, nullptr)) {
         LOG_MSG(info, "Extracting audio...\n");
         if (argc < 4) {
-            LOG_MSG(info, "The %s option needs at least 4 arguments, like this:\n", extract_audio_flag);
-            printf("\t%s %s ./output_folder Assets/Data/Sound/Title_Logo.bin", argv[0], extract_audio_flag);
+            LOG_MSG(info, "The --%s option needs at least 4 arguments, like this:\n", extract_audio_flag);
+            printf("\t%s --%s ./output_folder Assets/Data/Sound/Title_Logo.bin", argv[0], extract_audio_flag);
             return EXIT_FAILURE;
         }
 
@@ -119,7 +116,7 @@ int main(int argc, char** argv) {
             LOG_MSG(info, "Extracted '%s' to '%s'\n", files[i], out_dir);
         }
     }
-    else if (strcmp(flag, validate_flag) == 0) {
+    else if (args_getflag(argc, argv, "validate", nullptr)) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
         bool result = alr_validate(message, pol->editor.alr, true);
@@ -132,9 +129,9 @@ int main(int argc, char** argv) {
         printf("%s", message.c_str());
 
         return !result;
-    } else if (strcmp(flag, "--help") == 0) {
+    } else if (args_getflag(argc, argv, "help", "h")) {
         print_usage();
-    } else if (strcmp(flag, "--version") == 0) {
+    } else if (args_getflag(argc, argv, "version", "v")) {
         printf("Polaris (Esper-RE tools) v" POLARIS_VERSION "\n");
         printf("Open-source @ " POLARIS_URL "\n");
         printf("Written by Torphedo\n");
@@ -153,9 +150,15 @@ int main(int argc, char** argv) {
             printf("\t%s\n", txt);
         }
     } else {
-        LOG_MSG(error, "I didn't find any known arguments, I'm not sure what you want me to do with the file.\n");
-        print_usage();
-        return EXIT_FAILURE;
+        // No special arguments, run in normal graphical mode.
+        pol->headless = false;
+        if (!app.run("Polaris v" POLARIS_VERSION)) {
+            // Actual error message printed for us
+            LOG_MSG(error, "Failed to start up!\n");
+            return EXIT_FAILURE;
+        } else {
+            return EXIT_SUCCESS;
+        }
     }
 
     return EXIT_SUCCESS;
