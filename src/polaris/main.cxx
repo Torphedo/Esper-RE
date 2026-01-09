@@ -66,31 +66,7 @@ int main(int argc, char** argv) {
     app.layers.emplace_back(std::make_unique<polaris>());
     polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
 
-    if (strlen(path) > 0) {
-        // We have an argument, it should be a filepath. Try to load as an ALR or .dat file.
-        if (file_has_magic(path, 0x11)) {
-            if (!pol->editor.alr.load(path)) {
-                return EXIT_FAILURE;
-            }
-        }
-        else if (file_has_magic(path, st00_magic)) {
-            if (!pol->map.load(path)) {
-                return EXIT_FAILURE;
-            }
-        }
-    }
-
-    if (args_getflag(argc, argv, dump_textures_flag, nullptr)) {
-        LOG_MSG(info, "Dumping textures for %s\n", path);
-        const bool res = alr::dump_all_textures(pol->editor.alr);
-        return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
-    if (args_getflag(argc, argv, dump_mats_flag, nullptr)) {
-        LOG_MSG(info, "Dumping materials for %s\n", path);
-        const bool res = alr::dump_all_materials(pol->editor.alr, outpath);
-        return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
-    else if (args_getflag(argc, argv, extract_audio_flag, nullptr)) {
+    if (args_getflag(argc, argv, extract_audio_flag, nullptr)) {
         LOG_MSG(info, "Extracting audio...\n");
         if (argc < 4) {
             LOG_MSG(info, "The --%s option needs at least 4 arguments, like this:\n", extract_audio_flag);
@@ -116,7 +92,35 @@ int main(int argc, char** argv) {
             LOG_MSG(info, "Extracted '%s' to '%s'\n", files[i], out_dir);
         }
     }
-    else if (args_getflag(argc, argv, "validate", nullptr)) {
+
+    if (strlen(path) > 0) {
+        // Try to load as an ALR or .dat file.
+        if (file_has_magic(path, 0x11)) {
+            if (!pol->editor.alr.load(path)) {
+                return EXIT_FAILURE;
+            }
+        }
+        else if (file_has_magic(path, st00_magic)) {
+            if (!pol->map.load(path)) {
+                return EXIT_FAILURE;
+            }
+        } else {
+            LOG_MSG(error, "The input file '%s' doesn't appear to be an ALR or .dat file.\n", path);
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (args_getflag(argc, argv, dump_textures_flag, nullptr)) {
+        LOG_MSG(info, "Dumping textures for %s\n", path);
+        const bool res = alr::dump_all_textures(pol->editor.alr);
+        return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    if (args_getflag(argc, argv, dump_mats_flag, nullptr)) {
+        LOG_MSG(info, "Dumping materials for %s\n", path);
+        const bool res = alr::dump_all_materials(pol->editor.alr, outpath);
+        return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    if (args_getflag(argc, argv, "validate", nullptr)) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
         bool result = alr_validate(message, pol->editor.alr, true);
@@ -129,9 +133,11 @@ int main(int argc, char** argv) {
         printf("%s", message.c_str());
 
         return !result;
-    } else if (args_getflag(argc, argv, "help", "h")) {
+    }
+    if (args_getflag(argc, argv, "help", "h")) {
         print_usage();
-    } else if (args_getflag(argc, argv, "version", "v")) {
+    }
+    else if (args_getflag(argc, argv, "version", "v")) {
         printf("Polaris (Esper-RE tools) v" POLARIS_VERSION "\n");
         printf("Open-source @ " POLARIS_URL "\n");
         printf("Written by Torphedo\n");
