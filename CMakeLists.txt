@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(Esper-RE
-    VERSION 0.6.7
-    LANGUAGES C
+    LANGUAGES C CXX
 )
 # We need compile_commands.json for the include paths in some editors
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
@@ -44,16 +43,6 @@ target_link_libraries(pd_common PUBLIC bobtail)
 # Build Polaris
 include(polaris.cmake)
 
-# Build CLI ALR program
-add_executable(alr
-    src/alr/main.c
-    src/alr/alr.c
-    src/alr/dump.c
-    src/alr/split.c
-    src/alr/replace.c
-    src/alr/images.c
-)
-
 add_executable(deck_reader
     src/deck_reader/main.c
 )
@@ -68,7 +57,6 @@ add_executable(ddsx
 )
 
 # Link everything to the common library
-target_link_libraries(alr PRIVATE pd_common)
 target_link_libraries(deck_reader PRIVATE bobtail)
 target_link_libraries(ssb PRIVATE pd_common)
 target_link_libraries(ddsx PRIVATE bobtail)
