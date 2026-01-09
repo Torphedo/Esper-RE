@@ -75,7 +75,7 @@
 #endif
 
 // SSB: Data type constant and decoding function for the custom type
-#include <formats/pd_common.h>
+#include <formats/ssb.h>
 enum {
     ImGuiDataType_SSB_Text = ImGuiDataType_COUNT + 1,
 };

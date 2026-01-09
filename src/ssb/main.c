@@ -5,7 +5,7 @@
 #include <common/logging.h>
 #include <common/arguments.h>
 
-#include "ssb.h"
+#include "formats/ssb.h"
 
 const char* args[] = {
     "--help",
@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
     for (u32 i = 0; i < num_entries; i++) {
         ssb_functable_entry entry = {0};
         fread(&entry, sizeof(entry), 1, f);
-        decoded_text text = decode_text(entry);
+        decoded_text text = decode_double(entry.text1, entry.text2);
 
         LOG_MSG(info, "%s @ 0x%X\n", text.data, sizeof(ssb_header) + (entry.func_offset * 4));
     }

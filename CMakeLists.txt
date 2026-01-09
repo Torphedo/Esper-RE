@@ -37,6 +37,7 @@ add_library(pd_common STATIC
     src/formats/pd_common.c
     src/formats/stx.c
     src/formats/wav.c
+    src/formats/ssb.c
 )
 target_link_libraries(pd_common PUBLIC bobtail)
 
@@ -49,7 +50,6 @@ add_executable(deck_reader
 
 add_executable(ssb
     src/ssb/main.c
-    src/ssb/ssb.c
 )
 
 add_executable(ddsx

@@ -10,7 +10,7 @@
 #include <common/vfile.h>
 #include <common/int.h>
 #include <common/crc32.h>
-#include <formats/pd_common.h>
+#include <formats/ssb.h>
 
 // Minor helper functions for ImGui
 namespace ImGui {
