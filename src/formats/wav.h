@@ -37,7 +37,21 @@ typedef struct {
     u32 sample_chunk_size;
 }wav_fmt_header;
 
+/// @brief Write all WAV metadata to a file
+///
+/// After this all you have to do is write your audio samples, and you'll have a valid file.
+/// @param sample_rate Audio sample rate in Hz
+/// @param channels Number of channels
+/// @param sample_size Audio sample size in bytes
+/// @param format The audio sample format, e.g. WAV_FMT_PCM
+/// @param audio_size Size in bytes your audio data will be
+/// @param outfile File to write WAV header to
 void wav_write_headers(u32 sample_rate, u8 channels, u16 sample_size, u16 format, u32 audio_size, FILE* outfile);
+
+/// @brief Write a complete WAV file
+///
+/// See @ref wav_write_headers for details on other parameters.
+/// @param audio Buffer containing your audio samples
 void wav_write_audio(u32 sample_rate, u8 channels, u16 sample_size, u16 format, const void* audio, u32 audio_size, FILE* outfile);
 
 #ifdef __cplusplus

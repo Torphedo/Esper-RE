@@ -12,7 +12,7 @@
  *
  * EXMOT animations are probably from the exmot .ala files in /Player. These
  * are known to be the intro/outro animations (like smashing the arsenal
- * capsule agains the grorund at the start of the match)
+ * capsule agains the ground at the start of the match)
  */
 
 enum {

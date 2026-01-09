@@ -51,6 +51,7 @@ ibxm_reader ibxm_reader_create(const void* module_data, u32 data_size, u32 sampl
 
     out.replay = new_replay(out.module, sample_rate, 0);
     if (!out.replay) {
+        // FIXME: Seems like we leak the module context here
         return out;
     }
 
@@ -59,6 +60,7 @@ ibxm_reader ibxm_reader_create(const void* module_data, u32 data_size, u32 sampl
     out.mixbuf_size = calculate_mix_buf_len(sample_rate) * sizeof(s32);
     out.mixbuf = calloc(1, out.mixbuf_size);
     if (!out.mixbuf) {
+        // FIXME: We leak the module and replay contexts here
         return out;
     }
     out.initialized = true;
