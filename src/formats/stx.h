@@ -84,6 +84,12 @@ enum {
     STX_FIRST_OFFSET = STX_BLOCK_SIZE,
 };
 
+/// @brief Export an STX file to WAV
+/// @param out_file Path to save WAV file
+/// @param data STX data
+/// @param size STX size
+bool dump_stx(const char* out_file, const u8* data, u32 size);
+
 /// @brief Generate an STX block header
 ///
 /// The first block in the file gets special treatment in some fields, so make

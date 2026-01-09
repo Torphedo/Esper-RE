@@ -1,7 +1,12 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "shut_up_msvc.h"
-#include <common/int.h>
 #include <assert.h>
+#include <stdbool.h>
+#include <common/int.h>
 
 typedef struct {
     u32 magic;
@@ -69,3 +74,14 @@ static_assert(sizeof(sth2_wave_header) == 0x10, "Wrong STH2 'WAVE' header size!"
 enum {
     PD_SAMPLE_RATE_UWP = 22050,
 };
+
+/// @brief Export a .bin (STH2) sound effect file to WAV
+/// @param data File data
+/// @param size File size
+/// @param outpath Path to save the WAV file
+/// @param sample_rate Expected audio sample rate in Hz
+bool extract_sth2(const u8* data, u32 size, const char* outpath, u32 sample_rate);
+
+#ifdef __cplusplus
+}
+#endif

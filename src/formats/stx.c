@@ -1,5 +1,11 @@
 #include "stx.h"
 #include <stdbool.h>
+#include <stdio.h>
+
+#include <common/logging.h>
+#include <common/vfile.h>
+
+#include <formats/wav.h>
 
 stx_block_header stx_block_create(u16 total_num_blocks, u16 idx) {
     const bool is_first_block = (idx == 0);
@@ -23,4 +29,57 @@ stx_block_header stx_block_create(u16 total_num_blocks, u16 idx) {
     };
 
     return out;
+}
+
+bool dump_stx(const char* out_file, const u8* data, u32 size) {
+    FILE* f = fopen(out_file, "wb");
+    if (!f) {
+        return false;
+    }
+
+    vfile vf = vfile_open((u8*)data, size);
+
+    const stx_first_block* header = VFILE_READ_PTR(stx_first_block, &vf);
+    const u16 sample_rate = header->channels[0].sample_rate / 2;
+    wav_write_headers(sample_rate, 2, sizeof(u16), WAV_FMT_PCM, 0, f);
+
+    u32 audio_size = 0;
+    for (u32 i = 0; i < 2; i++) {
+        audio_size = 0;
+        vf.pos = header->header.offset.start;
+
+        for (u32 j = 0; j < header->header.block_count - 1; j++) {
+            const stx_block_header* block = VFILE_READ_PTR(stx_block_header, &vf);
+            u16 channel_size = block->channel_size;
+            channel_size = 1008;
+
+            const u16 block_size = channel_size * block->channel_count;
+            const u64 next_block = vf.pos + block_size;
+            audio_size += block_size;
+
+            if (block->magic != STX_MAGIC) {
+                LOG_MSG(warning, "Invalid block magic %X @ 0x%X!\n", block->magic, vf.pos - sizeof(*block));
+            }
+            if (block->channel_size != 1008) {
+                LOG_MSG(warning, "Unexpected channel size %d @ 0x%X\n", block->channel_size, vf.pos - sizeof(*block));
+            }
+            if (block->channel_count != 2) {
+                LOG_MSG(warning, "Unexpected channel count %d @ 0x%X\n", block->channel_count, vf.pos - sizeof(*block));
+            }
+
+            // Skip to the appropriate channel & save samples
+            vfile_seek(&vf, channel_size * i);
+            const u16* samples = (const u16*)vfile_cur(vf);
+            fwrite(samples, channel_size, 1, f);
+
+            vf.pos = next_block;
+        }
+    }
+
+    // Update WAV sizes
+    fseek(f, 0, SEEK_SET);
+    wav_write_headers(sample_rate, 2, sizeof(u16), WAV_FMT_PCM, audio_size, f);
+
+    fclose(f);
+    return true;
 }

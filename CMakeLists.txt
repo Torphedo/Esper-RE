@@ -38,6 +38,7 @@ add_library(pd_common STATIC
     src/formats/stx.c
     src/formats/wav.c
     src/formats/ssb.c
+    src/formats/sth2.c
 )
 target_link_libraries(pd_common PUBLIC bobtail)
 
