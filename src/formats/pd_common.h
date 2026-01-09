@@ -1,14 +1,20 @@
 #pragma once
-#ifdef __cplusplus
-extern "C" {
-#endif
+/// @file pd_common.h
+/// This file contains all other headers in the library.
 
-#include <stdbool.h>
-#include <common/int.h>
+#include "alr.h"
+#include "alr_animations.h"
+#include "data_types.h"
+#include "deck.h"
+#include "eventpack.h"
+#include "ssb.h"
+#include "st00.h"
+#include "stx.h"
+#include "sth2.h"
+#include "wav.h"
 
-bool extract_sth2(const u8* data, u32 size, const char* outpath, u32 sample_rate);
-bool dump_stx(const char* out_file, const u8* data, u32 size);
-
-#ifdef __cplusplus
-}
+#if defined(PD_COMMON_HAVE_MINIAUDIO) && defined(PD_COMMON_HAVE_IBXM)
+#include "ibxm_reader.h"
+#include "miniaudio_ibxm.h"
+#include "stx_tools.h"
 #endif
