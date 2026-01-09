@@ -49,7 +49,9 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
     };
 
     if (entry.unknown == TEXTURE_CUBEMAP) {
-        // TODO: Add cubemap support in our standard texture struct
+        out.cubemap = true;
+        out.cubemap_alignment = 0x100;
+        out.use_mipmaps = true;
     }
 
     switch (entry.pixel_format) {

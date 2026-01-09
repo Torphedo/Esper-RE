@@ -107,7 +107,7 @@ bool EditTexture(texture& tex) noexcept {
 
     ImGui::InputU16("Height", &tex.height);
     ImGui::InputU16("Width", &tex.width);
-    ImGui::InputU16("Mipmap Level", &tex.mip_level);
+    ImGui::Checkbox("Mipmaps", &tex.use_mipmaps);
 
     ImGui::Checkbox("Compressed format", &tex.compressed);
     if (!tex.compressed) {
