@@ -56,7 +56,7 @@ add_executable(ddsx
 
 # Link everything to the common library
 target_link_libraries(deck_reader PRIVATE bobtail)
-target_link_libraries(ssb PRIVATE pd_common)
+target_link_libraries(ssb PRIVATE pd_common m)
 target_link_libraries(ddsx PRIVATE bobtail)
 # Polaris handles its own linking
 
