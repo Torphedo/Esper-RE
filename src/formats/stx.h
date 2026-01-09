@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include <common/int.h>
-#include <common/file.h>
 #include "sth2.h"
 
 enum {

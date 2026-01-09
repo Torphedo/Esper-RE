@@ -1,4 +1,5 @@
 #include "stx.h"
+#include <stdbool.h>
 
 stx_block_header stx_block_create(u16 total_num_blocks, u16 idx) {
     const bool is_first_block = (idx == 0);

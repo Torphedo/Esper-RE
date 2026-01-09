@@ -6,6 +6,7 @@
 #include <common/logging.h>
 #include <common/arguments.h>
 #include <common/path.h>
+#include <common/file.h>
 
 #include <gui_bootstrap.hxx>
 #include <layer_imgui.hxx>

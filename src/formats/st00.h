@@ -1,7 +1,6 @@
 #pragma once
 #include <assert.h>
 #include <common/int.h>
-#include <common/file.h>
 #include "alr.h" // For vector struct
 
 // Object ID 0 is the mesh at this index in the ALR file

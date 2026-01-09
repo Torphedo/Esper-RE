@@ -6,6 +6,7 @@
 #include <miniaudio.h>
 
 #include <common/vfile.h>
+#include <common/file.h>
 #include <formats/stx.h>
 
 #include "miniaudio_ibxm.h"
