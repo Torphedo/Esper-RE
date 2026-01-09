@@ -15,14 +15,15 @@ only that data).
 
 Support status:
 
-| Feature           | Viewing                    | Export                             | Import                                   |
-| ----------------- | -------------------------- | ---------------------------------- | ---------------------------------------- |
-| Textures (square) | ✅                         | ✅(`.dds`)                         | ✅ (`.dds`, at same resolution & format) |
-| Textures (atlas)  | ✅                         | ✅(`.dds`)                         | ❌                                       |
-| Character meshes  | ✅                         | ✅(`.obj`)                         | ❌                                       |
-| Stage meshes      | ✅                         | ✅ (`.obj`)                        | ❌                                       |
-| Animations        | ✅ (graph)                 | ❌ (WIP `.anim` export)            | ❌                                       |
-| Skeleton          | ❌                         | ✅ (`.dae`)                        | ❌                                       |
+| Feature           | Viewing                    | Export                  | Import                                     |
+| ----------------- | -------------------------- |------------------------ |------------------------------------------- |
+| Textures (square) | ✅                         | ✅(`.dds`)              | ✅ (`.dds`, at same resolution & format)   |
+| Textures (atlas)  | ✅                         | ✅(`.dds`)              | ❌                                         |
+| Character meshes  | ✅                         | ✅(`.obj`)              | ❌                                         |
+| Stage meshes      | ✅                         | ✅ (`.obj`)             | ❌                                         |
+| Animations        | ✅ (graph)                 | ❌ (WIP `.anim` export) | ❌                                         |
+| Skeleton          | ❌                         | ✅ (`.dae`)             | ❌                                         |
+| Music (STX)       | ❌                         | ✅ (`.wav`)             | ✅ (`.wav`, `.mp3`, `.mod`, `.xm`, `.s3m`) |
 
 Here's what the UI for viewing/editing map files and textures looks like:    
 <img src="https://github.com/user-attachments/assets/a1fa4f13-0791-4ced-89ed-757387500670" style="width:90%;"/>     
@@ -38,29 +39,15 @@ operation in *headless* mode (no GUI):
 
 - `--dump-textures`
   - Dump all textures to a `textures` folder in DDS format.
+- `--dump-materials`
+  - Export materials from an ALR file in MTL format (for use with OBJ files)
+  - The exported OBJ files have material assignment data, but you have to manually write `mtllib [your .mtl file]` at the start.
+- `--extract-audio`
+  - Export all sound effects from multiple .bin files to a folder, in WAV format
 - `--validate`
   - Run assertions and consistency checks across the whole file. Doesn't guarantee
     the file will work in the game, just that nothing looks wrong based on our
     current knowledge of ALRs.
-
-## ALR [`src/alr`]
-This program can export/replace textures, and split ALR files apart in a few different ways. It's been mostly obseleted by
-Polaris, but is still more reliable for unusual files (like bosses) and uncommon
-texture formats (like cubemaps). Here's some typical output:        
-<img src="https://github.com/user-attachments/assets/ad8a35d6-a630-40bc-854e-3d56442ad21e" style="width:80%;"/>
-<img src="https://github.com/user-attachments/assets/308ee1cc-4b43-44bf-a22d-b23312f284e3" style="width:70%;"/>
-
-### Command-line Options
-`alr [input file] [flag] [output file (if applicable)]`
-- `--dump`
-  - Dumps all textures from the file, guessing the best format and size using metadata from
-    2 parts of the file. Has a bad habit of dumping one file with correct format but wrong size,
-    and one with the wrong format and correct size. Use Polaris instead, except for cubemaps.
-- `--info`
-  - Does a "dry run", printing out info but not dumping any files.
-- `--replace`
-  - Searches for textures that you dumped earlier, and replaces textures in the ALR with those files.
-    Allows you to dump textures, edit them, then replace them in the ALR.
 
 ## Deck Reader [`src/deck_reader`]
 This is a very simple TUI editor for deck/arsenal files. In the style of a simple batch
