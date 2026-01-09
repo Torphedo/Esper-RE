@@ -19,11 +19,19 @@
 
 const char* dump_textures_flag = "dump-textures";
 const char* dump_mats_flag = "dump-materials";
-const char* validate_flag = "--validate";
 const char* extract_audio_flag = "extract-audio";
 
 void print_usage() {
-    printf("Usage: polaris [ALR filename] [%s | %s]\n", dump_textures_flag, validate_flag);
+    printf("Usage: polaris [flag] [ALR filename] [output path, if relevant]\n");
+    printf("If you only give an ALR filename (and no flag), Polaris will run with that file already opened.\n\n");
+    printf("The possible flags are:\n");
+    printf("  --%s: Export all textures (in DDS format) from an ALR file to a 'textures' folder in the current directory\n", dump_textures_flag);
+    printf("  --%s: Export all materials from an ALR file to the specified MTL file\n", dump_mats_flag);
+    printf("  --%s: Export all sound effects (in .wav format) from .bin files to the specified folder.\n", extract_audio_flag);
+    printf("        e.g. 'polaris --%s Title_Logo.bin BattleVo_Hero.bin audiodump' exports WAVs from both files to the audiodump folder.\n", extract_audio_flag);
+    printf("\n");
+    printf("  --help: Show this message\n");
+    printf("  --version: Version number / credits / source code URL\n");
 }
 
 int main(int argc, char** argv) {
