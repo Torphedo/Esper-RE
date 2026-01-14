@@ -9,6 +9,10 @@ extern "C" {
 #include <common/int.h>
 #include "shut_up_msvc.h"
 
+enum {
+    PD_MAX_QUESTS = 256, // Number of quest entries in a QDT
+};
+
 typedef struct {
     u16 unk[4];
     char name[0x12];
@@ -29,9 +33,9 @@ typedef struct {
     u16 id;
     char name[0x32];
     char desc[0x202];
-    u32 unk3;
+    u32 unk2;
+    u16 unk3;
     u16 unk4;
-    u16 unk5;
     u32 padding;
     char unk_text[0x32];
 
@@ -39,14 +43,14 @@ typedef struct {
     u16 num_enemies;
     u16 player_slots;
     u16 thumbnail_id;
+    u16 unk5;
     u16 unk6;
-    u16 unk7;
 
     char objective[0xCE];
 
     deck_entry_header header;
     deck_entry deck[7];
-    u8 unk8[0x20];
+    u8 unk7[0x20];
 }quest_entry;
 static_assert(sizeof(quest_entry) == 0x520);
 

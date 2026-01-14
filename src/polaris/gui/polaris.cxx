@@ -53,6 +53,7 @@ void polaris::do_menu_bar() noexcept {
 
             if (ImGui::BeginMenu("Tools")) {
                 ImGui::MenuItem("Audio Analyzer (.bin / STX)", nullptr, &audioTool.enabled);
+                ImGui::MenuItem("Quest Editor (.qdt)", nullptr, &questTool.enabled);
                 ImGui::MenuItem("Generate STX", nullptr, &create_stx);
                 ImGui::MenuItem("Extract .mk / .ak", nullptr, &extract_mkak);
                 ImGui::MenuItem("Create .mk / .ak", nullptr, &create_mkak);
@@ -197,6 +198,7 @@ void polaris::update(GLFWwindow* window) noexcept {
     editor.draw(viewport);
     this->map.do_gui();
     this->audioTool.do_gui();
+    this->questTool.do_gui();
 }
 
 void polaris::render(GLFWwindow* window) noexcept {

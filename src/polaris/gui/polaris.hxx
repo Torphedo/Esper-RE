@@ -11,6 +11,7 @@
 #include "gui/alr_editor.hxx"
 #include "gui/viewport.hxx"
 #include "gui/tool_audio.hxx"
+#include "gui/tool_quest.hxx"
 
 // State for the overall editor
 struct polaris : gui_layer {
@@ -21,6 +22,7 @@ struct polaris : gui_layer {
     mapdata map = mapdata(*this);
 
     audio_tool audioTool;
+    quest_tool questTool;
 
     // 3D viewport
     viewport_t viewport;
