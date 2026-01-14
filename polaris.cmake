@@ -70,7 +70,7 @@ add_executable(polaris
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
-    src/polaris/gui/ma_stx_player.cxx
+    src/polaris/ma_stx_player.c
 )
 
 target_link_libraries(polaris PRIVATE pd_common coregui imgui nfd)

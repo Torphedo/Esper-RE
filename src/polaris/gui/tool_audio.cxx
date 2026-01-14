@@ -46,16 +46,16 @@ void audio_tool::do_gui_stx() noexcept {
     }
 
     if (ImGui::Button("Play")) {
-        if (stx_player) {
-            stx_player->play();
+        if (stx_player.initialized) {
+            ma_stx_play(&stx_player);
         }
     }
 
-    if (stx_player) {
-        ImGui::Text("[Debug] Current STX Block: %d", stx_player->audio_block_idx);
-        ImGui::Text("[Debug] STX Total Blocks: %d", stx_player->header.header.block_count);
-        ImGui::Text("[Debug] STX Loop Start Block: %d", stx_player->header.header.loop_start_block);
-        ImGui::Text("[Debug] STX Loop End Block: %d", stx_player->header.header.loop_end_block);
+    if (stx_player.initialized) {
+        ImGui::Text("[Debug] Current STX Block: %d", stx_player.audio_block_idx);
+        ImGui::Text("[Debug] STX Total Blocks: %d", stx_player.header.header.block_count);
+        ImGui::Text("[Debug] STX Loop Start Block: %d", stx_player.header.header.loop_start_block);
+        ImGui::Text("[Debug] STX Loop End Block: %d", stx_player.header.header.loop_end_block);
     }
 }
 
@@ -69,7 +69,7 @@ void audio_tool::do_gui() noexcept {
         if (ImGui::Button("Unload audio file")) {
             this->unload();
             if (is_stx) {
-                stx_player.reset();
+                ma_stx_teardown(&stx_player);
             }
         }
     } else {
@@ -82,8 +82,8 @@ void audio_tool::do_gui() noexcept {
                 this->load(path);
                 is_stx = path_has_extension(path, ".stx");
                 if (is_stx) {
-                    stx_player = std::make_unique<ma_stx_player>(data, size);
-                    stx_player->setup();
+                    stx_player = ma_stx_init(data, size);
+                    ma_stx_setup(&stx_player);
                 }
             }
             free(path);
