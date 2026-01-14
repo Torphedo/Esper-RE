@@ -46,6 +46,15 @@ void quest_tool::do_gui() noexcept {
         if (ImGui::Button("Unload quest file")) {
             this->unload();
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Save")) {
+            char* path = nullptr;
+            nfdresult_t result_in = NFD_SaveDialogU8(&path, quest_filter, ARRAY_SIZE(quest_filter), nullptr, "questdata.qdt");
+            if (result_in == NFD_OKAY && path) {
+                this->save(path);
+            }
+            free(path);
+        }
     } else {
         ImGui::Text("No quest file loaded.");
 
