@@ -53,6 +53,7 @@ void audio_tool::do_gui_stx() noexcept {
 
     if (stx_player) {
         ImGui::Text("[Debug] Current STX Block: %d", stx_player->audio_block_idx);
+        ImGui::Text("[Debug] STX Total Blocks: %d", stx_player->header.header.block_count);
         ImGui::Text("[Debug] STX Loop Start Block: %d", stx_player->header.header.loop_start_block);
         ImGui::Text("[Debug] STX Loop End Block: %d", stx_player->header.header.loop_end_block);
     }

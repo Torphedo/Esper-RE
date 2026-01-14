@@ -39,13 +39,13 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 void ma_stx_player::next_block() {
     audio_sample_idx = 0;
     audio_block_idx++;
-    if (audio_block_idx >= header.header.block_count) {
-        audio_block_idx = 0;
-    }
     if (audio_block_idx >= header.header.loop_end_block) {
         audio_block_idx = header.header.loop_start_block;
     }
 
+    if (audio_block_idx >= header.header.block_count) {
+        audio_block_idx = 0;
+    }
     audio = blocks[audio_block_idx];
 
     const void* deinterleaved_channels[2] = {
