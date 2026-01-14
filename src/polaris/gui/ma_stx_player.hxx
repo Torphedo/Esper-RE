@@ -16,6 +16,7 @@ struct ma_stx_player {
     ma_device device = {};
 
     ma_stx_player(const void* data, u32 size);
+    ~ma_stx_player();
 
     void next_block();
     bool setup();

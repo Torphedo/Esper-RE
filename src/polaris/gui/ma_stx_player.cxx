@@ -9,6 +9,11 @@ ma_stx_player::ma_stx_player(const void* data, u32 size)
     next_block();
 }
 
+ma_stx_player::~ma_stx_player() {
+    teardown();
+}
+
+
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     ma_stx_player* player = (ma_stx_player*)pDevice->pUserData;
 
