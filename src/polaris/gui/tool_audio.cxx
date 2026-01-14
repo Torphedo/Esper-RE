@@ -33,12 +33,13 @@ void audio_tool::do_gui() noexcept {
             nfdresult_t result_in = NFD_OpenDialogU8(&path, sound_filter, ARRAY_SIZE(sound_filter), nullptr);
             if (result_in == NFD_OKAY && path) {
                 this->load(path);
-                if (path_has_extension(path, ".stx")) {
-                    is_stx = true;
-                }
+                is_stx = path_has_extension(path, ".stx");
             }
             free(path);
         }
+    }
+
+    if (!data) {
         ImGui::End();
         return;
     }

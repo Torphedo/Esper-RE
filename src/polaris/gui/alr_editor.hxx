@@ -58,7 +58,6 @@ struct window_state_0x16 {
 };
 
 struct viewport_t;
-struct polaris;
 
 namespace alr {
 
