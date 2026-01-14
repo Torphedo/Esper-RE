@@ -57,6 +57,7 @@ typedef struct {
     u16 loop_end_block;
     u16 pad2;
 }stx_block_header;
+static_assert(sizeof(stx_block_header) == 0x20);
 
 // After the first (header) block, there are 8 of this structure.
 typedef struct {
@@ -77,6 +78,12 @@ typedef struct {
     stx_channel channels[STX_MAX_CHANNELS];
     unsigned char channel_names[STX_MAX_CHANNELS][STX_CHANNEL_NAME_SIZE];
 }stx_first_block;
+
+typedef struct {
+    stx_block_header header;
+    s16 samples[STX_TOTAL_BLOCK_SAMPLES];
+}stx_audio_block;
+static_assert(sizeof(stx_audio_block) == 0x800);
 
 // This is separate because we need struct sizes
 enum {

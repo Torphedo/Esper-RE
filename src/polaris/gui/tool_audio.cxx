@@ -3,6 +3,8 @@
 #include <string>
 
 #include <nfd.h>
+#include <miniaudio.h>
+
 #include <common/vfile.h>
 #include <common/platform.h>
 #include <common/path.h>
@@ -42,6 +44,18 @@ void audio_tool::do_gui_stx() noexcept {
             dump_stx(path, data, size);
         }
     }
+
+    if (ImGui::Button("Play")) {
+        if (stx_player) {
+            stx_player->play();
+        }
+    }
+
+    if (stx_player) {
+        ImGui::Text("[Debug] Current STX Block: %d", stx_player->audio_block_idx);
+        ImGui::Text("[Debug] STX Loop Start Block: %d", stx_player->header.header.loop_start_block);
+        ImGui::Text("[Debug] STX Loop End Block: %d", stx_player->header.header.loop_end_block);
+    }
 }
 
 void audio_tool::do_gui() noexcept {
@@ -53,6 +67,9 @@ void audio_tool::do_gui() noexcept {
     if (data) {
         if (ImGui::Button("Unload audio file")) {
             this->unload();
+            if (is_stx) {
+                stx_player.reset();
+            }
         }
     } else {
         ImGui::Text("No audio file loaded.");
@@ -63,6 +80,10 @@ void audio_tool::do_gui() noexcept {
             if (result_in == NFD_OKAY && path) {
                 this->load(path);
                 is_stx = path_has_extension(path, ".stx");
+                if (is_stx) {
+                    stx_player = std::make_unique<ma_stx_player>(data, size);
+                    stx_player->setup();
+                }
             }
             free(path);
         }
