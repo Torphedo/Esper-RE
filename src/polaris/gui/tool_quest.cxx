@@ -20,19 +20,37 @@ void edit_quest_entry(quest_entry& entry) {
     ImGui::InputText("Unknown Text", entry.unk_text, sizeof(entry.unk_text));
 
     ImGui::ScopedWidth scopeWidth(16);
-    ImGui::InputU16("Quest ID", &entry.id);
+    ImGui::InputS16("Quest ID", &entry.id);
     ImGui::InputU16("# Players", &entry.num_players);
     ImGui::InputU16("# Enemies", &entry.num_enemies);
     ImGui::InputU16("# Player Slots", &entry.player_slots);
-    ImGui::InputU16("Thumbnail ID", &entry.thumbnail_id);
+    ImGui::InputU16("Mission Photo", &entry.mission_photo);
+    ImGui::InputS16("Stage #", &entry.stage);
 
     if (ImGui::CollapsingHeader("Unknown Fields")) {
         INPUT_UNK_FIELD(entry, 1, U16);
-        INPUT_UNK_FIELD(entry, 2, U32);
+        INPUT_UNK_FIELD(entry, 2, U16);
         INPUT_UNK_FIELD(entry, 3, U16);
         INPUT_UNK_FIELD(entry, 4, U16);
         INPUT_UNK_FIELD(entry, 5, U16);
         INPUT_UNK_FIELD(entry, 6, U16);
+        INPUT_UNK_FIELD(entry, 7, U16);
+        INPUT_UNK_FIELD(entry, 8, U16);
+        INPUT_UNK_FIELD(entry, 9, U16);
+    }
+
+    if (ImGui::CollapsingHeader("Partners")) {
+        const char* names[8] = {"Meister", "Chunky", "Cuff Button", "pH", "Edgar", "Know", "Tsubutaki", "Sammah"};
+
+        for (u32 i = 0; i < ARRAY_SIZE(names); i++) {
+            bool val = entry.header.flags_byte & (u8(1) << i);
+            if (ImGui::Checkbox(names[i], &val)) {
+                const u8 mask = ~(u8(1 << i));
+                const u8 byte = u8(val) << i;
+                entry.header.flags_byte &= mask; // Clear the bit
+                entry.header.flags_byte |= byte;  // Set the bit if needed
+            }
+        }
     }
 }
 
