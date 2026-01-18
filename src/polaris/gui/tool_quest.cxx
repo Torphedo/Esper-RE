@@ -91,7 +91,19 @@ void quest_tool::do_gui() noexcept {
 
     ImGui::SameLine();
     ImGui::BeginChild("quest_edit");
-    edit_quest_entry(entries[selected_quest]);
+
+    if (ImGui::BeginTabBar("Quest Entry Tabs")) {
+        quest_entry& entry = entries[selected_quest];
+        if (ImGui::BeginTabItem("Custom Editor")) {
+            edit_quest_entry(entry);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Hex Editor")) {
+            hex_edit.DrawContents(&entry, sizeof(entry), selected_quest * sizeof(entry));
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
     ImGui::EndChild();
 
     ImGui::End();
