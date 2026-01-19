@@ -77,7 +77,6 @@ void main() {
     float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
 
     fragment_rgba = color * diffuse_factor;
-    fragment_rgba.a = 1.0;
 
     if (render_normal_colors) {
         fragment_rgba = vec4(normal, 1.0);
@@ -97,6 +96,8 @@ void viewport_t::init(GLFWwindow* window) noexcept {
     }
 
     fbo.bind();
+
+    glEnable(GL_BLEND);
     shader = program_compile_src(vertex_shader, fragment_shader);
     if (!shader_link_check(shader)) {
         LOG_MSG(error, "Shader compilation error!\n");
@@ -290,6 +291,63 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     ImGui::End();
 }
 
+void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_transparent) {
+    glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
+
+    glBindVertexArray(mesh.vao);
+    for (index_buffer idx_buf : mesh.idx_buffers) {
+        if (!idx_buf.enabled) {
+            continue; // This index buffer is hidden
+        }
+
+        // We cast away const here but don't write to the buffer
+        vfile vf = vfile_open(alr->data, alr->alr_size);
+        vf.pos = idx_buf.idx_chunk_offset;
+        vfile_seek(&vf, sizeof(chunk_generic));
+        const auto header = VFILE_READ(idxbuf_header, &vf);
+        const auto mat_chunk = alr->prev_chunk_by_id(0x1, idx_buf.idx_chunk_offset);
+        chunk_0x1_entry tex_entry = {};
+        alr->tex_manager.get_material(*alr, mat_chunk.offset, header.texture_idx, &tex_entry);
+
+        bool semi_transparent = tex_entry.shadow_map_flag == 0x54;
+        if (semi_transparent != allow_semi_transparent) {
+            continue;
+        }
+
+        mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform(*alr));
+        glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, tex_entry.texture_idx));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        gl_obj normal_idx = tex_entry.normal_idx;
+        if (tex_entry.vertbuf_format == 0x1F) {
+            normal_idx = tex_entry.normal_backup_idx;
+        }
+
+        shader_flags_t flags = this->shader_flags;
+        if (flags.has_normal) {
+            flags.has_normal = (normal_idx != 0);
+        }
+        glUniform1i(uniform_flags, *((u32*)&flags));
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, normal_idx));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        const u16 draw_mode = (header.primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
+        glDrawElements(draw_mode, header.num_indices, GL_UNSIGNED_SHORT, 0);
+    }
+    // VAO keeps index buffer binding, so clear it after draw.
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+}
+
 void viewport_t::render(GLFWwindow* window) noexcept {
     if (!active || !initialized) {
         return;
@@ -312,7 +370,7 @@ void viewport_t::render(GLFWwindow* window) noexcept {
     glUniform1i(uniform_sampler_albedo, 0);
     glUniform1i(uniform_sampler_normal, 1);
 
-    // Render all index buffers of all known meshes
+    // Render all opaque meshes
     for (u32 i = 0; i < meshes.size(); i++) {
         const mesh_view& mesh = meshes[i];
         if (!mesh.active) {
@@ -321,55 +379,19 @@ void viewport_t::render(GLFWwindow* window) noexcept {
         const bool do_wireframe = wireframe || (wireframe_selection && (i == selected_mesh));
         fbo.set_wireframe(do_wireframe);
 
-        glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
+        render_mesh(mesh, pvm, false);
+    }
 
-        glBindVertexArray(mesh.vao);
-        for (index_buffer idx_buf : mesh.idx_buffers) {
-            if (!idx_buf.enabled) {
-                continue; // This index buffer is hidden
-            }
-
-            mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform(*alr));
-            glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
-
-            // We cast away const here but don't write to the buffer
-            vfile vf = vfile_open(alr->data, alr->alr_size);
-            vf.pos = idx_buf.idx_chunk_offset;
-            vfile_seek(&vf, sizeof(chunk_generic));
-            const auto header = VFILE_READ(idxbuf_header, &vf);
-            const auto mat_chunk = alr->prev_chunk_by_id(0x1, idx_buf.idx_chunk_offset);
-            chunk_0x1_entry tex_entry = {};
-            alr->tex_manager.get_material(*alr, mat_chunk.offset, header.texture_idx, &tex_entry);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, tex_entry.texture_idx));
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-            gl_obj normal_idx = tex_entry.normal_idx;
-            if (tex_entry.vertbuf_format == 0x1F) {
-                normal_idx = tex_entry.normal_backup_idx;
-            }
-
-            shader_flags_t flags = this->shader_flags;
-            if (flags.has_normal) {
-                flags.has_normal = (normal_idx != 0);
-            }
-            glUniform1i(uniform_flags, *((u32*)&flags));
-
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, normal_idx));
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-            const u16 draw_mode = (header.primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
-            glDrawElements(draw_mode, header.num_indices, GL_UNSIGNED_SHORT, 0);
+    // Render semi-transparent meshes
+    for (u32 i = 0; i < meshes.size(); i++) {
+        const mesh_view& mesh = meshes[i];
+        if (!mesh.active) {
+            continue; // This mesh is hidden
         }
-        // VAO keeps index buffer binding, so clear it after draw.
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindVertexArray(0);
+        const bool do_wireframe = wireframe || (wireframe_selection && (i == selected_mesh));
+        fbo.set_wireframe(do_wireframe);
+
+        render_mesh(mesh, pvm, true);
     }
 
     glUseProgram(0);

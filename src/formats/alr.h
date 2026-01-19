@@ -526,7 +526,8 @@ typedef struct {
     u8 entry_idx;
     u8 unk6;
     u16 unk7;
-    u16 unk8;
+    u8 unk8;
+    u8 shadow_map_flag; // Set to 0x54 on shadow maps
     u16 unk9;
     u16 texture_idx;
     // With specific vertex formats (just 0x1F so far), this becomes the index
