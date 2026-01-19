@@ -153,7 +153,8 @@ void update_gl_tex(texture img, gl_obj texture_id) {
                 break;
             default:
                 LOG_MSG(error, "Unknown bobtail compressed format code: %d\n", img.fmt);
-                break;
+                // Exit! Otherwise the internal format will be 0 and crash.
+                return;
             }
 
             glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, img.width, img.height, 0, glFormat, gl_size, img.data);
