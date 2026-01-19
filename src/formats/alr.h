@@ -72,19 +72,29 @@ typedef struct {
 static_assert(sizeof(texture_header) == 0xC, "Wrong texture metadata chunk header size!");
 
 typedef enum {
-    // These are all the same(?)
-    FORMAT_RGBA8 =   0b00000110,
-    FORMAT_RGBA8_2 = 0b10010010,
-    FORMAT_RGBA8_3 = 0b10000110,
-    FORMAT_DXT1 = 0b00001100,
-    FORMAT_DXT3 = 0b00001110,
-    FORMAT_DXT5 = 0b00001111,
-    FORMAT_A8 = 0b10000000,
-    FORMAT_A8_2 = 0b10011111,
-    FORMAT_A8_3 = 0b10010011,
-    FORMAT_RG8 = 0b10000100,
-    FORMAT_MONO_16 = 0b10000010,
-    FORMAT_MONO_16_2 = 0b10000101,
+    // 8-bit red channel only
+    FORMAT_R8 = 0,
+    FORMAT_R8_2 = 0x13,
+
+    // 8-bit alpha only
+    FORMAT_A8 = 0x1F,
+
+    FORMAT_BGRA_5551 = 0x02, // 5 bits per channel, 1 bit alpha
+    FORMAT_BGRA_4444 = 0x04, // 4 bits per channel
+    FORMAT_BGR_565 = 0x05, // 5 bits for blue/red, 6 bits for green
+
+    // 8-bit RGBA
+    FORMAT_RGBA8 =   0x06,
+    FORMAT_RGBA8_2 = 0x12,
+
+    // 0x28 is a case in the game code's switch statement, but it should never
+    // be hit since it doesn't fit in 5 bits
+    // FORMAT_RGBA8_3 = 0x28,
+
+    // Block-compressed formats
+    FORMAT_DXT1 = 0x0C,
+    FORMAT_DXT3 = 0x0E,
+    FORMAT_DXT5 = 0x0F,
 }alr_pixel_format;
 
 // Bad enum name. I don't know what this value means except for these 2
@@ -100,7 +110,8 @@ typedef struct {
     u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.texbuf_offset)
     u32 pad;      // Always 0 (so far)
     u8 unknown;   // Usually 0x29
-    u8 pixel_format;
+    alr_pixel_format pixel_format: 5;
+    u8 unk_pixel_format: 3; // The top bit is sometimes set, unclear meaning.
     u8 unknown2;
     // I think this is actually the mip count, but often the textures have the
     // maximum possible mip count, so 1 << [mip count] == height/width.

@@ -7,21 +7,25 @@
 const char* texformat_str(alr_pixel_format format) {
     const char* out = "[UNKNOWN]";
     switch (format) {
-        case FORMAT_MONO_16_2:
-        case FORMAT_MONO_16:
-            out = "1-channel 16-bit raw";
-            break;
         case FORMAT_A8:
-        case FORMAT_A8_2:
-        case FORMAT_A8_3:
-            out = "1-channel 8-bit raw";
+            out = "1-channel 8-bit raw [red]";
             break;
-        case FORMAT_RG8:
-            out = "2-channel 8-bit raw";
+        case FORMAT_R8:
+        case FORMAT_R8_2:
+            out = "1-channel 8-bit raw [alpha]";
+            break;
+        case FORMAT_BGRA_5551:
+            out = "4-channel 5/5/5/1-bit raw";
+            break;
+        case FORMAT_BGR_565:
+            out = "3-channel 5/6/5-bit raw";
+            break;
+        case FORMAT_BGRA_4444:
+            out = "4-channel 4-bit raw";
             break;
         case FORMAT_RGBA8:
         case FORMAT_RGBA8_2:
-        case FORMAT_RGBA8_3:
+        // case FORMAT_RGBA8_3:
             out = "4-channel 8-bit raw [RGBA8]";
             break;
         case FORMAT_DXT1:
@@ -55,23 +59,27 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
     }
 
     switch (entry.pixel_format) {
-        case FORMAT_MONO_16_2:
-        case FORMAT_MONO_16:
-            out.unit_size = 2; // See documentation, this means 16-bit channels
-            out.channels = 1;
-            break;
         case FORMAT_A8:
-        case FORMAT_A8_2:
-        case FORMAT_A8_3:
+        case FORMAT_R8:
+        case FORMAT_R8_2:
             out.channels = 1;
-            break;
-        case FORMAT_RG8:
-            out.channels = 2;
             break;
         case FORMAT_RGBA8:
         case FORMAT_RGBA8_2:
-        case FORMAT_RGBA8_3:
+        // case FORMAT_RGBA8_3:
             out.channels = 4;
+            break;
+        case FORMAT_BGR_565:
+            out.compressed = true;
+            out.fmt = DDS_FORMAT_BGR_565;
+            break;
+        case FORMAT_BGRA_5551:
+            out.compressed = true;
+            out.fmt = DDS_FORMAT_BGRA_5551;
+            break;
+        case FORMAT_BGRA_4444:
+            out.compressed = true;
+            out.fmt = DDS_FORMAT_BGRA_4444;
             break;
         case FORMAT_DXT1:
             out.compressed = true;
@@ -104,25 +112,57 @@ void update_gl_tex(texture img, gl_obj texture_id) {
     if (img.compressed) {
         GLenum format = 0;
         GLint size = res;
+        bool block_compressed = true;
         switch (img.fmt) {
-            case DXT3:
-                format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-                break;
-            case DXT5:
-                format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-                break;
-            default:
-            case DXT1:
-                format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-                size /= 2;
-                break;
+        case DXT3:
+            format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+            break;
+        case DXT5:
+            format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            break;
+        case DXT1:
+            format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+            size /= 2;
+            break;
+        default:
+            block_compressed = false;
+            break;
         };
 
-        // Re-upload the texture
-        glCompressedTexImage2D(GL_TEXTURE_2D, 0, format, img.width, img.height, 0, size, img.data);
+        if (block_compressed) {
+            // Re-upload the texture
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, format, img.width, img.height, 0, size, img.data);
+        } else {
+            GLenum gl_size = 0;
+            GLenum internalFormat = 0;
+            GLenum glFormat = GL_RGBA;
+            // These aren't considered compressed by OpenGL
+            switch (img.fmt) {
+            case DDS_FORMAT_BGRA_5551:
+                gl_size = GL_UNSIGNED_SHORT_5_5_5_1;
+                internalFormat = GL_RGB5_A1;
+                break;
+            case DDS_FORMAT_BGR_565:
+                gl_size = GL_UNSIGNED_SHORT_5_6_5;
+                internalFormat = GL_RGB5;
+                glFormat = GL_RGB;
+                break;
+            case DDS_FORMAT_BGRA_4444:
+                gl_size = GL_UNSIGNED_SHORT_4_4_4_4;
+                internalFormat = GL_RGBA4;
+                break;
+            default:
+                LOG_MSG(error, "Unknown bobtail compressed format code: %d\n", img.fmt);
+                break;
+            }
+
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, img.width, img.height, 0, glFormat, gl_size, img.data);
+        }
     } else {
         // "Raw" uncompressed image
         GLenum gl_size = GL_UNSIGNED_BYTE;
+        GLint gl_format;
+
         switch (img.unit_size) {
         case 1:
             gl_size = GL_UNSIGNED_BYTE;
@@ -134,41 +174,40 @@ void update_gl_tex(texture img, gl_obj texture_id) {
             gl_size = GL_UNSIGNED_INT;
             break;
         default:
-            LOG_MSG(warning, "Unknown unit size %d, assuming 8-bit.\n", img.unit_size);
+            // LOG_MSG(warning, "Unknown unit size %d, assuming 8-bit.\n", img.unit_size);
             break;
         }
 
-        GLint format;
         switch (img.channels) {
-            case 1:
-                format = GL_RED;
-                break;
-            case 2:
-                format = GL_RG;
-                break;
-            case 3:
-                format = GL_BGR;
-                break;
-            default:
-                format = GL_BGRA;
-                break;
+        case 1:
+            gl_format = GL_RED;
+            break;
+        case 2:
+            gl_format = GL_RG;
+            break;
+        case 3:
+            gl_format = GL_BGR;
+            break;
+        default:
+            gl_format = GL_BGRA;
+            break;
         }
 
         // Internal format aren't supposed to be a BGR format. Some drivers will
         // let this slide, others will work but give error messages.
-        GLint internalFormat = format;
-        switch (format) {
-            case GL_BGR:
-                internalFormat = GL_RGB;
-                break;
-            case GL_BGRA:
-                internalFormat = GL_RGBA;
-                break;
-            default:
-                break;
+        GLint internalFormat = gl_format;
+        switch (gl_format) {
+        case GL_BGR:
+            internalFormat = GL_RGB;
+            break;
+        case GL_BGRA:
+            internalFormat = GL_RGBA;
+            break;
+        default:
+            break;
         }
 
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, img.width, img.height, 0, format, gl_size, img.data);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, img.width, img.height, 0, gl_format, gl_size, img.data);
     }
     glGenerateMipmap(GL_TEXTURE_2D);
 

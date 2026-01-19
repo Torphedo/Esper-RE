@@ -83,8 +83,11 @@ bool InputCompressedFormat(img_fmt_compressed& fmt, const char* label) {
         "DXT3/BC2",
         "DXT5/BC3",
         "BC4",
+        "RGB 5/6/5",
+        "RGBA 5/5/5/1",
+        "RGBA 4/4/4/4",
     };
-    const char* cur_fmt_name = (fmt >= DXT_ENUM_MAX) ? "UNKNOWN" : fmt_strings[fmt];
+    const char* cur_fmt_name = (fmt >= ARRAY_SIZE(fmt_strings)) ? "UNKNOWN" : fmt_strings[fmt];
 
     bool result = false;
     if (ImGui::BeginCombo(label, cur_fmt_name)) {
