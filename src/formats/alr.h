@@ -521,11 +521,11 @@ typedef struct {
     u32 unk2;
     u32 unk3; // Usually 0?
     u16 unk4;
+    u16 unk5;
     u8 vertbuf_format;
     u8 vert_size;
     u8 entry_idx;
     u8 unk6;
-    u16 unk7;
     u8 unk8;
     u8 shadow_map_flag; // Set to 0x54 on shadow maps
     u16 unk9;
@@ -534,13 +534,14 @@ typedef struct {
     // of the lightmap texture, and the next value is the index of the normal map.
     u16 normal_idx;
     u16 normal_backup_idx;
-    u32 pad[4];
+    u16 pad1;
+    u32 pad2[4];
     u8 unk10[4];
     u8 unk11[4];
-    u32 pad2;
+    u32 pad3;
     u32 unk12;
     u16 unk13[2];
-    u32 pad3[2];
+    u32 pad4[2];
 }chunk_0x1_entry;
 static_assert(sizeof(chunk_0x1_entry) == 0x4C, "Wrong 0x1 chunk entry size!");
 
