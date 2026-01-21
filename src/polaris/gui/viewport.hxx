@@ -48,9 +48,8 @@ struct viewport_t : gui_layer {
     // Color texture sampler. We call it albedo since it's the same number of
     // characters as "normal" and means the same thing.
     gl_obj uniform_sampler_albedo = 0;
-    
-    // Normal map sampler
     gl_obj uniform_sampler_normal = 0;
+    gl_obj uniform_sampler_lightmap = 0;
 
     // Camera, misc. rendering state
     camera cam;

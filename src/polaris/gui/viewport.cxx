@@ -21,11 +21,13 @@ const char* vertex_shader = R"(
 #version 330 core
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_texcoord;
+layout (location = 2) in vec2 a_lightmap_uv;
 layout (location = 3) in vec3 a_normal;
 
 uniform mat4 pvm;
 uniform uint uv_divisor;
 out vec2 texcoord;
+out vec2 lightmap_uv;
 out vec3 normal;
 
 void main() {
@@ -33,6 +35,7 @@ void main() {
 
     // We map the large integer value into the [0, 1] range for texture lookups
     texcoord = a_texcoord / uv_divisor;
+    lightmap_uv = a_lightmap_uv / uv_divisor;
     normal = a_normal / uv_divisor;
 }
 )";
@@ -42,9 +45,11 @@ const char* fragment_shader = R"(
 out vec4 fragment_rgba;
 
 in vec2 texcoord;
+in vec2 lightmap_uv;
 in vec3 normal;
 uniform sampler2D albedo_texture;
 uniform sampler2D normal_texture;
+uniform sampler2D lightmap_texture;
 uniform vec3 cam_dir;
 uniform int flags = 0;
 
@@ -73,10 +78,12 @@ void main() {
         normal_sample = (normal_sample * 2.0) - 1.0;
         normal_vec += normal_sample;
     }
-    const float ambient = 0.3f;
+    const float ambient = 0.2f;
     float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
+    vec4 lightmap_color = vec4(texture(lightmap_texture, lightmap_uv).rgb, 1.0);
+    lightmap_color = vec4(lightmap_color.rgb * 0.75, 1.0);
 
-    fragment_rgba = color * diffuse_factor;
+    fragment_rgba = (color * diffuse_factor) + lightmap_color;
 
     if (render_normal_colors) {
         fragment_rgba = vec4(normal, 1.0);
@@ -110,6 +117,7 @@ void viewport_t::init(GLFWwindow* window) noexcept {
 
     uniform_sampler_albedo = glGetUniformLocation(shader, "albedo_texture");
     uniform_sampler_normal = glGetUniformLocation(shader, "normal_texture");
+    uniform_sampler_lightmap = glGetUniformLocation(shader, "lightmap_texture");
 
     if (wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -322,8 +330,10 @@ void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_tr
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        gl_obj normal_idx = tex_entry.normal_idx;
+        u32 normal_idx = tex_entry.normal_idx;
+        u32 lightmap_idx = 0;
         if (tex_entry.vertbuf_format == 0x1F) {
+            lightmap_idx = tex_entry.normal_idx;
             normal_idx = tex_entry.normal_backup_idx;
         }
 
@@ -337,6 +347,16 @@ void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_tr
         glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, normal_idx));
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glActiveTexture(GL_TEXTURE2);
+        if (lightmap_idx == 0) {
+            // Make sure lightmap samples all zeroes
+            glBindTexture(GL_TEXTURE_2D, 0);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, lightmap_idx));
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
 
         const u16 draw_mode = (header.primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
@@ -369,6 +389,7 @@ void viewport_t::render(GLFWwindow* window) noexcept {
 
     glUniform1i(uniform_sampler_albedo, 0);
     glUniform1i(uniform_sampler_normal, 1);
+    glUniform1i(uniform_sampler_lightmap, 2);
 
     // Render all opaque meshes
     for (u32 i = 0; i < meshes.size(); i++) {
