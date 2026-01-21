@@ -81,7 +81,7 @@ void main() {
     const float ambient = 0.2f;
     float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
     vec4 lightmap_color = vec4(texture(lightmap_texture, lightmap_uv).rgb, 1.0);
-    lightmap_color = vec4(lightmap_color.rgb * 0.75, 1.0);
+    lightmap_color = vec4(lightmap_color.rgb * lightmap_color.a, 0.0);
 
     fragment_rgba = (color * diffuse_factor) + lightmap_color;
 
