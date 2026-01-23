@@ -59,12 +59,16 @@ namespace alr {
             ImGui::EndCombo();
         }
 
-        ImGui::Text("TODO: Implement both resolution input options");
-        /*
-        ImGui::Text("Resolution: %lux%lu", res, res);
-        ImGui::Text("(1 << %u = 2^%u = %lu)", entry.resolution_pwr, entry.resolution_pwr, res);
-        ImGui::Text("(0x15 texture entries don't capture rectangular textures well, check the atlas (0x10) chunk for more accurate dimensions)");
-        */
+        u16 height = 0;
+        u16 width = 0;
+        alr_texture_get_dimensions(entry, &height, &width);
+
+        bool dimensions_changed = false;
+        dimensions_changed |= ImGui::InputU16("Height", &height);
+        dimensions_changed |= ImGui::InputU16("Width", &width);
+        if (dimensions_changed) {
+            alr_texture_set_dimensions(&entry, height, width);
+        }
 
         if (ImGui::CollapsingHeader("Unknown Fields")) {
             ImGui::InputU32("Flags", &entry.flags);

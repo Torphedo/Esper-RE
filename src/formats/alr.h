@@ -114,6 +114,7 @@ typedef struct {
     u8 unk_pixel_format: 3; // The top bit is sometimes set, unclear meaning.
     u8 unknown2: 4;
 
+    // For power-of-2 textures.
     // 1 << n = height/width
     u8 width_pwr: 4;
     u8 height_pwr;
@@ -121,12 +122,29 @@ typedef struct {
     // These store the actual height/width values, in some rectangular textures.
     // Most of the time, the texture is square and uses the 1 << n method.
     // it's unclear why there are 2 different ways to specify the size.
-    u16 height_direct: 12;
-    u16 width_direct: 12;
+    u32 width_direct: 12;
+    u32 height_direct: 12;
+    u32: 0; // Pad out the rest of the 32 bits
     u32 text1;
     u32 text2;
 }texture_entry;
 static_assert(sizeof(texture_entry) == 0x1C, "Wrong texture metadata size!");
+
+/// @brief Get the height/width of a texture in pixels
+///
+/// This function accounts for power-of-2 and non-power-of-2 texture sizes.
+/// @param entry The texture to read the dimensions of
+/// @param height_out Location to receive texture height
+/// @param width_out Location to receive texture width
+void alr_texture_get_dimensions(texture_entry entry, u16* height_out, u16* width_out);
+
+/// @brief Overwrite the dimensions of a texture
+///
+/// This function accounts for power-of-2 and non-power-of-2 texture sizes.
+/// @param entry Texture to edit
+/// @param height The new height (in pixels)
+/// @param width The new width (in pixels)
+void alr_texture_set_dimensions(texture_entry* entry, u16 height, u16 width);
 
 // 0x16 chunk
 // =============================================================================

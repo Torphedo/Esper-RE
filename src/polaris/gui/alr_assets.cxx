@@ -51,15 +51,7 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
         .channels = 4,
     };
 
-    // It would make more sense to check if *either* is 0, but the game only
-    // checks that they're *both* 0.
-    if (entry.width_direct == 0 && entry.width_direct == 0) {
-        out.width = 1 << entry.width_pwr;
-        out.height = 1 << entry.height_pwr;
-    } else {
-        out.width = entry.width_direct + 1;
-        out.height = entry.height_direct + 1;
-    }
+    alr_texture_get_dimensions(entry, &out.height, &out.width);
 
     if (entry.unknown == TEXTURE_CUBEMAP) {
         out.cubemap = true;
