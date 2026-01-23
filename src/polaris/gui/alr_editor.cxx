@@ -362,11 +362,11 @@ void editor::window_state::draw_chunk_0x11(const file& alr, file::chunk& chunk) 
     alr::edit_chunk_layout(*layout);
 }
 
-void editor::window_state::import_dds_0x15(const file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
+void editor::window_state::import_dds_0x15(file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
     const file::chunk chunk = alr.chunks[chunk_idx];
     CHUNK_ID_ASSERT(0x15);
 
-    const texture_entry cur = entries[window_0x15.selected_texture];
+    texture_entry cur = entries[window_0x15.selected_texture];
     const texture_entry next = entries[window_0x15.selected_texture + 1];
     s64 tex_size = 0;
     if (window_0x15.selected_texture >= num_entries) {
@@ -380,10 +380,13 @@ void editor::window_state::import_dds_0x15(const file& alr, const char* path, u3
     }
 
 
-    texture_entry& entry = entries[window_0x15.selected_texture];
-    texture& tex = window_0x15.tex;
-    tex = image_buf_load(path, tex.data, tex_size);
-    alr_texture_set_dimensions(&entry, tex.height, tex.width);
+    // Load the texture data
+    u8* data = alr.resource_buffer() + cur.data_ptr;
+    texture tex = image_buf_load(path, data, tex_size);
+
+    // Update the ALR state and force a reload
+    alr_texture_set_dimensions(&cur, tex.height, tex.width);
+    alr.tex_manager.invalidate(window_0x15.selected_texture);
 }
 
 void editor::window_state::draw_chunk_0x15(editor& ed, file::chunk& chunk) noexcept {
@@ -432,17 +435,19 @@ void editor::window_state::draw_chunk_0x15(editor& ed, file::chunk& chunk) noexc
         free(path);
     }
 
-    window_0x15.tex = convert_tex(alr.resource_buffer(), entry);
     window_0x15.gl_tex_id = alr.tex_manager.get(alr, window_0x15.selected_texture);
     ImGui::SameLine();
     if (ImGui::Button("Export DDS")) {
         ed.tex_edit.tex_export_active = true;
-        ed.tex_edit.export_cfg = window_0x15.tex;
+        ed.tex_edit.export_cfg = convert_tex(alr.resource_buffer(), entry);
         ed.tex_edit.export_cfg.data = (u8*)uintptr_t(entry.data_ptr);
         ed.tex_edit.export_tex_idx = window_0x15.selected_texture;
     }
 
-    ImGui::draw_image(window_0x15.gl_tex_id, window_0x15.tex.width, window_0x15.tex.height, &window_0x15.use_actual_size, &window_0x15.scale, "preview");
+    u16 height = 0;
+    u16 width = 0;
+    alr_texture_get_dimensions(entry, &height, &width);
+    ImGui::draw_image(window_0x15.gl_tex_id, width, height, &window_0x15.use_actual_size, &window_0x15.scale, "preview");
     ImGui::EndGroup();
 }
 

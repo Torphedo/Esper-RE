@@ -42,7 +42,6 @@ struct window_state_0x10 {
 // State for 0x15 texture window
 struct window_state_0x15 {
     u32 selected_texture = 0;
-    texture tex;
     gl_obj gl_tex_id = 0;
 
     // User can choose to render the texture at its real size, or scaled up
@@ -98,7 +97,7 @@ public:
         void draw_chunk_0x15(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_0x16(file& alr, file::chunk& chunk, viewport_t& viewport) noexcept;
 
-        void import_dds_0x15(const file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
+        void import_dds_0x15(file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
         void send_vertbuf_to_viewport(file& alr, viewport_t& viewport) noexcept;
 
         window_state();
