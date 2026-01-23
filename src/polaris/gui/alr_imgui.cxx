@@ -59,21 +59,17 @@ namespace alr {
             ImGui::EndCombo();
         }
 
-        ImGui::InputU8("Resolution Power", &entry.resolution_pwr);
-        // This limits resolution to 4096^2, which is plenty for our use case
-        entry.resolution_pwr = MIN(entry.resolution_pwr, TEX_POWER_LIMIT);
-
-        const u64 res = u64(1) << entry.resolution_pwr;
+        ImGui::Text("TODO: Implement both resolution input options");
+        /*
         ImGui::Text("Resolution: %lux%lu", res, res);
         ImGui::Text("(1 << %u = 2^%u = %lu)", entry.resolution_pwr, entry.resolution_pwr, res);
         ImGui::Text("(0x15 texture entries don't capture rectangular textures well, check the atlas (0x10) chunk for more accurate dimensions)");
+        */
 
         if (ImGui::CollapsingHeader("Unknown Fields")) {
             ImGui::InputU32("Flags", &entry.flags);
             ImGui::InputU32("Padding", &entry.pad);
             ImGui::InputU8("Unknown 1", &entry.unknown);
-            ImGui::InputU8("Unknown 2", &entry.unknown2);
-            ImGui::InputU32("Unknown 3", &entry.unknown3);
         }
         ImGui::PopItemWidth();
 

@@ -112,11 +112,17 @@ typedef struct {
     u8 unknown;   // Usually 0x29
     alr_pixel_format pixel_format: 5;
     u8 unk_pixel_format: 3; // The top bit is sometimes set, unclear meaning.
-    u8 unknown2;
-    // I think this is actually the mip count, but often the textures have the
-    // maximum possible mip count, so 1 << [mip count] == height/width.
-    u8 resolution_pwr;
-    u32 unknown3; // Often 0
+    u8 unknown2: 4;
+
+    // 1 << n = height/width
+    u8 width_pwr: 4;
+    u8 height_pwr;
+
+    // These store the actual height/width values, in some rectangular textures.
+    // Most of the time, the texture is square and uses the 1 << n method.
+    // it's unclear why there are 2 different ways to specify the size.
+    u16 height_direct: 12;
+    u16 width_direct: 12;
     u32 text1;
     u32 text2;
 }texture_entry;

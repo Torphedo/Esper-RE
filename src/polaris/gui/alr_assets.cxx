@@ -46,11 +46,20 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
     // We default to uncompressed RGBA8 here
     texture out = {
         .data = resbuf + entry.data_ptr,
-        .height = out.width = 1 << entry.resolution_pwr,
         .compressed = false,
         .unit_size = 1,
         .channels = 4,
     };
+
+    // It would make more sense to check if *either* is 0, but the game only
+    // checks that they're *both* 0.
+    if (entry.width_direct == 0 && entry.width_direct == 0) {
+        out.width = 1 << entry.width_pwr;
+        out.height = 1 << entry.height_pwr;
+    } else {
+        out.width = entry.width_direct + 1;
+        out.height = entry.height_direct + 1;
+    }
 
     if (entry.unknown == TEXTURE_CUBEMAP) {
         out.cubemap = true;
