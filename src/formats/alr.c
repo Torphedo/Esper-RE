@@ -32,10 +32,10 @@ void alr_texture_set_dimensions(texture_entry* entry, u16 height, u16 width) {
         entry->height_direct = 0;
         entry->width_direct = 0;
     } else {
-        entry->height_direct = 0;
-        entry->width_direct = 0;
-        entry->height_direct = height;
-        entry->width_direct = width;
+        height = MAX(1, height); // Avoid underflow
+        width = MAX(1, width);
+        entry->height_direct = height - 1;
+        entry->width_direct = width - 1;
 
         // Wipe the other fields so the game doesn't try to use them
         entry->height_pwr = 0;

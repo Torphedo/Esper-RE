@@ -417,7 +417,9 @@ void editor::window_state::draw_chunk_0x15(editor& ed, file::chunk& chunk) noexc
     ImGui::BeginGroup();
     texture_entry& entry = entries[window_0x15.selected_texture];
 
-    alr::edit_texture_entry(entry);
+    if (alr::edit_texture_entry(entry)) {
+        alr.tex_manager.invalidate(window_0x15.selected_texture);
+    }
 
     if (ImGui::Button("Import DDS")) {
         // Display the file picker
