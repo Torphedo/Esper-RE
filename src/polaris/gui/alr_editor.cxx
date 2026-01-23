@@ -380,27 +380,10 @@ void editor::window_state::import_dds_0x15(const file& alr, const char* path, u3
     }
 
 
+    texture_entry& entry = entries[window_0x15.selected_texture];
     texture& tex = window_0x15.tex;
     tex = image_buf_load(path, tex.data, tex_size);
-
-    // The loaded image might not be an even power of 2, here we round to the
-    // nearest one
-    const u16 res = MAX(tex.width, tex.height);
-    for (u8 i = 0; i < TEX_POWER_LIMIT; i++) {
-        if (exponent(2, i) > res) {
-            // This power is larger than the largest target resolution
-            break;
-        }
-        // Save the current power of 2 back to the ALR
-        entries[window_0x15.selected_texture].height_pwr = i;
-        entries[window_0x15.selected_texture].width_pwr = i;
-    }
-
-    // Update our visual dimensions to match the new ALR value
-    const u8 width_pwr = entries[window_0x15.selected_texture].width_pwr;
-    const u8 height_pwr = entries[window_0x15.selected_texture].height_pwr;
-    window_0x15.tex.height = 1 << height_pwr;
-    window_0x15.tex.width = 1 << width_pwr;
+    alr_texture_set_dimensions(&entry, tex.height, tex.width);
 }
 
 void editor::window_state::draw_chunk_0x15(editor& ed, file::chunk& chunk) noexcept {
