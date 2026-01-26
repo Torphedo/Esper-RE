@@ -110,7 +110,10 @@ typedef struct {
     u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.texbuf_offset)
     u32 unused;   // The game combines this with [data_ptr] to store a pointer
     u8 unknown;   // Usually 0x29
-    alr_pixel_format pixel_format: 5;
+
+    // Values match the alr_pixel_format enum. We can't use it directly, because
+    // MSVC will make it "int" (4 bytes) by default even in a bitfield.
+    u8 pixel_format: 5;
     u8 unk_pixel_format: 3; // The top bit is sometimes set, unclear meaning.
     u8 unknown2: 4;
 
