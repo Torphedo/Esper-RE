@@ -1,8 +1,8 @@
 # Esper-RE
-Tools, templates, and information for modding and researching Phantom Dust files.
+This repo hosts tools and scripts for modding and researching Phantom Dust files.
 These tools mainly focus on [ALR](https://phantomdust.miraheze.org/wiki/Modding/File_Formats/ALR)
 files, but there are also some simple tools for [Deck/Arsenal](https://phantomdust.miraheze.org/wiki/Modding/File_Formats/Decks)
-files and [SSB](https://phantomdust.miraheze.org/wiki/File_Formats/SSB) menu script files. You can find more info
+files and [SSB](https://phantomdust.miraheze.org/wiki/File_Formats/SSB) script files. You can find more info
 about the game and file formats on the [Phantom Dust Modding Wiki](https://phantomdust.miraheze.org/wiki/Modding).
 
 ## Polaris [`src/polaris`]
@@ -13,23 +13,27 @@ modding, without giving up the flexibility. There are mini hex editors in
 nearly every window, so you can quickly jump to the data you want (and see
 only that data).
 
-Support status:
+Support status for `.alr` files:
 
 | Feature           | Viewing                    | Export                  | Import                                     |
 | ----------------- | -------------------------- |------------------------ |------------------------------------------- |
-| Textures (square) | ✅                         | ✅(`.dds`)              | ✅ (`.dds`, at same resolution & format)   |
-| Textures (atlas)  | ✅                         | ✅(`.dds`)              | ❌                                         |
-| Character meshes  | ✅                         | ✅(`.obj`)              | ❌                                         |
-| Stage meshes      | ✅                         | ✅ (`.obj`)             | ❌                                         |
+| Textures          | ✅                         | ✅(`.dds`)              | ✅ (`.dds`, at same resolution & format)   |
+| Meshes            | ✅                         | ✅(`.obj`)              | ❌                                         |
 | Animations        | ✅ (graph)                 | ❌ (WIP `.anim` export) | ❌                                         |
 | Skeleton          | ❌                         | ✅ (`.dae`)             | ❌                                         |
-| Music (STX)       | ❌                         | ✅ (`.wav`)             | ✅ (`.wav`, `.mp3`, `.mod`, `.xm`, `.s3m`) |
 
-Here's what the UI for viewing/editing map files and textures looks like:    
-<img src="https://github.com/user-attachments/assets/a1fa4f13-0791-4ced-89ed-757387500670" style="width:90%;"/>     
-And the UI for texture atlases:    
-<img src="https://github.com/user-attachments/assets/5d75910c-8339-4d1f-bf80-931227157220" style="width:70%;"/>
+Polaris also supports several other Phantom Dust files:
+- Stage layout (`.dat`) files can be loaded alongside their corresponding ALR, to spawn in, render, and edit dynamic objects like chairs and railings (Surface stages only, no underground stages).
+- Music (`.stx`) files can be generated from `.wav`, `.mp3`, `.mod`, `.xm`, or `.s3m` files. They can also be exported to `.wav` and played back directly in Polaris
+- Sounds effect (`.bin`) files can be exported to `.wav`
+- Quest (`questdata.qdt`) files can be edited (though they're not fully understood yet)
+- `.mk` and `.ak` files are bundles of NPC models and animations stored in `.alr` and related files. Polaris can extract and create these bundles.
 
+Here's the underground bar map rendered in Polaris:    
+<img src="https://github.com/user-attachments/assets/62e2b8c2-1e83-4666-9bda-007ecec425e8"  style="width:90%;"/>
+
+Polaris rendering Meister's low-poly model, while editing the quests file and playing back a custom STX file it generated from the FastTracker II song `domatron.xm`:    
+<img src="https://github.com/user-attachments/assets/dab7b85a-62ed-4d1f-8103-28c9f902cdc7" style="width:70%;"/>
 
 ### Command-line Options
 Polaris takes a filename as its first argument (which also means you can drag-and-drop
@@ -57,9 +61,9 @@ in-place instead of scrolling.
 <img src="https://github.com/user-attachments/assets/8992a8e4-cddf-495b-99c2-db9998c41bda" style="width:70%;"/>
 
 ## SSB Tool [`src/ssb`]
-This is even more barebones than the deck editor, because I don't work with SSBs often.
-Our resident SSB expert is Vu, who has some Python tools [here](https://github.com/VSaige3/pd-ssb-decomp).
+This is a barebones tool, which only prints an SSB's function export table. For better SSB tools, take a look at these repos:
+- [hantu](https://github.com/VSaige3/hantu)
+- [pd-ssb-decomp](https://github.com/VSaige3/pd-ssb-decomp)
 For more information on the file format, check out the [wiki page](https://phantomdust.miraheze.org/wiki/File_Formats/SSB).
-The tool in this repo will only display an SSB's function export table:
 
 <img src="https://github.com/user-attachments/assets/57e7bc37-d45b-413b-92fb-4d7d091a413b" style="width:70%;"/>
