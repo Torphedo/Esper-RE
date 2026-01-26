@@ -37,7 +37,7 @@ void audio_tool::do_gui_bin() noexcept {
 }
 
 void audio_tool::do_gui_stx() noexcept {
-    if (ImGui::Button("Dump STX")) {
+    if (ImGui::Button("Dump to WAV")) {
         char *path = nullptr;
         nfdresult_t result_out = NFD_SaveDialogU8(&path, wave_filter, ARRAY_SIZE(wave_filter), nullptr, nullptr);
         if (result_out == NFD_OKAY && path) {
