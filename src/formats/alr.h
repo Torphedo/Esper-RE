@@ -108,7 +108,7 @@ typedef enum {
 typedef struct {
     u32 flags;    // Unknown, always 01 00 04 00 so far
     u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.texbuf_offset)
-    u32 pad;      // Always 0 (so far)
+    u32 unused;   // The game combines this with [data_ptr] to store a pointer
     u8 unknown;   // Usually 0x29
     alr_pixel_format pixel_format: 5;
     u8 unk_pixel_format: 3; // The top bit is sometimes set, unclear meaning.
@@ -119,9 +119,8 @@ typedef struct {
     u8 width_pwr: 4;
     u8 height_pwr;
 
+    // For non-power-of-2 textures.
     // These store the actual height/width values, in some rectangular textures.
-    // Most of the time, the texture is square and uses the 1 << n method.
-    // it's unclear why there are 2 different ways to specify the size.
     u32 width_direct: 12;
     u32 height_direct: 12;
     u32: 0; // Pad out the rest of the 32 bits
@@ -157,10 +156,10 @@ typedef struct {
     u8 unknown1;
     u32 unknown2;
     u32 vertex_count;
-    u32 pad;
+    u32 unused1;
     u32 unknown3;
     u32 data_ptr;
-    u32 pad2;
+    u32 unused2; // The game uses this to store a pointer in [data_ptr]
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
 

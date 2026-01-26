@@ -72,7 +72,6 @@ namespace alr {
 
         if (ImGui::CollapsingHeader("Unknown Fields")) {
             ImGui::InputU32("Flags", &entry.flags);
-            ImGui::InputU32("Padding", &entry.pad);
             ImGui::InputU8("Unknown 1", &entry.unknown);
         }
         ImGui::PopItemWidth();
@@ -138,8 +137,6 @@ namespace alr {
             ImGui::InputU8("Unknown 1", &entry.unknown1);
             ImGui::InputU32("Unknown 2", &entry.unknown2);
             ImGui::InputU32("Unknown 3", &entry.unknown3);
-            ImGui::InputU32("Padding 1", &entry.pad);
-            ImGui::InputU32("Padding 2", &entry.pad2);
         }
 
         ImGui::PopItemWidth();

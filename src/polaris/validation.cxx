@@ -279,7 +279,6 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
 
             for (u32 i = 0; i < num_entries; i++) {
                 const s64 resbuf_size = alr.alr_size - alr.resbuf_offset;
-                AL_ASSERT(entries[i].pad == 0, "What I thought was padding in entry %d had data!", i);
                 AL_ASSERT(entries[i].data_ptr < resbuf_size, "Entry %d is well outside the resource buffer!", i);
             }
             break;
@@ -291,8 +290,6 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
 
             for (u32 i = 0; i < num_entries; i++) {
                 const vertbuf_entry entry = entries[i];
-                AL_ASSERT(entry.pad == 0, "What I thought was padding in entry %d had data!", i);
-                AL_ASSERT(entry.pad2 == 0, "What I thought was padding in entry %d had data!", i);
                 AL_ASSERT(entry.vertex_size == entry.vertex_size2,
                         "Vertex sizes in entry %d don't match! (%d vs. %d)", i, entry.vertex_size, entry.vertex_size2);
 
