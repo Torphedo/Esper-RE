@@ -47,6 +47,9 @@ namespace ImGui {
 
     void BeginChildFitContent(const char* id, float width_percent);
 
+    /// @brief Horizontally centered ImGui::Text() wrapper
+    void TextCentered(const char* fmt, ...);
+
     /// @brief A sort of backwards assert that displays a message in the GUI
     ///
     /// @param condition The failure condition. If this is *true*, your custom

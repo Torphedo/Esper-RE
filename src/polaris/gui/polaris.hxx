@@ -27,6 +27,7 @@ struct polaris : gui_layer {
 
     bool headless = true; // Whether we're running without graphics.
     bool show_demo = false; // ImGui Demo Window toggle
+    bool show_about = false; // About menu toggle
 
     // Whether we show a window with all the debug performance timers.
     bool show_timers = false;

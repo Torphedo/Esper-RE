@@ -4,11 +4,17 @@
 #define POLARIS_URL "https://github.com/Torphedo/Esper-RE"
 
 static const char* polaris_special_thanks[] = {
-    "fleevoid (Almost everything early on, brainstorming, etc.)",
-    "blasianblazy (Early ALR layout info, cubemap info, map object IDs/transforms, etc.)",
-    "NerdyMiner (Early ALR research, texture & model research)",
-    "Toaf (indirect animation & SSB info via releasing a development build)",
-    "Vu (SSB research, decoding for ALR texture and bone names)",
-    "Nuion (texture dumper testing)",
-    "Czarpos (Autodesk Maya .anim Blender plugin)",
+    "fleevoid \n\t\t- Early C++ help, image formatting info, brainstorming\n",
+
+    "blasianblazy \n\t\t- Early ALR layout info, helped discover cubemaps\n\t\t"
+     "- .dat map object IDs\n\t\t- Discovered PC audio sample format\n\t\t"
+     "- Discovered most non-trivial quest fields\n",
+
+    "Vu \n\t\t- All SSB research \n\t\t- ALR texture & bone names \n\t\t"
+    "- Ghidra project\n",
+
+    "NerdyMiner \n\t\t- Early ALR research, texture & model research\n",
+    "Toaf \n\t\t- Discovered 2003 development build\n",
+    "Nuion \n\t\t- Texture dumper testing\n",
+    "Czarpos \n\t\t- Autodesk Maya .anim Blender plugin\n",
 };

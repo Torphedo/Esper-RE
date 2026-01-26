@@ -22,6 +22,20 @@ float CharWidth(u32 num_chars) {
     return ImGui::CalcTextSize("1").x * num_chars;
 }
 
+
+
+void TextCentered(const char* fmt, ...) {
+    const float windowWidth = ImGui::GetWindowSize().x;
+    const float textWidth   = ImGui::CalcTextSize(fmt).x;
+
+    ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextV(fmt, args);
+    va_end(args);
+}
+
 void PlsReportIf(bool condition, const char* format, ...) {
     if (!condition) {
         // Failure condition wasn't hit, everything's fine.

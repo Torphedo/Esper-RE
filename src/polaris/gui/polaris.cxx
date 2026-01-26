@@ -11,6 +11,7 @@
 #include "alr/mkak.hxx"
 #include "util/scope_timer.hxx"
 #include "polaris.hxx"
+#include "version.h"
 
 bool extract_mkak_menu() {
     nfdu8filteritem_t filters[] = { { "Phantom Dust MK archive", "mk"}, { "Phantom Dust AK archive", "ak"} };
@@ -78,6 +79,22 @@ bool create_stx_menu() {
     return result;
 }
 
+bool about_menu() {
+    bool open = true;
+    ImGui::Begin("About Polaris", &open);
+
+    ImGui::TextCentered("Polaris v" POLARIS_VERSION "\n");
+    ImGui::TextCentered("Open-source @ " POLARIS_URL "\n");
+    ImGui::TextCentered("Written by Torphedo\n\n\n");
+    ImGui::TextCentered("=== Special Thanks ===\n");
+    for (const char* txt : polaris_special_thanks) {
+        ImGui::Text("\t%s\n", txt);
+    }
+    ImGui::End();
+
+    return open;
+}
+
 void polaris::do_menu_bar() noexcept {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     const float height = ImGui::GetFrameHeight();
@@ -123,6 +140,12 @@ void polaris::do_menu_bar() noexcept {
                 ImGui::MenuItem("Generate STX", nullptr, &create_stx);
                 ImGui::MenuItem("Extract .mk / .ak", nullptr, &extract_mkak);
                 ImGui::MenuItem("Create .mk / .ak", nullptr, &create_mkak);
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Help")) {
+                ImGui::MenuItem("About", nullptr, &show_about);
+
                 ImGui::EndMenu();
             }
 
@@ -214,6 +237,10 @@ void polaris::update(GLFWwindow* window) noexcept {
             ImGui::Text("%s: %.2lfms", entry.first, entry.second * 1000);
         }
         ImGui::End();
+    }
+
+    if (show_about) {
+        show_about = about_menu();
     }
 
     editor.draw(viewport);
