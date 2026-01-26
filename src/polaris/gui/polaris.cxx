@@ -12,6 +12,72 @@
 #include "util/scope_timer.hxx"
 #include "polaris.hxx"
 
+bool extract_mkak_menu() {
+    nfdu8filteritem_t filters[] = { { "Phantom Dust MK archive", "mk"}, { "Phantom Dust AK archive", "ak"} };
+    bool result = false;
+
+    char* path = nullptr;
+    nfdresult_t result_in = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
+    char* out_dir = nullptr;
+    if (result_in == NFD_OKAY && path) {
+        nfdresult_t result_out = NFD_PickFolderU8(&out_dir, nullptr);
+        if (result_out == NFD_OKAY && out_dir) {
+            result = mkak::dump_to_folder(path, out_dir);
+        }
+    }
+    free(path);
+    free(out_dir);
+
+    return result;
+}
+
+bool create_mkak_menu() {
+    const nfdu8filteritem_t filters[] = { { "Phantom Dust MK archive", "mk"}, { "Phantom Dust AK archive", "ak"} };
+    bool result = false;
+
+    std::vector<std::string> input_paths;
+    nfdresult_t result_in = NFD_OpenDialogMultipleAutoFree(input_paths, nullptr, 0, nullptr);
+    if (result_in == NFD_OKAY) {
+        char* outpath = nullptr;
+        nfdresult_t result_out = NFD_SaveDialogU8(&outpath, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+
+        if (result_out == NFD_OKAY && outpath) {
+            result = mkak::create_pack(input_paths, outpath);
+        }
+        free(outpath);
+    }
+
+    return result;
+}
+
+bool create_stx_menu() {
+    const nfdu8filteritem_t infilters[] = {
+        { "Audio File", "wav,mp3,mod,xm,s3m"},
+        {"Raw Audio", "wav"},
+        {"MPEG-3", "mp3"},
+        {"ProTracker Module", "mod"},
+        {"FastTracker II Module", "xm"},
+        {"ScreamTracker 3 Module", "s3m"},
+    };
+    const nfdu8filteritem_t outfilters[] = { { "Phantom Dust Music", "stx"} };
+    bool result = false;
+
+    // Prompt for an input and output file
+    char* path = nullptr;
+    nfdresult_t nfdRes = NFD_OpenDialogU8(&path, infilters, ARRAY_SIZE(infilters), nullptr);
+    if (nfdRes == NFD_OKAY && path) {
+        char* outpath = nullptr;
+        nfdresult_t result_out = NFD_SaveDialogU8(&outpath, outfilters, ARRAY_SIZE(outfilters), nullptr, nullptr);
+        if (result_out == NFD_OKAY && outpath) {
+            result = generate_stx_from_file(path, outpath);
+        }
+        free(outpath);
+    }
+    free(path);
+
+    return result;
+}
+
 void polaris::do_menu_bar() noexcept {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     const float height = ImGui::GetFrameHeight();
@@ -116,58 +182,13 @@ void polaris::do_menu_bar() noexcept {
     }
 
     if (extract_mkak) {
-        nfdu8filteritem_t filters[] = { { "Phantom Dust MK archive", "mk"}, { "Phantom Dust AK archive", "ak"} };
-        char* path = nullptr;
-        nfdresult_t result_in = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
-        char* out_dir = nullptr;
-        if (result_in == NFD_OKAY && path) {
-            nfdresult_t result_out = NFD_PickFolderU8(&out_dir, nullptr);
-            if (result_out == NFD_OKAY && out_dir) {
-                mkak::dump_to_folder(path, out_dir);
-            }
-        }
-        free(path);
-        free(out_dir);
+        extract_mkak_menu();
     }
-
     if (create_mkak) {
-        const nfdu8filteritem_t filters[] = { { "Phantom Dust MK archive", "mk"}, { "Phantom Dust AK archive", "ak"} };
-
-        std::vector<std::string> input_paths;
-        nfdresult_t result_in = NFD_OpenDialogMultipleAutoFree(input_paths, nullptr, 0, nullptr);
-        if (result_in == NFD_OKAY) {
-            char* outpath = nullptr;
-            nfdresult_t result_out = NFD_SaveDialogU8(&outpath, filters, ARRAY_SIZE(filters), nullptr, nullptr);
-
-            if (result_out == NFD_OKAY && outpath) {
-                mkak::create_pack(input_paths, outpath);
-            }
-            free(outpath);
-        }
+        create_mkak_menu();
     }
-
     if (create_stx) {
-        nfdu8filteritem_t infilters[] = {
-        { "Audio File", "wav,mp3,mod,xm,s3m"},
-        {"Raw Audio", "wav"},
-        {"MPEG-3", "mp3"},
-        {"ProTracker Module", "mod"},
-        {"FastTracker II Module", "xm"},
-        {"ScreamTracker 3 Module", "s3m"},
-       };
-        nfdu8filteritem_t outfilters[] = { { "Phantom Dust Music", "stx"} };
-
-        char* path = nullptr;
-        nfdresult_t result = NFD_OpenDialogU8(&path, infilters, ARRAY_SIZE(infilters), nullptr);
-        if (result == NFD_OKAY && path) {
-            char* outpath = nullptr;
-            nfdresult_t result_out = NFD_SaveDialogU8(&outpath, outfilters, ARRAY_SIZE(outfilters), nullptr, nullptr);
-            if (result_out == NFD_OKAY && outpath) {
-                generate_stx_from_file(path, outpath);
-            }
-            free(outpath);
-        }
-        free(path);
+        create_stx_menu();
     }
 }
 

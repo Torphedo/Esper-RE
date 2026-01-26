@@ -23,15 +23,10 @@ struct polaris : gui_layer {
 
     audio_tool audioTool;
     quest_tool questTool;
+    viewport_t viewport; // 3D viewport
 
-    // 3D viewport
-    viewport_t viewport;
-
-    // Whether we're running without graphics.
-    bool headless = true;
-
-    // Whether to show the ImGui Demo Window
-    bool show_demo = false;
+    bool headless = true; // Whether we're running without graphics.
+    bool show_demo = false; // ImGui Demo Window toggle
 
     // Whether we show a window with all the debug performance timers.
     bool show_timers = false;
