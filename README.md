@@ -25,14 +25,14 @@ Support status for `.alr` files:
 Polaris also supports several other Phantom Dust files:
 - Stage layout (`.dat`) files can be loaded alongside their corresponding ALR, to spawn in, render, and edit dynamic objects like chairs and railings (Surface stages only, no underground stages).
 - Music (`.stx`) files can be generated from `.wav`, `.mp3`, `.mod`, `.xm`, or `.s3m` files. They can also be exported to `.wav` and played back directly in Polaris
-- Sounds effect (`.bin`) files can be exported to `.wav`
+- Sound effect (`.bin`) files can be exported to `.wav`
 - Quest (`questdata.qdt`) files can be edited (though they're not fully understood yet)
 - `.mk` and `.ak` files are bundles of NPC models and animations stored in `.alr` and related files. Polaris can extract and create these bundles.
 
 Here's the underground bar map rendered in Polaris:    
 <img src="https://github.com/user-attachments/assets/62e2b8c2-1e83-4666-9bda-007ecec425e8"  style="width:90%;"/>
 
-Polaris rendering Meister's low-poly model, while editing the quests file and playing back a custom STX file it generated from the FastTracker II song `domatron.xm`:    
+Here's Polaris animating Meister's low-poly model, while editing the quests file and playing back a custom STX file it generated from the FastTracker II song `domatron.xm`:    
 <img src="https://github.com/user-attachments/assets/dab7b85a-62ed-4d1f-8103-28c9f902cdc7" style="width:70%;"/>
 
 ### Command-line Options
