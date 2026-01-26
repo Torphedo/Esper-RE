@@ -242,37 +242,8 @@ gl_obj texture_manager::get(alr::file& alr, u32 idx) noexcept {
     }
     const auto* entries = (texture_entry*)vfile_cur(vf);
 
-    const atlas_entry* atlases = nullptr;
-    if (atlasheader_offset > 0) {
-        vf.pos = atlasheader_offset;
-        vfile_seek(&vf, sizeof(chunk_generic)); // Skip id/size
-        const auto atlasheader = VFILE_READ(atlas_header, &vf);
-        if (idx > atlasheader.atlas_count) {
-            LOG_MSG(warning, "Requested texture atlas index %d is out of bounds (max = %d)\n", idx, atlasheader.atlas_count);
-        } else {
-            // Skip over names
-            vfile_seek(&vf, atlasheader.atlas_count * sizeof(atlas_name));
-            atlases = (atlas_entry*)vfile_cur(vf);
-        }
-    }
-
+    // Convert to our custom texture struct, then upload to OpenGL
     texture tex = convert_tex(alr.resource_buffer(), entries[idx]);
-
-    // Use atlas metadata if reasonable
-    if (atlases) {
-        const u32 too_small = 0;
-        const u32 too_big = 2048;
-        const u32 height = atlases[idx].height;
-        const u32 width = atlases[idx].width;
-        if (too_small < height && height < too_big) {
-            tex.height = height;
-        }
-
-        if (too_small < width && width < too_big) {
-            tex.width = width;
-        }
-
-    }
 
     gl_obj gl_tex_id = 0;
     glGenTextures(1, &gl_tex_id);
