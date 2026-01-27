@@ -17,6 +17,8 @@ struct polaris;
 struct viewport_t : gui_layer {
     // Whether the viewport has been set up and can be rendered to.
     bool initialized = false;
+    // Whether the viewport's framebuffer is visible to the user
+    bool visible = false;
 
     // Whether the viewport editor window should render.
     bool editor_enabled = false;

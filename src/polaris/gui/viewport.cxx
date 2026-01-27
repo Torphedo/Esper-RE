@@ -193,7 +193,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
         ImGui::End();
     }
 
-    ImGui::Begin("Viewport");
+    visible = ImGui::Begin("Viewport");
     const float padding = ImGui::GetStyle().FramePadding.x * 2;
 
     // Need this ridiculous workaround to make sure options don't take up
@@ -369,7 +369,7 @@ void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_tr
 }
 
 void viewport_t::render(GLFWwindow* window) noexcept {
-    if (!active || !initialized) {
+    if (!active || !initialized || !visible) {
         return;
     }
 
