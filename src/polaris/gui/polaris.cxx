@@ -188,7 +188,7 @@ void polaris::do_menu_bar() noexcept {
         char* path = nullptr;
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            this->map = mapdata(path, *this);
+            this->mapEdit = mapdata_editor(path, *this);
         }
         free(path);
     }
@@ -199,7 +199,7 @@ void polaris::do_menu_bar() noexcept {
         char* path = nullptr;
         nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            map.save(path);
+            mapEdit.map.save(path);
         }
         free(path);
     }
@@ -244,7 +244,7 @@ void polaris::update(GLFWwindow* window) noexcept {
     }
 
     editor.draw(viewport);
-    this->map.do_gui();
+    this->mapEdit.do_gui();
     this->audioTool.do_gui();
     this->questTool.do_gui();
 }

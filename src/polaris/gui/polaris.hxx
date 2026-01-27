@@ -7,7 +7,7 @@
 #include <formats/alr.h>
 #include <layer.hxx>
 
-#include "mapdata.hxx"
+#include "mapdata_editor.hxx"
 #include "gui/alr_editor.hxx"
 #include "gui/viewport.hxx"
 #include "gui/tool_audio.hxx"
@@ -19,7 +19,7 @@ struct polaris : gui_layer {
     alr::editor editor;
 
     // State for accompanying .dat file for a stage ALR.
-    mapdata map = mapdata(*this);
+    mapdata_editor mapEdit = mapdata_editor(*this);
 
     audio_tool audioTool;
     quest_tool questTool;

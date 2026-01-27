@@ -54,7 +54,7 @@ add_executable(polaris
     src/polaris/gui/tool_quest.cxx
 
     src/polaris/gui/alr_editor.cxx
-    src/polaris/gui/mapdata.cxx
+    src/polaris/gui/mapdata_editor.cxx
     src/polaris/gui/mesh_view.cxx
     src/polaris/gui/framebuffer.cxx
     src/polaris/gui/viewport.cxx
@@ -71,6 +71,7 @@ add_executable(polaris
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
     src/polaris/ma_stx_player.c
+    src/polaris/mapdata.cxx
 )
 
 target_link_libraries(polaris PRIVATE pd_common coregui imgui nfd)

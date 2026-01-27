@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
             }
         }
         else if (file_has_magic(path, st00_magic)) {
-            if (!pol->map.load(path)) {
+            if (!pol->mapEdit.map.load(path)) {
                 return EXIT_FAILURE;
             }
         } else {
@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
         bool result = alr_validate(message, pol->editor.alr, true);
-        result &= mapdata_validate(pol->map, message);
+        result &= mapdata_validate(pol->mapEdit, message);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");
         } else {

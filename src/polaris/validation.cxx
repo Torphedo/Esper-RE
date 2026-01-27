@@ -356,16 +356,16 @@ bool ps01_validate(const void* data, u32 offset, u32 num_entries, u32 nm00_count
     return result;
 }
 
-bool mapdata_validate(const mapdata& map, std::string& msg) noexcept {
-    if (!map.data) {
+bool mapdata_validate(const mapdata_editor& map, std::string& msg) noexcept {
+    if (!map.map.data) {
         return true; // Not a failure, just not loaded
     }
-    if (!map.load_verify()) {
+    if (!map.map.load_verify()) {
         return false;
     }
 
     bool result = true;
-    vfile vf = vfile_open(map.data, map.size);
+    vfile vf = vfile_open(map.map.data, map.map.size);
     const st00_t& header = VFILE_READ(st00_t, &vf);
     // Area file magic has the form "AR0x" (e.g. "AR02", "AR05", etc.)
     const bool is_area = strncmp("AR0", (const char*)&header.magic, 3) == 0;
@@ -383,11 +383,11 @@ bool mapdata_validate(const mapdata& map, std::string& msg) noexcept {
     }
 
     if (header.chunk_size > 0) {
-        const auto* ps00 = (ps01_entry*)(map.data + header.chunk_size);
+        const auto* ps00 = (ps01_entry*)(map.map.data + header.chunk_size);
         ps01_validate(ps00, header.chunk_size, header.ps00_count, header.nm00_count, msg);
     }
     if (header.ps01_offset > 0) {
-        const auto* ps01 = (ps01_entry*)(map.data + header.ps01_offset);
+        const auto* ps01 = (ps01_entry*)(map.map.data + header.ps01_offset);
         ps01_validate(ps01, header.chunk_size, header.ps01_count, header.nm00_count, msg);
     }
 

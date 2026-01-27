@@ -3,7 +3,7 @@
 /// @author Torphedo
 /// created Jul 17 2025
 #include <string>
-#include "gui/mapdata.hxx"
+#include "gui/mapdata_editor.hxx"
 #include "alr/alr_file.hxx"
 
 /// @brief Check if an ALR meets all of our expectations
@@ -23,4 +23,4 @@ bool alr_validate(std::string& msg, const alr::file& alr, bool headless) noexcep
 bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk,
                         std::string& msg, bool headless) noexcept;
 
-bool mapdata_validate(const mapdata& map, std::string& msg) noexcept;
+bool mapdata_validate(const mapdata_editor& map, std::string& msg) noexcept;

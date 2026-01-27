@@ -4,35 +4,25 @@
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 
-#include "util/fileclass.hxx"
-#include <formats/st00.h>
+#include "mapdata.hxx"
 
 struct polaris;
 
 // This class represents ".dat" map files in memory
-struct mapdata : public fileclass {
+struct mapdata_editor {
 public:
     polaris& pol;
-    const char* filepath = nullptr;
+    mapdata map;
     bool initialized = false;
 
     MemoryEditor hex_edit;
 
-    // fileclass overrides
-    virtual bool load_verify() const noexcept override;
-
-    mapdata(polaris& pol) : pol(pol) {
+    mapdata_editor(polaris& pol) : pol(pol) {
         return;
     }
-    mapdata(const char* filepath, polaris& pol);
-    mapdata& operator=(mapdata&& other);
-    ~mapdata();
-
-    const char* name_at_idx(u32 idx) const noexcept;
-    st00_t* get_header() {
-        return (st00_t*)data;
-    }
-    bool offset_is_reasonable(s32 offset) noexcept;
+    mapdata_editor(const char* filepath, polaris& pol);
+    mapdata_editor& operator=(mapdata_editor&& other);
+    ~mapdata_editor();
 
     void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept;
     void edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept;

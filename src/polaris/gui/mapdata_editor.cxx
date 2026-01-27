@@ -1,4 +1,4 @@
-#include "mapdata.hxx"
+#include "mapdata_editor.hxx"
 #include <cstdlib>
 
 #include <common/file.h>
@@ -10,51 +10,15 @@
 #include "util/utils.hxx"
 #include "mesh_view.hxx"
 
-bool mapdata::offset_is_reasonable(s32 offset) noexcept {
-    if (offset <= 0 || offset > size) {
-        return false;
-    }
-    return true;
+mapdata_editor::mapdata_editor(const char* filepath, polaris& pol) : pol(pol) {
+    map.filepath = filepath;
+    initialized = map.load(filepath);
 }
 
-bool mapdata::load_verify() const noexcept {
-    if (!data) {
-        return false;
-    }
-    const u32 magic = *(u32*)data;
-    const bool is_st00 = (magic == st00_magic);
-    const bool is_area = strncmp((char*)data, "AR0", 3) == 0;
-    if (!is_st00 && !is_area) {
-        LOG_MSG(error, "\"%s\" doesn't seem to be a .dat map file (invalid magic 0x%x)\n", filepath, magic);
-        return false;
-    }
-    return true;
-}
-
-mapdata::mapdata(const char* filepath, polaris& pol) : pol(pol), filepath(filepath) {
-    initialized = load(filepath);
-}
-
-const char* mapdata::name_at_idx(u32 idx) const noexcept {
-    const auto* header = (st00_t*)data;
-    if (idx >= header->nm00_count) {
-        return "";
-    }
-
-    u32 i = 0;
-    const char* txt = (const char*)(data + header->nm00_offset);
-    while (idx > i) {
-        txt += strlen(txt) + 1;
-        i++;
-    }
-
-    return txt;
-}
-
-// Move assignment operator (when assigning with a temp value)
-mapdata& mapdata::operator=(mapdata&& other) {
+// Move assignment operator
+mapdata_editor& mapdata_editor::operator=(mapdata_editor&& other) {
     if (this != &other) {
-        free(data);
+        map.unload();
         memcpy(this, &other, sizeof(other)); // Copy state from temporary
         // Wipe temporary so it doesn't free our pointer on destroy
         memset(&other, 0, sizeof(other));
@@ -63,7 +27,7 @@ mapdata& mapdata::operator=(mapdata&& other) {
     return *this;
 }
 
-mapdata::~mapdata() {
+mapdata_editor::~mapdata_editor() {
     initialized = false;
 }
 
@@ -77,10 +41,10 @@ void map_obj_to_viewport(viewport_t& viewport, const alr::file& alr, const ps01_
     viewport.meshes.push_back(mesh);
 }
 
-void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
+void mapdata_editor::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     ImGui::ScopedIndent indent(ImGui::CharWidth(2));
 
-    std::string cur_name = name_at_idx(entry->object_id);
+    std::string cur_name = map.name_at_idx(entry->object_id);
     if (cur_name.empty()) {
         str_format_append(cur_name, "missing name [ID 0x%X]", entry->object_id);
     }
@@ -88,9 +52,9 @@ void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     std::string label;
     str_format_append(label, "Object Type##%d", idx);
     if (ImGui::BeginCombo(label.c_str(), cur_name.c_str())) {
-        st00_t* header = get_header();
+        st00_t* header = map.get_header();
         for (s32 i = 0; i < header->nm00_count; i++) {
-            if (ImGui::Selectable(name_at_idx(i))) {
+            if (ImGui::Selectable(map.name_at_idx(i))) {
                 entry->object_id = i;
             }
         }
@@ -121,7 +85,7 @@ void mapdata::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
     }
 }
 
-void mapdata::edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept {
+void mapdata_editor::edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept {
     if (header->ps00_count > 0) {
         const bool all_to_viewport = ImGui::Button("Send all to viewport");
         u32 offset = header->chunk_size;
@@ -137,13 +101,13 @@ void mapdata::edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept {
     }
 }
 
-void mapdata::edit_cp00_entries(s32 offset) noexcept {
+void mapdata_editor::edit_cp00_entries(s32 offset) noexcept {
     if (offset < 0) {
         ImGui::Text("No CP00 entry (offset %d)", offset);
         return;
     }
 
-    cp00_t* header = (cp00_t*)(data + offset);
+    cp00_t* header = (cp00_t*)(map.data + offset);
     ImGui::PushItemWidth(ImGui::CharWidth(30));
     for (u32 i = 0; i < header->num_entries; i++) {
         cp00_entry* entry = &header->entries[i];
@@ -166,13 +130,13 @@ void mapdata::edit_cp00_entries(s32 offset) noexcept {
     ImGui::PopItemWidth();
 }
 
-void mapdata::draw_custom_editor() {
+void mapdata_editor::draw_custom_editor() {
     if (!ImGui::BeginTabBar("")) {
         return;
     }
-    st00_t* header = get_header();
-    auto* ps00_entries = (ps01_entry*)(data + header->chunk_size);
-    auto* ps01_entries = (ps01_entry*)(data + header->ps01_offset);
+    st00_t* header = map.get_header();
+    auto* ps00_entries = (ps01_entry*)(map.data + header->chunk_size);
+    auto* ps01_entries = (ps01_entry*)(map.data + header->ps01_offset);
     if (ImGui::BeginTabItem("PS0/")) {
         edit_ps01_entries(header, ps00_entries);
         ImGui::EndTabItem();
@@ -184,8 +148,8 @@ void mapdata::draw_custom_editor() {
     }
 
     if (ImGui::BeginTabItem("NM00")) {
-        if (offset_is_reasonable(header->nm00_offset)) {
-            char* txt = (char*)(data + header->nm00_offset);
+        if (map.offset_is_reasonable(header->nm00_offset)) {
+            char* txt = (char*)(map.data + header->nm00_offset);
             for (s32 i = 0; i < header->nm00_count; i++) {
                 const s32 len = strlen(txt) + 1;
                 std::string label = "Object " + std::to_string(i);
@@ -197,35 +161,35 @@ void mapdata::draw_custom_editor() {
     }
 
     if (ImGui::BeginTabItem("CP00 (1)")) {
-        if (offset_is_reasonable(header->CP00_offset1)) {
+        if (map.offset_is_reasonable(header->CP00_offset1)) {
             edit_cp00_entries(header->CP00_offset1);
         }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (2)")) {
-        if (offset_is_reasonable(header->CP00_offset2)) {
+        if (map.offset_is_reasonable(header->CP00_offset2)) {
             edit_cp00_entries(header->CP00_offset2);
         }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (3)")) {
-        if (offset_is_reasonable(header->CP00_offset3)) {
+        if (map.offset_is_reasonable(header->CP00_offset3)) {
             edit_cp00_entries(header->CP00_offset3);
         }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (4)")) {
-        if (offset_is_reasonable(header->CP00_offset4)) {
+        if (map.offset_is_reasonable(header->CP00_offset4)) {
             edit_cp00_entries(header->CP00_offset4);
         }
         ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("CP00 (5)")) {
-        if (offset_is_reasonable(header->CP00_offset5)) {
+        if (map.offset_is_reasonable(header->CP00_offset5)) {
             edit_cp00_entries(header->CP00_offset5);
         }
         ImGui::EndTabItem();
@@ -234,7 +198,7 @@ void mapdata::draw_custom_editor() {
     ImGui::EndTabBar();
 }
 
-void mapdata::do_gui() noexcept {
+void mapdata_editor::do_gui() noexcept {
     if (!this->initialized) {
         return; // Ignore if not initialized
     }
@@ -242,12 +206,12 @@ void mapdata::do_gui() noexcept {
     ImGui::Begin(".dat Data");
 
     if (ImGui::BeginTabBar("Chunk Tabs")) {
-        if (ImGui::BeginTabItem("Raw file data")) {
-            hex_edit.DrawContents((void *) this->data, this->size);
-            ImGui::EndTabItem();
-        }
         if (ImGui::BeginTabItem("Chunks")) {
             draw_custom_editor();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Raw file data")) {
+            hex_edit.DrawContents((void *) map.data, map.size);
             ImGui::EndTabItem();
         }
 
