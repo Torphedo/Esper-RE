@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <common/file.h>
 #include <common/logging.h>
+#include <common/vmem.h>
 
 bool fileclass::load(const char* path) noexcept {
     size = file_size(path);
@@ -10,7 +11,7 @@ bool fileclass::load(const char* path) noexcept {
         return false;
     }
 
-    data = file_load(path);
+    data = (u8*)vmem_map_file(path);
     if (!data) {
         return false;
     }
@@ -24,7 +25,7 @@ bool fileclass::load(const char* path) noexcept {
 }
 
 void fileclass::unload() noexcept {
-    free(data);
+    vmem_unmap_file(data, size);
     data = nullptr;
     size = 0;
 }
