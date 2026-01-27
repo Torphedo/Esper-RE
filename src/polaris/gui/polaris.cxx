@@ -222,7 +222,7 @@ void polaris::init(GLFWwindow* window) noexcept {
 }
 
 void polaris::update(GLFWwindow* window) noexcept {
-    const scope_timer draw_timer(timer_map, "main_draw");
+    const scope_timer draw_timer(timer_map, "main_update");
 
     viewport.update(window);
     this->do_menu_bar();
@@ -250,6 +250,7 @@ void polaris::update(GLFWwindow* window) noexcept {
 }
 
 void polaris::render(GLFWwindow* window) noexcept {
+    const scope_timer draw_timer(timer_map, "main_render");
     viewport.render(window);
 }
 
