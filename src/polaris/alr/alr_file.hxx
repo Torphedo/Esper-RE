@@ -66,6 +66,10 @@ namespace alr {
         /// @param shift_amount The amount to shift forward by
         bool shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept;
 
+        /// Find the index of the first offset in the header that points to a model
+        /// @return Index, or -1 if none are found
+        s32 first_model_idx() const noexcept;
+
         u8* resource_buffer() const noexcept {
             return this->data + this->resbuf_offset;
         }

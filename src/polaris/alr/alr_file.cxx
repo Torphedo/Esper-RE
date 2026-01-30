@@ -248,6 +248,22 @@ bool file::save(const char* path) const noexcept {
         return true;
     }
 
+    s32 file::first_model_idx() const noexcept {
+        vfile vf = vfile_open(data, alr_size);
+
+        const auto* header = (chunk_layout*)vfile_cur(vf);
+        for (u32 i = 0; i < header->offset_array_size; i++) {
+            vf.pos = header->offsets[i];
+            const auto* chunk = VFILE_READ_PTR(chunk_generic, &vf);
+            // All models start with an 0x1 chunk
+            if (chunk->id == 0x1) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     void file::expand_reservation(s64 new_size) noexcept {
         if (new_size < reserve_size) {
             LOG_MSG(error, "No reason to shrink reservation from 0x%X -> 0x%X, ignoring!\n", reserve_size, new_size);

@@ -306,17 +306,19 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
     vf.pos = header_chunk.offset;
 
     const auto* header = (chunk_layout*)vfile_cur(vf);
-    if (header->offset_array_size > ALR_NUM_PLAYER_ANIMATIONS) {
-        // This is a player file, so all the animation offsets come before the
-        // model offsets, and we need to skip past them.
-        idx += ALR_NUM_PLAYER_ANIMATIONS;
-    }
-    if (idx >= header->offset_array_size) {
-        LOG_MSG(error, "Mesh index %d is out of bounds (max = %d)\n", idx, header->offset_array_size);
+    const s32 first_model_idx = alr.first_model_idx();
+    const s32 num_models = header->offset_array_size - first_model_idx;
+    if (first_model_idx < 0 || num_models < 1) {
+        LOG_MSG(error, "No models found!\n");
         return out;
     }
 
-    const s32 offset = header->offsets[idx];
+    if (idx >= num_models) {
+        LOG_MSG(error, "Mesh index %d is out of bounds (max = %d)\n", idx, num_models);
+        return out;
+    }
+
+    const s32 offset = header->offsets[first_model_idx + idx];
     if (offset < 0) {
         LOG_MSG(error, "Mesh index %d doesn't exist (negative offset %d)\n", idx, offset);
         return out;
