@@ -274,9 +274,8 @@ void viewport_t::update(GLFWwindow* window) noexcept {
                     }
                     vfile vf = vfile_open(alr->data, alr->alr_size);
                     vf.pos = idxbuf.idx_chunk_offset;
-                    const auto generic_0x2 = VFILE_READ(chunk_generic, &vf);
-                    assert(generic_0x2.id == 2);
                     const auto* alr_idxbuf = (idxbuf_header*)vfile_cur(vf);
+                    assert(alr_idxbuf.id == 2);
                     if (raycast(ray, mesh.vertices, mesh.vertex_size, idxbuf.get_transform(*alr), alr_idxbuf)) {
                         got_selected = true;
                         break;
@@ -311,7 +310,6 @@ void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_tr
         // We cast away const here but don't write to the buffer
         vfile vf = vfile_open(alr->data, alr->alr_size);
         vf.pos = idx_buf.idx_chunk_offset;
-        vfile_seek(&vf, sizeof(chunk_generic));
         const auto header = VFILE_READ(idxbuf_header, &vf);
         const auto mat_chunk = alr->prev_chunk_by_id(0x1, idx_buf.idx_chunk_offset);
         chunk_0x1_entry tex_entry = {};

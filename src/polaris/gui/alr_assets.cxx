@@ -364,8 +364,8 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
 
     // Parse all index buffers
     u32 cur_offset = vf.pos;
-    chunk_generic cur_chunk = VFILE_READ(chunk_generic, &vf);
-    while (cur_chunk.id == 0x2) {
+    auto* chunk = (chunk_generic*)vfile_cur(vf);
+    while (chunk->id == 0x2) {
         const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
         if (idx_header.vertex_buf == vertbuf_idx) {
             // Setup & add index buffer
@@ -374,9 +374,9 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
         }
 
         // Prepare to read next index buffer
-        cur_offset += cur_chunk.size;
+        cur_offset += chunk->size;
         vf.pos = cur_offset;
-        cur_chunk = VFILE_READ(chunk_generic, &vf);
+        chunk = (chunk_generic*)vfile_cur(vf);
         assert(cur_chunk.id < 0x15);
     }
 

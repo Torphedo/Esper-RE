@@ -333,12 +333,11 @@ void dump_materials_obj(FILE* f, const chunk_0x1_entry* materials, u32 num_mats,
 }
 
 void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
-    vfile vf = vfile_open((void*)(alr_data + offset), 0x10);
+    vfile vf = vfile_open((void*)(alr_data + offset), sizeof(idxbuf_header) + 0x8);
 
     // We use the temporary size until we can get the actual size here
-    const chunk_generic generic_header = VFILE_READ(chunk_generic, &vf);
-    vf.size = generic_header.size; // This just sets the limit of how much we can read
     const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+    vf.size = header.size; // This just sets the limit of how much we can read
     fprintf(out, "usemtl mat_%d\n", header.texture_idx);
 
     const u16* indices = (u16*)vfile_cur(vf);
@@ -432,7 +431,6 @@ void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u3
 
             // Skip to idx_chunk and skip header
             vf.pos = idx_chunk.offset;
-            vfile_seek(&vf, sizeof(chunk_generic));
             const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
 
             // We only want index buffers meant for this vertex buffer
@@ -864,12 +862,11 @@ bool obj_import(const char* txt, alr::file& alr, u32 vertbuf_chunk_offset, u32 e
 
     // Parse first index buffer chunk
     const u32 idxbuf_offset = vf.pos;
-    const auto idxbuf_genheader = VFILE_READ(chunk_generic, &vf);
     auto* idx_header = (idxbuf_header*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*idx_header)); // Skip header
     u16* indices = (u16*)vfile_cur(vf);
 
-    vf.pos = idxbuf_offset + idxbuf_genheader.size; // Skip to next chunk
+    vf.pos = idxbuf_offset + idx_header->size; // Skip to next chunk
     if (idx_count > idx_header->num_indices) {
         // Not enough space, need to push the next index buffer forwards
         const u32 diff = idx_count - idx_header->num_indices;

@@ -155,6 +155,7 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             break;
         }
         case 0x2: {
+            chunkvf.pos -= sizeof(chunk_generic);
             const auto header = VFILE_READ(idxbuf_header, &chunkvf);
             const auto indices = (u16*)vfile_cur(chunkvf);
             const idxbuf_header empty = {0};

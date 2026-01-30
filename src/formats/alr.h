@@ -503,6 +503,8 @@ typedef enum {
 }alr_primitive_type;
 
 typedef struct {
+    u32 id;
+    u32 size;
     // Centerpoint of the object represented by the index buffer
     float center[3];
     float unk_float;
@@ -529,7 +531,7 @@ typedef struct {
     u32 num_indices;
     u32 pad[5];
 }idxbuf_header;
-static_assert(sizeof(idxbuf_header) == 0x60, "Wrong index buffer header size!");
+static_assert(sizeof(idxbuf_header) == 0x68, "Wrong index buffer header size!");
 
 // 0x1 chunk
 // =============================================================================

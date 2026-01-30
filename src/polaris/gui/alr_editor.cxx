@@ -84,10 +84,7 @@ void editor::window_state::draw_chunk_0x2(file& alr, file::chunk& chunk) noexcep
 
     // Index buffer editing
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
-    chunk_generic genheader = VFILE_READ(chunk_generic, &vf);
-    // We get the header pointer so we can modify it in-place
-    idxbuf_header* header = (idxbuf_header*)vfile_cur(vf);
-    vfile_seek(&vf, sizeof(*header)); // Skip past the header
+    idxbuf_header* header = VFILE_READ_PTR(idxbuf_header, &vf);
 
     ImGui::PushItemWidth(ImGui::CharWidth() * 32);
 
@@ -120,8 +117,7 @@ void editor::window_state::draw_chunk_0x2(file& alr, file::chunk& chunk) noexcep
             // User inputs for this triangle
             char label[0x20] = {0};
             snprintf(label, sizeof(label), "Index %d", i + 1);
-            u16* idx = (u16*)vfile_cur(vf);
-            vfile_seek(&vf, sizeof(*idx));
+            u16* idx = VFILE_READ_PTR(u16, &vf);
             ImGui::InputU16(label, idx);
         }
     }

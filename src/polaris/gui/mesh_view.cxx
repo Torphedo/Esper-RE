@@ -55,7 +55,6 @@ mat4s index_buffer::get_transform(const alr::file& alr) const noexcept {
     const auto* joints = VFILE_READ_PTR(joint_t, &vf);
 
     vf.pos = idx_chunk_offset;
-    vfile_seek(&vf, sizeof(chunk_generic));
     const auto* idx_header = VFILE_READ_PTR(idxbuf_header, &vf);
 
     const u32 anim_id = BAS01_WAIT0;
@@ -142,9 +141,8 @@ bool mesh_view::add_index_buf(const u8* alr_data, u32 alr_size, index_buffer buf
     // We cast away const here but don't write to the buffer
     vfile vf = vfile_open((u8*)alr_data, alr_size);
     vf.pos = buf.idx_chunk_offset;
-    const auto genheader = VFILE_READ(chunk_generic, &vf);
-    assert(genheader.id == 0x2);
     const auto header = VFILE_READ(idxbuf_header, &vf);
+    assert(header.id == 0x2);
     const auto* data = (u16*)vfile_cur(vf);
 
     glBindVertexArray(vao);
@@ -245,7 +243,6 @@ void mesh_view::edit_menu(alr::file& alr) noexcept {
             // We cast away const here but don't write to the buffer
             vfile vf = vfile_open(alr.data, alr.alr_size);
             vf.pos = buf.idx_chunk_offset;
-            vfile_seek(&vf, sizeof(chunk_generic));
             const auto header = VFILE_READ(idxbuf_header, &vf);
             const auto mat_chunk = alr.prev_chunk_by_id(0x1, buf.idx_chunk_offset);
             chunk_0x1_entry *tex_entry = nullptr;

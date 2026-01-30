@@ -40,10 +40,6 @@ struct index_buffer {
         : idx_chunk_offset(idx_offset), armature_chunk_offset(skele_offset) {
         is_skele_transform = true;
     }
-    index_buffer(u32 offset, vec3s* position, vec3s* rotation) noexcept
-        : idx_chunk_offset(offset), position(position), rotation(rotation) {
-        return;
-    }
 };
 
 struct mesh_view {
