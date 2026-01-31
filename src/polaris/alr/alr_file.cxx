@@ -254,7 +254,7 @@ bool file::save(const char* path) const noexcept {
         const auto* header = (chunk_layout*)vfile_cur(vf);
 
         s32 result = -1;
-        for (u32 i = 0; i < header->offset_array_size; i++) {
+        for (s32 i = 0; i < header->offset_array_size; i++) {
             vf.pos = header->offsets[i];
             const auto* chunk = VFILE_READ_PTR(chunk_generic, &vf);
             // All models start with an 0x1 chunk
@@ -413,18 +413,44 @@ bool file::save(const char* path) const noexcept {
         // Skip all rotation keys
         afile.pos = rotkey_offset + (aheader->rotation_key_count * aheader->rotation_key_size);
 
-        for (u32 i = 0; i < ARRAY_SIZE(rotation.raw); i++) {
-            // rotation.raw[i] = glm_rad(rotation.raw[i]);
-            // rotation.raw[i] *= (1.0f * M_PI);
-            // rotation.raw[i] *= (2.0f * 180.0f);
-        }
-
         mat4s rot_xform = glms_euler_zyx(rotation);
         mat4s pos_xform = glms_translate_make(position);
         mat4s anim_xform = glms_mat4_mul(pos_xform, rot_xform);
         return rot_xform;
     }
 
+    mat4s file::joint_final_xform(const chunk_armature* joint_header, u32 anim_id, s32 joint_idx, float cur_frame) const noexcept {
+        // We're going to use J1->J2 to mean "J2 is J1's parent".
+        // If we have 3 joints J0->J1->J2, with matching animation transforms
+        // A0 / A1 / A2, then the final transform for J0 is:
+        //     (J2 * A2) * (J1 * A1) * (J0 * A0)
+        const joint_t* joint = &joint_header->joints[joint_idx];
+        mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
+        do {
+            mat4s joint_xform = alr::transform_from_joint(*joint);
+            mat4s anim_xform = anim_xform_for_joint(anim_id, joint_idx, cur_frame);
+
+            // HACK: If there's an animation for this joint, discard joint rotation to fix broken limbs.
+            mat4s identity = GLMS_MAT4_IDENTITY_INIT;
+            if (memcmp(identity.raw, anim_xform.raw, sizeof(identity)) != 0) {
+                vec4s translation = {};
+                mat4s rot_xform = {};
+                vec3s scale = {};
+                glms_decompose(joint_xform, &translation, &rot_xform, &scale);
+                joint_xform = glms_translate_make(glms_vec3(translation));
+            }
+
+            joint_xform = glms_mat4_mul(joint_xform, anim_xform);
+            obj_transform = glms_mat4_mul(joint_xform, obj_transform);
+            if (joint->parent_idx < 0 || joint->parent_idx >= joint_header->joint_count) {
+                break;
+            }
+            joint_idx = joint->parent_idx;
+            joint = &joint_header->joints[joint_idx];
+        } while (true);
+
+        return obj_transform;
+    }
 
     void file::expand_reservation(s64 new_size) noexcept {
         if (new_size < reserve_size) {
