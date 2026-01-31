@@ -314,12 +314,14 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
 
     // Parse all index buffers
     auto* chunk = (chunk_generic*)vfile_cur(vf);
-    while (chunk->id == 0x2) {
+    while (chunk->id != ALR_ID_END_INDICES) {
         const idxbuf_header* idx_header = (idxbuf_header*)vfile_cur(vf);
-        if (idx_header->vertex_buf == vertbuf_idx) {
-            // Setup & add index buffer
-            const index_buffer idx_buf(vf.pos, skel_chunk_offset);
-            out.add_index_buf(alr.data, alr.alr_size, idx_buf);
+        if (chunk->id == 0x2) {
+            if (idx_header->vertex_buf == vertbuf_idx) {
+                // Setup & add index buffer
+                const index_buffer idx_buf(vf.pos, skel_chunk_offset);
+                out.add_index_buf(alr.data, alr.alr_size, idx_buf);
+            }
         }
 
         // Prepare to read next index buffer
