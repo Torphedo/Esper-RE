@@ -60,12 +60,16 @@ mat4s index_buffer::get_transform(const alr::file& alr) const noexcept {
     float cur_frame = 0.0f;
 
     // Calculate the object's xform by applying all of its parent xforms
+    // We're going to use J1->J2 to mean "J2 is J1's parent".
+    // If we have 3 joints J0->J1->J2, with matching animation transforms A0-A2,
+    // then the final transform for J0 is:
+    //     (J2 * A2) * (J1 * A1) * (J0 * A0)
     s32 joint_idx = idx_header->transform_idx;
     const joint_t* joint = &joints[joint_idx];
     mat4s obj_transform = GLMS_MAT4_IDENTITY_INIT;
     do {
         mat4s joint_xform = alr::transform_from_joint(*joint);
-        mat4s anim_xform = alr::anim_xform_for_joint(alr.data, alr.alr_size, anim_id, joint_idx, cur_frame);
+        mat4s anim_xform = alr.anim_xform_for_joint(anim_id, joint_idx, cur_frame);
 
         // HACK: If there's an animation for this joint, discard joint rotation to fix broken limbs.
         mat4s identity = GLMS_MAT4_IDENTITY_INIT;

@@ -80,6 +80,22 @@ namespace alr {
 
         alr_model_desc model_at_idx(u32 idx) const noexcept;
 
+        /// Find an animation chunk for the specified joint in the specified animation
+        /// @param alr ALR to parse
+        /// @param idx Internal animation ID
+        /// @param joint_idx Index of the joint to find the animation for
+        /// @return Offset to the animation chunk, or -1 on failure
+        s32 animation_by_idx(u32 idx, u32 joint_idx) const noexcept;
+
+        /// Get a transform of a joint at a specific frame of the specified animation
+        /// @param alr ALR to parse
+        /// @param anim_id Internal animation ID (within the ALR)
+        /// @param joint_idx Index of joint being animated
+        /// @param cur_frame Current animation frame
+        /// @return Transform to right-multiply with joint transform
+        mat4s anim_xform_for_joint(u32 anim_id, s32 joint_idx, float cur_frame) const noexcept;
+
+
         u8* resource_buffer() const noexcept {
             return this->data + this->resbuf_offset;
         }

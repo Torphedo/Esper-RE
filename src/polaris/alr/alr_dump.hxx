@@ -21,23 +21,6 @@ void anim_key_info(u32 key_size, data_type& frame_type, data_type& component_typ
 /// @return Key converted to floating point. Unused components are left as 0.
 vec3s anim_read_key(const u8* key, u32 key_size, float& frame_out, const u8** next_key_out = nullptr);
 
-/// Find an animation chunk for the specified joint in the specified animation
-/// @param alr ALR data to parse
-/// @param alr_size Size of ALR buffer
-/// @param idx Internal animation ID
-/// @param joint_idx Index of the joint to find the animation for
-/// @return Offset to the animation chunk, or -1 on failure
-s32 animation_by_idx(const u8* alr, u32 alr_size, u32 idx, u32 joint_idx);
-
-/// Get a transform of a joint at a specific frame of the specified animation
-/// @param alr ALR data to parse
-/// @param alr_size Size of ALR buffer
-/// @param anim_id Internal animation ID (within the ALR)
-/// @param joint_idx Index of joint being animated
-/// @param cur_frame Current animation frame
-/// @return Transform to right-multiply with joint transform
-mat4s anim_xform_for_joint(u8* alr, u32 alr_size, u32 anim_id, s32 joint_idx, float cur_frame);
-
 /// Export an armature chunk to a COLLADA (.dae) file
 /// @param f File stream to output to
 /// @param armature_data Buffer view pointing to an armature (ID 0x3) chunk

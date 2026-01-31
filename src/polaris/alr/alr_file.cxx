@@ -2,6 +2,8 @@
 #include <string.h>
 #include <common/file.h>
 #include <common/vmem.h>
+#include <formats/alr_animations.h>
+#include "alr_dump.hxx"
 
 namespace alr {
 
@@ -333,6 +335,96 @@ bool file::save(const char* path) const noexcept {
 
         return out;
     }
+
+    s32 file::animation_by_idx(u32 idx, u32 joint_idx) const noexcept {
+        vfile vf = vfile_open(data, alr_size);
+
+        const auto* layout = VFILE_READ_PTR(chunk_layout, &vf);
+
+        const bool invalid_anim_id = (idx >= ALR_NUM_PLAYER_ANIMATIONS);
+        const bool no_anims = (layout->offset_array_size < ALR_NUM_PLAYER_ANIMATIONS);
+        const bool out_of_bounds = (layout->offset_array_size <= idx);
+        if (invalid_anim_id || no_anims || out_of_bounds) {
+            return -1;
+        }
+
+        s32 offset = layout->offsets[idx];
+        if (offset < 0) {
+            // Animation doesn't exist
+            return -1;
+        }
+
+        vf.pos = offset;
+        while (true) {
+            s32 cur_offset = vf.pos;
+            auto* animation_header = VFILE_READ_PTR(anim_header, &vf);
+            if (animation_header->id != 0x5) {
+                break; // We hit the end of the animation
+            }
+
+            if (animation_header->joint_idx == joint_idx) {
+                return cur_offset;
+            }
+            vf.pos = cur_offset + animation_header->size;
+        }
+
+        return -1;
+    }
+
+    mat4s file::anim_xform_for_joint(u32 anim_id, s32 joint_idx, float cur_frame) const noexcept {
+        s32 anim_offset = animation_by_idx(anim_id, joint_idx);
+        if (anim_offset <= 0) {
+            return GLMS_MAT4_IDENTITY_INIT;
+        }
+
+        vfile afile = vfile_open(data, alr_size);
+        vfile_seek(&afile, anim_offset);
+        const auto* aheader = VFILE_READ_PTR(anim_header, &afile);
+
+        vec3s position = {};
+        vec3s rotation = {};
+        const u32 transkey_offset = afile.pos;
+        for (u32 i = 0; i < aheader->translation_key_count; i++) {
+            float frame = 0.0f;
+            const u8* keydata = (const u8*)vfile_cur(afile);
+            vec3s key = alr::anim_read_key(keydata, aheader->translation_key_size, frame);
+            if (frame > cur_frame) {
+                break;
+            }
+            vfile_seek(&afile, aheader->translation_key_size);
+
+            position = key;
+        }
+        // Skip all translation keys
+        afile.pos = transkey_offset + (aheader->translation_key_count * aheader->translation_key_size);
+
+        const u32 rotkey_offset = afile.pos;
+        for (u32 i = 0; i < aheader->rotation_key_count; i++) {
+            float frame = 0.0f;
+            const u8* keydata = (const u8*)vfile_cur(afile);
+            vec3s key = alr::anim_read_key(keydata, aheader->rotation_key_size, frame);
+            if (frame > cur_frame) {
+                break;
+            }
+            vfile_seek(&afile, aheader->rotation_key_size);
+
+            rotation = key;
+        }
+        // Skip all rotation keys
+        afile.pos = rotkey_offset + (aheader->rotation_key_count * aheader->rotation_key_size);
+
+        for (u32 i = 0; i < ARRAY_SIZE(rotation.raw); i++) {
+            // rotation.raw[i] = glm_rad(rotation.raw[i]);
+            // rotation.raw[i] *= (1.0f * M_PI);
+            // rotation.raw[i] *= (2.0f * 180.0f);
+        }
+
+        mat4s rot_xform = glms_euler_zyx(rotation);
+        mat4s pos_xform = glms_translate_make(position);
+        mat4s anim_xform = glms_mat4_mul(pos_xform, rot_xform);
+        return rot_xform;
+    }
+
 
     void file::expand_reservation(s64 new_size) noexcept {
         if (new_size < reserve_size) {
