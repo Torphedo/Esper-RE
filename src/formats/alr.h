@@ -58,19 +58,11 @@ typedef struct {
 }chunk_layout;
 static_assert(sizeof(chunk_layout) == 0x20, "Wrong layout chunk header size!");
 
-
 // 0x15 chunk
 // =============================================================================
 // This describes the format/dimensions/etc. of textures, and always comes after the 0x11 chunk.
 // At the end of the file is a large buffer with vertex and texture data (the resource buffer).
 // Together with 0x16 chunks, it maps out the resource buffer.
-typedef struct {
-    u32 id;         // 0x15
-    u32 chunk_size; // Size of this entire chunk
-    u32 array_size;
-}texture_header;
-static_assert(sizeof(texture_header) == 0xC, "Wrong texture metadata chunk header size!");
-
 typedef enum {
     // 8-bit red channel only
     FORMAT_R8 = 0,
@@ -81,7 +73,7 @@ typedef enum {
 
     FORMAT_BGRA_5551 = 0x02, // 5 bits per channel, 1 bit alpha
     FORMAT_BGRA_4444 = 0x04, // 4 bits per channel
-    FORMAT_BGR_565 = 0x05, // 5 bits for blue/red, 6 bits for green
+    FORMAT_BGR_565 = 0x05,   // 5 bits for blue/red, 6 bits for green
 
     // 8-bit RGBA
     FORMAT_RGBA8 =   0x06,
@@ -104,7 +96,6 @@ typedef enum {
     TEXTURE_CUBEMAP = 0x2D
 }alr_texture_style;
 
-// After the header, there are [array_size] instances of this structure:
 typedef struct {
     u32 flags;    // Unknown, always 01 00 04 00 so far
     u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.texbuf_offset)
@@ -131,6 +122,15 @@ typedef struct {
     u32 text2;
 }texture_entry;
 static_assert(sizeof(texture_entry) == 0x1C, "Wrong texture metadata size!");
+
+typedef struct {
+    u32 id; // 0x15
+    u32 size;
+    u32 num_entries;
+    texture_entry entries[];
+}texture_header;
+static_assert(sizeof(texture_header) == 0xC, "Wrong texture metadata chunk header size!");
+
 
 /// @brief Get the height/width of a texture in pixels
 ///
@@ -165,6 +165,16 @@ typedef struct {
     u32 unused2; // The game uses this to store a pointer in [data_ptr]
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
+
+// Same as texture header, but the array is a different type
+typedef struct {
+    u32 id; // 0x16
+    u32 size;
+    u32 num_entries;
+    vertbuf_entry entries[];
+}vertbuf_header;
+static_assert(sizeof(vertbuf_header) == 0xC, "Wrong vertex buffer header size!");
+
 
 // 0x13 chunk
 // =============================================================================
@@ -467,16 +477,8 @@ static_assert(sizeof(anim_header) == 0x20, "Wrong animation header size!");
 // 0x3 chunk
 // =============================================================================
 // This stores all the joints in the skeleton/armature and their relationships to each other.
-typedef struct {
-    u32 id;
-    u32 size;
-    u16 joint_count;
-    u16 unknown; // Usually 1
-    u32 pad;
-}chunk_armature;
-static_assert(sizeof(chunk_armature) == 0x10, "Wrong armature chunk header size!");
 
-// After the header are [joint_count] instances of this structure, holding information about each joint/bone.
+// Definition of a joint in the skeleton
 typedef struct {
     vec3f position;
     // X/Y/Z Euler rotation
@@ -491,6 +493,17 @@ typedef struct {
     u8 pad2[0x10];
 }joint_t;
 static_assert(sizeof(joint_t) == 0x40, "Wrong joint size!");
+
+typedef struct {
+    u32 id;
+    u32 size;
+    u16 joint_count;
+    u16 unknown; // Usually 1
+    u32 pad;
+    joint_t joints[];
+}chunk_armature;
+static_assert(sizeof(chunk_armature) == 0x10, "Wrong armature chunk header size!");
+
 
 // 0x2 chunk
 // =============================================================================
@@ -539,15 +552,6 @@ static_assert(sizeof(idxbuf_header) == 0x68, "Wrong index buffer header size!");
 
 // 0x1 chunk
 // =============================================================================
-// Not researched yet.
-typedef struct {
-    u32 id;
-    u32 chunk_size;
-    u16 num_entries; // Each entry is 0x4C bytes
-    u16 unknown;
-}chunk_0x1_header;
-static_assert(sizeof(chunk_0x1_header) == 0xC, "Wrong 0x1 chunk header size!");
-
 typedef struct {
     u8 unk1[4];
     u32 unk2;
@@ -576,6 +580,15 @@ typedef struct {
     u32 pad4[2];
 }chunk_0x1_entry;
 static_assert(sizeof(chunk_0x1_entry) == 0x4C, "Wrong 0x1 chunk entry size!");
+
+typedef struct {
+    u32 id;
+    u32 size;
+    u16 num_entries;
+    u16 unknown;
+    chunk_0x1_entry entries[];
+}chunk_0x1_header;
+static_assert(sizeof(chunk_0x1_header) == 0xC, "Wrong 0x1 chunk header size!");
 
 // The common ID and size that come at the start of any chunk.
 typedef struct {

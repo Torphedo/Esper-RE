@@ -236,8 +236,8 @@ gl_obj texture_manager::get(alr::file& alr, u32 idx) noexcept {
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = texheader_offset;
     const auto texheader = VFILE_READ(texture_header, &vf);
-    if (idx > texheader.array_size) {
-        LOG_MSG(error, "Requested texture index %d is out of bounds (max = %d)\n", idx, texheader.array_size);
+    if (idx > texheader.num_entries) {
+        LOG_MSG(error, "Requested texture index %d is out of bounds (max = %d)\n", idx, texheader.num_entries);
         return 0;
     }
     const auto* entries = (texture_entry*)vfile_cur(vf);
@@ -257,11 +257,10 @@ gl_obj texture_manager::get(alr::file& alr, u32 idx) noexcept {
 bool texture_manager::get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept {
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = material_header_offset;
-    const auto header = VFILE_READ(chunk_0x1_header, &vf);
-    auto* entries = (chunk_0x1_entry*)vfile_cur(vf);
+    const auto header = VFILE_READ_PTR(chunk_0x1_header, &vf);
 
-    if (idx < header.num_entries) {
-        *entry_out = &entries[idx];
+    if (idx < header->num_entries) {
+        *entry_out = &header->entries[idx];
         return true;
     }
 
