@@ -376,7 +376,7 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
         cur_offset += chunk->size;
         vf.pos = cur_offset;
         chunk = (chunk_generic*)vfile_cur(vf);
-        assert(cur_chunk.id < 0x15);
+        assert(chunk->id < 0x15);
     }
 
     return out;

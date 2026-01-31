@@ -275,7 +275,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
                     vfile vf = vfile_open(alr->data, alr->alr_size);
                     vf.pos = idxbuf.idx_chunk_offset;
                     const auto* alr_idxbuf = (idxbuf_header*)vfile_cur(vf);
-                    assert(alr_idxbuf.id == 2);
+                    assert(alr_idxbuf->id == 2);
                     if (raycast(ray, mesh.vertices, mesh.vertex_size, idxbuf.get_transform(*alr), alr_idxbuf)) {
                         got_selected = true;
                         break;
