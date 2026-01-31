@@ -22,7 +22,7 @@ struct camera {
     float move_speed = 15.0f;
     float mouse_sens = 0.005f;
     float near_clip_plane = 1.25f;
-    float far_clip_plane = 10000.0f;
+    float far_clip_plane = 15000.0f;
 
     bool invert_mouse_x = false;
     bool invert_mouse_y = true;
