@@ -23,9 +23,6 @@ struct texture_manager {
     // Offset of the 0x15 chunk
     u32 texheader_offset = 0;
 
-    // Offset of the 0x10 chunk
-    u32 atlasheader_offset = 0;
-
     std::unordered_map<u32, gl_obj> gl_tex_map;
 
     gl_obj get(alr::file& alr, u32 idx) noexcept;
