@@ -805,14 +805,14 @@ parsed_obj obj_load(const char* text) {
             if (strncmp(line, "v ", 2) == 0) {
                 vec3s pos = {};
                 sscanf(line, "v %f %f %f", &pos.x, &pos.y, &pos.z);
-                positions[pos_i] = pos;
+                positions[pos_i++] = pos;
             }
 
             // vt == vertex texture coordinate
             if (strncmp(line, "vt ", 3) == 0) {
                 vec2s uv = {};
                 sscanf(line, "vt %f %f", &uv.x, &uv.y);
-                texcoords[uv_i] = uv;
+                texcoords[uv_i++] = uv;
             }
         }
 
@@ -865,55 +865,31 @@ bool obj_import(const char* txt, alr::file& alr, u32 vertbuf_chunk_offset, u32 e
     }
 
     vertex_format_t vert_format = format_by_id(entry->format);
+    parsed_obj obj = obj_load(txt);
 
     u8* vertices = alr.resource_buffer() + entry->data_ptr;
     const u8* vertices_end = vertices + ((entry->vertex_count + 1) * entry->vertex_size);
-    const char* line = txt;
-    while (*line != 0x00) {
-        // Find end of line (NUL or newline)
-        const char* line_end = strchr(line, '\n');
-        if (!line_end) {
-            break;
-        }
 
-        if (line[0] != '#') {
-            // Faces
-            if (strncmp(line, "f ", 2) == 0) {
-                u16 idx_temp[3] = {};
-                sscanf(line, "f %hd %hd %hd", &idx_temp[0], &idx_temp[1], &idx_temp[2]);
+    const u32 num_indices_copy = MIN(idx_header->num_indices, obj.idx_count);
+    memcpy(indices, obj.indices, sizeof(*indices) * num_indices_copy);
 
-                for (u16 idx : idx_temp) {
-                    // OBJ indices start @ 1
-                    *indices = idx - 1;
-                    indices++;
-                }
-            }
-
-            // Vertex position
-            if (strncmp(line, "v ", 2) == 0) {
-                vec3s pos = {};
-                sscanf(line, "v %f %f %f", &pos.x, &pos.y, &pos.z);
-                memcpy(vertices, &pos.raw, sizeof(pos.raw));
-                vertices += entry->vertex_size;
-            }
-
-            // vt == vertex texture coordinate
-            if (strncmp(line, "vt ", 3) == 0) {
-            }
-        }
-
-        // Advance to next line
-        line = line_end + 1;
+    const u32 num_vertices_copy = MIN(entry->vertex_count, obj.vert_count);
+    for (u32 i = 0; i < num_vertices_copy; i++) {
+        memcpy(vertices, &obj.positions[i], sizeof(vec3s));
+        vertices += entry->vertex_size;
     }
 
     idx_header->num_indices = idx_count;
     idx_header->vertex_buf = entry_idx;
     while (vertices < vertices_end) {
-        // Wipe vertex position data
+        // Wipe excess vertex position data
         memset(vertices, 0, sizeof(vec3s));
         vertices += entry->vertex_size;
     }
 
+    free(obj.positions);
+    free(obj.indices);
+    free(obj.texcoords);
     return true;
 }
 
