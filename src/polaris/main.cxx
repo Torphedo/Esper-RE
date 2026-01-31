@@ -130,6 +130,11 @@ int main(int argc, char** argv) {
         return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     if (args_getflag(argc, argv, "validate", nullptr)) {
+        if (strlen(path) == 0) {
+            LOG_MSG(error, "No path found, you probably did '%s /path/to/file --validate' instead of '%s --validate /path/to/file'\n", argv[0], argv[0]);
+            return EXIT_FAILURE;
+        }
+
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
         bool result = alr_validate(message, pol->editor.alr, true);

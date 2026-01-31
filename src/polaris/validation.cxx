@@ -143,19 +143,17 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
     // We might want access to ALR and/or chunk data during validation
     vfile alr_file = vfile_open(alr.data, alr.alr_size);
     vfile chunkvf = vfile_open(alr.data + chunk.offset, chunk.size);
-    chunkvf.pos += sizeof(chunk_generic);
 
     switch (chunk.id) {
         case 0x0:
             AL_ASSERT(chunk.size == sizeof(chunk_generic), "0x0 chunk had %d bytes of data (expected 8)!", chunk.size);
             break;
         case 0x1: {
-            const u16 num_entries = VFILE_READ(u16, &chunkvf);
-            result &= validate_entry_sizes(msg, chunk.size, sizeof(chunk_0x1_header), num_entries, sizeof(chunk_0x1_entry));
+            const auto* header = VFILE_READ_PTR(chunk_0x1_header, &chunkvf);
+            result &= validate_entry_sizes(msg, chunk.size, sizeof(header), header->num_entries, sizeof(chunk_0x1_entry));
             break;
         }
         case 0x2: {
-            chunkvf.pos -= sizeof(chunk_generic);
             const auto header = VFILE_READ(idxbuf_header, &chunkvf);
             const auto indices = (u16*)vfile_cur(chunkvf);
             const idxbuf_header empty = {0};
@@ -173,7 +171,6 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             break;
         }
         case 0x3: {
-            chunkvf.pos -= sizeof(chunk_generic);
             const auto joint_header = VFILE_READ(chunk_armature, &chunkvf);
             const joint_t* joints = VFILE_READ_PTR(joint_t, &chunkvf);
 
@@ -196,7 +193,6 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             break;
         }
         case 0x5: {
-            chunkvf.pos -= sizeof(chunk_generic);
             const anim_header header = VFILE_READ(anim_header, &chunkvf);
             AL_ASSERT(header.scale_key_count == 0, "Scale keys are used!");
 
@@ -227,7 +223,6 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             AL_ASSERT(chunk.size == 12, "0xD chunk had %d bytes of data (expected 12)!", chunk.size);
             break;
         case 0x10: {
-            chunkvf.pos -= sizeof(chunk_generic);
             const atlas_header header = VFILE_READ(atlas_header, &chunkvf);
             vfile_seek(&chunkvf, sizeof(atlas_name) * header.atlas_count);
 
@@ -253,7 +248,6 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             break;
         }
         case 0x11: {
-            chunkvf.pos -= sizeof(chunk_generic);
             const auto header = VFILE_READ(chunk_layout, &chunkvf);
             if (header.texbuf_offset + header.texbuf_size > alr.alr_size) {
                 str_format_append(msg, "0x%x-byte resource buffer @ 0x%x can't fit in this 0x%x-byte ALR!", header.texbuf_size, header.texbuf_offset, alr.alr_size);
@@ -275,9 +269,10 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             // Don't know anything about this chunk type
             break;
         case 0x15: {
+            vfile_seek(&chunkvf, sizeof(chunk_generic));
             const u32 num_entries = VFILE_READ(u32, &chunkvf);
             const auto entries = (texture_entry*)vfile_cur(chunkvf);
-            result &= validate_entry_sizes(msg, chunk.size, sizeof(chunk_generic), num_entries, sizeof(texture_entry));
+            result &= validate_entry_sizes(msg, chunk.size, sizeof(chunk_generic) + sizeof(u32), num_entries, sizeof(texture_entry));
 
             for (u32 i = 0; i < num_entries; i++) {
                 const s64 resbuf_size = alr.alr_size - alr.resbuf_offset;
@@ -286,6 +281,7 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             break;
         }
         case 0x16: {
+            vfile_seek(&chunkvf, sizeof(chunk_generic));
             const u32 num_entries = VFILE_READ(u32, &chunkvf);
             const auto entries = (vertbuf_entry*)vfile_cur(chunkvf);
             result &= validate_entry_sizes(msg, chunk.size, sizeof(chunk_generic) + sizeof(u32), num_entries, sizeof(vertbuf_entry));
