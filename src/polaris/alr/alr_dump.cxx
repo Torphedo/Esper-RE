@@ -491,26 +491,12 @@ bool dump_all_textures(const file& alr) {
         decode_single32(decoded_name, tex_entries[i].text1);
         decode_single32(&decoded_name[ENCODED_CHAR_COUNT], tex_entries[i].text2);
         strncat(decoded_name, ".dds", sizeof(decoded_name) - 1);
-        char* name = decoded_name;
+        const char* name = decoded_name;
 
         if (atlas_entries != nullptr && header_atlas.atlas_count > i) {
-            const atlas_entry entry = atlas_entries[i];
-            // We get better dimension info from the atlas headers, so use it!
-            // Dimensions from the atlas headers are almost always more
-            // accurate, so we always use them unless they're obviously wrong.
-
-            const u32 too_small = 0;
-            const u32 too_big = 8192;
-            if (entry.width > too_small && entry.width < too_big) {
-                cur_tex.width = entry.width;
-            }
-            if (entry.height > too_small && entry.height < too_big) {
-                cur_tex.height = entry.height;
-            }
-
-            // Also use the name from the atlas for the filename, because it'll
+            // Use the name from the atlas for the filename, because it'll
             // have correct capitalization
-            name = (char*)atlas_names[i].name;
+            name = atlas_names[i].name;
         }
 
         char path[0x30] = {0};
