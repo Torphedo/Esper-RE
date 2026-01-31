@@ -20,6 +20,7 @@ void edit_menu(vertex_attribute& attr);
 struct index_buffer {
     u32 idx_chunk_offset = 0;
     u32 armature_chunk_offset = 0;
+    u32 mat_chunk_offset = 0;
 
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
@@ -36,8 +37,10 @@ struct index_buffer {
 
     mat4s get_transform(const alr::file& alr, float frame, u32 anim_id) const noexcept;
     index_buffer() = default;
-    index_buffer(u32 idx_offset, u32 skele_offset) noexcept
-        : idx_chunk_offset(idx_offset), armature_chunk_offset(skele_offset) {
+    index_buffer(u32 idx_offset, u32 skele_offset, u32 mat_offset) noexcept
+        : idx_chunk_offset(idx_offset), armature_chunk_offset(skele_offset),
+        mat_chunk_offset(mat_offset)
+    {
         is_skele_transform = true;
     }
 };

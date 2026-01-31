@@ -310,6 +310,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
 }
 
 void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_transparent) {
+    const scope_timer timer("renderALRMesh", true);
     glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
 
     glBindVertexArray(mesh.vao);
@@ -318,20 +319,28 @@ void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_tr
             continue; // This index buffer is hidden
         }
 
-        // We cast away const here but don't write to the buffer
-        vfile vf = vfile_open(alr->data, alr->alr_size);
-        vf.pos = idx_buf.idx_chunk_offset;
-        const auto header = VFILE_READ(idxbuf_header, &vf);
-        const auto mat_chunk = alr->prev_chunk_by_id(0x1, idx_buf.idx_chunk_offset);
+        idxbuf_header header;
         chunk_0x1_entry tex_entry = {};
-        alr->tex_manager.get_material(*alr, mat_chunk.offset, header.texture_idx, &tex_entry);
+        mat4s obj_pvm = {};
+        { // timer scope
+            const scope_timer timer2("viewportRenderPrepare", true);
 
-        bool semi_transparent = tex_entry.shadow_map_flag == 0x54;
-        if (semi_transparent != allow_semi_transparent) {
-            continue;
-        }
+            // We cast away const here but don't write to the buffer
+            vfile vf = vfile_open(alr->data, alr->alr_size);
+            vf.pos = idx_buf.idx_chunk_offset;
+            header = VFILE_READ(idxbuf_header, &vf);
 
-        mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform(*alr, anim_frame, anim_id));
+            alr->tex_manager.get_material(*alr, idx_buf.mat_chunk_offset, header.texture_idx, &tex_entry);
+
+            bool semi_transparent = tex_entry.shadow_map_flag == 0x54;
+            if (semi_transparent != allow_semi_transparent) {
+                continue;
+            }
+
+            obj_pvm = glms_mul(*(mat4s *) pvm, idx_buf.get_transform(*alr, anim_frame, anim_id));
+        } // end timer scope
+
+        const scope_timer timer3("viewportRenderGL", true);
         glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
         glActiveTexture(GL_TEXTURE0);

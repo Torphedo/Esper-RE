@@ -305,6 +305,7 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
     // We need offsets for our other utility functions
     const ptrdiff_t skel_chunk_offset = (ptrdiff_t)model.skel_chunk - (ptrdiff_t)alr.data;
     const ptrdiff_t idx_chunk_offset = (ptrdiff_t)model.idx_chunk - (ptrdiff_t)alr.data;
+    const ptrdiff_t mat_chunk_offset = (ptrdiff_t)model.mat_chunk - (ptrdiff_t)alr.data;
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vfile_seek(&vf, idx_chunk_offset);
 
@@ -315,7 +316,7 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
         if (chunk->id == 0x2) {
             if (idx_header->vertex_buf == vertbuf_idx) {
                 // Setup & add index buffer
-                const index_buffer idx_buf(vf.pos, skel_chunk_offset);
+                const index_buffer idx_buf(vf.pos, skel_chunk_offset, mat_chunk_offset);
                 out.add_index_buf(alr.data, alr.alr_size, idx_buf);
             }
         }
