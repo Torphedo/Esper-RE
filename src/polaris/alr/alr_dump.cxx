@@ -3,7 +3,6 @@
 #include <string.h>
 #include <common/file.h>
 
-#include <formats/alr_animations.h>
 #include <formats/pd_common.h>
 #include <version.h>
 

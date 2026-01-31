@@ -228,50 +228,12 @@ void mesh_view::edit_menu(alr::file& alr) noexcept {
 
             snprintf(label, sizeof(label) - 1, "Normal Texture##%d", i);
             ImGui::InputU16(label, &tex_entry->normal_idx);
-            // buf.albedo_tex_idx %= pol->alr.tex_manager.
-            // buf.normal_tex_idx %= pol->gl_textures.size();
 
             snprintf(label, sizeof(label) - 1, "Show textures##%d", i);
             if (ImGui::CollapsingHeader(label)) {
                 ImGui::Image(alr.tex_manager.get(alr, tex_entry->texture_idx), ImVec2(512, 512));
                 ImGui::Image(alr.tex_manager.get(alr, tex_entry->normal_idx), ImVec2(512, 512));
             }
-
-            // TODO: Bring back primitive override
-            /*
-            // Edit triangle mode
-            const char* gl_type_strings[] = {
-                "GL_TRIANGLES", "GL_TRIANGLE_STRIP", "GL_TRIANGLE_FAN", "GL_POINTS", "GL_LINES", "GL_LINE_STRIP",
-            };
-
-            const u16 gl_types[] = {
-                GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_POINTS, GL_LINES, GL_LINE_STRIP,
-            };
-
-            // Find index of the selected primitive type in the lookup table
-            u16 current_type = 0;
-            for (u32 i = 0; i < ARRAY_SIZE(gl_types); i++) {
-                if (buf.draw_mode == gl_types[i]) {
-                    current_type = i;
-                    break;
-                }
-            }
-
-            if (ImGui::BeginCombo("Primitive type", gl_type_strings[current_type])) {
-                for (u32 i = 0; i < ARRAY_SIZE(gl_types); i++) {
-                    const bool selected = current_type == i;
-                    if (ImGui::Selectable(gl_type_strings[i], selected)) {
-                        // Save new primitive type if needed
-                        current_type = i;
-                        buf.draw_mode = gl_types[current_type];
-                    }
-                    if (selected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            */
 
             ImGui::NewLine();
         }

@@ -11,10 +11,6 @@
 #include "camera.hxx"
 #include "gui/framebuffer.hxx"
 
-// We need a forward declaration instead of a header include, since a class
-// in this file is a member of polaris.
-struct polaris;
-
 struct viewport_t : gui_layer {
     // Whether the viewport has been set up and can be rendered to.
     bool initialized = false;
