@@ -742,6 +742,41 @@ void editor::send_all_to_viewport(viewport_t& viewport) const noexcept {
     }
 }
 
+const char* chunk_name_by_id(u32 id) {
+    const char* known_name = "";
+    switch (id) {
+    case ALR_ID_MATERIAL:
+        known_name = "[Material]";
+        break;
+    case ALR_ID_INDICES:
+        known_name = "[Index Buffer]";
+        break;
+    case ALR_ID_SKELETON:
+        known_name = "[Armature]";
+        break;
+    case ALR_ID_ANIMATION:
+        known_name = "[Animation]";
+        break;
+    case ALR_ID_CAM_ANIM:
+        known_name = "[Camera Path]";
+        break;
+    case ALR_ID_TEXATLAS:
+        known_name = "[Texture Atlas]";
+        break;
+    case ALR_ID_HEADER:
+        known_name = "[Header]";
+        break;
+    case ALR_ID_TEXTURE:
+        known_name = "[Texture]";
+        break;
+    case ALR_ID_MODEL:
+        known_name = "[Model]";
+        break;
+    }
+
+    return known_name;
+}
+
 void editor::draw(viewport_t& viewport) noexcept {
     graphics_initialized = true;
     ImGui::Begin("ALR Chunks");
@@ -793,7 +828,7 @@ void editor::draw(viewport_t& viewport) noexcept {
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            ImGui::Text("0x%X", chunk.id);
+            ImGui::Text("0x%X %s", chunk.id, chunk_name_by_id(chunk.id));
 
             // Selectable needs a unique ID, so we use the offset as the
             // selectable column because it's unique
@@ -837,33 +872,7 @@ void editor::draw(viewport_t& viewport) noexcept {
             continue;
         }
 
-        const char* known_name = "";
-        switch (chunk.id) {
-        case ALR_ID_INDICES:
-            known_name = "[Index Buffer]";
-            break;
-        case ALR_ID_SKELETON:
-            known_name = "[Armature]";
-            break;
-        case ALR_ID_ANIMATION:
-            known_name = "[Animation]";
-            break;
-        case ALR_ID_CAM_ANIM:
-            known_name = "[Camera Path]";
-            break;
-        case ALR_ID_TEXATLAS:
-            known_name = "[Texture Atlas]";
-            break;
-        case ALR_ID_HEADER:
-            known_name = "[Header]";
-            break;
-        case ALR_ID_TEXTURE:
-            known_name = "[Texture Metadata]";
-            break;
-        case ALR_ID_MODEL:
-            known_name = "[Vertex Metadata]";
-            break;
-        }
+        const char* known_name = chunk_name_by_id(chunk.id);
         char buf[0x30] = {0};
         // Each window needs a unique ID, but "##x" isn't shown
         snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%llX", chunk.id, known_name, chunk.offset);
