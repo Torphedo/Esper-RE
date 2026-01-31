@@ -12,7 +12,10 @@ typedef enum {
 }camera_mode;
 
 struct camera {
-    vec3s target = {0}; // Position the camera looks towards
+    // Position the camera looks towards. If we don't initialize it, the camera
+    // will try to look from (0, 0, 0) to itself, which makes no sense and
+    // breaks rendering until the camera moves for the first time.
+    vec3s target = {-1.0f};
     vec3s pos = {0}; // Position of the viewer
     vec2s orbit_angles = {0};
     float radius = 30.0f;
