@@ -4,8 +4,9 @@
 #include <common/vfile.h>
 #include <formats/alr_animations.h>
 
-#include "util/imgui_utils.hxx"
-#include "alr/alr_dump.hxx"
+#include <alr/alr_dump.hxx>
+#include <util/imgui_utils.hxx>
+#include <util/scope_timer.hxx>
 
 const u16 gl_type_table[DATA_TYPE_COUNT] = {
     GL_BYTE, GL_UNSIGNED_BYTE,
@@ -40,6 +41,7 @@ void edit_menu(vertex_attribute& attr) {
 }
 
 mat4s index_buffer::get_transform(const alr::file& alr, float frame, u32 anim_id) const noexcept {
+    const scope_timer draw_timer("calcAnimTransforms", true);
     if (!is_skele_transform) {
         assert(position);
         assert(rotation);

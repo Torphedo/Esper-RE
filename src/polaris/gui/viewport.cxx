@@ -1,7 +1,6 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "viewport.hxx"
 #include <imgui.h>
-#include "util/imgui_utils.hxx"
 
 #include <common/vfile.h>
 #include <common/logging.h>
@@ -9,6 +8,8 @@
 #include "mesh_view.hxx"
 #include "polaris.hxx"
 #include "selector_ray.hxx"
+#include <util/scope_timer.hxx>
+#include <util/imgui_utils.hxx>
 
 extern "C" {
     #include <common/gl/shader.h>
@@ -138,6 +139,7 @@ void viewport_t::destroy() noexcept {
 }
 
 void viewport_t::update(GLFWwindow* window) noexcept {
+    const scope_timer draw_timer("viewportUpdate");
     if (!active || !initialized) {
         return;
     }
@@ -376,6 +378,7 @@ void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_tr
 }
 
 void viewport_t::render(GLFWwindow* window) noexcept {
+    const scope_timer draw_timer("viewportRender");
     if (!active || !initialized || !visible) {
         return;
     }

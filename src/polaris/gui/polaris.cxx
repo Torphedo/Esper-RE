@@ -227,7 +227,7 @@ void polaris::init(GLFWwindow* window) noexcept {
 }
 
 void polaris::update(GLFWwindow* window) noexcept {
-    const scope_timer draw_timer(timer_map, "main_update");
+    const scope_timer draw_timer("mainUpdate");
 
     viewport.update(window);
     this->do_menu_bar();
@@ -238,9 +238,10 @@ void polaris::update(GLFWwindow* window) noexcept {
 
     if (this->show_timers) {
         ImGui::Begin("Performance Timers", &show_timers);
-        for (std::pair<const char*, double> entry : timer_map) {
+        for (std::pair<const char*, double> entry : global_timers) {
             ImGui::Text("%s: %.2lfms", entry.first, entry.second * 1000);
         }
+        global_timers.clear();
         ImGui::End();
     }
 
@@ -255,7 +256,7 @@ void polaris::update(GLFWwindow* window) noexcept {
 }
 
 void polaris::render(GLFWwindow* window) noexcept {
-    const scope_timer draw_timer(timer_map, "main_render");
+    const scope_timer draw_timer("mainRender");
     viewport.render(window);
 }
 

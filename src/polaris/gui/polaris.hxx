@@ -32,10 +32,6 @@ struct polaris : gui_layer {
     // Whether we show a window with all the debug performance timers.
     bool show_timers = false;
 
-    // Set of named timers keyed by name.
-    // "mutable" allows const methods to modify this
-    mutable std::unordered_map<const char*, double> timer_map;
-
     void do_menu_bar() noexcept;
 
     void init(GLFWwindow* window) noexcept override;
