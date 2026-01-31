@@ -236,20 +236,15 @@ void editor::window_state::draw_chunk_0x10(file& alr, file::chunk& chunk) noexce
     CHUNK_ID_ASSERT(0x10);
 
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
-    // Skip over the ID and size fields we already have
-    vfile_seek(&vf, sizeof(chunk_generic));
 
-    auto* header = (atlas_header*) vfile_cur(vf);
-    vfile_seek(&vf, sizeof(*header));
-
-    auto* atlas_names = (atlas_name*) vfile_cur(vf);
+    auto* header = VFILE_READ_PTR(atlas_header, &vf);
+    auto* atlas_names = (atlas_name*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*atlas_names) * header->atlas_count);
 
-    auto* atlases = (atlas_entry*) vfile_cur(vf);
+    auto* atlases = (atlas_entry*)vfile_cur(vf);
     vfile_seek(&vf, sizeof(*atlases) * header->atlas_count);
 
-    auto* textures = (atlas_tex_entry *) vfile_cur(vf);
-    vfile_seek(&vf, sizeof(*textures) * header->texture_count);
+    auto* textures = VFILE_READ_PTR(atlas_tex_entry , &vf);
 
     // We have to look up texture entries to find out where each texture is
     texture_entry* entries = nullptr;
@@ -637,7 +632,7 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
     const auto tex_header = VFILE_READ(texture_header, &vf);
     const texture_entry* entries = (texture_entry*)vfile_cur(vf);
 
-    vf.pos = offset_0x10 + sizeof(chunk_generic);
+    vf.pos = offset_0x10;
     const auto aHeader = VFILE_READ(atlas_header, &vf);
     vfile_seek(&vf, sizeof(atlas_name) * aHeader.atlas_count);
     const auto aEntries = (atlas_entry*)vfile_cur(vf);

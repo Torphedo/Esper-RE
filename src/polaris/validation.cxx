@@ -227,6 +227,7 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             AL_ASSERT(chunk.size == 12, "0xD chunk had %d bytes of data (expected 12)!", chunk.size);
             break;
         case 0x10: {
+            chunkvf.pos -= sizeof(chunk_generic);
             const atlas_header header = VFILE_READ(atlas_header, &chunkvf);
             vfile_seek(&chunkvf, sizeof(atlas_name) * header.atlas_count);
 

@@ -473,8 +473,6 @@ bool dump_all_textures(const file& alr) {
     if (atlas_chunk.size > 0) {
         vf = vfile_open(alr.data + atlas_chunk.offset, atlas_chunk.size);
 
-        // Skip over the ID and size fields we already have
-        vfile_seek(&vf, sizeof(chunk_generic));
         header_atlas = VFILE_READ(atlas_header, &vf);
 
         // Skip over names

@@ -400,11 +400,13 @@ static vertex_format_t format_by_id(u8 id) {
 // =============================================================================
 // This chunk is for texture atlases and their sub-textures.
 typedef struct {
+    u32 id;
+    u32 size;
     u32 atlas_count; // The number of texture atlases
     u32 texture_count; // The total number of textures in all atlases
     unsigned char alr_name[0x10]; // Usually the name of the ALR without the ".alr" part
 }atlas_header;
-static_assert(sizeof(atlas_header) == 0x18, "Wrong atlas chunk header size!");
+static_assert(sizeof(atlas_header) == 0x20, "Wrong atlas chunk header size!");
 
 // After the header are [atlas_count] instances of this structure:
 typedef struct {
