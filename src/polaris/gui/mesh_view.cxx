@@ -50,7 +50,6 @@ mat4s index_buffer::get_transform(const alr::file& alr) const noexcept {
 
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = armature_chunk_offset;
-    vfile_seek(&vf, sizeof(chunk_generic));
     const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
     const auto* joints = VFILE_READ_PTR(joint_t, &vf);
 

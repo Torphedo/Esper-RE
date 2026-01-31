@@ -219,6 +219,11 @@ void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
     viewport.init(window);
     viewport.alr = &editor.alr;
+
+    // Get as close as possible to 60 FPS
+    const GLFWvidmode* vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    const u32 interval = (vid->refreshRate / 60);
+    glfwSwapInterval(interval);
 }
 
 void polaris::update(GLFWwindow* window) noexcept {

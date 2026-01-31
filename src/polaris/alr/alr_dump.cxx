@@ -260,8 +260,6 @@ void dump_armature_dae(FILE* f, vfile armature_data) {
     fprintf(f, DAE_HEADER);
     fprintf(f, "%s\n", R"(<node id="Armature" name="Armature" type="NODE">)");
 
-    vfile_seek(&armature_data, sizeof(chunk_generic));
-
     const chunk_armature header = VFILE_READ(chunk_armature, &armature_data);
     auto* joints = (joint_t *) vfile_cur(armature_data);
 

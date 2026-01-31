@@ -173,6 +173,7 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             break;
         }
         case 0x3: {
+            chunkvf.pos -= sizeof(chunk_generic);
             const auto joint_header = VFILE_READ(chunk_armature, &chunkvf);
             const joint_t* joints = VFILE_READ_PTR(joint_t, &chunkvf);
 
@@ -204,7 +205,6 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
                 str_format_append(msg, "Couldn't find matching skeleton chunk for animation @ 0x%X", chunk.offset);
             } else {
                 vfile skel_vf = vfile_open(alr.data + skel_chunk.offset, skel_chunk.size);
-                vfile_seek(&skel_vf, sizeof(chunk_generic));
 
                 // Skeleton header == "skull"
                 const chunk_armature skull = VFILE_READ(chunk_armature, &skel_vf);

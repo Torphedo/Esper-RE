@@ -466,11 +466,13 @@ static_assert(sizeof(anim_header) == 0x20, "Wrong animation header size!");
 // =============================================================================
 // This stores all the joints in the skeleton/armature and their relationships to each other.
 typedef struct {
+    u32 id;
+    u32 size;
     u16 joint_count;
     u16 unknown; // Usually 1
     u32 pad;
 }chunk_armature;
-static_assert(sizeof(chunk_armature) == 0x8, "Wrong armature chunk header size!");
+static_assert(sizeof(chunk_armature) == 0x10, "Wrong armature chunk header size!");
 
 // After the header are [joint_count] instances of this structure, holding information about each joint/bone.
 typedef struct {

@@ -129,9 +129,8 @@ void editor::window_state::draw_chunk_0x3(const file& alr, file::chunk& chunk) n
     CHUNK_ID_ASSERT(0x3);
 
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
-    vfile_seek(&vf, sizeof(chunk_generic)); // Skip ID & size
 
-    const u32 num_joints = (chunk.size - sizeof(chunk_generic) - sizeof(chunk_armature)) / sizeof(joint_t);
+    const u32 num_joints = (chunk.size - sizeof(chunk_armature)) / sizeof(joint_t);
     const chunk_armature header = VFILE_READ(chunk_armature, &vf);
     auto* joints = (joint_t *) vfile_cur(vf);
 
@@ -161,7 +160,6 @@ void editor::window_state::draw_chunk_0x5(const file& alr, file::chunk& chunk) n
     if (ImGui::Button("Dump animation")) {
         file::chunk armature_chunk = alr.first_chunk_in_range(0x3, chunk.offset, alr.resbuf_offset);
         vfile armature_vf = vfile_open(alr.data + armature_chunk.offset, armature_chunk.size);
-        vfile_seek(&armature_vf, sizeof(chunk_generic));
         const auto armature_header = VFILE_READ(chunk_armature, &armature_vf);
         const auto* joints = (joint_t*)vfile_cur(armature_vf);
 

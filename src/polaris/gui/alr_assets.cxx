@@ -332,12 +332,11 @@ mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
     // Get joint array from 0x3 chunk
     u32 next_chunk_off = vf.pos;
     const u32 armature_chunk_offset = vf.pos;
-    const auto generic_0x3 = VFILE_READ(chunk_generic, &vf);
-    next_chunk_off += generic_0x3.size;
 
     // Unused but we read them anyway
     const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
     const joint_t* joints = (joint_t*)vfile_cur(vf);
+    next_chunk_off += joint_header->size;
 
     // Skip to the 0x16 chunk
     vf.pos = next_chunk_off;
