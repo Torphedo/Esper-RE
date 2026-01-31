@@ -293,87 +293,37 @@ texture_manager::~texture_manager() noexcept {
 
 mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
     mesh_view out = {};
-
-    const alr::file::chunk header_chunk = alr.chunks[0];
-    if (header_chunk.id != 0x11) {
-        LOG_MSG(error, "Header chunk ID != 0x11, something is seriously wrong!\n");
-        return out;
-    }
-
-    // We cast away const because we won't be editing the ALR data at all.
-    vfile vf = vfile_open(alr.data, alr.alr_size);
-    vf.pos = header_chunk.offset;
-
-    const auto* header = (chunk_layout*)vfile_cur(vf);
-    const s32 first_model_idx = alr.first_model_idx();
-    const s32 num_models = header->offset_array_size - first_model_idx;
-    if (first_model_idx < 0 || num_models < 1) {
-        LOG_MSG(error, "No models found!\n");
-        return out;
-    }
-
-    if (idx >= num_models) {
-        LOG_MSG(error, "Mesh index %d is out of bounds (max = %d)\n", idx, num_models);
-        return out;
-    }
-
-    const s32 offset = header->offsets[first_model_idx + idx];
-    if (offset < 0) {
-        LOG_MSG(error, "Mesh index %d doesn't exist (negative offset %d)\n", idx, offset);
-        return out;
-    }
-    vf.pos = offset;
-
-    // Skip 0x1 (materials) chunk
-    const auto* generic_0x1 = (chunk_generic*)vfile_cur(vf);
-    vfile_seek(&vf, generic_0x1->size);
-
-    // Get joint array from 0x3 chunk
-    u32 next_chunk_off = vf.pos;
-    const u32 armature_chunk_offset = vf.pos;
-
-    // Unused but we read them anyway
-    const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
-    const joint_t* joints = (joint_t*)vfile_cur(vf);
-    next_chunk_off += joint_header->size;
-
-    // Skip to the 0x16 chunk
-    vf.pos = next_chunk_off;
-    const auto generic_0x16 = VFILE_READ(chunk_generic, &vf);
-    next_chunk_off = next_chunk_off + generic_0x16.size;
-
-    // Get vertex buffer entries
-    const u32 num_vertbuf_entries = VFILE_READ(u32, &vf);
-    const auto* vertbuf_entries = (vertbuf_entry*)vfile_cur(vf);
+    alr_model_desc model = alr.model_at_idx(idx);
 
     // Get the actual vertex buffer
     const u8* resbuf = alr.resource_buffer();
-    const vertbuf_entry& entry = vertbuf_entries[vertbuf_idx];
+    const vertbuf_entry& entry = model.vert_chunk->entries[vertbuf_idx];
     const u8* vertices = resbuf + entry.data_ptr;
 
-    // Upload vertex buffer with correct attributes
+    // Upload vertex buffer
     out.setup();
     out.update_vertex_buf(vertices, entry.vertex_size * entry.vertex_count);
     get_vert_attribute(&out, entry);
     out.apply_attributes();
 
-    // Skip past the rest of the 0x16 chunk, to the first 0x2 chunk
-    vf.pos = next_chunk_off;
+    // We need offsets for our other utility functions
+    const ptrdiff_t skel_chunk_offset = (ptrdiff_t)model.skel_chunk - (ptrdiff_t)alr.data;
+    const ptrdiff_t idx_chunk_offset = (ptrdiff_t)model.idx_chunk - (ptrdiff_t)alr.data;
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vfile_seek(&vf, idx_chunk_offset);
 
     // Parse all index buffers
-    u32 cur_offset = vf.pos;
     auto* chunk = (chunk_generic*)vfile_cur(vf);
     while (chunk->id == 0x2) {
-        const idxbuf_header idx_header = VFILE_READ(idxbuf_header, &vf);
-        if (idx_header.vertex_buf == vertbuf_idx) {
+        const idxbuf_header* idx_header = (idxbuf_header*)vfile_cur(vf);
+        if (idx_header->vertex_buf == vertbuf_idx) {
             // Setup & add index buffer
-            const index_buffer idx_buf(cur_offset, armature_chunk_offset);
+            const index_buffer idx_buf(vf.pos, skel_chunk_offset);
             out.add_index_buf(alr.data, alr.alr_size, idx_buf);
         }
 
         // Prepare to read next index buffer
-        cur_offset += chunk->size;
-        vf.pos = cur_offset;
+        vfile_seek(&vf, chunk->size);
         chunk = (chunk_generic*)vfile_cur(vf);
         assert(chunk->id < 0x15);
     }

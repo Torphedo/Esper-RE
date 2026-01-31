@@ -264,6 +264,61 @@ bool file::save(const char* path) const noexcept {
         return -1;
     }
 
+    alr_model_desc file::model_at_idx(u32 idx) const noexcept {
+        alr_model_desc out = {};
+
+        const chunk header_chunk = chunks[0];
+        if (header_chunk.id != 0x11) {
+            LOG_MSG(error, "Header chunk ID != 0x11, something is seriously wrong!\n");
+            return out;
+        }
+
+        // We cast away const because we won't be editing the ALR data at all.
+        vfile vf = vfile_open(data, alr_size);
+        vf.pos = header_chunk.offset;
+
+        const auto* header = (chunk_layout*)vfile_cur(vf);
+        const s32 first_model_idx = this->first_model_idx();
+        const s32 num_models = header->offset_array_size - first_model_idx;
+        if (first_model_idx < 0 || num_models < 1) {
+            LOG_MSG(error, "No models found!\n");
+            return out;
+        }
+
+        if (idx >= num_models) {
+            LOG_MSG(error, "Mesh index %d is out of bounds (max = %d)\n", idx, num_models);
+            return out;
+        }
+
+        const s32 offset = header->offsets[first_model_idx + idx];
+        if (offset < 0) {
+            LOG_MSG(error, "Mesh index %d doesn't exist (negative offset %d)\n", idx, offset);
+            return out;
+        }
+        vf.pos = offset;
+
+        out.mat_chunk = (chunk_0x1_header*)vfile_cur(vf);
+        vfile_seek(&vf, out.mat_chunk->size);
+
+        out.skel_chunk = (chunk_armature*)vfile_cur(vf);
+        vfile_seek(&vf, out.skel_chunk->size);
+
+        out.vert_chunk = (vertbuf_header*)vfile_cur(vf);
+        vfile_seek(&vf, out.vert_chunk->size);
+
+        out.idx_chunk = (idxbuf_header*)vfile_cur(vf);
+        vfile_seek(&vf, out.idx_chunk->size);
+
+        bool bad_id = (out.idx_chunk->id != 0x2 || out.vert_chunk->id != 0x16 ||
+                      out.skel_chunk->id != 0x3 || out.mat_chunk->id != 0x1);
+        if (bad_id) {
+            LOG_MSG(error, "One of model %d's key chunks had the wrong ID, something has gone wrong!\n", idx);
+            out = {}; // Return all NULLs
+        }
+
+        return out;
+    }
+
     void file::expand_reservation(s64 new_size) noexcept {
         if (new_size < reserve_size) {
             LOG_MSG(error, "No reason to shrink reservation from 0x%X -> 0x%X, ignoring!\n", reserve_size, new_size);

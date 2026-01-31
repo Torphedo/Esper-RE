@@ -6,6 +6,7 @@
 typedef struct {
     chunk_0x1_header* mat_chunk; // Materials
     chunk_armature*  skel_chunk;
+    vertbuf_header*  vert_chunk;
     idxbuf_header*   idx_chunk;
 }alr_model_desc;
 
@@ -75,6 +76,8 @@ namespace alr {
         /// Find the index of the first offset in the header that points to a model
         /// @return Index, or -1 if none are found
         s32 first_model_idx() const noexcept;
+
+        alr_model_desc model_at_idx(u32 idx) const noexcept;
 
         u8* resource_buffer() const noexcept {
             return this->data + this->resbuf_offset;
