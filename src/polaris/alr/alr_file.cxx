@@ -247,20 +247,30 @@ bool file::save(const char* path) const noexcept {
         return true;
     }
 
-    s32 file::first_model_idx() const noexcept {
+    s32 file::first_model_idx(u32* num_models_out) const noexcept {
         vfile vf = vfile_open(data, alr_size);
-
         const auto* header = (chunk_layout*)vfile_cur(vf);
+
+        s32 result = -1;
         for (u32 i = 0; i < header->offset_array_size; i++) {
             vf.pos = header->offsets[i];
             const auto* chunk = VFILE_READ_PTR(chunk_generic, &vf);
             // All models start with an 0x1 chunk
             if (chunk->id == 0x1) {
-                return i;
+                result = i;
+                break;
             }
         }
 
-        return -1;
+        if (num_models_out) {
+            if (result >= 0) {
+                *num_models_out = header->offset_array_size - result;
+            } else {
+                *num_models_out = 0;
+            }
+        }
+
+        return result;
     }
 
     alr_model_desc file::model_at_idx(u32 idx) const noexcept {
@@ -277,8 +287,8 @@ bool file::save(const char* path) const noexcept {
         vf.pos = header_chunk.offset;
 
         const auto* header = (chunk_layout*)vfile_cur(vf);
-        const s32 first_model_idx = this->first_model_idx();
-        const s32 num_models = header->offset_array_size - first_model_idx;
+        u32 num_models = 0;
+        const s32 first_model_idx = this->first_model_idx(&num_models);
         if (first_model_idx < 0 || num_models < 1) {
             LOG_MSG(error, "No models found!\n");
             return out;
@@ -307,12 +317,18 @@ bool file::save(const char* path) const noexcept {
 
         out.idx_chunk = (idxbuf_header*)vfile_cur(vf);
         vfile_seek(&vf, out.idx_chunk->size);
+        if (out.idx_chunk->id == 0x13) {
+            // Sometimes this chunk appears before the index buffers, not sure
+            // what it does. Skip it.
+            out.idx_chunk = (idxbuf_header*)vfile_cur(vf);
+            vfile_seek(&vf, out.idx_chunk->size);
+        }
 
         bool bad_id = (out.idx_chunk->id != 0x2 || out.vert_chunk->id != 0x16 ||
                       out.skel_chunk->id != 0x3 || out.mat_chunk->id != 0x1);
         if (bad_id) {
-            LOG_MSG(error, "One of model %d's key chunks had the wrong ID, something has gone wrong!\n", idx);
-            out = {}; // Return all NULLs
+            // This happens with some empty models. Return all NULL.
+            out = {};
         }
 
         return out;

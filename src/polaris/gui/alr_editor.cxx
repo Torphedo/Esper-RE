@@ -707,7 +707,40 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
     ImGui::End();
 }
 
+
+bool editor::load(const char* path, viewport_t& viewport) noexcept {
+    bool result = alr.load(path);
+    states.clear(); // UI state doesn't transfer between files
+
+    if (graphics_initialized) {
+        send_all_to_viewport(viewport);
+    }
+    return result;
+}
+
+void editor::send_all_to_viewport(viewport_t& viewport) const noexcept {
+    u32 num_models = 0;
+    alr.first_model_idx(&num_models);
+
+    // Stage ALRs have a base, background, and skybox model.
+    // Player ALRs have at most a base and detail (e.g. scarf) model.
+    for (u32 i = 0; i < 3; i++) {
+        alr_model_desc model = alr.model_at_idx(i);
+        if (model.vert_chunk == nullptr) {
+            continue;
+        }
+        for (u32 j = 0; j < model.vert_chunk->num_entries; j++) {
+            if (model.vert_chunk->entries[j].vertex_size == 12) {
+                continue;
+            }
+            mesh_view mesh = mesh_at_idx(alr, i, j);
+            viewport.meshes.push_back(mesh);
+        }
+    }
+}
+
 void editor::draw(viewport_t& viewport) noexcept {
+    graphics_initialized = true;
     ImGui::Begin("ALR Chunks");
 
     const char* filter_label = "ID Filter";

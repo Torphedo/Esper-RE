@@ -74,8 +74,9 @@ namespace alr {
         bool shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept;
 
         /// Find the index of the first offset in the header that points to a model
+        /// @param Optional output argument to receive the number of models present
         /// @return Index, or -1 if none are found
-        s32 first_model_idx() const noexcept;
+        s32 first_model_idx(u32* num_models_out = nullptr) const noexcept;
 
         alr_model_desc model_at_idx(u32 idx) const noexcept;
 

@@ -127,8 +127,11 @@ public:
 
     // If present, only display chunks with this ID
     std::optional<u32> chunk_filter;
+    bool graphics_initialized = false;
 
     void draw(viewport_t& viewport) noexcept;
+    bool load(const char* path, viewport_t& viewport) noexcept;
+    void send_all_to_viewport(viewport_t& viewport) const noexcept;
 };
 
 } // namespace al

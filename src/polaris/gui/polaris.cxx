@@ -165,8 +165,7 @@ void polaris::do_menu_bar() noexcept {
                 mesh.destroy();
             }
             this->viewport.meshes.clear();
-            editor.alr.load(path);
-            editor.states.clear(); // UI state doesn't transfer between files
+            editor.load(path, this->viewport);
         }
         free(path);
     }
@@ -219,6 +218,7 @@ void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
     viewport.init(window);
     viewport.alr = &editor.alr;
+    editor.send_all_to_viewport(viewport);
 
     // Get as close as possible to 60 FPS
     const GLFWvidmode* vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
