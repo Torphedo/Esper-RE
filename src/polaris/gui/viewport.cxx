@@ -146,6 +146,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     const double cur_time = glfwGetTime();
     const double delta_time = cur_time - prev_time;
     prev_time = cur_time;
+    anim_frame += (delta_time / FRAMETIME_24FPS);
 
     if (editor_enabled) {
         ImGui::Begin("Render Settings", &this->editor_enabled);
@@ -216,6 +217,13 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     ImGui::SetNextItemWidth(ImGui::CalcTextSize(move_speed_label).x + 20.0f + padding);
     ImGui::SliderFloat(move_speed_label, &cam.move_speed, 0.1f, 1000.0f);
 
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(ImGui::CharWidth(16) + padding);
+    ImGui::InputU32("Animation ID", &anim_id);
+    anim_id %= ALR_NUM_PLAYER_ANIMATIONS;
+    ImGui::SameLine();
+    ImGui::Text(" = %s", animation_names[anim_id]);
+
     ImVec2 fb_start = ImGui::GetCursorScreenPos();
     vec2s mouse_pos = {};
     {
@@ -276,7 +284,8 @@ void viewport_t::update(GLFWwindow* window) noexcept {
                     vf.pos = idxbuf.idx_chunk_offset;
                     const auto* alr_idxbuf = (idxbuf_header*)vfile_cur(vf);
                     assert(alr_idxbuf->id == 2);
-                    if (raycast(ray, mesh.vertices, mesh.vertex_size, idxbuf.get_transform(*alr), alr_idxbuf)) {
+                    mat4s xform = idxbuf.get_transform(*alr, anim_frame, anim_id);
+                    if (raycast(ray, mesh.vertices, mesh.vertex_size, xform, alr_idxbuf)) {
                         got_selected = true;
                         break;
                     }
@@ -320,7 +329,7 @@ void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_tr
             continue;
         }
 
-        mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform(*alr));
+        mat4s obj_pvm = glms_mul(*(mat4s*)pvm, idx_buf.get_transform(*alr, anim_frame, anim_id));
         glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
 
         glActiveTexture(GL_TEXTURE0);

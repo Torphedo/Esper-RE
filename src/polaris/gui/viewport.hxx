@@ -5,6 +5,7 @@
 
 #include <common/int.h>
 #include <formats/alr.h>
+#include <formats/alr_animations.h>
 #include <layer.hxx>
 
 #include "camera.hxx"
@@ -25,6 +26,9 @@ struct viewport_t : gui_layer {
     bool raycast_test = false;
     bool wireframe_selection = false;
     u16 selected_mesh = 0;
+
+    u32 anim_id = BAS01_WAIT0;
+    float anim_frame = 0.0f;
 
     framebuffer fbo;
 

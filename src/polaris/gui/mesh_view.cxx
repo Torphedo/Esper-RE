@@ -39,7 +39,7 @@ void edit_menu(vertex_attribute& attr) {
     ImGui::Checkbox("Enable attribute", &attr.exists);
 }
 
-mat4s index_buffer::get_transform(const alr::file& alr) const noexcept {
+mat4s index_buffer::get_transform(const alr::file& alr, float frame, u32 anim_id) const noexcept {
     if (!is_skele_transform) {
         assert(position);
         assert(rotation);
@@ -56,12 +56,9 @@ mat4s index_buffer::get_transform(const alr::file& alr) const noexcept {
     vf.pos = idx_chunk_offset;
     const auto* idx_header = VFILE_READ_PTR(idxbuf_header, &vf);
 
-    const u32 anim_id = BAS01_WAIT0;
-    float cur_frame = 0.0f;
-
     // Calculate the object's xform by applying all of its parent xforms
     const s32 joint_idx = idx_header->transform_idx;
-    mat4s obj_transform = alr.joint_final_xform(joint_header, anim_id, joint_idx, cur_frame);
+    mat4s obj_transform = alr.joint_final_xform(joint_header, anim_id, joint_idx, frame);
 
     return obj_transform;
 }

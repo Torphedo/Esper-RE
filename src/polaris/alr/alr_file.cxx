@@ -380,6 +380,7 @@ bool file::save(const char* path) const noexcept {
         vfile afile = vfile_open(data, alr_size);
         vfile_seek(&afile, anim_offset);
         const auto* aheader = VFILE_READ_PTR(anim_header, &afile);
+        cur_frame = fmodf(cur_frame, aheader->length);
 
         vec3s position = {};
         vec3s rotation = {};

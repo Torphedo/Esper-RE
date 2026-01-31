@@ -487,6 +487,9 @@ typedef struct {
 }anim_header;
 static_assert(sizeof(anim_header) == 0x20, "Wrong animation header size!");
 
+// Time per animation frame in seconds
+static const double FRAMETIME_24FPS = 1.0 / 24.0;
+
 // Skeleton (0x3) chunk
 // =============================================================================
 // This stores all the joints in the skeleton/armature and their relationships to each other.

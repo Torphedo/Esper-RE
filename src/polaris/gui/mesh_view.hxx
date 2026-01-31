@@ -34,7 +34,7 @@ struct index_buffer {
     vec3s* position = nullptr;
     vec3s* rotation = nullptr;
 
-    mat4s get_transform(const alr::file& alr) const noexcept;
+    mat4s get_transform(const alr::file& alr, float frame, u32 anim_id) const noexcept;
     index_buffer() = default;
     index_buffer(u32 idx_offset, u32 skele_offset) noexcept
         : idx_chunk_offset(idx_offset), armature_chunk_offset(skele_offset) {
