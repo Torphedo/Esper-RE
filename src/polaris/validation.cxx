@@ -268,7 +268,7 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
         case 0x13:
             // Don't know anything about this chunk type
             break;
-        case 0x15: {
+        case ALR_ID_TEXTURE: {
             vfile_seek(&chunkvf, sizeof(chunk_generic));
             const u32 num_entries = VFILE_READ(u32, &chunkvf);
             const auto entries = (texture_entry*)vfile_cur(chunkvf);

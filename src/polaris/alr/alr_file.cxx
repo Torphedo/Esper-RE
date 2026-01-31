@@ -35,7 +35,7 @@ bool file::load(const char* path) noexcept {
     chunks = shatter_alr(data, alr_size);
 
     tex_manager.destroy(); // Clear texture cache
-    tex_manager.texheader_offset = first_chunk_by_id(0x15).offset;
+    tex_manager.texheader_offset = first_chunk_by_id(ALR_ID_TEXTURE).offset;
     loaded = true;
     return true;
 }
@@ -222,7 +222,7 @@ bool file::save(const char* path) const noexcept {
                     header->texbuf_size += shift_amount;
                 }
             }
-            else if (c.id == 0x15) {
+            else if (c.id == ALR_ID_TEXTURE) {
                 vfile_seek(&vf, sizeof(chunk_generic));
                 const u32 num_entries = VFILE_READ(u32, &vf);
                 auto* entries = (texture_entry*)vfile_cur(vf);
@@ -232,7 +232,7 @@ bool file::save(const char* path) const noexcept {
                     }
                 }
             }
-            else if (c.id == 0x16) {
+            else if (c.id == ALR_ID_MODEL) {
                 vfile_seek(&vf, sizeof(chunk_generic));
                 const u32 num_entries = VFILE_READ(u32, &vf);
                 auto* entries = (vertbuf_entry*)vfile_cur(vf);

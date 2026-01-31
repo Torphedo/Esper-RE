@@ -446,7 +446,7 @@ void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u3
 }
 
 bool dump_all_textures(const file& alr) {
-    file::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    file::chunk texture_chunk = alr.first_chunk_by_id(ALR_ID_TEXTURE);
     file::chunk atlas_chunk = alr.first_chunk_by_id(0x10);
     if (texture_chunk.size == 0 && atlas_chunk.size == 0) {
         LOG_MSG(warning, "I couldn't find any textures to dump.\n");
@@ -517,7 +517,7 @@ bool dump_all_textures(const file& alr) {
 }
 
 bool dump_all_materials(const file& alr, const char* output_path) {
-    file::chunk texture_chunk = alr.first_chunk_by_id(0x15);
+    file::chunk texture_chunk = alr.first_chunk_by_id(ALR_ID_TEXTURE);
     file::chunk material_chunk = alr.first_chunk_by_id(0x1);
     if (texture_chunk.size == 0 && material_chunk.size == 0) {
         LOG_MSG(warning, "I couldn't find any materials to dump.\n");

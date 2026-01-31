@@ -25,6 +25,7 @@ typedef struct {
 // - 0x1
 // - 0x3
 // - 0x16
+// - 0x13 [optional]
 // - [one or more 0x2 chunk(s)]
 // - 0xD (empty)
 // - 0x0 (null terminator)
@@ -36,7 +37,19 @@ typedef struct {
 // - [models, if present]
 // - 0x10 and 0x0, if texture atlas is used
 
-// 0x11 chunk
+enum {
+    ALR_ID_MATERIAL = 0x1,
+    ALR_ID_INDICES = 0x2,
+    ALR_ID_SKELETON = 0x3,
+    ALR_ID_ANIMATION = 0x5,
+    ALR_ID_CAM_ANIM = 0x7,
+    ALR_ID_TEXATLAS = 0x10,
+    ALR_ID_HEADER = 0x11,
+    ALR_ID_TEXTURE = 0x15,
+    ALR_ID_MODEL = 0x16,
+};
+
+// Header (0x11) chunk
 // =============================================================================
 // All ALR files begin with this chunk, followed by an array of file offsets.
 // The order of offsets follows the structure above. This means the game can use
@@ -58,7 +71,7 @@ typedef struct {
 }chunk_layout;
 static_assert(sizeof(chunk_layout) == 0x20, "Wrong layout chunk header size!");
 
-// 0x15 chunk
+// Texture (0x15) chunk
 // =============================================================================
 // This describes the format/dimensions/etc. of textures, and always comes after the 0x11 chunk.
 // At the end of the file is a large buffer with vertex and texture data (the resource buffer).
@@ -148,7 +161,7 @@ void alr_texture_get_dimensions(texture_entry entry, u16* height_out, u16* width
 /// @param width The new width (in pixels)
 void alr_texture_set_dimensions(texture_entry* entry, u16 height, u16 width);
 
-// 0x16 chunk
+// Model (0x16) chunk
 // =============================================================================
 // This describes the format, size, etc. of vertex buffers.
 // Together with 0x15 chunks, it maps out the resource buffer.
@@ -406,7 +419,7 @@ static vertex_format_t format_by_id(u8 id) {
 // ======= END CUSTOM STRUCTURES =======
 
 
-// 0x10 chunk
+// Atlas (0x10) chunk
 // =============================================================================
 // This chunk is for texture atlases and their sub-textures.
 typedef struct {
@@ -456,7 +469,7 @@ typedef struct {
 }atlas_tex_entry;
 static_assert(sizeof(atlas_tex_entry) == 0x3C, "Wrong texture metadata size!");
 
-// 0x5 chunk
+// Animation (0x5) chunk
 // =============================================================================
 // This stores keyframes for a single animation.
 typedef struct {
@@ -474,7 +487,7 @@ typedef struct {
 }anim_header;
 static_assert(sizeof(anim_header) == 0x20, "Wrong animation header size!");
 
-// 0x3 chunk
+// Skeleton (0x3) chunk
 // =============================================================================
 // This stores all the joints in the skeleton/armature and their relationships to each other.
 
@@ -505,7 +518,7 @@ typedef struct {
 static_assert(sizeof(chunk_armature) == 0x10, "Wrong armature chunk header size!");
 
 
-// 0x2 chunk
+// Index buffer (0x2) chunk
 // =============================================================================
 // Information about an index buffer.
 
@@ -550,7 +563,7 @@ typedef struct {
 }idxbuf_header;
 static_assert(sizeof(idxbuf_header) == 0x68, "Wrong index buffer header size!");
 
-// 0x1 chunk
+// Material (0x1) chunk
 // =============================================================================
 typedef struct {
     u8 unk1[4];

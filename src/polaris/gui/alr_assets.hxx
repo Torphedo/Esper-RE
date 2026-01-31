@@ -20,7 +20,7 @@ texture convert_tex(u8* resbuf, texture_entry entry);
 void update_gl_tex(texture img, gl_obj texture_id);
 
 struct texture_manager {
-    // Offset of the 0x15 chunk
+    // Offset of the texture chunk
     u32 texheader_offset = 0;
 
     std::unordered_map<u32, gl_obj> gl_tex_map;
