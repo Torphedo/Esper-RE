@@ -32,7 +32,9 @@ struct texture_manager {
     void invalidate(u32 idx) noexcept;
     void destroy() noexcept;
 
-    ~texture_manager() noexcept;
+    ~texture_manager() noexcept {
+        destroy();
+    }
 };
 
 mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx);

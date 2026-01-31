@@ -287,10 +287,6 @@ void texture_manager::destroy() noexcept {
     gl_tex_map.clear();
 }
 
-texture_manager::~texture_manager() noexcept {
-    destroy();
-}
-
 mesh_view mesh_at_idx(const alr::file& alr, u32 idx, u32 vertbuf_idx) {
     mesh_view out = {};
     alr_model_desc model = alr.model_at_idx(idx);
