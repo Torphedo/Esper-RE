@@ -259,11 +259,16 @@ void alr::mesh::render(file& alr, render_context& ctx) const noexcept {
     const chunk_0x1_entry* materials = chunks.mat_chunk->entries;
 
     for (const index_buffer& idxbuf : idxbufs) {
+        if (!idxbuf.enabled) {
+            continue;
+        }
+
         const idxbuf_header* header = (idxbuf_header*) (alr.data + idxbuf.idx_chunk_offset);
         const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
         const chunk_0x1_entry& material = materials[header->texture_idx];
         const vertex_buffer& gl_vertbuf = gl_vertbufs[header->vertex_buf];
 
+        ctx.fbo.set_wireframe(idxbuf.wireframe);
         glBindVertexArray(gl_vertbuf.vao);
         mat4s xform = idxbuf.get_transform(alr, ctx.anim_frame, ctx.anim_id);
         mat4s cam_xform = {};
@@ -359,6 +364,13 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
             glGenBuffers(1, &idxbuf.obj);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbuf.obj);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_header->num_indices * sizeof(u16), idx_header->indices, GL_DYNAMIC_DRAW);
+
+            const vertbuf_entry* entries = model.vert_chunk->entries;
+            if (entries[idx_header->vertex_buf].vertex_size == 12) {
+                // This only has space for position, it'll be a solid color and look
+                // ugly in the viewport.
+                idxbuf.enabled = false;
+            }
 
             out.idxbufs.push_back(idxbuf);
         }

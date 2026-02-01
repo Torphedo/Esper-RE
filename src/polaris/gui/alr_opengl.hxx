@@ -24,6 +24,7 @@ struct index_buffer {
     gl_obj obj = 0;
 
     bool enabled = true; // Whether to render this index buffer
+    bool wireframe = false;
 
     // If true, we're using a transform calculated from an 0x3 chunk
     // (and updating it won't affect the file's data)
