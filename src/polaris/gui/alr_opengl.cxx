@@ -128,7 +128,7 @@ bool vertex_buffer::apply_attributes() const noexcept {
     return true;
 }
 
-void vertex_buffer::edit_menu(alr::file& alr) noexcept {
+void vertex_buffer::edit_menu() noexcept {
     const char* format_settings_help = "These may help if a model looks corrupted, or textures are applied wrong.";
     const char* idxbuf_help = "The individual objects within the model";
 

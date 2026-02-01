@@ -17,7 +17,7 @@ struct polaris : gui_layer {
 
     audio_tool audioTool;
     quest_tool questTool;
-    render_context viewport; // 3D viewport
+    render_context renderCtx;
 
     bool headless = true; // Whether we're running without graphics.
     bool show_demo = false; // ImGui Demo Window toggle

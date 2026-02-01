@@ -49,8 +49,6 @@ struct window_state_vertbuf {
     s32 shift_amount = 0;
 };
 
-struct render_context;
-
 namespace alr {
 
 class editor {
@@ -127,7 +125,7 @@ public:
 
     void update() noexcept;
     void render(render_context& ctx) noexcept;
-    bool load(const char* path, render_context& ctx) noexcept;
+    bool load(const char* path) noexcept;
     void send_all_to_viewport() noexcept;
 
     void clear_meshes() noexcept {

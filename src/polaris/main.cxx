@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
     if (strlen(path) > 0) {
         // Try to load as an ALR or .dat file.
         if (file_has_magic(path, 0x11)) {
-            if (!pol->editor.load(path, pol->viewport)) {
+            if (!pol->editor.load(path)) {
                 return EXIT_FAILURE;
             }
         }

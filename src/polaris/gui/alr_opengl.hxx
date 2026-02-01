@@ -76,7 +76,7 @@ struct vertex_buffer {
     bool apply_attributes() const noexcept;
 
     /// @brief ImGui menu to edit the mesh properties
-    void edit_menu(alr::file& alr) noexcept;
+    void edit_menu() noexcept;
 };
 
 // Standardized vertex format that can express all known Phantom Dust vertex

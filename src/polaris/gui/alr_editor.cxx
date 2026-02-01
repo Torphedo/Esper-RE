@@ -706,16 +706,6 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
 }
 
 
-bool editor::load(const char* path, render_context& viewport) noexcept {
-    bool result = alr.load(path);
-    states.clear(); // UI state doesn't transfer between files
-
-    if (graphics_initialized) {
-        send_all_to_viewport();
-    }
-    return result;
-}
-
 void editor::send_all_to_viewport() noexcept {
     u32 num_models = 0;
     alr.first_model_idx(&num_models);
@@ -882,6 +872,16 @@ void editor::render(render_context& ctx) noexcept {
         mesh.render(alr, ctx);
     }
     ctx.unbind();
+}
+
+bool editor::load(const char* path) noexcept {
+    bool result = alr.load(path);
+    states.clear(); // UI state doesn't transfer between files
+
+    if (graphics_initialized) {
+        send_all_to_viewport();
+    }
+    return result;
 }
 
 } // namespace al

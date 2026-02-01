@@ -126,8 +126,8 @@ void polaris::do_menu_bar() noexcept {
             }
 
             if (ImGui::BeginMenu("Windows")) {
-                ImGui::MenuItem("Viewport", nullptr, &this->viewport.active);
-                ImGui::MenuItem("Render Settings", nullptr, &this->viewport.editor_enabled);
+                ImGui::MenuItem("Viewport", nullptr, &this->renderCtx.active);
+                ImGui::MenuItem("Render Settings", nullptr, &this->renderCtx.editor_enabled);
                 ImGui::MenuItem("Performance Timers", nullptr, &this->show_timers);
                 ImGui::MenuItem("ImGui Demo Window", nullptr, &this->show_demo);
                 ImGui::EndMenu();
@@ -161,7 +161,7 @@ void polaris::do_menu_bar() noexcept {
         if (result == NFD_OKAY && path != nullptr) {
             // Wipe data that references the ALR before loading a new one
             editor.clear_meshes();
-            editor.load(path, this->viewport);
+            editor.load(path);
         }
         free(path);
     }
@@ -212,7 +212,7 @@ void polaris::do_menu_bar() noexcept {
 
 void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
-    viewport.init(window);
+    renderCtx.init(window);
     editor.send_all_to_viewport();
 
     // Get as close as possible to 60 FPS
@@ -224,7 +224,7 @@ void polaris::init(GLFWwindow* window) noexcept {
 void polaris::update(GLFWwindow* window) noexcept {
     const scope_timer draw_timer("mainUpdate");
 
-    viewport.update(window);
+    renderCtx.update(window);
     this->do_menu_bar();
 
     if (this->show_demo) {
@@ -252,9 +252,9 @@ void polaris::update(GLFWwindow* window) noexcept {
 
 void polaris::render(GLFWwindow* window) noexcept {
     const scope_timer draw_timer("mainRender");
-    editor.render(viewport);
+    editor.render(renderCtx);
 }
 
 void polaris::destroy() noexcept {
-    viewport.destroy();
+    renderCtx.destroy();
 }
