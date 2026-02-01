@@ -16,81 +16,9 @@ extern "C" {
     #include <common/gl/input.h>
 }
 
-// We ought to split these shaders into other files, but the code is so
-// trivial that it's not really worth it.
-const char* vertex_shader = R"(
-#version 330 core
-layout (location = 0) in vec3 a_pos;
-layout (location = 1) in vec2 a_texcoord;
-layout (location = 2) in vec2 a_lightmap_uv;
-layout (location = 3) in vec3 a_normal;
-
-uniform mat4 pvm;
-uniform uint uv_divisor;
-out vec2 texcoord;
-out vec2 lightmap_uv;
-out vec3 normal;
-
-void main() {
-    gl_Position = pvm * vec4(a_pos, 1.0);
-
-    // We map the large integer value into the [0, 1] range for texture lookups
-    texcoord = a_texcoord / uv_divisor;
-    lightmap_uv = a_lightmap_uv / uv_divisor;
-    normal = a_normal / uv_divisor;
-}
-)";
-
-const char* fragment_shader = R"(
-#version 330 core
-out vec4 fragment_rgba;
-
-in vec2 texcoord;
-in vec2 lightmap_uv;
-in vec3 normal;
-uniform sampler2D albedo_texture;
-uniform sampler2D normal_texture;
-uniform sampler2D lightmap_texture;
-uniform vec3 cam_dir;
-uniform int flags = 0;
-
-void main() {
-    bool render_uv_colors = (flags & 1) != 0;
-    bool render_normal_colors = (flags & 2) != 0;
-    bool has_normal = (flags & 4) != 0;
-
-    vec4 color = vec4(texcoord, 0.0, 1.0);
-    // I figure avoiding a texture sample is worth an if statement. - torph
-    if (!render_uv_colors) {
-        color = texture(albedo_texture, texcoord);
-    }
-
-    // TODO: Do alpha blending here. This is low-priority since most textures have BC1 1-bit alpha (except for a few normal maps).
-    if (color.a < 0.1) {
-        discard;
-    }
-
-    vec3 normal_vec = cam_dir;
-    if (has_normal || render_normal_colors) {
-        normal_vec = normal;
-    }
-    if (has_normal) {
-        vec3 normal_sample = texture(normal_texture, texcoord).rgb;
-        normal_sample = (normal_sample * 2.0) - 1.0;
-        normal_vec += normal_sample;
-    }
-    const float ambient = 0.2f;
-    float diffuse_factor = abs(dot(cam_dir, normal_vec)) + ambient;
-    vec4 lightmap_color = vec4(texture(lightmap_texture, lightmap_uv).rgb, 1.0);
-    lightmap_color = vec4(lightmap_color.rgb * lightmap_color.a, 0.0);
-
-    fragment_rgba = (color * diffuse_factor) + lightmap_color;
-
-    if (render_normal_colors) {
-        fragment_rgba = vec4(normal, 1.0);
-    }
-}
-)";
+// GLSL shaders
+#include "generic.vert.h"
+#include "diffuse.frag.h"
 
 void viewport_t::init(GLFWwindow* window) noexcept {
     // Have the viewport render in full resolution, it'll be downscale when
@@ -106,7 +34,7 @@ void viewport_t::init(GLFWwindow* window) noexcept {
     fbo.bind();
 
     glEnable(GL_BLEND);
-    shader = program_compile_src(vertex_shader, fragment_shader);
+    shader = program_compile_src(generic_vert, diffuse_frag);
     if (!shader_link_check(shader)) {
         LOG_MSG(error, "Shader compilation error!\n");
         return;
