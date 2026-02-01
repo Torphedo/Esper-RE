@@ -5,6 +5,8 @@
 #include <util/scope_timer.hxx>
 #include <alr/alr_file.hxx>
 
+/* === Static index buffer implementation === */
+
 const u16 gl_type_table[DATA_TYPE_COUNT] = {
     GL_BYTE, GL_UNSIGNED_BYTE,
     GL_SHORT, GL_UNSIGNED_SHORT,
@@ -62,6 +64,8 @@ mat4s index_buffer::get_transform(const alr::file& alr, float frame, u32 anim_id
     return obj_transform;
 }
 
+/* === Static vertex buffer implementation === */
+
 bool vertex_buffer::setup() noexcept {
     if (initialized) {
         return true; // Don't setup twice and leak OpenGL objects
@@ -89,7 +93,7 @@ void vertex_buffer::destroy() noexcept {
     glDeleteBuffers(1, &vbo);
 }
 
-bool vertex_buffer::update_vertex_buf(const u8* buf, u32 size) noexcept {
+bool vertex_buffer::upload_vertex_buf(const u8* buf, u32 size) noexcept {
     if (!initialized) {
         return false;
     }
@@ -101,7 +105,6 @@ bool vertex_buffer::update_vertex_buf(const u8* buf, u32 size) noexcept {
     return true;
 }
 
-/// @brief Upload the new vertex format settings to the GPU
 bool vertex_buffer::apply_attributes() const noexcept {
     if (!initialized) {
         return false;
@@ -163,91 +166,6 @@ void vertex_buffer::edit_menu() noexcept {
             }
         }
     }
-}
-
-vec4s read_attr(vfile& vf, vertex_attribute attr) {
-    vec4s result = {};
-    if (!attr.exists) {
-        return result;
-    }
-
-    vf.pos = attr.offset;
-    for (u32 i = 0; i < attr.components; i++) {
-        float val = 0.0f;
-        switch (attr.type) {
-            case DATA_TYPE_FLOAT:
-                val = VFILE_READ(float, &vf);
-                break;
-            case DATA_TYPE_S8:
-                val = VFILE_READ(s8, &vf);
-                break;
-            case DATA_TYPE_U8:
-                val = VFILE_READ(u8, &vf);
-                break;
-            case DATA_TYPE_S16:
-                val = VFILE_READ(s16, &vf);
-                break;
-            case DATA_TYPE_U16:
-                val = VFILE_READ(u16, &vf);
-                break;
-            default:
-                LOG_MSG(warning, "Unimplemented data type '%s'! (%d bytes)\n", nameof_type(attr.type), sizeof_type(attr.type));
-                break;
-        }
-        if (attr.divisor > 0) {
-            val /= float(attr.divisor);
-        }
-
-        result.raw[i] = val;
-    }
-
-    return result;
-}
-
-std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
-    vertex_format_t format = format_by_id(format_id);
-    std_vertex output = {};
-    // Get a virtual file for the buffer
-    vfile vf = vfile_open(vertbuf, format.size);
-
-    vertex_attribute pos_attr = format.attributes[ATTRIBUTE_POSITION];
-    if (pos_attr.exists) {
-        vec4s pos = read_attr(vf, pos_attr);
-        output.pos = vec3s{pos.x, pos.y, pos.z};
-    }
-
-    vertex_attribute uv_attr = format.attributes[ATTRIBUTE_TEXCOORD];
-    if (uv_attr.exists) {
-        vec4s uv = read_attr(vf, uv_attr);
-        output.texcoord = vec2s{uv.x, uv.y};
-    }
-
-    vertex_attribute normal_attr = format.attributes[ATTRIBUTE_NORMAL];
-    if (normal_attr.exists) {
-        vec4s normal_temp = read_attr(vf, normal_attr);
-        vec3s normal = vec3s{normal_temp.x, normal_temp.y, normal_temp.z};
-        normal = glms_normalize(normal);
-
-        output.normal = normal;
-    }
-
-    // Fix vertically flipped UVs to match what Blender expects
-    if (output.texcoord.has_value()) {
-        output.texcoord.value().y = reflect(output.texcoord.value().y, 0.5f);
-    }
-
-    return output;
-}
-
-void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header) {
-    // Search our table of known formats
-    vertex_format_t format = format_by_id(vert_header.format);
-
-    // Copy format data to the output
-    out->vertex_size = format.size;
-    // TODO: Make divisors per-attribute instead of UV-only
-    out->uv_divisor = format.attributes[ATTRIBUTE_TEXCOORD].divisor;
-    memcpy(out->attributes, format.attributes, sizeof(format.attributes));
 }
 
 void alr::mesh::render(file& alr, render_context& ctx) const noexcept {
@@ -338,7 +256,7 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
 
         // Upload vertex buffer
         vertbuf.setup();
-        vertbuf.update_vertex_buf(vertices, entry.vertex_size * entry.vertex_count);
+        vertbuf.upload_vertex_buf(vertices, entry.vertex_size * entry.vertex_count);
         get_vert_attribute(&vertbuf, entry);
         vertbuf.apply_attributes();
         out.gl_vertbufs.push_back(vertbuf);
@@ -380,3 +298,89 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
 
     return out;
 }
+
+vec4s read_attr(vfile& vf, vertex_attribute attr) {
+    vec4s result = {};
+    if (!attr.exists) {
+        return result;
+    }
+
+    vf.pos = attr.offset;
+    for (u32 i = 0; i < attr.components; i++) {
+        float val = 0.0f;
+        switch (attr.type) {
+            case DATA_TYPE_FLOAT:
+                val = VFILE_READ(float, &vf);
+                break;
+            case DATA_TYPE_S8:
+                val = VFILE_READ(s8, &vf);
+                break;
+            case DATA_TYPE_U8:
+                val = VFILE_READ(u8, &vf);
+                break;
+            case DATA_TYPE_S16:
+                val = VFILE_READ(s16, &vf);
+                break;
+            case DATA_TYPE_U16:
+                val = VFILE_READ(u16, &vf);
+                break;
+            default:
+                LOG_MSG(warning, "Unimplemented data type '%s'! (%d bytes)\n", nameof_type(attr.type), sizeof_type(attr.type));
+                break;
+        }
+        if (attr.divisor > 0) {
+            val /= float(attr.divisor);
+        }
+
+        result.raw[i] = val;
+    }
+
+    return result;
+}
+
+std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
+    vertex_format_t format = format_by_id(format_id);
+    std_vertex output = {};
+    // Get a virtual file for the buffer
+    vfile vf = vfile_open(vertbuf, format.size);
+
+    vertex_attribute pos_attr = format.attributes[ATTRIBUTE_POSITION];
+    if (pos_attr.exists) {
+        vec4s pos = read_attr(vf, pos_attr);
+        output.pos = vec3s{pos.x, pos.y, pos.z};
+    }
+
+    vertex_attribute uv_attr = format.attributes[ATTRIBUTE_TEXCOORD];
+    if (uv_attr.exists) {
+        vec4s uv = read_attr(vf, uv_attr);
+        output.texcoord = vec2s{uv.x, uv.y};
+    }
+
+    vertex_attribute normal_attr = format.attributes[ATTRIBUTE_NORMAL];
+    if (normal_attr.exists) {
+        vec4s normal_temp = read_attr(vf, normal_attr);
+        vec3s normal = vec3s{normal_temp.x, normal_temp.y, normal_temp.z};
+        normal = glms_normalize(normal);
+
+        output.normal = normal;
+    }
+
+    // Fix vertically flipped UVs to match what Blender expects
+    if (output.texcoord.has_value()) {
+        output.texcoord.value().y = reflect(output.texcoord.value().y, 0.5f);
+    }
+
+    return output;
+}
+
+void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header) {
+    // Search our table of known formats
+    vertex_format_t format = format_by_id(vert_header.format);
+
+    // Copy format data to the output
+    out->vertex_size = format.size;
+    // TODO: Make divisors per-attribute instead of UV-only
+    out->uv_divisor = format.attributes[ATTRIBUTE_TEXCOORD].divisor;
+    memcpy(out->attributes, format.attributes, sizeof(format.attributes));
+}
+

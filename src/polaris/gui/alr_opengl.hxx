@@ -15,6 +15,7 @@ namespace alr {
 /// This doesn't call ImGui::Begin()/End(), use it in an existing window.
 void edit_menu(vertex_attribute& attr);
 
+// Static index buffer wrapper
 struct index_buffer {
     u32 idx_chunk_offset = 0;
     u32 armature_chunk_offset = 0;
@@ -44,6 +45,7 @@ struct index_buffer {
     }
 };
 
+// Static vertex buffer wrapper
 struct vertex_buffer {
     vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {};
     // The offset of the *entry*, not of the 0x16 chunk.
@@ -69,7 +71,7 @@ struct vertex_buffer {
     ///
     /// @param buf The vertex buffer to upload
     /// @param size The size of the vertex buffer
-    bool update_vertex_buf(const u8* buf, u32 size) noexcept;
+    bool upload_vertex_buf(const u8* buf, u32 size) noexcept;
 
     /// @brief Upload the new vertex format settings to the GPU
     ///
@@ -79,6 +81,27 @@ struct vertex_buffer {
     /// @brief ImGui menu to edit the mesh properties
     void edit_menu() noexcept;
 };
+
+typedef struct {
+    chunk_0x1_header* mat_chunk; // Materials
+    chunk_armature*  skel_chunk;
+    vertbuf_header*  vert_chunk;
+    idxbuf_header*   idx_chunk;
+}alr_model_desc;
+
+namespace alr {
+    struct mesh {
+        alr_model_desc chunks = {};
+        std::vector<vertex_buffer> gl_vertbufs;
+        std::vector<index_buffer> idxbufs;
+        bool active = true; // Whether to render this mesh
+
+        void render(file& alr, render_context& ctx) const noexcept;
+        void destroy() noexcept;
+    };
+}
+
+alr::mesh mesh_at_idx(const alr::file& alr, u32 idx);
 
 // Standardized vertex format that can express all known Phantom Dust vertex
 // formats. Will change often as new information is found.
@@ -110,23 +133,3 @@ vec4s read_attr(vfile& vf, vertex_attribute attr);
 /// @param vert_header ALR vertex buffer header w/ format information
 void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header);
 
-typedef struct {
-    chunk_0x1_header* mat_chunk; // Materials
-    chunk_armature*  skel_chunk;
-    vertbuf_header*  vert_chunk;
-    idxbuf_header*   idx_chunk;
-}alr_model_desc;
-
-namespace alr {
-    struct mesh {
-        alr_model_desc chunks = {};
-        std::vector<vertex_buffer> gl_vertbufs;
-        std::vector<index_buffer> idxbufs;
-        bool active = true; // Whether to render this mesh
-
-        void render(file& alr, render_context& ctx) const noexcept;
-        void destroy() noexcept;
-    };
-}
-
-alr::mesh mesh_at_idx(const alr::file& alr, u32 idx);
