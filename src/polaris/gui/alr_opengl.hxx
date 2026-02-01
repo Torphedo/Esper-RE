@@ -45,7 +45,7 @@ struct index_buffer {
     }
 };
 
-struct mesh_view {
+struct vertex_buffer {
     vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {};
     // The offset of the *entry*, not of the 0x16 chunk.
     u16 vertex_size = 0;
@@ -109,4 +109,4 @@ vec4s read_attr(vfile& vf, vertex_attribute attr);
 /// Fill in vertex attributes on a mesh based on vertex format
 /// @param out Mesh to receive vertex attribute info
 /// @param vert_header ALR vertex buffer header w/ format information
-void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header);
+void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header);

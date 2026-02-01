@@ -5,7 +5,7 @@
 
 #include <common/image.h>
 #include <formats/alr.h>
-#include <gui/mesh_view.hxx>
+#include <gui/alr_opengl.hxx>
 
 typedef struct {
     chunk_0x1_header* mat_chunk; // Materials
@@ -46,23 +46,12 @@ struct texture_manager {
 
 namespace alr {
     struct mesh {
-        // 1. Loop over all index buffers.
-        // 2. Index into a vertbuf_entry* and bind the corresponding VAO
-        // 3. Use index buffer info to get the final animated xform, or just use
-        //    the optional pos/rot pointers
-        // 4. Index into materials to get texture IDs, then fetch via manager
         alr_model_desc chunks;
-        std::vector<mesh_view> vaos;
+        std::vector<vertex_buffer> gl_vertbufs;
         std::vector<index_buffer> idxbufs;
 
         void render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_obj u_pvm, gl_obj u_divisor) const noexcept;
         void destroy() noexcept;
-
-        // Need:
-        // - VAO
-        // - Index buffers
-        // - Texture (ideally material info)
-        // - Transform (need ALR index buffer for the joint ID, or pos/rot pointers)
     };
 }
 

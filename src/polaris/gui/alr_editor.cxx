@@ -18,7 +18,7 @@
 
 #include "alr_assets.hxx"
 #include "alr_imgui.hxx"
-#include "mesh_view.hxx"
+#include "alr_opengl.hxx"
 #include "viewport.hxx"
 
 // Normally I'd make this a method, but by using a macro we can have LOG_MSG()
@@ -458,8 +458,7 @@ void editor::window_state::send_vertbuf_to_viewport(file& alr, viewport_t& viewp
         }
     }
 
-    auto mesh = mesh_at_idx(alr, idx);
-    viewport.meshes.push_back(mesh);
+    viewport.meshes.push_back(mesh_at_idx(alr, idx));
 }
 
 void editor::window_state::draw_chunk_vertbuf(file& alr, file::chunk& chunk, viewport_t& viewport) noexcept {
@@ -732,8 +731,7 @@ void editor::send_all_to_viewport(viewport_t& viewport) const noexcept {
         if (model.vert_chunk == nullptr) {
             continue;
         }
-        auto mesh = mesh_at_idx(alr, i);
-        viewport.meshes.push_back(mesh);
+        viewport.meshes.emplace_back(mesh_at_idx(alr, i));
     }
 }
 

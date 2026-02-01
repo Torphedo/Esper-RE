@@ -1,4 +1,4 @@
-#include "mesh_view.hxx"
+#include "alr_opengl.hxx"
 #include <cstdio>
 
 #include <common/vfile.h>
@@ -65,7 +65,7 @@ mat4s index_buffer::get_transform(const alr::file& alr, float frame, u32 anim_id
     return obj_transform;
 }
 
-bool mesh_view::setup() noexcept {
+bool vertex_buffer::setup() noexcept {
     if (initialized) {
         return true; // Don't setup twice and leak OpenGL objects
     }
@@ -84,7 +84,7 @@ bool mesh_view::setup() noexcept {
     return true;
 }
 
-void mesh_view::destroy() noexcept {
+void vertex_buffer::destroy() noexcept {
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -92,7 +92,7 @@ void mesh_view::destroy() noexcept {
     glDeleteBuffers(1, &vbo);
 }
 
-bool mesh_view::update_vertex_buf(const u8* buf, u32 size) noexcept {
+bool vertex_buffer::update_vertex_buf(const u8* buf, u32 size) noexcept {
     if (!initialized) {
         return false;
     }
@@ -105,7 +105,7 @@ bool mesh_view::update_vertex_buf(const u8* buf, u32 size) noexcept {
 }
 
 /// @brief Upload the new vertex format settings to the GPU
-bool mesh_view::apply_attributes() const noexcept {
+bool vertex_buffer::apply_attributes() const noexcept {
     if (!initialized) {
         return false;
     }
@@ -131,7 +131,7 @@ bool mesh_view::apply_attributes() const noexcept {
     return true;
 }
 
-void mesh_view::edit_menu(alr::file& alr) noexcept {
+void vertex_buffer::edit_menu(alr::file& alr) noexcept {
     const char* format_settings_help = "These may help if a model looks corrupted, or textures are applied wrong.";
     const char* idxbuf_help = "The individual objects within the model";
 
@@ -250,7 +250,7 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
     return output;
 }
 
-void get_vert_attribute(mesh_view* out, vertbuf_entry vert_header) {
+void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header) {
     // Search our table of known formats
     vertex_format_t format = format_by_id(vert_header.format);
 

@@ -5,7 +5,7 @@
 #include <common/vfile.h>
 #include <common/logging.h>
 
-#include "mesh_view.hxx"
+#include "alr_opengl.hxx"
 #include "polaris.hxx"
 #include "selector_ray.hxx"
 #include <util/scope_timer.hxx>
@@ -130,7 +130,7 @@ void viewport_t::destroy() noexcept {
     if (initialized) {
         fbo.destroy();
         glDeleteProgram(shader);
-        for (auto& mesh : meshes) {
+        for (alr::mesh& mesh : meshes) {
             mesh.destroy();
         }
 
@@ -188,7 +188,8 @@ void viewport_t::update(GLFWwindow* window) noexcept {
                 // If you make this loop over all meshes in the future, make sure not to
                 // use the for loop style with a colon (or make sure you get a reference),
                 // otherwise it'll run the menu on a copy and not modify the data
-                auto& mesh = meshes.at(selected_mesh);
+                alr::mesh& mesh = meshes.at(selected_mesh);
+                // TODO: Restore edit menu
                 // mesh.edit_menu(*alr);
             }
 
@@ -306,7 +307,7 @@ void viewport_t::render(GLFWwindow* window) noexcept {
 
     // Render all opaque meshes
     for (u32 i = 0; i < meshes.size(); i++) {
-        const auto& mesh = meshes[i];
+        const alr::mesh& mesh = meshes[i];
         const bool do_wireframe = wireframe || (wireframe_selection && (i == selected_mesh));
         fbo.set_wireframe(do_wireframe);
         mesh.render(*alr, anim_id, anim_frame, *(mat4s*)pvm, uniform_pvm, uniform_uv_divisor);

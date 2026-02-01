@@ -1,5 +1,5 @@
 #pragma once
-#include "mesh_view.hxx"
+#include "alr_opengl.hxx"
 #include <vector>
 #include <GLFW/glfw3.h>
 
@@ -80,7 +80,6 @@ struct viewport_t : gui_layer {
 
     void update(GLFWwindow* window) noexcept override;
     void render(GLFWwindow* window) noexcept override;
-    void render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_transparent);
 
     // Destroys the underlying OpenGL resources and invalidates all copies of this instance.
     void destroy() noexcept override;

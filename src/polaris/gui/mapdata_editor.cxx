@@ -8,7 +8,7 @@
 #include "gui/polaris.hxx"
 #include "util/imgui_utils.hxx"
 #include "util/utils.hxx"
-#include "mesh_view.hxx"
+#include "alr_opengl.hxx"
 
 mapdata_editor::mapdata_editor(const char* filepath, polaris& pol) : pol(pol) {
     map.filepath = filepath;
@@ -32,7 +32,7 @@ mapdata_editor::~mapdata_editor() {
 }
 
 void map_obj_to_viewport(viewport_t& viewport, const alr::file& alr, const ps01_entry* entry) noexcept {
-    auto mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id);
+    alr::mesh mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id);
     for (index_buffer& idxbuf : mesh.idxbufs) {
         idxbuf.is_skele_transform = false;
         idxbuf.position = (vec3s*)&entry->pos;

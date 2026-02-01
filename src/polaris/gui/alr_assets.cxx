@@ -296,7 +296,7 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
     const u8* resbuf = alr.resource_buffer();
 
     for (u32 i = 0; i < model.vert_chunk->num_entries; i++) {
-        mesh_view vertbuf = {};
+        vertex_buffer vertbuf = {};
         const vertbuf_entry& entry = model.vert_chunk->entries[i];
         const u8* vertices = resbuf + entry.data_ptr;
 
@@ -305,7 +305,7 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
         vertbuf.update_vertex_buf(vertices, entry.vertex_size * entry.vertex_count);
         get_vert_attribute(&vertbuf, entry);
         vertbuf.apply_attributes();
-        out.vaos.push_back(vertbuf);
+        out.gl_vertbufs.push_back(vertbuf);
     }
 
     // We need offsets for our other utility functions
@@ -346,14 +346,15 @@ void alr::mesh::render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_
         const idxbuf_header* header = (idxbuf_header*) (alr.data + idxbuf.idx_chunk_offset);
         const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
         const chunk_0x1_entry& material = materials[header->texture_idx];
+        const vertex_buffer& gl_vertbuf = gl_vertbufs[header->vertex_buf];
 
-        glBindVertexArray(vaos[header->vertex_buf].vao);
+        glBindVertexArray(gl_vertbuf.vao);
         mat4s xform = idxbuf.get_transform(alr, frame, anim_id);
 
         mat4s pvm = glms_mul(cam_xform, xform);
 
         glUniformMatrix4fv(u_pvm, 1, GL_FALSE, (float*)pvm.raw);
-        const u32 divisor = vaos[header->vertex_buf].uv_divisor;
+        const u32 divisor = gl_vertbuf.uv_divisor;
         glUniform1ui(u_divisor, divisor);
 
         glActiveTexture(GL_TEXTURE0);
@@ -367,14 +368,6 @@ void alr::mesh::render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_
             lightmap_idx = material.normal_idx;
             normal_idx = material.normal_backup_idx;
         }
-
-        /*
-        shader_flags_t flags = this->shader_flags;
-        if (flags.has_normal) {
-            flags.has_normal = (normal_idx != 0);
-        }
-        glUniform1i(uniform_flags, *((u32*)&flags));
-        */
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, normal_idx));
@@ -406,7 +399,7 @@ void alr::mesh::destroy() noexcept {
         glDeleteBuffers(1, &idxbuf.obj);
     }
 
-    for (auto& vertbuf : vaos) {
+    for (vertex_buffer& vertbuf : gl_vertbufs) {
         vertbuf.destroy();
     }
 }
