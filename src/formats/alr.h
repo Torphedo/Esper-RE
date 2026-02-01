@@ -572,8 +572,8 @@ static_assert(sizeof(idxbuf_header) == 0x68, "Wrong index buffer header size!");
 // Material (0x1) chunk
 // =============================================================================
 typedef struct {
-    u8 unk1[4];
-    u32 unk2;
+    u32 text1;
+    u32 text2;
     u32 unk3; // Usually 0?
     u16 unk4;
     u16 unk5;
@@ -591,12 +591,18 @@ typedef struct {
     u16 normal_backup_idx;
     u16 pad1;
     u32 pad2[4];
+
+    // Looks kind of like RGBA bitmasks. Some common values:
+    // - 00 00 00 00
+    // - 00 00 00 FF
+    // - 7F 7F 7F FF
+    // - 7F 7F 7F 14
     u8 unk10[4];
     u8 unk11[4];
     u32 pad3;
-    u32 unk12;
-    u16 unk13[2];
-    u32 pad4[2];
+
+    // These are usually multiples of 10 (40, 250, 200, 300, 1000 are common values)
+    u16 unk12[8];
 }chunk_0x1_entry;
 static_assert(sizeof(chunk_0x1_entry) == 0x4C, "Wrong 0x1 chunk entry size!");
 
