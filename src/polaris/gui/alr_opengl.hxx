@@ -110,3 +110,23 @@ vec4s read_attr(vfile& vf, vertex_attribute attr);
 /// @param out Mesh to receive vertex attribute info
 /// @param vert_header ALR vertex buffer header w/ format information
 void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header);
+
+typedef struct {
+    chunk_0x1_header* mat_chunk; // Materials
+    chunk_armature*  skel_chunk;
+    vertbuf_header*  vert_chunk;
+    idxbuf_header*   idx_chunk;
+}alr_model_desc;
+
+namespace alr {
+    struct mesh {
+        alr_model_desc chunks;
+        std::vector<vertex_buffer> gl_vertbufs;
+        std::vector<index_buffer> idxbufs;
+
+        void render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_obj u_pvm, gl_obj u_divisor) const noexcept;
+        void destroy() noexcept;
+    };
+}
+
+alr::mesh mesh_at_idx(const alr::file& alr, u32 idx);

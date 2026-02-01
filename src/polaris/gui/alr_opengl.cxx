@@ -260,3 +260,120 @@ void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header) {
     out->uv_divisor = format.attributes[ATTRIBUTE_TEXCOORD].divisor;
     memcpy(out->attributes, format.attributes, sizeof(format.attributes));
 }
+
+void alr::mesh::render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_obj u_pvm, gl_obj u_divisor) const noexcept {
+    const vertbuf_entry* vertbufs = chunks.vert_chunk->entries;
+    const chunk_0x1_entry* materials = chunks.mat_chunk->entries;
+
+    for (const index_buffer& idxbuf : idxbufs) {
+        const idxbuf_header* header = (idxbuf_header*) (alr.data + idxbuf.idx_chunk_offset);
+        const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
+        const chunk_0x1_entry& material = materials[header->texture_idx];
+        const vertex_buffer& gl_vertbuf = gl_vertbufs[header->vertex_buf];
+
+        glBindVertexArray(gl_vertbuf.vao);
+        mat4s xform = idxbuf.get_transform(alr, frame, anim_id);
+
+        mat4s pvm = glms_mul(cam_xform, xform);
+
+        glUniformMatrix4fv(u_pvm, 1, GL_FALSE, (float*)pvm.raw);
+        const u32 divisor = gl_vertbuf.uv_divisor;
+        glUniform1ui(u_divisor, divisor);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, material.texture_idx));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        u32 normal_idx = material.normal_idx;
+        u32 lightmap_idx = 0;
+        if (material.vertbuf_format == 0x1F) {
+            lightmap_idx = material.normal_idx;
+            normal_idx = material.normal_backup_idx;
+        }
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, normal_idx));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glActiveTexture(GL_TEXTURE2);
+        if (lightmap_idx == 0) {
+            // Make sure lightmap samples all zeroes
+            glBindTexture(GL_TEXTURE_2D, 0);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, lightmap_idx));
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
+
+        const u16 draw_mode = (header->primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbuf.obj);
+        glDrawElements(draw_mode, header->num_indices, GL_UNSIGNED_SHORT, 0);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void alr::mesh::destroy() noexcept {
+    for (auto& idxbuf : idxbufs) {
+        glDeleteBuffers(1, &idxbuf.obj);
+    }
+
+    for (vertex_buffer& vertbuf : gl_vertbufs) {
+        vertbuf.destroy();
+    }
+}
+
+alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
+    alr::mesh out = {};
+    alr_model_desc model = alr.model_at_idx(idx);
+    out.chunks = model;
+
+    // Get the actual vertex buffer
+    const u8* resbuf = alr.resource_buffer();
+
+    for (u32 i = 0; i < model.vert_chunk->num_entries; i++) {
+        vertex_buffer vertbuf = {};
+        const vertbuf_entry& entry = model.vert_chunk->entries[i];
+        const u8* vertices = resbuf + entry.data_ptr;
+
+        // Upload vertex buffer
+        vertbuf.setup();
+        vertbuf.update_vertex_buf(vertices, entry.vertex_size * entry.vertex_count);
+        get_vert_attribute(&vertbuf, entry);
+        vertbuf.apply_attributes();
+        out.gl_vertbufs.push_back(vertbuf);
+    }
+
+    // We need offsets for our other utility functions
+    const ptrdiff_t skel_chunk_offset = (ptrdiff_t)model.skel_chunk - (ptrdiff_t)alr.data;
+    const ptrdiff_t idx_chunk_offset = (ptrdiff_t)model.idx_chunk - (ptrdiff_t)alr.data;
+    const ptrdiff_t mat_chunk_offset = (ptrdiff_t)model.mat_chunk - (ptrdiff_t)alr.data;
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vfile_seek(&vf, idx_chunk_offset);
+
+    // Parse all index buffers
+    auto* chunk = (chunk_generic*)vfile_cur(vf);
+    while (chunk->id != ALR_ID_END_INDICES) {
+        const idxbuf_header* idx_header = (idxbuf_header*)vfile_cur(vf);
+        if (chunk->id == 0x2) {
+            index_buffer idxbuf(vf.pos, skel_chunk_offset, mat_chunk_offset);
+            glGenBuffers(1, &idxbuf.obj);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbuf.obj);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_header->num_indices * sizeof(u16), idx_header->indices, GL_DYNAMIC_DRAW);
+
+            out.idxbufs.push_back(idxbuf);
+        }
+
+        // Prepare to read next index buffer
+        vfile_seek(&vf, chunk->size);
+        chunk = (chunk_generic*)vfile_cur(vf);
+        assert(chunk->id < 0x15);
+    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    return out;
+}

@@ -4,6 +4,7 @@
 #include <common/vfile.h>
 #include <formats/alr.h>
 #include <gui/alr_assets.hxx>
+#include <gui/alr_opengl.hxx>
 
 namespace alr {
     class file {
