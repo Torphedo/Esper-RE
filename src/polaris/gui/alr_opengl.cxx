@@ -287,14 +287,14 @@ mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
     return anim_pose[joint_idx];
 }
 
-void alr::mesh_instance::update_animation(const alr::file& alr, float delta_time) noexcept {
+void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
     scope_timer timer("instanceUpdateAnimation", true);
     const chunk_armature* skel = mesh.chunks.skel_chunk;
     anim_pose.resize(skel->joint_count);
 
     anim_frame += delta_time / FRAMETIME_24FPS;
     for (u32 i{}; i < skel->joint_count; i++) {
-        anim_pose[i] = alr.joint_final_xform(skel, active_anim, i, anim_frame);
+        anim_pose[i] = alr.joint_final_xform(skel, anim_id, i, anim_frame);
     }
 }
 
@@ -302,8 +302,8 @@ void alr::mesh_instance::render(alr::file& alr, render_context& ctx) const noexc
     mesh.render(alr, ctx, *this);
 }
 
-alr::mesh_instance::mesh_instance(const alr::mesh& mesh, u32 active_anim, vec3s* pos, vec3s* rot)
-    : mesh(mesh), active_anim(active_anim), pos(pos), rot(rot)
+alr::mesh_instance::mesh_instance(const alr::mesh& mesh, vec3s* pos, vec3s* rot)
+    : mesh(mesh), pos(pos), rot(rot)
 {
     return;
 }

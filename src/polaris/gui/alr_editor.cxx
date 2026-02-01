@@ -453,7 +453,7 @@ void editor::window_state::send_vertbuf_to_viewport(editor& ed) noexcept {
         }
     }
 
-    ed.instances.emplace_back(ed.meshes[idx], 0);
+    ed.instances.emplace_back(ed.meshes[idx]);
 }
 
 void editor::window_state::draw_chunk_vertbuf(editor& ed, file::chunk& chunk) noexcept {
@@ -726,7 +726,7 @@ void editor::load_all_meshes() noexcept {
         if (meshes[i].chunks.vert_chunk == nullptr) {
             continue;
         }
-        instances.emplace_back(meshes[i], 0);
+        instances.emplace_back(meshes[i]);
     }
 }
 
@@ -950,7 +950,7 @@ void editor::update(render_context& ctx) noexcept {
 void editor::render(render_context& ctx) noexcept {
     ctx.bind();
     for (alr::mesh_instance& instance : instances) {
-        instance.update_animation(alr, ImGui::GetIO().DeltaTime);
+        instance.update_animation(alr, ctx.anim_id, ImGui::GetIO().DeltaTime);
         instance.render(alr, ctx);
     }
     ctx.unbind();

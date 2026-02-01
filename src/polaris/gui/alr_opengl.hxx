@@ -94,16 +94,15 @@ namespace alr {
         vec3s* pos = nullptr;
         vec3s* rot = nullptr;
 
-        u32 active_anim = 0;
         float anim_frame = 0.0f;
         std::vector<mat4s> anim_pose; // Computed every frame
         const alr::mesh& mesh;
 
         mat4s transform(u32 joint_idx) const noexcept;
-        void update_animation(const alr::file& alr, float delta_time) noexcept;
+        void update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
         void render(alr::file& alr, render_context& ctx) const noexcept;
 
-        mesh_instance(const alr::mesh& mesh, u32 active_anim, vec3s* pos = nullptr, vec3s* rot = nullptr);
+        mesh_instance(const alr::mesh& mesh, vec3s* pos = nullptr, vec3s* rot = nullptr);
     };
 }
 

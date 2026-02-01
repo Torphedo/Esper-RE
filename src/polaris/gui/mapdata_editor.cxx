@@ -27,7 +27,7 @@ mapdata_editor::~mapdata_editor() {
 
 void map_obj_to_viewport(alr::editor& ed, const ps01_entry* entry) noexcept {
     const u32 idx = FIRST_OBJ_IDX + entry->object_id;
-    ed.instances.emplace_back(ed.meshes[idx], 0, (vec3s*)&entry->pos, (vec3s*)&entry->rotation);
+    ed.instances.emplace_back(ed.meshes[idx], (vec3s*)&entry->pos, (vec3s*)&entry->rotation);
 }
 
 void mapdata_editor::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
