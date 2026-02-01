@@ -45,9 +45,6 @@ struct viewport_t : gui_layer {
     // A value to divide the UVs by before using them
     gl_obj uniform_uv_divisor = 0;
 
-    // 32-bit shader flag bitfield
-    gl_obj uniform_flags = 0;
-
     // Camera view direction vector
     gl_obj uniform_cam_dir = 0;
 
@@ -68,11 +65,6 @@ struct viewport_t : gui_layer {
 
     // Shader settings bitfield
     bool render_texcoords = false;
-    struct shader_flags_t {
-        bool render_normals: 1;
-        bool has_normal: 1; // Whether this object even has a normal map
-        u32: 0; // This pads the bitfield to 32 bits
-    }shader_flags = {};
 
     // All meshes in the scene
     std::vector<alr::mesh> meshes;

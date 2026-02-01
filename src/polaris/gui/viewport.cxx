@@ -59,7 +59,6 @@ void viewport_t::set_shader(gl_obj shader) noexcept {
 
     uniform_pvm = glGetUniformLocation(active_shader, "pvm");
     uniform_uv_divisor = glGetUniformLocation(active_shader, "uv_divisor");
-    uniform_flags = glGetUniformLocation(active_shader, "flags");
     uniform_cam_dir = glGetUniformLocation(active_shader, "cam_dir");
 
     uniform_sampler_albedo = glGetUniformLocation(active_shader, "albedo_texture");
@@ -72,6 +71,7 @@ void viewport_t::destroy() noexcept {
     if (initialized) {
         fbo.destroy();
         glDeleteProgram(diffuse_shader);
+        glDeleteProgram(uv_shader);
         for (alr::mesh& mesh : meshes) {
             mesh.destroy();
         }
@@ -111,17 +111,16 @@ void viewport_t::update(GLFWwindow* window) noexcept {
             set_shader(render_texcoords ? uv_shader : diffuse_shader);
         }
 
-        bool temp_render_normals = shader_flags.render_normals;
-        ImGui::Checkbox("Visualize normals", &temp_render_normals);
-        shader_flags.render_normals = temp_render_normals;
+        // TODO: Bring back normal visualization
+        // ImGui::Checkbox("Visualize normals", &render_normals);
 
-        bool temp_force_disable_normals = shader_flags.has_normal;
-        ImGui::Checkbox("Use normal maps", &temp_force_disable_normals);
-        shader_flags.has_normal = temp_force_disable_normals;
+        // TODO: Bring back normal map rendering
+        // ImGui::Checkbox("Use normal maps", &temp_force_disable_normals);
 
-        ImGui::Checkbox("Enable raycast test", &raycast_test);
+        // TODO: Try to do raycasting again
+        // ImGui::Checkbox("Enable raycast test", &raycast_test);
+
         ImGui::Checkbox("Render selection in wireframe", &wireframe_selection);
-
 
         if (ImGui::CollapsingHeader("Model properties")) {
             selected_mesh = CLAMP(0, selected_mesh, meshes.size());
@@ -131,7 +130,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
                 // use the for loop style with a colon (or make sure you get a reference),
                 // otherwise it'll run the menu on a copy and not modify the data
                 alr::mesh& mesh = meshes.at(selected_mesh);
-                // TODO: Restore edit menu
+                // TODO: Bring back edit menu
                 // mesh.edit_menu(*alr);
             }
 
@@ -208,16 +207,7 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     if (cursor_lock) {
         ImGui::GetIO().WantCaptureMouse = false;
         ImGui::GetIO().WantCaptureKeyboard = false;
-        if (raycast_test) {
-            const vec4s fb_viewport = {
-                // .x = fb_start.x, .y = fb_start.y,
-                .z = image_size.x, .w = image_size.y,
-            };
-            ray_t ray = screen_to_ray(mouse_pos, cam, fb_viewport);
-
-        } else {
-            cam.update(delta_time);
-        }
+        cam.update(delta_time);
     }
 
     ImGui::End();
@@ -241,7 +231,6 @@ void viewport_t::render(GLFWwindow* window) noexcept {
     glUseProgram(active_shader);
     glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
     glUniform3fv(uniform_cam_dir, 1, cam.facing().raw);
-    glUniform1i(uniform_flags, *((u32*)&shader_flags));
 
     glUniform1i(uniform_sampler_albedo, 0);
     glUniform1i(uniform_sampler_normal, 1);
