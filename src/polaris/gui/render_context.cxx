@@ -76,49 +76,8 @@ void render_context::update(GLFWwindow* window) noexcept {
     if (!active || !initialized) {
         return;
     }
-    // Calculate delta time every time we render
-    static double prev_time = glfwGetTime();
-    const double cur_time = glfwGetTime();
-    const double delta_time = cur_time - prev_time;
-    prev_time = cur_time;
+    const double delta_time = ImGui::GetIO().DeltaTime;
     anim_frame += (delta_time / FRAMETIME_24FPS);
-
-    if (editor_enabled) {
-        ImGui::Begin("Render Settings", &this->editor_enabled);
-        ImGui::SetNextItemWidth(ImGui::CharWidth(20));
-        ImGui::InputU16("Selected Model", &selected_mesh);
-
-        fbo.bind();
-        if (ImGui::Checkbox("Wireframe", &wireframe)) {
-            fbo.set_wireframe(wireframe);
-        }
-
-        if (ImGui::Checkbox("Back-face culling", &backface_cull)) {
-            fbo.set_backface_cull(backface_cull);
-        }
-        fbo.unbind();
-
-        if (ImGui::Checkbox("Visualize UVs", &render_texcoords)) {
-            set_shader(render_texcoords ? uv_shader : diffuse_shader);
-        }
-
-        // TODO: Bring back normal visualization
-        // ImGui::Checkbox("Visualize normals", &render_normals);
-
-        // TODO: Bring back normal map rendering
-        // ImGui::Checkbox("Use normal maps", &temp_force_disable_normals);
-
-        // TODO: Try to do raycasting again
-        // ImGui::Checkbox("Enable raycast test", &raycast_test);
-
-        ImGui::Checkbox("Render selection in wireframe", &wireframe_selection);
-
-        if (ImGui::CollapsingHeader("Model properties")) {
-            // TODO: Bring back edit menu
-            // mesh.edit_menu(*alr);
-        }
-        ImGui::End();
-    }
 
     visible = ImGui::Begin("Viewport");
     const float padding = ImGui::GetStyle().FramePadding.x * 2;

@@ -122,8 +122,10 @@ public:
 
     // All meshes that can be drawn
     std::vector<alr::mesh> meshes;
+    u32 selected_mesh = 0;
+    u32 selected_submesh = 0;
 
-    void update() noexcept;
+    void update(render_context& ctx) noexcept;
     void render(render_context& ctx) noexcept;
     bool load(const char* path) noexcept;
     void send_all_to_viewport() noexcept;

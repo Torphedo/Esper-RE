@@ -23,7 +23,7 @@ struct index_buffer {
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
 
-    bool enabled = true; // Whether to render this index buffer
+    bool active = true; // Whether to render this index buffer
     bool wireframe = false;
 
     // If true, we're using a transform calculated from an 0x3 chunk

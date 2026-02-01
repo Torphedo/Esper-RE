@@ -244,7 +244,7 @@ void polaris::update(GLFWwindow* window) noexcept {
         show_about = about_menu();
     }
 
-    editor.update();
+    editor.update(renderCtx);
     this->mapEdit.do_gui();
     this->audioTool.do_gui();
     this->questTool.do_gui();

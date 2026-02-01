@@ -756,7 +756,7 @@ const char* chunk_name_by_id(u32 id) {
     return known_name;
 }
 
-void editor::update() noexcept {
+void editor::update(render_context& ctx) noexcept {
     graphics_initialized = true;
     ImGui::Begin("ALR Chunks");
 
@@ -864,6 +864,48 @@ void editor::update() noexcept {
     }
 
     tex_edit.draw(alr);
+
+
+    if (ctx.editor_enabled) {
+        ImGui::Begin("Render Settings", &ctx.editor_enabled);
+        ImGui::SetNextItemWidth(ImGui::CharWidth(20));
+        ImGui::InputU16("Selected Model", &ctx.selected_mesh);
+
+        ctx.fbo.bind();
+        if (ImGui::Checkbox("Wireframe", &ctx.wireframe)) {
+            ctx.fbo.set_wireframe(ctx.wireframe);
+        }
+
+        if (ImGui::Checkbox("Back-face culling", &ctx.backface_cull)) {
+            ctx.fbo.set_backface_cull(ctx.backface_cull);
+        }
+        ctx.fbo.unbind();
+
+        if (ImGui::Checkbox("Visualize UVs", &ctx.render_texcoords)) {
+            ctx.set_shader(ctx.render_texcoords ? ctx.uv_shader : ctx.diffuse_shader);
+        }
+
+        // TODO: Bring back normal visualization
+        // ImGui::Checkbox("Visualize normals", &render_normals);
+
+        // TODO: Bring back normal map rendering
+        // ImGui::Checkbox("Use normal maps", &temp_force_disable_normals);
+
+        // TODO: Try to do raycasting again
+        // ImGui::Checkbox("Enable raycast test", &raycast_test);
+
+        ImGui::Checkbox("Render selection in wireframe", &ctx.wireframe_selection);
+
+        ImGui::SliderInt("Selected Mesh", (int*)&selected_mesh, 0, meshes.size() - 1);
+
+        alr::mesh& mesh = meshes[selected_mesh];
+        ImGui::SliderInt("Selected Submesh", (int*)&selected_submesh, 0, mesh.gl_vertbufs.size() - 1);
+
+        if (ImGui::CollapsingHeader("Model properties")) {
+            mesh.gl_vertbufs[selected_submesh].edit_menu();
+        }
+        ImGui::End();
+    }
 }
 
 void editor::render(render_context& ctx) noexcept {
