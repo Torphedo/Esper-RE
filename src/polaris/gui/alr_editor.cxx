@@ -925,12 +925,18 @@ void editor::update(render_context& ctx) noexcept {
         if (mesh.gl_vertbufs.size() == 0) {
             ImGui::Text("[no objects on this mesh]");
         } else {
+            const u32 old_selection = selected_object;
             ImGui::SetNextItemWidth(sliderWidth);
-            ImGui::SliderInt("Selected Object", (int *) &selected_object, 0, mesh.gl_vertbufs.size() - 1);
-            ImGui::SameLine();
+            bool changed = ImGui::SliderInt("Selected Object", (int *) &selected_object, 0, mesh.gl_vertbufs.size() - 1);
             selected_object = CLAMP(0, selected_object, mesh.gl_vertbufs.size() - 1);
 
             vertex_buffer &vertbuf = mesh.gl_vertbufs[selected_object];
+            if (changed) {
+                mesh.gl_vertbufs[old_selection].wireframe = false;
+                vertbuf.wireframe = true;
+            }
+
+            ImGui::SameLine();
             ImGui::Checkbox("Render##2", &vertbuf.active);
 
             if (ImGui::CollapsingHeader("Object properties")) {
@@ -944,10 +950,8 @@ void editor::update(render_context& ctx) noexcept {
 void editor::render(render_context& ctx) noexcept {
     ctx.bind();
     for (alr::mesh_instance& instance : instances) {
-        if (instance.mesh.active) {
-            instance.update_animation(alr, ImGui::GetIO().DeltaTime);
-            instance.render(alr, ctx);
-        }
+        instance.update_animation(alr, ImGui::GetIO().DeltaTime);
+        instance.render(alr, ctx);
     }
     ctx.unbind();
 }

@@ -23,12 +23,9 @@ struct index_buffer {
     gl_obj obj = 0;
 
     bool active = true; // Whether to render this index buffer
-    bool wireframe = false;
 
     index_buffer() = default;
-    index_buffer(u32 idx_offset) noexcept
-        : idx_chunk_offset(idx_offset)
-    {
+    index_buffer(u32 idx_offset) noexcept : idx_chunk_offset(idx_offset) {
         return;
     }
 };
@@ -46,6 +43,7 @@ struct vertex_buffer {
 
     // Whether to render this mesh
     bool active = true;
+    bool wireframe = false;
 
     bool initialized = false;
 
@@ -95,18 +93,17 @@ namespace alr {
         // Optional, from .dat file
         vec3s* pos = nullptr;
         vec3s* rot = nullptr;
-        vec3s* scale = nullptr;
 
         u32 active_anim = 0;
         float anim_frame = 0.0f;
         std::vector<mat4s> anim_pose; // Computed every frame
         const alr::mesh& mesh;
 
-        mat4s world_xform() const noexcept;
+        mat4s transform(u32 joint_idx) const noexcept;
         void update_animation(const alr::file& alr, float delta_time) noexcept;
         void render(alr::file& alr, render_context& ctx) const noexcept;
 
-        mesh_instance(const alr::mesh& mesh, u32 active_anim, vec3s* pos = nullptr, vec3s* rot = nullptr, vec3s* scale = nullptr);
+        mesh_instance(const alr::mesh& mesh, u32 active_anim, vec3s* pos = nullptr, vec3s* rot = nullptr);
     };
 }
 

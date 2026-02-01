@@ -3,6 +3,7 @@
 #include <formats/alr.h>
 #include <util/imgui_utils.hxx>
 #include <alr/alr_file.hxx>
+#include <util/scope_timer.hxx>
 
 /* === Static index buffer implementation === */
 
@@ -143,6 +144,10 @@ void vertex_buffer::edit_menu() noexcept {
 }
 
 void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept {
+    if (!this->active) {
+        return;
+    }
+
     const vertbuf_entry* vertbufs = chunks.vert_chunk->entries;
     const chunk_0x1_entry* materials = chunks.mat_chunk->entries;
 
@@ -156,13 +161,9 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
         const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
         const chunk_0x1_entry& material = materials[header->texture_idx];
 
-        ctx.fbo.set_wireframe(idxbuf.wireframe || ctx.wireframe);
+        ctx.fbo.set_wireframe(gl_vertbuf.wireframe || ctx.wireframe);
         glBindVertexArray(gl_vertbuf.vao);
-        mat4s xform = instance.anim_pose[header->transform_idx];
-        if (instance.pos || instance.rot) {
-            xform = instance.world_xform();
-        }
-
+        mat4s xform = instance.transform(header->transform_idx);
         mat4s cam_xform = {};
         ctx.cam.proj_view((vec4*)cam_xform.raw);
 
@@ -277,17 +278,17 @@ alr::mesh load_alr_mesh(const alr::file& alr, u32 idx) {
 
 /* === Mesh instance implementation === */
 
-mat4s alr::mesh_instance::world_xform() const noexcept {
+mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
     if (pos && rot) {
         mat4s rot_xform = glms_euler_zyx(*rot);
         mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *pos);
         return glms_mat4_mul(pos_xform, rot_xform);
     }
-
-    return GLMS_MAT4_IDENTITY;
+    return anim_pose[joint_idx];
 }
 
 void alr::mesh_instance::update_animation(const alr::file& alr, float delta_time) noexcept {
+    scope_timer timer("instanceUpdateAnimation", true);
     const chunk_armature* skel = mesh.chunks.skel_chunk;
     anim_pose.resize(skel->joint_count);
 
@@ -301,9 +302,8 @@ void alr::mesh_instance::render(alr::file& alr, render_context& ctx) const noexc
     mesh.render(alr, ctx, *this);
 }
 
-alr::mesh_instance::mesh_instance(const alr::mesh& mesh, u32 active_anim,
-            vec3s* pos, vec3s* rot, vec3s* scale)
-            : mesh(mesh), active_anim(active_anim), pos(pos), rot(rot), scale(scale)
+alr::mesh_instance::mesh_instance(const alr::mesh& mesh, u32 active_anim, vec3s* pos, vec3s* rot)
+    : mesh(mesh), active_anim(active_anim), pos(pos), rot(rot)
 {
     return;
 }
