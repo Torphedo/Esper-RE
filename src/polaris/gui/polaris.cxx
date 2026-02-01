@@ -161,10 +161,7 @@ void polaris::do_menu_bar() noexcept {
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
             // Wipe data that references the ALR before loading a new one
-            for (alr::mesh& mesh : this->viewport.meshes) {
-                mesh.destroy();
-            }
-            this->viewport.meshes.clear();
+            editor.clear_meshes();
             editor.load(path, this->viewport);
         }
         free(path);
@@ -217,8 +214,7 @@ void polaris::do_menu_bar() noexcept {
 void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
     viewport.init(window);
-    viewport.alr = &editor.alr;
-    editor.send_all_to_viewport(viewport);
+    editor.send_all_to_viewport();
 
     // Get as close as possible to 60 FPS
     const GLFWvidmode* vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -249,7 +245,7 @@ void polaris::update(GLFWwindow* window) noexcept {
         show_about = about_menu();
     }
 
-    editor.draw(viewport);
+    editor.update();
     this->mapEdit.do_gui();
     this->audioTool.do_gui();
     this->questTool.do_gui();
@@ -257,7 +253,7 @@ void polaris::update(GLFWwindow* window) noexcept {
 
 void polaris::render(GLFWwindow* window) noexcept {
     const scope_timer draw_timer("mainRender");
-    viewport.render(window);
+    editor.render(viewport);
 }
 
 void polaris::destroy() noexcept {

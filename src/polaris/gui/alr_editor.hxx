@@ -56,7 +56,7 @@ struct window_state_vertbuf {
     s32 shift_amount = 0;
 };
 
-struct viewport_t;
+struct render_context;
 
 namespace alr {
 
@@ -86,7 +86,7 @@ public:
         /// Whether to show this chunk's editing window
         bool active = true;
 
-        void draw(editor& ed, viewport_t& viewport) noexcept;
+        void update(editor& ed) noexcept;
         void draw_chunk_material(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_idxbuf(file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_skeleton(const file& alr, file::chunk& chunk) noexcept;
@@ -95,10 +95,10 @@ public:
         void draw_chunk_atlas(file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_header(const file& alr, file::chunk& chunk) const noexcept;
         void draw_chunk_texture(editor& ed, file::chunk& chunk) noexcept;
-        void draw_chunk_vertbuf(file& alr, file::chunk& chunk, viewport_t& viewport) noexcept;
+        void draw_chunk_vertbuf(editor& ed, file::chunk& chunk) noexcept;
 
         void import_dds_0x15(file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
-        void send_vertbuf_to_viewport(file& alr, viewport_t& viewport) noexcept;
+        void send_vertbuf_to_viewport(editor& ed) noexcept;
 
         window_state();
         window_state(u32 chunk_idx, u32 chunk_id);
@@ -129,9 +129,24 @@ public:
     std::optional<u32> chunk_filter;
     bool graphics_initialized = false;
 
-    void draw(viewport_t& viewport) noexcept;
-    bool load(const char* path, viewport_t& viewport) noexcept;
-    void send_all_to_viewport(viewport_t& viewport) const noexcept;
+    // All meshes that can be drawn
+    std::vector<alr::mesh> meshes;
+
+    void update() noexcept;
+    void render(render_context& ctx) noexcept;
+    bool load(const char* path, render_context& ctx) noexcept;
+    void send_all_to_viewport() noexcept;
+
+    void clear_meshes() noexcept {
+        for (alr::mesh& mesh : meshes) {
+            mesh.destroy();
+        }
+        meshes.clear();
+    }
+
+    ~editor() {
+        clear_meshes();
+    }
 };
 
 } // namespace al

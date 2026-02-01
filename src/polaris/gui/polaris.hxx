@@ -1,5 +1,4 @@
 #pragma once
-#include <glad/glad.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -9,7 +8,7 @@
 
 #include "mapdata_editor.hxx"
 #include "gui/alr_editor.hxx"
-#include "gui/viewport.hxx"
+#include "gui/render_context.hxx"
 #include "gui/tool_audio.hxx"
 #include "gui/tool_quest.hxx"
 
@@ -23,7 +22,7 @@ struct polaris : gui_layer {
 
     audio_tool audioTool;
     quest_tool questTool;
-    viewport_t viewport; // 3D viewport
+    render_context viewport; // 3D viewport
 
     bool headless = true; // Whether we're running without graphics.
     bool show_demo = false; // ImGui Demo Window toggle

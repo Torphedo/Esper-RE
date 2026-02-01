@@ -57,7 +57,7 @@ add_executable(polaris
     src/polaris/gui/mapdata_editor.cxx
     src/polaris/gui/alr_opengl.cxx
     src/polaris/gui/framebuffer.cxx
-    src/polaris/gui/viewport.cxx
+    src/polaris/gui/render_context.cxx
     src/polaris/gui/camera.cxx
 
     src/polaris/util/fileclass.cxx

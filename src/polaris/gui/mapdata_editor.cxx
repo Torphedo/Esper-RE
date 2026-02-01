@@ -31,14 +31,14 @@ mapdata_editor::~mapdata_editor() {
     initialized = false;
 }
 
-void map_obj_to_viewport(viewport_t& viewport, const alr::file& alr, const ps01_entry* entry) noexcept {
-    alr::mesh mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id);
+void map_obj_to_viewport(alr::editor& ed, const ps01_entry* entry) noexcept {
+    alr::mesh mesh = mesh_at_idx(ed.alr, FIRST_OBJ_IDX + entry->object_id);
     for (index_buffer& idxbuf : mesh.idxbufs) {
         idxbuf.is_skele_transform = false;
         idxbuf.position = (vec3s*)&entry->pos;
         idxbuf.rotation = (vec3s*)&entry->rotation;
     }
-    viewport.meshes.push_back(mesh);
+    ed.meshes.push_back(mesh);
 }
 
 void mapdata_editor::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept {
@@ -81,7 +81,7 @@ void mapdata_editor::edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noe
     label = "";
     str_format_append(label, "Send to viewport##%d", idx);
     if (ImGui::Button(label.c_str())) {
-        map_obj_to_viewport(pol.viewport, pol.editor.alr, entry);
+        map_obj_to_viewport(pol.editor, entry);
     }
 }
 
@@ -91,7 +91,7 @@ void mapdata_editor::edit_ps01_entries(st00_t* header, ps01_entry* entries) noex
         u32 offset = header->chunk_size;
         for (u32 i = 0; i < header->ps00_count; i++) {
             if (all_to_viewport) {
-                map_obj_to_viewport(pol.viewport, pol.editor.alr, &entries[i]);
+                map_obj_to_viewport(pol.editor, &entries[i]);
             }
             ImGui::Text("@ 0x%X: ", offset);
             edit_ps01_entry(i, &entries[i], header->nm00_count);

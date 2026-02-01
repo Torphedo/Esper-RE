@@ -1,5 +1,6 @@
 // Need this define to use operators on ImGui vector types
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include <glad/glad.h>
 #include "alr_editor.hxx"
 #include <nfd.h>
 
@@ -16,10 +17,7 @@
 #include <alr/alr_dump.hxx>
 #include <util/imgui_utils.hxx>
 
-#include "alr_assets.hxx"
 #include "alr_imgui.hxx"
-#include "alr_opengl.hxx"
-#include "viewport.hxx"
 
 // Normally I'd make this a method, but by using a macro we can have LOG_MSG()
 // automatically log the name of the method that shouldn't have been called.
@@ -443,7 +441,8 @@ void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) no
     ImGui::EndGroup();
 }
 
-void editor::window_state::send_vertbuf_to_viewport(file& alr, viewport_t& viewport) noexcept {
+void editor::window_state::send_vertbuf_to_viewport(editor& ed) noexcept {
+    file& alr = ed.alr;
     const file::chunk chunk = alr.chunks[chunk_idx];
     CHUNK_ID_ASSERT(ALR_ID_MODEL);
 
@@ -458,10 +457,11 @@ void editor::window_state::send_vertbuf_to_viewport(file& alr, viewport_t& viewp
         }
     }
 
-    viewport.meshes.push_back(mesh_at_idx(alr, idx));
+    ed.meshes.push_back(mesh_at_idx(alr, idx));
 }
 
-void editor::window_state::draw_chunk_vertbuf(file& alr, file::chunk& chunk, viewport_t& viewport) noexcept {
+void editor::window_state::draw_chunk_vertbuf(editor& ed, file::chunk& chunk) noexcept {
+    file& alr = ed.alr;
     CHUNK_ID_ASSERT(ALR_ID_MODEL);
 
     // We use the vfile API to handle the chunk data
@@ -514,7 +514,7 @@ void editor::window_state::draw_chunk_vertbuf(file& alr, file::chunk& chunk, vie
     }
 
     if (ImGui::Button("Send to Viewport")) {
-        send_vertbuf_to_viewport(alr, viewport);
+        send_vertbuf_to_viewport(ed);
     }
 
     if (ImGui::CollapsingHeader("Shift Buffer")) {
@@ -535,7 +535,7 @@ void editor::window_state::draw_chunk_vertbuf(file& alr, file::chunk& chunk, vie
     ImGui::EndChild();
 }
 
-void editor::window_state::draw(editor& ed, viewport_t& viewport) noexcept {
+void editor::window_state::update(editor& ed) noexcept {
     if (!ed.alr.data || ed.alr.alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
         return;
@@ -577,7 +577,7 @@ void editor::window_state::draw(editor& ed, viewport_t& viewport) noexcept {
                     draw_chunk_texture(ed, chunk);
                     break;
                 case ALR_ID_MODEL:
-                    draw_chunk_vertbuf(ed.alr, chunk, viewport);
+                    draw_chunk_vertbuf(ed, chunk);
                     break;
                 default:
                     // Unimplemented window
@@ -710,17 +710,17 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
 }
 
 
-bool editor::load(const char* path, viewport_t& viewport) noexcept {
+bool editor::load(const char* path, render_context& viewport) noexcept {
     bool result = alr.load(path);
     states.clear(); // UI state doesn't transfer between files
 
     if (graphics_initialized) {
-        send_all_to_viewport(viewport);
+        send_all_to_viewport();
     }
     return result;
 }
 
-void editor::send_all_to_viewport(viewport_t& viewport) const noexcept {
+void editor::send_all_to_viewport() noexcept {
     u32 num_models = 0;
     alr.first_model_idx(&num_models);
 
@@ -731,7 +731,7 @@ void editor::send_all_to_viewport(viewport_t& viewport) const noexcept {
         if (model.vert_chunk == nullptr) {
             continue;
         }
-        viewport.meshes.emplace_back(mesh_at_idx(alr, i));
+        meshes.emplace_back(mesh_at_idx(alr, i));
     }
 }
 
@@ -770,7 +770,7 @@ const char* chunk_name_by_id(u32 id) {
     return known_name;
 }
 
-void editor::draw(viewport_t& viewport) noexcept {
+void editor::update() noexcept {
     graphics_initialized = true;
     ImGui::Begin("ALR Chunks");
 
@@ -871,13 +871,21 @@ void editor::draw(viewport_t& viewport) noexcept {
         snprintf(buf, sizeof(buf), "0x%X %s Chunk @ 0x%llX", chunk.id, known_name, chunk.offset);
 
         if (ImGui::Begin(buf, &state.active)) {
-            state.draw(*this, viewport);
+            state.update(*this);
         }
 
         ImGui::End();
     }
 
     tex_edit.draw(alr);
+}
+
+void editor::render(render_context& ctx) noexcept {
+    ctx.bind();
+    for (alr::mesh& mesh : meshes) {
+        mesh.render(alr, ctx);
+    }
+    ctx.unbind();
 }
 
 } // namespace al

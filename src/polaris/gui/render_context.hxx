@@ -1,18 +1,12 @@
 #pragma once
-#include "alr_opengl.hxx"
-#include <vector>
-#include <GLFW/glfw3.h>
-
 #include <common/int.h>
-#include <formats/alr.h>
-#include <formats/alr_animations.h>
 #include <layer.hxx>
+#include <formats/alr_animations.h>
 
 #include "camera.hxx"
-#include "gui/framebuffer.hxx"
-#include "alr_assets.hxx"
+#include "framebuffer.hxx"
 
-struct viewport_t : gui_layer {
+struct render_context : gui_layer {
     // Whether the viewport has been set up and can be rendered to.
     bool initialized = false;
     // Whether the viewport's framebuffer is visible to the user
@@ -20,7 +14,6 @@ struct viewport_t : gui_layer {
 
     // Whether the viewport editor window should render.
     bool editor_enabled = false;
-    bool raycast_test = false;
     bool wireframe_selection = false;
     u16 selected_mesh = 0;
 
@@ -28,8 +21,6 @@ struct viewport_t : gui_layer {
     float anim_frame = 0.0f;
 
     framebuffer fbo;
-
-    alr::file* alr = nullptr;
 
     // Shader program used to render the scene
     gl_obj active_shader = 0;
@@ -63,18 +54,15 @@ struct viewport_t : gui_layer {
     // Backface culling toggle
     bool backface_cull = true;
 
-    // Shader settings bitfield
     bool render_texcoords = false;
-
-    // All meshes in the scene
-    std::vector<alr::mesh> meshes;
 
     // Set up a custom framebuffer. Returns whether it succeeded, you can also
     // check the [initialized] member.
     void init(GLFWwindow* window) noexcept override;
 
     void update(GLFWwindow* window) noexcept override;
-    void render(GLFWwindow* window) noexcept override;
+    void bind() noexcept;
+    void unbind() noexcept;
 
     // Destroys the underlying OpenGL resources and invalidates all copies of this instance.
     void destroy() noexcept override;

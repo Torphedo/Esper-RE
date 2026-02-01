@@ -1,8 +1,7 @@
-#include "alr_opengl.hxx"
+#include <glad/glad.h>
 #include <cstdio>
 
 #include <common/vfile.h>
-#include <formats/alr_animations.h>
 
 #include <alr/alr_dump.hxx>
 #include <util/imgui_utils.hxx>
@@ -257,7 +256,7 @@ void get_vert_attribute(vertex_buffer* out, vertbuf_entry vert_header) {
     memcpy(out->attributes, format.attributes, sizeof(format.attributes));
 }
 
-void alr::mesh::render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_obj u_pvm, gl_obj u_divisor) const noexcept {
+void alr::mesh::render(file& alr, render_context& ctx) const noexcept {
     const vertbuf_entry* vertbufs = chunks.vert_chunk->entries;
     const chunk_0x1_entry* materials = chunks.mat_chunk->entries;
 
@@ -268,13 +267,15 @@ void alr::mesh::render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_
         const vertex_buffer& gl_vertbuf = gl_vertbufs[header->vertex_buf];
 
         glBindVertexArray(gl_vertbuf.vao);
-        mat4s xform = idxbuf.get_transform(alr, frame, anim_id);
+        mat4s xform = idxbuf.get_transform(alr, ctx.anim_frame, ctx.anim_id);
+        mat4s cam_xform = {};
+        ctx.cam.proj_view((vec4*)cam_xform.raw);
 
         mat4s pvm = glms_mul(cam_xform, xform);
 
-        glUniformMatrix4fv(u_pvm, 1, GL_FALSE, (float*)pvm.raw);
+        glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
         const u32 divisor = gl_vertbuf.uv_divisor;
-        glUniform1ui(u_divisor, divisor);
+        glUniform1ui(ctx.uniform_uv_divisor, divisor);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, material.texture_idx));

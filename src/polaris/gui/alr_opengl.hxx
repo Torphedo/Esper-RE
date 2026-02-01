@@ -1,12 +1,12 @@
 #pragma once
 #include <optional>
 #include <vector>
-#include <glad/glad.h>
 #include <cglm/struct.h>
 
 #include <common/int.h>
 #include <common/vfile.h>
 #include <formats/alr.h>
+#include "render_context.hxx"
 
 namespace alr {
     class file;
@@ -124,7 +124,7 @@ namespace alr {
         std::vector<vertex_buffer> gl_vertbufs;
         std::vector<index_buffer> idxbufs;
 
-        void render(file& alr, u32 anim_id, float frame, mat4s cam_xform, gl_obj u_pvm, gl_obj u_divisor) const noexcept;
+        void render(file& alr, render_context& ctx) const noexcept;
         void destroy() noexcept;
     };
 }

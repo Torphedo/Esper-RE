@@ -1,27 +1,28 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "viewport.hxx"
 #include <imgui.h>
-
-#include <common/vfile.h>
-#include <common/logging.h>
-
-#include "alr_opengl.hxx"
-#include "polaris.hxx"
-#include "selector_ray.hxx"
-#include <util/scope_timer.hxx>
-#include <util/imgui_utils.hxx>
 
 extern "C" {
     #include <common/gl/shader.h>
     #include <common/gl/input.h>
 }
 
+#include <common/vfile.h>
+#include <common/logging.h>
+
+#include "polaris.hxx"
+#include "selector_ray.hxx"
+#include <util/scope_timer.hxx>
+#include <util/imgui_utils.hxx>
+
+#include "alr_opengl.hxx"
+#include "render_context.hxx"
+
 // GLSL shaders
 #include "generic.vert.h"
 #include "diffuse.frag.h"
 #include "show_uv.frag.h"
 
-void viewport_t::init(GLFWwindow* window) noexcept {
+void render_context::init(GLFWwindow* window) noexcept {
     // Have the viewport render in full resolution, it'll be downscale when
     // rendered as a texture by ImGui::Image
     int width = 0;
@@ -54,7 +55,7 @@ void viewport_t::init(GLFWwindow* window) noexcept {
     fbo.unbind();
 }
 
-void viewport_t::set_shader(gl_obj shader) noexcept {
+void render_context::set_shader(gl_obj shader) noexcept {
     active_shader = shader;
 
     uniform_pvm = glGetUniformLocation(active_shader, "pvm");
@@ -67,20 +68,16 @@ void viewport_t::set_shader(gl_obj shader) noexcept {
 
 }
 
-void viewport_t::destroy() noexcept {
+void render_context::destroy() noexcept {
     if (initialized) {
         fbo.destroy();
         glDeleteProgram(diffuse_shader);
         glDeleteProgram(uv_shader);
-        for (alr::mesh& mesh : meshes) {
-            mesh.destroy();
-        }
-
         initialized = false;
     }
 }
 
-void viewport_t::update(GLFWwindow* window) noexcept {
+void render_context::update(GLFWwindow* window) noexcept {
     const scope_timer draw_timer("viewportUpdate");
     if (!active || !initialized) {
         return;
@@ -123,17 +120,8 @@ void viewport_t::update(GLFWwindow* window) noexcept {
         ImGui::Checkbox("Render selection in wireframe", &wireframe_selection);
 
         if (ImGui::CollapsingHeader("Model properties")) {
-            selected_mesh = CLAMP(0, selected_mesh, meshes.size());
-
-            if (selected_mesh < meshes.size()) {
-                // If you make this loop over all meshes in the future, make sure not to
-                // use the for loop style with a colon (or make sure you get a reference),
-                // otherwise it'll run the menu on a copy and not modify the data
-                alr::mesh& mesh = meshes.at(selected_mesh);
-                // TODO: Bring back edit menu
-                // mesh.edit_menu(*alr);
-            }
-
+            // TODO: Bring back edit menu
+            // mesh.edit_menu(*alr);
         }
         ImGui::End();
     }
@@ -213,39 +201,21 @@ void viewport_t::update(GLFWwindow* window) noexcept {
     ImGui::End();
 }
 
-void viewport_t::render(GLFWwindow* window) noexcept {
-    const scope_timer draw_timer("viewportRender");
-    if (!active || !initialized || !visible) {
-        return;
-    }
-
+void render_context::bind() noexcept {
     // Start rendering to the viewport
     fbo.bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Get camera transform
-    mat4 pvm = {0};
-    cam.proj_view(pvm);
-
     // Bind shader & upload camera transform
     glUseProgram(active_shader);
-    glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
     glUniform3fv(uniform_cam_dir, 1, cam.facing().raw);
 
     glUniform1i(uniform_sampler_albedo, 0);
     glUniform1i(uniform_sampler_normal, 1);
     glUniform1i(uniform_sampler_lightmap, 2);
+}
 
-    // Render all opaque meshes
-    for (u32 i = 0; i < meshes.size(); i++) {
-        const alr::mesh& mesh = meshes[i];
-        const bool do_wireframe = wireframe || (wireframe_selection && (i == selected_mesh));
-        fbo.set_wireframe(do_wireframe);
-        mesh.render(*alr, anim_id, anim_frame, *(mat4s*)pvm, uniform_pvm, uniform_uv_divisor);
-    }
-
-    // Render semi-transparent meshes
-
+void render_context::unbind() noexcept {
     glUseProgram(0);
-    fbo.unbind(); // Reset state
+    fbo.unbind();
 }
