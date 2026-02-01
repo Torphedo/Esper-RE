@@ -2,8 +2,7 @@
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 
-#include <formats/questdata.h>
-#include "util/fileclass.hxx"
+#include <util/fileclass.hxx>
 
 /// ImGui tool menu for audio files
 struct quest_tool : fileclass {

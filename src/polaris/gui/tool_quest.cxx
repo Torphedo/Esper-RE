@@ -1,11 +1,9 @@
 #include "tool_quest.hxx"
-#include <string>
-#include <stdlib.h>
-
 #include <nfd.h>
 
-#include "util/imgui_utils.hxx"
-#include "util/utils.hxx"
+#include <formats/questdata.h>
+#include <util/imgui_utils.hxx>
+#include <util/utils.hxx>
 
 static const nfdu8filteritem_t quest_filter[] = { { "Phantom Dust Quest File", "qdt"} };
 

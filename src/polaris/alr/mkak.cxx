@@ -1,11 +1,8 @@
 #include "mkak.hxx"
-#include <cstdio>
-#include <cstring>
 
 #include <common/file.h>
 #include <common/vfile.h>
 #include <common/path.h>
-#include <common/logging.h>
 #include <formats/eventpack.h>
 
 namespace mkak {

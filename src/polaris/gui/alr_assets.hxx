@@ -5,7 +5,10 @@
 
 #include <common/image.h>
 #include <formats/alr.h>
-#include <gui/alr_opengl.hxx>
+
+namespace alr {
+    class file;
+};
 
 /// @brief Gets a human-readable description of the pixel format
 const char* texformat_str(alr_pixel_format format);

@@ -1,20 +1,14 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 
-extern "C" {
-    #include <common/gl/shader.h>
-    #include <common/gl/input.h>
-}
+#include <common/gl/shader.h>
+#include <common/gl/input.h>
 
-#include <common/vfile.h>
 #include <common/logging.h>
+#include <formats/alr.h>
 
-#include "polaris.hxx"
-#include "selector_ray.hxx"
 #include <util/scope_timer.hxx>
 #include <util/imgui_utils.hxx>
-
-#include "alr_opengl.hxx"
 #include "render_context.hxx"
 
 // GLSL shaders

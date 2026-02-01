@@ -1,16 +1,11 @@
 #pragma once
-#include <vector>
-#include <string>
-#include <unordered_map>
-
-#include <formats/alr.h>
 #include <layer.hxx>
 
 #include "mapdata_editor.hxx"
-#include "gui/alr_editor.hxx"
-#include "gui/render_context.hxx"
-#include "gui/tool_audio.hxx"
-#include "gui/tool_quest.hxx"
+#include "alr_editor.hxx"
+#include "render_context.hxx"
+#include "tool_audio.hxx"
+#include "tool_quest.hxx"
 
 // State for the overall editor
 struct polaris : gui_layer {

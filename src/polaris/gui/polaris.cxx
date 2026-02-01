@@ -1,6 +1,6 @@
 // Need this define to use operators on ImGui vector types
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui.h>
+#include "polaris.hxx"
 #include <imgui_internal.h>
 #include "util/imgui_utils.hxx"
 #include "util/nfde_wrapper.hxx"
@@ -10,7 +10,6 @@
 
 #include "alr/mkak.hxx"
 #include "util/scope_timer.hxx"
-#include "polaris.hxx"
 #include "version.h"
 
 bool extract_mkak_menu() {

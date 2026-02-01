@@ -1,9 +1,6 @@
 #include "alr_dump.hxx"
-#include <vector>
-#include <string.h>
 #include <common/file.h>
 
-#include <formats/pd_common.h>
 #include <version.h>
 
 namespace alr {

@@ -1,14 +1,8 @@
 #include "mapdata_editor.hxx"
-#include <cstdlib>
 
-#include <common/file.h>
-#include <common/logging.h>
-
-#include <formats/st00.h>
-#include "gui/polaris.hxx"
-#include "util/imgui_utils.hxx"
-#include "util/utils.hxx"
-#include "alr_opengl.hxx"
+#include "polaris.hxx"
+#include <util/imgui_utils.hxx>
+#include <util/utils.hxx>
 
 mapdata_editor::mapdata_editor(const char* filepath, polaris& pol) : pol(pol) {
     map.filepath = filepath;

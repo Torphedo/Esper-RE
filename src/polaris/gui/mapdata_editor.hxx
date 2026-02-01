@@ -1,6 +1,4 @@
 #pragma once
-#include <common/int.h>
-
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 

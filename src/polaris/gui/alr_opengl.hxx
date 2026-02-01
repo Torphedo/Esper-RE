@@ -3,9 +3,7 @@
 #include <vector>
 #include <cglm/struct.h>
 
-#include <common/int.h>
 #include <common/vfile.h>
-#include <formats/alr.h>
 #include "render_context.hxx"
 
 namespace alr {

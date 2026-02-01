@@ -4,7 +4,6 @@
 #include <common/crc32.h>
 
 #include <alr/alr_dump.hxx>
-#include <gui/alr_assets.hxx>
 #include <util/imgui_utils.hxx>
 #include <util/utils.hxx>
 

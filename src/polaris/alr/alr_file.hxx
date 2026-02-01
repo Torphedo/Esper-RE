@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <cglm/struct.h>
-#include <common/vfile.h>
 #include <formats/alr.h>
 #include <gui/alr_assets.hxx>
 #include <gui/alr_opengl.hxx>

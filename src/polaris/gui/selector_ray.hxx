@@ -1,8 +1,8 @@
 #pragma once
-#include "cglm/include/cglm/struct.h"
+#include <cglm/struct.h>
 
-#include "formats/alr.h"
-#include "gui/camera.hxx"
+#include <formats/alr.h>
+#include "camera.hxx"
 
 struct ray_t {
     vec3s origin;

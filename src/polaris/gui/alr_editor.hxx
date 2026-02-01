@@ -2,14 +2,7 @@
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 
-#include <common/image.h>
-#include <common/int.h>
-#include <common/vfile.h>
-
-#include <formats/alr.h>
-
 #include <alr/alr_file.hxx>
-#include <gui/alr_assets.hxx>
 
 // State for material (ID 0x1) window
 struct window_state_material {

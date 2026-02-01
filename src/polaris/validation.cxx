@@ -1,5 +1,4 @@
 #include "validation.hxx"
-#include <string.h>
 
 #include <common/vfile.h>
 

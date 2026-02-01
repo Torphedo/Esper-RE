@@ -5,12 +5,8 @@
 #include <nfd.h>
 
 #include <common/file.h>
-#include <common/vfile.h>
-#include <common/vmem.h>
-#include <common/logging.h>
 #include <common/crc32.h>
 
-#include <formats/pd_common.h>
 #include <formats/alr.h>
 
 #include <validation.hxx>

@@ -17,6 +17,7 @@ typedef struct {
     stx_first_block header;
     stx_audio_block audio;
 
+    // TODO: Make this an opaque pointer to avoid including miniaudio up the chain
     ma_device device;
 } ma_stx_player;
 

@@ -1,8 +1,6 @@
 #pragma once
-#include <memory>
-
-#include "util/fileclass.hxx"
-#include "ma_stx_player.h"
+#include <util/fileclass.hxx>
+#include <ma_stx_player.h>
 
 #include <formats/stx.h>
 #include <formats/sth2.h>

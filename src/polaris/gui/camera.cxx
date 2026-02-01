@@ -2,7 +2,6 @@
 // Need this define to use operators on ImGui vector types
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
-#include <cglm/struct.h>
 #include <glad/glad.h>
 #include <common/int.h>
 

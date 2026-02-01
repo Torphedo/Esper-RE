@@ -1,11 +1,9 @@
 #include <glad/glad.h>
-#include <cstdio>
 
-#include <common/vfile.h>
-
-#include <alr/alr_dump.hxx>
+#include <formats/alr.h>
 #include <util/imgui_utils.hxx>
 #include <util/scope_timer.hxx>
+#include <alr/alr_file.hxx>
 
 const u16 gl_type_table[DATA_TYPE_COUNT] = {
     GL_BYTE, GL_UNSIGNED_BYTE,
