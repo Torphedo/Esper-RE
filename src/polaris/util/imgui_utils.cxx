@@ -14,8 +14,9 @@
 
 // Minor helper functions for ImGui
 namespace ImGui {
-void BeginChildFitContent(const char* id, float width_percent) {
-    ImGui::BeginChild(id, ImVec2(ImGui::GetContentRegionAvail().x * width_percent, 260), ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
+void BeginChildFitContent(const char* id) {
+    int flags = ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY;
+    ImGui::BeginChild(id, ImVec2(0, 0), flags);
 }
 
 float CharWidth(u32 num_chars) {

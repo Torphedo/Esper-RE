@@ -37,7 +37,7 @@ namespace alr {
             FORMAT_DXT1, FORMAT_DXT3, FORMAT_DXT5,
         };
 
-        ImGui::PushItemWidth(ImGui::CharWidth() * 40);
+        ImGui::PushItemWidth(ImGui::CharWidth() * 20);
 
         ImGui::InputPDString("Name", &entry.text1, &entry.text2);
         ImGui::InputU32("Resource Buffer Offset", &entry.data_ptr);
@@ -104,10 +104,12 @@ namespace alr {
 
     bool edit_atlas_texture(atlas_tex_entry& entry) {
         const u32 hash = crc32fast((u8*)&entry, sizeof(entry));
-        ImGui::PushItemWidth(ImGui::CharWidth() * sizeof(entry.filename));
+        ImGui::SetNextItemWidth(ImGui::CharWidth() * sizeof(entry.filename));
 
-        ImGui::InputU32("Parent Atlas", &entry.index);
         ImGui::InputText("Texture Name", entry.filename, sizeof(entry.filename) - 1);
+
+        ImGui::PushItemWidth(ImGui::CharWidth() * 16);
+        ImGui::InputU32("Parent Atlas", &entry.index);
         ImGui::InputFloat2("Texture Coordinates", entry.atlas_texcoords);
         ImGui::InputU32("Texture Width", &entry.width);
         ImGui::InputU32("Texture Height", &entry.height);

@@ -45,7 +45,7 @@ namespace ImGui {
         }
     };
 
-    void BeginChildFitContent(const char* id, float width_percent);
+    void BeginChildFitContent(const char* id);
 
     /// @brief Horizontally centered ImGui::Text() wrapper
     void TextCentered(const char* fmt, ...);

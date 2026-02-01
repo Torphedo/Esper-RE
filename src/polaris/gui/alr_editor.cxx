@@ -260,7 +260,8 @@ void editor::window_state::draw_chunk_atlas(file& alr, file::chunk& chunk) noexc
     }
 
 
-    ImGui::BeginChildFitContent("Atlases", 0.3f);
+    ImGui::BeginChildFitContent("selectionContainer");
+    ImGui::BeginChildFitContent("Atlases");
     ImGui::Text("%d Atlases for %.*s:", header->atlas_count, (int)sizeof(header->alr_name), header->alr_name);
     for (u32 i = 0; i < header->atlas_count; i++) {
         char buf[sizeof(atlas_names[i].name) + 0x20] = {0};
@@ -271,7 +272,6 @@ void editor::window_state::draw_chunk_atlas(file& alr, file::chunk& chunk) noexc
         }
     }
     ImGui::EndChild();
-    ImGui::SameLine();
 
 
     // The currently selected texture might be in a different atlas, which would
@@ -289,7 +289,8 @@ void editor::window_state::draw_chunk_atlas(file& alr, file::chunk& chunk) noexc
     }
 
     // Display textures in the selected atlases
-    ImGui::BeginChildFitContent("Textures", 0.3f);
+    ImGui::Text("\nTextures: ");
+    ImGui::BeginChildFitContent("Textures");
     for (u32 i = 0; i < header->texture_count; i++) {
         const atlas_tex_entry tex = textures[i];
         // Only list textures belonging to the selected atlases
@@ -304,13 +305,17 @@ void editor::window_state::draw_chunk_atlas(file& alr, file::chunk& chunk) noexc
             win_atlas.selected_atlas_texture = i;
         }
     }
-    ImGui::EndChild();
+    ImGui::EndChild(); // End texture select
+
+    ImGui::EndChild(); // End selectionContainer
+    ImGui::SameLine();
 
     atlas_name* aName = &atlas_names[win_atlas.selected_atlas];
     atlas_entry* atlas = &atlases[win_atlas.selected_atlas];
     atlas_tex_entry* tex = &textures[win_atlas.selected_atlas_texture];
     texture cur_tex = convert_tex(alr.resource_buffer(), entries[tex->index]);
 
+    ImGui::BeginChildFitContent("texture editing");
     // Override dimensions, we only want format info from the other chunk
     cur_tex.height = atlas->height;
     cur_tex.width = atlas->width;
@@ -338,6 +343,8 @@ void editor::window_state::draw_chunk_atlas(file& alr, file::chunk& chunk) noexc
 
     alr::edit_atlas_texture(*tex);
     ImGui::draw_image(win_atlas.gl_tex_id, tex->width, tex->height, &win_atlas.use_actual_size, &win_atlas.scale, "texture", uv0, uv1);
+
+    ImGui::EndChild();
 }
 
 void editor::window_state::draw_chunk_header(const file& alr, file::chunk& chunk) const noexcept {
@@ -387,7 +394,7 @@ void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) no
     const u32 num_entries = VFILE_READ(u32, &vf);
     auto* entries = (texture_entry*)vfile_cur(vf);
 
-    ImGui::BeginChildFitContent("Textures", 0.3f);
+    ImGui::BeginChild("Textures", ImVec2(0, 0), ImGuiChildFlags_AutoResizeX);
     for (u32 i = 0; i < num_entries; i++) {
         char buf[0x30] = {0};
         decoded_text name = {0};
