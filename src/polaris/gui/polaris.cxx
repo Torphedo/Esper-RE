@@ -213,7 +213,7 @@ void polaris::do_menu_bar() noexcept {
 void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
     renderCtx.init(window);
-    editor.send_all_to_viewport();
+    editor.load_all_meshes();
 
     // Get as close as possible to 60 FPS
     const GLFWvidmode* vid = glfwGetVideoMode(glfwGetPrimaryMonitor());

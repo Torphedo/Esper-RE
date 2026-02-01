@@ -18,8 +18,6 @@ void edit_menu(vertex_attribute& attr);
 // Static index buffer wrapper
 struct index_buffer {
     u32 idx_chunk_offset = 0;
-    u32 armature_chunk_offset = 0;
-    u32 mat_chunk_offset = 0;
 
     // OpenGL object to bind to GL_ELEMENT_ARRAY_BUFFER
     gl_obj obj = 0;
@@ -27,21 +25,11 @@ struct index_buffer {
     bool active = true; // Whether to render this index buffer
     bool wireframe = false;
 
-    // If true, we're using a transform calculated from an 0x3 chunk
-    // (and updating it won't affect the file's data)
-    // If false, we're referencing a position/rotation from a .dat file in memory.
-    bool is_skele_transform = false;
-    mat4s transform = glms_mat4_identity();
-    vec3s* position = nullptr;
-    vec3s* rotation = nullptr;
-
-    mat4s get_transform(const alr::file& alr, float frame, u32 anim_id) const noexcept;
     index_buffer() = default;
-    index_buffer(u32 idx_offset, u32 skele_offset, u32 mat_offset) noexcept
-        : idx_chunk_offset(idx_offset), armature_chunk_offset(skele_offset),
-        mat_chunk_offset(mat_offset)
+    index_buffer(u32 idx_offset) noexcept
+        : idx_chunk_offset(idx_offset)
     {
-        is_skele_transform = true;
+        return;
     }
 };
 
@@ -90,18 +78,39 @@ typedef struct {
 }alr_model_desc;
 
 namespace alr {
+    struct mesh_instance;
+
     struct mesh {
         alr_model_desc chunks = {};
         std::vector<vertex_buffer> gl_vertbufs;
         std::vector<index_buffer> idxbufs;
         bool active = true; // Whether to render this mesh
 
-        void render(file& alr, render_context& ctx) const noexcept;
+        void render(file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept;
         void destroy() noexcept;
+    };
+
+    // An instance of a mesh in the world
+    struct mesh_instance {
+        // Optional, from .dat file
+        vec3s* pos = nullptr;
+        vec3s* rot = nullptr;
+        vec3s* scale = nullptr;
+
+        u32 active_anim = 0;
+        float anim_frame = 0.0f;
+        std::vector<mat4s> anim_pose; // Computed every frame
+        const alr::mesh& mesh;
+
+        mat4s world_xform() const noexcept;
+        void update_animation(const alr::file& alr, float delta_time) noexcept;
+        void render(alr::file& alr, render_context& ctx) const noexcept;
+
+        mesh_instance(const alr::mesh& mesh, u32 active_anim, vec3s* pos = nullptr, vec3s* rot = nullptr, vec3s* scale = nullptr);
     };
 }
 
-alr::mesh mesh_at_idx(const alr::file& alr, u32 idx);
+alr::mesh load_alr_mesh(const alr::file& alr, u32 idx);
 
 // Standardized vertex format that can express all known Phantom Dust vertex
 // formats. Will change often as new information is found.

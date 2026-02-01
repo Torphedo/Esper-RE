@@ -2,7 +2,6 @@
 
 #include <formats/alr.h>
 #include <util/imgui_utils.hxx>
-#include <util/scope_timer.hxx>
 #include <alr/alr_file.hxx>
 
 /* === Static index buffer implementation === */
@@ -37,31 +36,6 @@ void edit_menu(vertex_attribute& attr) {
         ImGui::EndCombo();
     }
     ImGui::Checkbox("Enable attribute", &attr.exists);
-}
-
-mat4s index_buffer::get_transform(const alr::file& alr, float frame, u32 anim_id) const noexcept {
-    const scope_timer draw_timer("calcAnimTransforms", true);
-    if (!is_skele_transform) {
-        assert(position);
-        assert(rotation);
-        mat4s rot_xform = glms_euler_zyx(*rotation);
-        mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *position);
-        return glms_mat4_mul(pos_xform, rot_xform);
-    }
-
-    vfile vf = vfile_open(alr.data, alr.alr_size);
-    vf.pos = armature_chunk_offset;
-    const auto* joint_header = VFILE_READ_PTR(chunk_armature, &vf);
-    const auto* joints = VFILE_READ_PTR(joint_t, &vf);
-
-    vf.pos = idx_chunk_offset;
-    const auto* idx_header = VFILE_READ_PTR(idxbuf_header, &vf);
-
-    // Calculate the object's xform by applying all of its parent xforms
-    const s32 joint_idx = idx_header->transform_idx;
-    mat4s obj_transform = alr.joint_final_xform(joint_header, anim_id, joint_idx, frame);
-
-    return obj_transform;
 }
 
 /* === Static vertex buffer implementation === */
@@ -168,7 +142,7 @@ void vertex_buffer::edit_menu() noexcept {
     }
 }
 
-void alr::mesh::render(file& alr, render_context& ctx) const noexcept {
+void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept {
     const vertbuf_entry* vertbufs = chunks.vert_chunk->entries;
     const chunk_0x1_entry* materials = chunks.mat_chunk->entries;
 
@@ -184,7 +158,11 @@ void alr::mesh::render(file& alr, render_context& ctx) const noexcept {
 
         ctx.fbo.set_wireframe(idxbuf.wireframe || ctx.wireframe);
         glBindVertexArray(gl_vertbuf.vao);
-        mat4s xform = idxbuf.get_transform(alr, ctx.anim_frame, ctx.anim_id);
+        mat4s xform = instance.anim_pose[header->transform_idx];
+        if (instance.pos || instance.rot) {
+            xform = instance.world_xform();
+        }
+
         mat4s cam_xform = {};
         ctx.cam.proj_view((vec4*)cam_xform.raw);
 
@@ -241,7 +219,7 @@ void alr::mesh::destroy() noexcept {
     }
 }
 
-alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
+alr::mesh load_alr_mesh(const alr::file& alr, u32 idx) {
     alr::mesh out = {};
     alr_model_desc model = alr.model_at_idx(idx);
     out.chunks = model;
@@ -262,10 +240,8 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
         out.gl_vertbufs.push_back(vertbuf);
     }
 
-    // We need offsets for our other utility functions
-    const ptrdiff_t skel_chunk_offset = (ptrdiff_t)model.skel_chunk - (ptrdiff_t)alr.data;
+    // We need offsets for the index buffer object
     const ptrdiff_t idx_chunk_offset = (ptrdiff_t)model.idx_chunk - (ptrdiff_t)alr.data;
-    const ptrdiff_t mat_chunk_offset = (ptrdiff_t)model.mat_chunk - (ptrdiff_t)alr.data;
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vfile_seek(&vf, idx_chunk_offset);
 
@@ -274,7 +250,7 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
     while (chunk->id != ALR_ID_END_INDICES) {
         const idxbuf_header* idx_header = (idxbuf_header*)vfile_cur(vf);
         if (chunk->id == 0x2) {
-            index_buffer idxbuf(vf.pos, skel_chunk_offset, mat_chunk_offset);
+            index_buffer idxbuf(vf.pos);
             glGenBuffers(1, &idxbuf.obj);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbuf.obj);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_header->num_indices * sizeof(u16), idx_header->indices, GL_DYNAMIC_DRAW);
@@ -297,6 +273,39 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     return out;
+}
+
+/* === Mesh instance implementation === */
+
+mat4s alr::mesh_instance::world_xform() const noexcept {
+    if (pos && rot) {
+        mat4s rot_xform = glms_euler_zyx(*rot);
+        mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *pos);
+        return glms_mat4_mul(pos_xform, rot_xform);
+    }
+
+    return GLMS_MAT4_IDENTITY;
+}
+
+void alr::mesh_instance::update_animation(const alr::file& alr, float delta_time) noexcept {
+    const chunk_armature* skel = mesh.chunks.skel_chunk;
+    anim_pose.resize(skel->joint_count);
+
+    anim_frame += delta_time / FRAMETIME_24FPS;
+    for (u32 i{}; i < skel->joint_count; i++) {
+        anim_pose[i] = alr.joint_final_xform(skel, active_anim, i, anim_frame);
+    }
+}
+
+void alr::mesh_instance::render(alr::file& alr, render_context& ctx) const noexcept {
+    mesh.render(alr, ctx, *this);
+}
+
+alr::mesh_instance::mesh_instance(const alr::mesh& mesh, u32 active_anim,
+            vec3s* pos, vec3s* rot, vec3s* scale)
+            : mesh(mesh), active_anim(active_anim), pos(pos), rot(rot), scale(scale)
+{
+    return;
 }
 
 vec4s read_attr(vfile& vf, vertex_attribute attr) {

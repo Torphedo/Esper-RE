@@ -453,7 +453,7 @@ void editor::window_state::send_vertbuf_to_viewport(editor& ed) noexcept {
         }
     }
 
-    ed.meshes.push_back(mesh_at_idx(alr, idx));
+    ed.instances.emplace_back(ed.meshes[idx], 0);
 }
 
 void editor::window_state::draw_chunk_vertbuf(editor& ed, file::chunk& chunk) noexcept {
@@ -706,19 +706,36 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
 }
 
 
-void editor::send_all_to_viewport() noexcept {
+void editor::load_all_meshes() noexcept {
     u32 num_models = 0;
     alr.first_model_idx(&num_models);
 
-    // Stage ALRs have a base, background, and skybox model.
-    // Player ALRs have at most a base and detail (e.g. scarf) model.
-    for (u32 i = 0; i < 3; i++) {
+    meshes.resize(num_models);
+    for (u32 i = 0; i < num_models; i++) {
         alr_model_desc model = alr.model_at_idx(i);
         if (model.vert_chunk == nullptr) {
             continue;
         }
-        meshes.emplace_back(mesh_at_idx(alr, i));
+        meshes[i] = load_alr_mesh(alr, i);
     }
+
+    // Stage ALRs have a base, background, and skybox model.
+    // Player ALRs have at most a base and detail (e.g. scarf) model.
+    for (u32 i = 0; i < MIN(meshes.size(), 3); i++) {
+        alr_model_desc model = alr.model_at_idx(i);
+        if (meshes[i].chunks.vert_chunk == nullptr) {
+            continue;
+        }
+        instances.emplace_back(meshes[i], 0);
+    }
+}
+
+void editor::clear_meshes() noexcept {
+    for (alr::mesh& mesh : meshes) {
+        mesh.destroy();
+    }
+    meshes.clear();
+    instances.clear();
 }
 
 const char* chunk_name_by_id(u32 id) {
@@ -905,16 +922,20 @@ void editor::update(render_context& ctx) noexcept {
         alr::mesh& mesh = meshes[selected_mesh];
         ImGui::Checkbox("Render##1", &mesh.active);
 
-        ImGui::SetNextItemWidth(sliderWidth);
-        ImGui::SliderInt("Selected Object", (int*)&selected_object, 0, mesh.gl_vertbufs.size() - 1);
-        ImGui::SameLine();
-        selected_object = CLAMP(0, selected_object, mesh.gl_vertbufs.size() - 1);
+        if (mesh.gl_vertbufs.size() == 0) {
+            ImGui::Text("[no objects on this mesh]");
+        } else {
+            ImGui::SetNextItemWidth(sliderWidth);
+            ImGui::SliderInt("Selected Object", (int *) &selected_object, 0, mesh.gl_vertbufs.size() - 1);
+            ImGui::SameLine();
+            selected_object = CLAMP(0, selected_object, mesh.gl_vertbufs.size() - 1);
 
-        vertex_buffer& vertbuf = mesh.gl_vertbufs[selected_object];
-        ImGui::Checkbox("Render##2", &vertbuf.active);
+            vertex_buffer &vertbuf = mesh.gl_vertbufs[selected_object];
+            ImGui::Checkbox("Render##2", &vertbuf.active);
 
-        if (ImGui::CollapsingHeader("Object properties")) {
-            vertbuf.edit_menu();
+            if (ImGui::CollapsingHeader("Object properties")) {
+                vertbuf.edit_menu();
+            }
         }
         ImGui::End();
     }
@@ -922,9 +943,10 @@ void editor::update(render_context& ctx) noexcept {
 
 void editor::render(render_context& ctx) noexcept {
     ctx.bind();
-    for (alr::mesh& mesh : meshes) {
-        if (mesh.active) {
-            mesh.render(alr, ctx);
+    for (alr::mesh_instance& instance : instances) {
+        if (instance.mesh.active) {
+            instance.update_animation(alr, ImGui::GetIO().DeltaTime);
+            instance.render(alr, ctx);
         }
     }
     ctx.unbind();
@@ -935,7 +957,7 @@ bool editor::load(const char* path) noexcept {
     states.clear(); // UI state doesn't transfer between files
 
     if (graphics_initialized) {
-        send_all_to_viewport();
+        load_all_meshes();
     }
     return result;
 }

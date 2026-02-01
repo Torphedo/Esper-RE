@@ -122,6 +122,9 @@ public:
 
     // All meshes that can be drawn
     std::vector<alr::mesh> meshes;
+
+    std::vector<alr::mesh_instance> instances;
+
     // The "mesh" is everything reachable from an 0x16 chunk
     u32 selected_mesh = 0;
     // An "object" is is a vertex buffer and all of its index buffers
@@ -132,14 +135,9 @@ public:
     void update(render_context& ctx) noexcept;
     void render(render_context& ctx) noexcept;
     bool load(const char* path) noexcept;
-    void send_all_to_viewport() noexcept;
+    void load_all_meshes() noexcept;
 
-    void clear_meshes() noexcept {
-        for (alr::mesh& mesh : meshes) {
-            mesh.destroy();
-        }
-        meshes.clear();
-    }
+    void clear_meshes() noexcept;
 
     ~editor() {
         clear_meshes();
