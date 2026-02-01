@@ -211,15 +211,11 @@ vec4s read_attr(vfile& vf, vertex_attribute attr) {
     return result;
 }
 
-// TODO: Make this also use the format table.
 std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
     vertex_format_t format = format_by_id(format_id);
     std_vertex output = {};
     // Get a virtual file for the buffer
     vfile vf = vfile_open(vertbuf, format.size);
-
-    // The only thing consistent across formats is that they always start with
-    // the 3D position.
 
     vertex_attribute pos_attr = format.attributes[ATTRIBUTE_POSITION];
     if (pos_attr.exists) {
@@ -233,7 +229,7 @@ std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
         output.texcoord = vec2s{uv.x, uv.y};
     }
 
-    vertex_attribute normal_attr = format.attributes[ATTRIBUTE_TEXCOORD];
+    vertex_attribute normal_attr = format.attributes[ATTRIBUTE_NORMAL];
     if (normal_attr.exists) {
         vec4s normal_temp = read_attr(vf, normal_attr);
         vec3s normal = vec3s{normal_temp.x, normal_temp.y, normal_temp.z};
