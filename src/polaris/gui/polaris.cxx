@@ -161,7 +161,7 @@ void polaris::do_menu_bar() noexcept {
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
             // Wipe data that references the ALR before loading a new one
-            for (mesh_view& mesh : this->viewport.meshes) {
+            for (auto& mesh : this->viewport.meshes) {
                 mesh.destroy();
             }
             this->viewport.meshes.clear();

@@ -32,8 +32,8 @@ mapdata_editor::~mapdata_editor() {
 }
 
 void map_obj_to_viewport(viewport_t& viewport, const alr::file& alr, const ps01_entry* entry) noexcept {
-    mesh_view mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id, 0);
-    for (index_buffer& idxbuf : mesh.idx_buffers) {
+    auto mesh = mesh_at_idx(alr, FIRST_OBJ_IDX + entry->object_id);
+    for (index_buffer& idxbuf : mesh.idxbufs) {
         idxbuf.is_skele_transform = false;
         idxbuf.position = (vec3s*)&entry->pos;
         idxbuf.rotation = (vec3s*)&entry->rotation;

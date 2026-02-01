@@ -130,7 +130,7 @@ void viewport_t::destroy() noexcept {
     if (initialized) {
         fbo.destroy();
         glDeleteProgram(shader);
-        for (mesh_view mesh : meshes) {
+        for (auto& mesh : meshes) {
             mesh.destroy();
         }
 
@@ -188,8 +188,8 @@ void viewport_t::update(GLFWwindow* window) noexcept {
                 // If you make this loop over all meshes in the future, make sure not to
                 // use the for loop style with a colon (or make sure you get a reference),
                 // otherwise it'll run the menu on a copy and not modify the data
-                mesh_view &mesh = meshes.at(selected_mesh);
-                mesh.edit_menu(*alr);
+                auto& mesh = meshes.at(selected_mesh);
+                // mesh.edit_menu(*alr);
             }
 
         }
@@ -272,118 +272,12 @@ void viewport_t::update(GLFWwindow* window) noexcept {
             };
             ray_t ray = screen_to_ray(mouse_pos, cam, fb_viewport);
 
-            for (u32 i = 0; i < meshes.size(); i++) {
-                const mesh_view& mesh = meshes[i];
-                if (!mesh.active) {
-                    continue;
-                }
-                bool got_selected = false;
-                for (const index_buffer& idxbuf : mesh.idx_buffers) {
-                    if (!idxbuf.enabled) {
-                        continue;
-                    }
-                    vfile vf = vfile_open(alr->data, alr->alr_size);
-                    vf.pos = idxbuf.idx_chunk_offset;
-                    const auto* alr_idxbuf = (idxbuf_header*)vfile_cur(vf);
-                    assert(alr_idxbuf->id == 2);
-                    mat4s xform = idxbuf.get_transform(*alr, anim_frame, anim_id);
-                    if (raycast(ray, mesh.vertices, mesh.vertex_size, xform, alr_idxbuf)) {
-                        got_selected = true;
-                        break;
-                    }
-                }
-                if (got_selected) {
-                    selected_mesh = i;
-                    break;
-                }
-            }
-
-            // ray.dir = glms_vec3_scale(ray.dir, 0.1f);
-            // cam.target = glms_vec3_add(cam.target, ray.dir);
-            // cam.pos = glms_vec3_add(cam.pos, ray.dir);
         } else {
             cam.update(delta_time);
         }
     }
 
     ImGui::End();
-}
-
-void viewport_t::render_mesh(const mesh_view& mesh, mat4 pvm, bool allow_semi_transparent) {
-    const scope_timer timer("renderALRMesh", true);
-    glUniform1ui(uniform_uv_divisor, mesh.uv_divisor);
-
-    glBindVertexArray(mesh.vao);
-    for (index_buffer idx_buf : mesh.idx_buffers) {
-        if (!idx_buf.enabled) {
-            continue; // This index buffer is hidden
-        }
-
-        idxbuf_header header;
-        chunk_0x1_entry tex_entry = {};
-        mat4s obj_pvm = {};
-        { // timer scope
-            const scope_timer timer2("viewportRenderPrepare", true);
-
-            // We cast away const here but don't write to the buffer
-            vfile vf = vfile_open(alr->data, alr->alr_size);
-            vf.pos = idx_buf.idx_chunk_offset;
-            header = VFILE_READ(idxbuf_header, &vf);
-
-            alr->tex_manager.get_material(*alr, idx_buf.mat_chunk_offset, header.texture_idx, &tex_entry);
-
-            bool semi_transparent = tex_entry.shadow_map_flag == 0x54;
-            if (semi_transparent != allow_semi_transparent) {
-                continue;
-            }
-
-            obj_pvm = glms_mul(*(mat4s *) pvm, idx_buf.get_transform(*alr, anim_frame, anim_id));
-        } // end timer scope
-
-        const scope_timer timer3("viewportRenderGL", true);
-        glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)obj_pvm.raw);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, tex_entry.texture_idx));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        u32 normal_idx = tex_entry.normal_idx;
-        u32 lightmap_idx = 0;
-        if (tex_entry.vertbuf_format == 0x1F) {
-            lightmap_idx = tex_entry.normal_idx;
-            normal_idx = tex_entry.normal_backup_idx;
-        }
-
-        shader_flags_t flags = this->shader_flags;
-        if (flags.has_normal) {
-            flags.has_normal = (normal_idx != 0);
-        }
-        glUniform1i(uniform_flags, *((u32*)&flags));
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, normal_idx));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        glActiveTexture(GL_TEXTURE2);
-        if (lightmap_idx == 0) {
-            // Make sure lightmap samples all zeroes
-            glBindTexture(GL_TEXTURE_2D, 0);
-        } else {
-            glBindTexture(GL_TEXTURE_2D, alr->tex_manager.get(*alr, lightmap_idx));
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        }
-
-        const u16 draw_mode = (header.primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buf.obj);
-        glDrawElements(draw_mode, header.num_indices, GL_UNSIGNED_SHORT, 0);
-    }
-    // VAO keeps index buffer binding, so clear it after draw.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
 }
 
 void viewport_t::render(GLFWwindow* window) noexcept {
@@ -412,27 +306,13 @@ void viewport_t::render(GLFWwindow* window) noexcept {
 
     // Render all opaque meshes
     for (u32 i = 0; i < meshes.size(); i++) {
-        const mesh_view& mesh = meshes[i];
-        if (!mesh.active) {
-            continue; // This mesh is hidden
-        }
+        const auto& mesh = meshes[i];
         const bool do_wireframe = wireframe || (wireframe_selection && (i == selected_mesh));
         fbo.set_wireframe(do_wireframe);
-
-        render_mesh(mesh, pvm, false);
+        mesh.render(*alr, anim_id, anim_frame, *(mat4s*)pvm, uniform_pvm, uniform_uv_divisor);
     }
 
     // Render semi-transparent meshes
-    for (u32 i = 0; i < meshes.size(); i++) {
-        const mesh_view& mesh = meshes[i];
-        if (!mesh.active) {
-            continue; // This mesh is hidden
-        }
-        const bool do_wireframe = wireframe || (wireframe_selection && (i == selected_mesh));
-        fbo.set_wireframe(do_wireframe);
-
-        render_mesh(mesh, pvm, true);
-    }
 
     glUseProgram(0);
     fbo.unbind(); // Reset state

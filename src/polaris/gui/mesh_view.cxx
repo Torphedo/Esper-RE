@@ -90,46 +90,16 @@ void mesh_view::destroy() noexcept {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
-
-    for (index_buffer buf : idx_buffers) {
-        glDeleteBuffers(1, &buf.obj);
-    }
 }
 
 bool mesh_view::update_vertex_buf(const u8* buf, u32 size) noexcept {
     if (!initialized) {
         return false;
     }
-    vertices = buf;
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, size, buf, GL_DYNAMIC_DRAW); 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    return true;
-}
-
-bool mesh_view::add_index_buf(const u8* alr_data, u32 alr_size, index_buffer buf) noexcept {
-    if (!initialized) {
-        return false;
-    }
-    // We cast away const here but don't write to the buffer
-    vfile vf = vfile_open((u8*)alr_data, alr_size);
-    vf.pos = buf.idx_chunk_offset;
-    const auto header = VFILE_READ(idxbuf_header, &vf);
-    assert(header.id == 0x2);
-    const auto* data = (u16*)vfile_cur(vf);
-
-    glBindVertexArray(vao);
-
-    glGenBuffers(1, &buf.obj);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf.obj);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, header.num_indices * sizeof(u16), data, GL_DYNAMIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    this->idx_buffers.push_back(buf);
 
     return true;
 }
@@ -198,44 +168,6 @@ void mesh_view::edit_menu(alr::file& alr) noexcept {
             if (ImGui::Button("Apply attribute changes")) {
                 this->apply_attributes();
             }
-        }
-    }
-
-    const bool idx_buf = ImGui::CollapsingHeader("Index buffers");
-    ImGui::SetItemTooltip(idxbuf_help);
-    if (idx_buf) {
-        ImGui::ScopedIndent indent(ImGui::CharWidth(2));
-        ImGui::ScopedWidth width(20);
-
-        for (u32 i = 0; i < idx_buffers.size(); i++) {
-            index_buffer &buf = idx_buffers.at(i);
-            ImGui::Text("Index buffer %d (@ 0x%X)", i, buf.idx_chunk_offset);
-            char label[32] = {0};
-
-            snprintf(label, sizeof(label) - 1, "Render ##%d", i);
-            ImGui::Checkbox(label, &buf.enabled);
-
-            // We cast away const here but don't write to the buffer
-            vfile vf = vfile_open(alr.data, alr.alr_size);
-            vf.pos = buf.idx_chunk_offset;
-            const auto header = VFILE_READ(idxbuf_header, &vf);
-            const auto mat_chunk = alr.prev_chunk_by_id(0x1, buf.idx_chunk_offset);
-            chunk_0x1_entry *tex_entry = nullptr;
-            alr.tex_manager.get_material(alr, mat_chunk.offset, header.texture_idx, &tex_entry);
-
-            snprintf(label, sizeof(label) - 1, "Albedo Texture##%d", i);
-            ImGui::InputU16(label, &tex_entry->texture_idx);
-
-            snprintf(label, sizeof(label) - 1, "Normal Texture##%d", i);
-            ImGui::InputU16(label, &tex_entry->normal_idx);
-
-            snprintf(label, sizeof(label) - 1, "Show textures##%d", i);
-            if (ImGui::CollapsingHeader(label)) {
-                ImGui::Image(alr.tex_manager.get(alr, tex_entry->texture_idx), ImVec2(512, 512));
-                ImGui::Image(alr.tex_manager.get(alr, tex_entry->normal_idx), ImVec2(512, 512));
-            }
-
-            ImGui::NewLine();
         }
     }
 }

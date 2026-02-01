@@ -458,7 +458,7 @@ void editor::window_state::send_vertbuf_to_viewport(file& alr, viewport_t& viewp
         }
     }
 
-    mesh_view mesh = mesh_at_idx(alr, idx, window_vertbuf.selected_vertex_buf);
+    auto mesh = mesh_at_idx(alr, idx);
     viewport.meshes.push_back(mesh);
 }
 
@@ -732,13 +732,8 @@ void editor::send_all_to_viewport(viewport_t& viewport) const noexcept {
         if (model.vert_chunk == nullptr) {
             continue;
         }
-        for (u32 j = 0; j < model.vert_chunk->num_entries; j++) {
-            if (model.vert_chunk->entries[j].vertex_size == 12) {
-                continue;
-            }
-            mesh_view mesh = mesh_at_idx(alr, i, j);
-            viewport.meshes.push_back(mesh);
-        }
+        auto mesh = mesh_at_idx(alr, i);
+        viewport.meshes.push_back(mesh);
     }
 }
 

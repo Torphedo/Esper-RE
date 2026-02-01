@@ -564,6 +564,8 @@ typedef struct {
     // The number of indices stored in the buffer (might not match the available space)
     u32 num_indices;
     u32 pad[5];
+
+    u16 indices[];
 }idxbuf_header;
 static_assert(sizeof(idxbuf_header) == 0x68, "Wrong index buffer header size!");
 

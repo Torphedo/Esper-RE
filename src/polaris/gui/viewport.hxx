@@ -10,6 +10,7 @@
 
 #include "camera.hxx"
 #include "gui/framebuffer.hxx"
+#include "alr_assets.hxx"
 
 struct viewport_t : gui_layer {
     // Whether the viewport has been set up and can be rendered to.
@@ -71,7 +72,7 @@ struct viewport_t : gui_layer {
     }shader_flags = {};
 
     // All meshes in the scene
-    std::vector<mesh_view> meshes;
+    std::vector<alr::mesh> meshes;
 
     // Set up a custom framebuffer. Returns whether it succeeded, you can also
     // check the [initialized] member.

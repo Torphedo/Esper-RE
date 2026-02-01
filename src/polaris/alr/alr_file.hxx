@@ -1,14 +1,9 @@
 #pragma once
 #include <vector>
+#include <cglm/struct.h>
+#include <common/vfile.h>
 #include <formats/alr.h>
 #include <gui/alr_assets.hxx>
-
-typedef struct {
-    chunk_0x1_header* mat_chunk; // Materials
-    chunk_armature*  skel_chunk;
-    vertbuf_header*  vert_chunk;
-    idxbuf_header*   idx_chunk;
-}alr_model_desc;
 
 namespace alr {
     class file {
