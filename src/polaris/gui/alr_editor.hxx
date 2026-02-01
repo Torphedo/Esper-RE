@@ -122,8 +122,12 @@ public:
 
     // All meshes that can be drawn
     std::vector<alr::mesh> meshes;
+    // The "mesh" is everything reachable from an 0x16 chunk
     u32 selected_mesh = 0;
-    u32 selected_submesh = 0;
+    // An "object" is is a vertex buffer and all of its index buffers
+    u32 selected_object = 0;
+    // A "vertex group" is an index buffer
+    u32 selected_vertgroup = 0;
 
     void update(render_context& ctx) noexcept;
     void render(render_context& ctx) noexcept;

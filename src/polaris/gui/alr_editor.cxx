@@ -896,13 +896,25 @@ void editor::update(render_context& ctx) noexcept {
 
         ImGui::Checkbox("Render selection in wireframe", &ctx.wireframe_selection);
 
+        const float checkWidth = ImGui::CalcTextSize("Selected Object\t \tRender").x;
+        const float sliderWidth = ImGui::GetContentRegionAvail().x - checkWidth;
+        ImGui::SetNextItemWidth(sliderWidth);
         ImGui::SliderInt("Selected Mesh", (int*)&selected_mesh, 0, meshes.size() - 1);
+        ImGui::SameLine();
 
         alr::mesh& mesh = meshes[selected_mesh];
-        ImGui::SliderInt("Selected Submesh", (int*)&selected_submesh, 0, mesh.gl_vertbufs.size() - 1);
+        ImGui::Checkbox("Render##1", &mesh.active);
 
-        if (ImGui::CollapsingHeader("Model properties")) {
-            mesh.gl_vertbufs[selected_submesh].edit_menu();
+        ImGui::SetNextItemWidth(sliderWidth);
+        ImGui::SliderInt("Selected Object", (int*)&selected_object, 0, mesh.gl_vertbufs.size() - 1);
+        ImGui::SameLine();
+        selected_object = CLAMP(0, selected_object, mesh.gl_vertbufs.size() - 1);
+
+        vertex_buffer& vertbuf = mesh.gl_vertbufs[selected_object];
+        ImGui::Checkbox("Render##2", &vertbuf.active);
+
+        if (ImGui::CollapsingHeader("Object properties")) {
+            vertbuf.edit_menu();
         }
         ImGui::End();
     }
@@ -911,7 +923,9 @@ void editor::update(render_context& ctx) noexcept {
 void editor::render(render_context& ctx) noexcept {
     ctx.bind();
     for (alr::mesh& mesh : meshes) {
-        mesh.render(alr, ctx);
+        if (mesh.active) {
+            mesh.render(alr, ctx);
+        }
     }
     ctx.unbind();
 }

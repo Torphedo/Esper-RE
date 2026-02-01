@@ -130,9 +130,6 @@ bool vertex_buffer::apply_attributes() const noexcept {
 
 void vertex_buffer::edit_menu() noexcept {
     const char* format_settings_help = "These may help if a model looks corrupted, or textures are applied wrong.";
-    const char* idxbuf_help = "The individual objects within the model";
-
-    ImGui::Checkbox("Render mesh", &active);
 
     const bool format_settings = ImGui::CollapsingHeader("Vertex Format Settings");
     // Tooltip is placed on header, even if collapsed
@@ -148,6 +145,9 @@ void vertex_buffer::edit_menu() noexcept {
         // Edit menus per attribute
         if (ImGui::CollapsingHeader("Vertex Attributes")) {
             ImGui::ScopedIndent indent2(ImGui::CharWidth(2));
+            if (ImGui::Button("Apply attribute changes")) {
+                this->apply_attributes();
+            }
 
             for (u32 i = 0; i < ARRAY_SIZE(attributes); i++) {
                 // Give child window a unique name to avoid ImGui errors
@@ -160,10 +160,6 @@ void vertex_buffer::edit_menu() noexcept {
 
                 ImGui::NewLine();
                 ImGui::EndChild();
-            }
-
-            if (ImGui::Button("Apply attribute changes")) {
-                this->apply_attributes();
             }
         }
     }
@@ -369,7 +365,7 @@ alr::mesh mesh_at_idx(const alr::file& alr, u32 idx) {
             if (entries[idx_header->vertex_buf].vertex_size == 12) {
                 // This only has space for position, it'll be a solid color and look
                 // ugly in the viewport.
-                idxbuf.active = false;
+                out.gl_vertbufs[idx_header->vertex_buf].active = false;
             }
 
             out.idxbufs.push_back(idxbuf);

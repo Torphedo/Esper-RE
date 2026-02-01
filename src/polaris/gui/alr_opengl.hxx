@@ -119,9 +119,10 @@ typedef struct {
 
 namespace alr {
     struct mesh {
-        alr_model_desc chunks;
+        alr_model_desc chunks = {};
         std::vector<vertex_buffer> gl_vertbufs;
         std::vector<index_buffer> idxbufs;
+        bool active = true; // Whether to render this mesh
 
         void render(file& alr, render_context& ctx) const noexcept;
         void destroy() noexcept;
