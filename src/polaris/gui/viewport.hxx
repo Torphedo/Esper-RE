@@ -32,7 +32,10 @@ struct viewport_t : gui_layer {
     alr::file* alr = nullptr;
 
     // Shader program used to render the scene
-    gl_obj shader = 0;
+    gl_obj active_shader = 0;
+
+    gl_obj diffuse_shader = 0;
+    gl_obj uv_shader = 0;
 
     // Uniform locations (to send data to the shader each frame)
 
@@ -64,8 +67,8 @@ struct viewport_t : gui_layer {
     bool backface_cull = true;
 
     // Shader settings bitfield
+    bool render_texcoords = false;
     struct shader_flags_t {
-        bool render_texcoords: 1;
         bool render_normals: 1;
         bool has_normal: 1; // Whether this object even has a normal map
         u32: 0; // This pads the bitfield to 32 bits
@@ -83,4 +86,6 @@ struct viewport_t : gui_layer {
 
     // Destroys the underlying OpenGL resources and invalidates all copies of this instance.
     void destroy() noexcept override;
+
+    void set_shader(gl_obj shader) noexcept;
 };

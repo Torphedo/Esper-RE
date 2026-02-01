@@ -19,6 +19,7 @@ extern "C" {
 // GLSL shaders
 #include "generic.vert.h"
 #include "diffuse.frag.h"
+#include "show_uv.frag.h"
 
 void viewport_t::init(GLFWwindow* window) noexcept {
     // Have the viewport render in full resolution, it'll be downscale when
@@ -34,19 +35,18 @@ void viewport_t::init(GLFWwindow* window) noexcept {
     fbo.bind();
 
     glEnable(GL_BLEND);
-    shader = program_compile_src(generic_vert, diffuse_frag);
-    if (!shader_link_check(shader)) {
-        LOG_MSG(error, "Shader compilation error!\n");
+    diffuse_shader = program_compile_src(generic_vert, diffuse_frag);
+    if (!shader_link_check(diffuse_shader)) {
+        LOG_MSG(error, "Failed to compile diffuse shader!\n");
         return;
     }
-    uniform_pvm = glGetUniformLocation(shader, "pvm");
-    uniform_uv_divisor = glGetUniformLocation(shader, "uv_divisor");
-    uniform_flags = glGetUniformLocation(shader, "flags");
-    uniform_cam_dir = glGetUniformLocation(shader, "cam_dir");
+    uv_shader = program_compile_src(generic_vert, show_uv_frag);
+    if (!shader_link_check(uv_shader)) {
+        LOG_MSG(error, "Failed to compile UV shader!\n");
+        return;
+    }
 
-    uniform_sampler_albedo = glGetUniformLocation(shader, "albedo_texture");
-    uniform_sampler_normal = glGetUniformLocation(shader, "normal_texture");
-    uniform_sampler_lightmap = glGetUniformLocation(shader, "lightmap_texture");
+    set_shader(diffuse_shader);
 
     if (wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -54,10 +54,24 @@ void viewport_t::init(GLFWwindow* window) noexcept {
     fbo.unbind();
 }
 
+void viewport_t::set_shader(gl_obj shader) noexcept {
+    active_shader = shader;
+
+    uniform_pvm = glGetUniformLocation(active_shader, "pvm");
+    uniform_uv_divisor = glGetUniformLocation(active_shader, "uv_divisor");
+    uniform_flags = glGetUniformLocation(active_shader, "flags");
+    uniform_cam_dir = glGetUniformLocation(active_shader, "cam_dir");
+
+    uniform_sampler_albedo = glGetUniformLocation(active_shader, "albedo_texture");
+    uniform_sampler_normal = glGetUniformLocation(active_shader, "normal_texture");
+    uniform_sampler_lightmap = glGetUniformLocation(active_shader, "lightmap_texture");
+
+}
+
 void viewport_t::destroy() noexcept {
     if (initialized) {
         fbo.destroy();
-        glDeleteProgram(shader);
+        glDeleteProgram(diffuse_shader);
         for (alr::mesh& mesh : meshes) {
             mesh.destroy();
         }
@@ -93,9 +107,9 @@ void viewport_t::update(GLFWwindow* window) noexcept {
         }
         fbo.unbind();
 
-        bool temp_render_texcoords = shader_flags.render_texcoords;
-        ImGui::Checkbox("Visualize UVs", &temp_render_texcoords);
-        shader_flags.render_texcoords = temp_render_texcoords;
+        if (ImGui::Checkbox("Visualize UVs", &render_texcoords)) {
+            set_shader(render_texcoords ? uv_shader : diffuse_shader);
+        }
 
         bool temp_render_normals = shader_flags.render_normals;
         ImGui::Checkbox("Visualize normals", &temp_render_normals);
@@ -224,7 +238,7 @@ void viewport_t::render(GLFWwindow* window) noexcept {
     cam.proj_view(pvm);
 
     // Bind shader & upload camera transform
-    glUseProgram(shader);
+    glUseProgram(active_shader);
     glUniformMatrix4fv(uniform_pvm, 1, GL_FALSE, (float*)pvm);
     glUniform3fv(uniform_cam_dir, 1, cam.facing().raw);
     glUniform1i(uniform_flags, *((u32*)&shader_flags));
