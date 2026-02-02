@@ -27,7 +27,7 @@ do {                                 \
 
 namespace alr {
 
-void editor::window_state::draw_chunk_material(const file& alr, file::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_material(file& alr, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(ALR_ID_MATERIAL);
 
     vfile vf = vfile_open(alr.data, alr.alr_size);
@@ -35,10 +35,10 @@ void editor::window_state::draw_chunk_material(const file& alr, file::chunk& chu
     const material_header header = VFILE_READ(material_header, &vf);
     auto entries = (material_entry*) vfile_cur(vf);
 
-    ImGui::BeginChild("Entries", ImVec2(300, 0));
+    ImGui::BeginChildFitContent("Entries");
     for (u32 i = 0; i < header.num_entries; i++) {
         char buf[0x30] = {0};
-        snprintf(buf, sizeof(buf) - 1, "Entry #%d", i);
+        snprintf(buf, sizeof(buf) - 1, "Entry #%d  ", i);
 
         const bool is_selected = win_material.selected_entry == i;
         if (ImGui::Selectable(buf, is_selected)) {
@@ -49,9 +49,23 @@ void editor::window_state::draw_chunk_material(const file& alr, file::chunk& chu
     ImGui::EndChild();
     ImGui::SameLine();
 
-    material_entry* entry = &entries[win_material.selected_entry];
+    material_entry& entry = entries[win_material.selected_entry];
     // Explicit constructor
-    hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)alr.data);
+
+    ImGui::BeginChild("editor child window", ImVec2(), ImGuiChildFlags_AutoResizeX);
+    if (ImGui::BeginTabBar("editor tabs")) {
+        if (ImGui::BeginTabItem("Editor")) {
+            edit_material_entry(entry);
+            ImGui::Image(alr.tex_manager.get(alr, entry.texture_idx), ImVec2(500, 500));
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Hex Editor")) {
+            hex_chunk.DrawContents(&entry, sizeof(entry), (uintptr_t) &entry - (uintptr_t) alr.data);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+    ImGui::EndChild();
 }
 
 void editor::window_state::draw_chunk_idxbuf(file& alr, file::chunk& chunk) noexcept {

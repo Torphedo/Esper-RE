@@ -225,7 +225,7 @@ void texture_manager::invalidate(u32 idx) noexcept {
 
 gl_obj texture_manager::get(alr::file& alr, u32 idx) noexcept {
     if (gl_tex_map.contains(idx)) {
-        return gl_tex_map[idx];
+        return gl_tex_map.at(idx);
     }
 
     if (texheader_offset == 0) {

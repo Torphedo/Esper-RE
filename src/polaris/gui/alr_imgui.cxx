@@ -27,6 +27,30 @@ namespace alr {
         return (hash != crc32fast((u8*)&layout, sizeof(layout)));
     }
 
+    bool edit_material_entry(material_entry& entry) {
+        const u32 hash = crc32fast((u8*)&entry, sizeof(entry));
+        ImGui::PushItemWidth(ImGui::CharWidth() * 20);
+
+        ImGui::InputPDString("Shader Name", &entry.text1, &entry.text2);
+        ImGui::InputU8("Vertex Format ID", &entry.vertbuf_format);
+        ImGui::InputU8("Vertex Format Size", &entry.vert_size);
+        ImGui::InputU8("Index", &entry.entry_idx);
+        ImGui::InputU16("Diffuse Texture ID", &entry.texture_idx);
+
+        const char* normal_label = "Normal Map Texture ID";
+        if (entry.vertbuf_format == 0x1F) {
+            normal_label = "Baked Lightmap Texture ID";
+        }
+        ImGui::InputU16(normal_label, &entry.normal_idx);
+
+        if (entry.vertbuf_format == 0x1F) {
+            ImGui::InputU16("Normal Map Texture ID", &entry.normal_backup_idx);
+        }
+
+        const u32 newhash = crc32fast((u8*)&entry, sizeof(entry));
+        return (hash != newhash);
+    }
+
     bool edit_texture_entry(texture_entry& entry) {
         const u32 hash = crc32fast((u8*)&entry, sizeof(entry));
 

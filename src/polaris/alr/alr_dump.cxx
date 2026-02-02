@@ -454,10 +454,10 @@ bool dump_all_materials(const file& alr, const char* output_path) {
     }
 
     vf.pos = material_chunk.offset;
-    const auto material_header = VFILE_READ(material_header, &vf);
+    const auto mat_header = VFILE_READ(material_header, &vf);
     const auto* materials = (const material_entry*)vfile_cur(vf);
 
-    dump_materials_obj(f, materials, material_header.num_entries, texture_names.data(), texture_names.size());
+    dump_materials_obj(f, materials, mat_header.num_entries, texture_names.data(), texture_names.size());
     fclose(f);
     return true;
 }

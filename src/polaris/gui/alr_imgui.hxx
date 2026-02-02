@@ -16,6 +16,8 @@ namespace alr {
 
     bool edit_chunk_layout(chunk_layout& layout);
 
+    bool edit_material_entry(material_entry& entry);
+
     bool edit_texture_entry(texture_entry& entry);
 
     /// @brief Edit an entry representing a texture atlas

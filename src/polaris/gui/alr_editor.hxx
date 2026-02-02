@@ -7,6 +7,7 @@
 // State for material (ID 0x1) window
 struct window_state_material {
     u32 selected_entry = 0;
+    bool scale_to_window = false;
 };
 
 // State for 0x3 (armature) window
@@ -78,7 +79,7 @@ public:
         bool active = true;
 
         void update(editor& ed) noexcept;
-        void draw_chunk_material(const file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_material(file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_idxbuf(file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_skeleton(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_animation(const file& alr, file::chunk& chunk) noexcept;
