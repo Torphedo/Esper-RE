@@ -40,7 +40,7 @@ mat4s transform_from_joint(const joint_t& joint);
 /// @param num_mats Number of materials in the array
 /// @param texture_names List of all texture names (must be in same order as in the ALR)
 /// @param num_names Number of texture names in the array
-void dump_materials_obj(FILE* f, const chunk_0x1_entry* materials, u32 num_mats, const decoded_text* texture_names, u32 num_names);
+void dump_materials_obj(FILE* f, const material_entry* materials, u32 num_mats, const decoded_text* texture_names, u32 num_names);
 
 /// @brief Dump index buffer in OBJ format
 ///

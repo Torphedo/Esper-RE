@@ -212,9 +212,9 @@ void fprint_obj_idx(FILE* out, bool uv, bool normal, u16 idx) {
     fprintf(out, " ");
 }
 
-void dump_materials_obj(FILE* f, const chunk_0x1_entry* materials, u32 num_mats, const decoded_text* texture_names, u32 num_names) {
+void dump_materials_obj(FILE* f, const material_entry* materials, u32 num_mats, const decoded_text* texture_names, u32 num_names) {
     for (u32 i = 0; i < num_mats; i++) {
-        const chunk_0x1_entry* mat = &materials[i];
+        const material_entry* mat = &materials[i];
         // This swaps around in 1 specific vertex format that uses a baked light map
         const u32 normal_idx = (mat->vertbuf_format == 0x1F) ? mat->normal_backup_idx : mat->normal_idx;
         if (mat->texture_idx >= num_names) {
@@ -454,8 +454,8 @@ bool dump_all_materials(const file& alr, const char* output_path) {
     }
 
     vf.pos = material_chunk.offset;
-    const auto material_header = VFILE_READ(chunk_0x1_header, &vf);
-    const auto* materials = (const chunk_0x1_entry*)vfile_cur(vf);
+    const auto material_header = VFILE_READ(material_header, &vf);
+    const auto* materials = (const material_entry*)vfile_cur(vf);
 
     dump_materials_obj(f, materials, material_header.num_entries, texture_names.data(), texture_names.size());
     fclose(f);

@@ -29,8 +29,8 @@ struct texture_manager {
     std::unordered_map<u32, gl_obj> gl_tex_map;
 
     gl_obj get(alr::file& alr, u32 idx) noexcept;
-    bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry** entry_out) const noexcept;
-    bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, chunk_0x1_entry* entry_out) const noexcept;
+    bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, material_entry** entry_out) const noexcept;
+    bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, material_entry* entry_out) const noexcept;
 
     void invalidate(u32 idx) noexcept;
     void destroy() noexcept;

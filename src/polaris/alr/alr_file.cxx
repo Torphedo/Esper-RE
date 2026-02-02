@@ -306,7 +306,7 @@ bool file::save(const char* path) const noexcept {
         }
         vf.pos = offset;
 
-        out.mat_chunk = (chunk_0x1_header*)vfile_cur(vf);
+        out.mat_chunk = (material_header*)vfile_cur(vf);
         vfile_seek(&vf, out.mat_chunk->size);
 
         out.skel_chunk = (chunk_armature*)vfile_cur(vf);

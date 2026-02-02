@@ -32,8 +32,8 @@ void editor::window_state::draw_chunk_material(const file& alr, file::chunk& chu
 
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = chunk.offset;
-    const chunk_0x1_header header = VFILE_READ(chunk_0x1_header, &vf);
-    auto entries = (chunk_0x1_entry*) vfile_cur(vf);
+    const material_header header = VFILE_READ(material_header, &vf);
+    auto entries = (material_entry*) vfile_cur(vf);
 
     ImGui::BeginChild("Entries", ImVec2(300, 0));
     for (u32 i = 0; i < header.num_entries; i++) {
@@ -49,7 +49,7 @@ void editor::window_state::draw_chunk_material(const file& alr, file::chunk& chu
     ImGui::EndChild();
     ImGui::SameLine();
 
-    chunk_0x1_entry* entry = &entries[win_material.selected_entry];
+    material_entry* entry = &entries[win_material.selected_entry];
     // Explicit constructor
     hex_chunk.DrawContents(entry, sizeof(*entry), (uintptr_t)entry - (uintptr_t)alr.data);
 }

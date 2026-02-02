@@ -148,8 +148,8 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
             AL_ASSERT(chunk.size == sizeof(chunk_generic), "0x0 chunk had %d bytes of data (expected 8)!", chunk.size);
             break;
         case 0x1: {
-            const auto* header = VFILE_READ_PTR(chunk_0x1_header, &chunkvf);
-            result &= validate_entry_sizes(msg, chunk.size, sizeof(header), header->num_entries, sizeof(chunk_0x1_entry));
+            const auto* header = VFILE_READ_PTR(material_header, &chunkvf);
+            result &= validate_entry_sizes(msg, chunk.size, sizeof(header), header->num_entries, sizeof(material_entry));
             break;
         }
         case 0x2: {

@@ -149,7 +149,7 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
     }
 
     const vertbuf_entry* vertbufs = chunks.vert_chunk->entries;
-    const chunk_0x1_entry* materials = chunks.mat_chunk->entries;
+    const material_entry* materials = chunks.mat_chunk->entries;
 
     for (const index_buffer& idxbuf : idxbufs) {
         const idxbuf_header* header = (idxbuf_header*) (alr.data + idxbuf.idx_chunk_offset);
@@ -159,7 +159,7 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
         }
 
         const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
-        const chunk_0x1_entry& material = materials[header->texture_idx];
+        const material_entry& material = materials[header->texture_idx];
 
         ctx.fbo.set_wireframe(gl_vertbuf.wireframe || ctx.wireframe);
         glBindVertexArray(gl_vertbuf.vao);

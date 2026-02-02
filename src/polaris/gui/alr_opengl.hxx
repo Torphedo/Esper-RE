@@ -69,7 +69,7 @@ struct vertex_buffer {
 };
 
 typedef struct {
-    chunk_0x1_header* mat_chunk; // Materials
+    material_header* mat_chunk; // Materials
     chunk_armature*  skel_chunk;
     vertbuf_header*  vert_chunk;
     idxbuf_header*   idx_chunk;

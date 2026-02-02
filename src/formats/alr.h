@@ -603,17 +603,17 @@ typedef struct {
 
     // These are usually multiples of 10 (40, 250, 200, 300, 1000 are common values)
     u16 unk12[8];
-}chunk_0x1_entry;
-static_assert(sizeof(chunk_0x1_entry) == 0x4C, "Wrong 0x1 chunk entry size!");
+}material_entry;
+static_assert(sizeof(material_entry) == 0x4C, "Wrong 0x1 chunk entry size!");
 
 typedef struct {
     u32 id;
     u32 size;
     u16 num_entries;
     u16 unknown;
-    chunk_0x1_entry entries[];
-}chunk_0x1_header;
-static_assert(sizeof(chunk_0x1_header) == 0xC, "Wrong 0x1 chunk header size!");
+    material_entry entries[];
+}material_header;
+static_assert(sizeof(material_header) == 0xC, "Wrong 0x1 chunk header size!");
 
 // The common ID and size that come at the start of any chunk.
 typedef struct {
