@@ -139,6 +139,7 @@ void polaris::do_menu_bar() noexcept {
                 ImGui::MenuItem("Generate STX", nullptr, &create_stx);
                 ImGui::MenuItem("Extract .mk / .ak", nullptr, &extract_mkak);
                 ImGui::MenuItem("Create .mk / .ak", nullptr, &create_mkak);
+                ImGui::MenuItem("Shader (.cso) Viewer", nullptr, &csoTool.enabled);
                 ImGui::EndMenu();
             }
 
@@ -243,6 +244,7 @@ void polaris::update(GLFWwindow* window) noexcept {
     this->mapEdit.do_gui();
     this->audioTool.do_gui();
     this->questTool.do_gui();
+    this->csoTool.do_gui();
 }
 
 void polaris::render(GLFWwindow* window) noexcept {
