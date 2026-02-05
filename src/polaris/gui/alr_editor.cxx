@@ -972,6 +972,7 @@ void editor::render(render_context& ctx) noexcept {
     ctx.bind();
     for (alr::mesh_instance& instance : instances) {
         instance.update_animation(alr, ctx.anim_id, ImGui::GetIO().DeltaTime);
+        instance.update_skinning(alr, ctx.anim_id, ImGui::GetIO().DeltaTime);
         instance.render(alr, ctx);
     }
     ctx.unbind();

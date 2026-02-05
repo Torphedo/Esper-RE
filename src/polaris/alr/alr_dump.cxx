@@ -120,6 +120,26 @@ mat4s transform_from_joint(const joint_t & joint) {
     return transform;
 }
 
+mat4s joint_bind_xform(const chunk_armature* joint_header, s32 joint_idx) {
+    // We're going to use J1->J2 to mean "J2 is J1's parent".
+    // If we have 3 joints J0->J1->J2, then the final transform for J0 is:
+    //     J2 * J1 * J0
+    const joint_t* joint = &joint_header->joints[joint_idx];
+    mat4s xform  GLMS_MAT4_IDENTITY_INIT;
+    do {
+        mat4s joint_xform = alr::transform_from_joint(*joint);
+        xform = glms_mat4_mul(joint_xform, xform);
+        if (joint->parent_idx < 0 || joint->parent_idx >= joint_header->joint_count) {
+            break;
+        }
+        joint_idx = joint->parent_idx;
+        joint = &joint_header->joints[joint_idx];
+    } while (true);
+
+    return xform;
+}
+
+
 // Just the game's structure, but made so that we can traverse down from the
 // root instead of up from the leaves
 struct joint_tree {

@@ -82,6 +82,7 @@ namespace alr {
         alr_model_desc chunks = {};
         std::vector<vertex_buffer> gl_vertbufs;
         std::vector<index_buffer> idxbufs;
+        std::vector<mat4s> bind_pose;
         bool active = true; // Whether to render this mesh
 
         void render(file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept;
@@ -96,10 +97,12 @@ namespace alr {
 
         float anim_frame = 0.0f;
         std::vector<mat4s> anim_pose; // Computed every frame
+        std::vector<mat4s> skin_pose; // Computed every frame for skinned meshes
         const alr::mesh& mesh;
 
         mat4s transform(u32 joint_idx) const noexcept;
         void update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
+        void update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
         void render(alr::file& alr, render_context& ctx) const noexcept;
 
         mesh_instance(const alr::mesh& mesh, vec3s* pos = nullptr, vec3s* rot = nullptr);

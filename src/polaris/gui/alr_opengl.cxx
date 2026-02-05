@@ -3,6 +3,7 @@
 #include <formats/alr.h>
 #include <util/imgui_utils.hxx>
 #include <alr/alr_file.hxx>
+#include <alr/alr_dump.hxx>
 #include <util/scope_timer.hxx>
 
 /* === Static index buffer implementation === */
@@ -225,6 +226,11 @@ alr::mesh load_alr_mesh(const alr::file& alr, u32 idx) {
     alr_model_desc model = alr.model_at_idx(idx);
     out.chunks = model;
 
+    if (!model.vert_chunk) {
+        LOG_MSG(error, "Failed to load static mesh!\n");
+        return out;
+    }
+
     // Get the actual vertex buffer
     const u8* resbuf = alr.resource_buffer();
 
@@ -273,6 +279,14 @@ alr::mesh load_alr_mesh(const alr::file& alr, u32 idx) {
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+    // Calculate bind pose matrices
+    const u32 joint_count = model.skel_chunk->joint_count;
+    out.bind_pose.reserve(joint_count);
+    for (u32 i = 0; i < model.skel_chunk->joint_count; i++) {
+        const mat4s xform = alr::joint_bind_xform(model.skel_chunk, i);
+        out.bind_pose.push_back(xform);
+    }
+
     return out;
 }
 
@@ -284,7 +298,7 @@ mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
         mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *pos);
         return glms_mat4_mul(pos_xform, rot_xform);
     }
-    return anim_pose[joint_idx];
+    return skin_pose[joint_idx];
 }
 
 void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
@@ -295,6 +309,23 @@ void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, flo
     anim_frame += delta_time / FRAMETIME_24FPS;
     for (u32 i{}; i < skel->joint_count; i++) {
         anim_pose[i] = alr.joint_final_xform(skel, anim_id, i, anim_frame);
+    }
+}
+
+void alr::mesh_instance::update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
+    scope_timer timer("instanceUpdateSkinning", true);
+    const chunk_armature* skel = mesh.chunks.skel_chunk;
+    skin_pose.resize(skel->joint_count);
+
+    // The skinning matrix transforms a vertex from the bind pose to the
+    // animated pose. The animation pose transform goes from the origin to the
+    // bone's animated position.
+    // In a skinned mesh, the vertices are already in the bind pose (T-pose),
+    // not the origin. So, we invert the bind pose to make their coordinates
+    // relative to the bone (aka. skin space) before applying the animation pose.
+    for (u32 i{}; i < skel->joint_count; i++) {
+        const mat4s inv_bind = glms_mat4_inv(mesh.bind_pose[i]);
+        skin_pose[i] = glms_mat4_mul(inv_bind, anim_pose[i]);
     }
 }
 

@@ -34,6 +34,14 @@ void dump_armature_dae(FILE* f, vfile armature_data);
 /// @return 4x4 transformation matrix
 mat4s transform_from_joint(const joint_t& joint);
 
+/// @brief Calculate the bind pose transform of a joint
+///
+/// This function does not apply animation.
+/// @param joint_header Skeleton data
+/// @param joint_idx The joint whose transform will be calculated
+/// @return Final local space transform of the joint
+mat4s joint_bind_xform(const chunk_armature* joint_header, s32 joint_idx);
+
 /// @brief Dump materials to a file in MTL format (used with OBJ)
 /// @param f Standard C file to output to
 /// @param materials ALR material array
