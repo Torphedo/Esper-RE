@@ -332,7 +332,7 @@ void alr::mesh_instance::update_skinning(const alr::file& alr, u32 anim_id, floa
     // relative to the bone (aka. skin space) before applying the animation pose.
     for (u32 i{}; i < skel->joint_count; i++) {
         const mat4s inv_bind = glms_mat4_inv(mesh.bind_pose[i]);
-        skin_pose[i] = glms_mat4_mul(inv_bind, anim_pose[i]);
+        skin_pose[i] = glms_mat4_mul(anim_pose[i], inv_bind);
     }
 }
 
