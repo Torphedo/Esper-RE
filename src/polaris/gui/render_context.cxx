@@ -12,9 +12,9 @@
 #include "render_context.hxx"
 
 // GLSL shaders
-#include "generic.vert.h"
-#include "diffuse.frag.h"
-#include "show_uv.frag.h"
+#include <shaders/generic.vert.h>
+#include <shaders/diffuse.frag.h>
+#include <shaders/show_uv.frag.h>
 
 void render_context::init(GLFWwindow* window) noexcept {
     // Have the viewport render in full resolution, it'll be downscale when
