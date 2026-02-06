@@ -298,7 +298,7 @@ mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
         mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *pos);
         return glms_mat4_mul(pos_xform, rot_xform);
     }
-    return skin_pose[joint_idx];
+    return anim_pose[joint_idx];
 }
 
 void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
