@@ -161,6 +161,11 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
 
         const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
         const material_entry& material = materials[header->texture_idx];
+        if (material.vertbuf_format == ALR_VERTFMT_SWBOS) {
+            ctx.set_shader(ctx.skinned_shader);
+        } else {
+            ctx.set_shader(ctx.diffuse_shader);
+        }
 
         ctx.fbo.set_wireframe(gl_vertbuf.wireframe || ctx.wireframe);
         glBindVertexArray(gl_vertbuf.vao);
@@ -173,6 +178,8 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
         glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
         const u32 divisor = gl_vertbuf.uv_divisor;
         glUniform1ui(ctx.uniform_uv_divisor, divisor);
+
+        glUniformMatrix4fv(ctx.uniform_skin_xforms, instance.skin_pose.size(), GL_FALSE, (float*)instance.skin_pose.data());
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, material.texture_idx));

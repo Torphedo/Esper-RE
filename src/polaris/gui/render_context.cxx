@@ -13,6 +13,7 @@
 
 // GLSL shaders
 #include <shaders/generic.vert.h>
+#include <shaders/skinning.vert.h>
 #include <shaders/diffuse.frag.h>
 #include <shaders/show_uv.frag.h>
 
@@ -41,6 +42,12 @@ void render_context::init(GLFWwindow* window) noexcept {
         return;
     }
 
+    skinned_shader = program_compile_src(skinning_vert, diffuse_frag);
+    if (!shader_link_check(skinned_shader)) {
+        LOG_MSG(error, "Failed to compile skinned shader!\n");
+        return;
+    }
+
     set_shader(diffuse_shader);
 
     if (wireframe) {
@@ -49,9 +56,15 @@ void render_context::init(GLFWwindow* window) noexcept {
     fbo.unbind();
 }
 
-void render_context::set_shader(gl_obj shader) noexcept {
+void render_context::set_shader(gl_obj shader, bool force) noexcept {
+    if (active_shader == shader && !force) {
+        return; // Don't set up multiple times if we don't need to
+    }
+
     active_shader = shader;
 
+    glUseProgram(active_shader);
+    uniform_skin_xforms = glGetUniformLocation(active_shader, "skin_xforms");
     uniform_pvm = glGetUniformLocation(active_shader, "pvm");
     uniform_uv_divisor = glGetUniformLocation(active_shader, "uv_divisor");
     uniform_cam_dir = glGetUniformLocation(active_shader, "cam_dir");
@@ -59,7 +72,6 @@ void render_context::set_shader(gl_obj shader) noexcept {
     uniform_sampler_albedo = glGetUniformLocation(active_shader, "albedo_texture");
     uniform_sampler_normal = glGetUniformLocation(active_shader, "normal_texture");
     uniform_sampler_lightmap = glGetUniformLocation(active_shader, "lightmap_texture");
-
 }
 
 void render_context::destroy() noexcept {

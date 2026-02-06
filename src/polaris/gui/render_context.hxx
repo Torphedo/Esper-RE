@@ -27,8 +27,12 @@ struct render_context : gui_layer {
 
     gl_obj diffuse_shader = 0;
     gl_obj uv_shader = 0;
+    gl_obj skinned_shader = 0;
 
     // Uniform locations (to send data to the shader each frame)
+
+    // Skinning matrix array
+    gl_obj uniform_skin_xforms = 0;
 
     // Projection-view-model transform matrix
     gl_obj uniform_pvm = 0;
@@ -67,5 +71,5 @@ struct render_context : gui_layer {
     // Destroys the underlying OpenGL resources and invalidates all copies of this instance.
     void destroy() noexcept override;
 
-    void set_shader(gl_obj shader) noexcept;
+    void set_shader(gl_obj shader, bool force = false) noexcept;
 };

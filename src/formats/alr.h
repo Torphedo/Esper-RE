@@ -180,6 +180,15 @@ typedef struct {
 }vertbuf_entry;
 static_assert(sizeof(vertbuf_entry) == 0x1C, "Wrong vertex metadata size!");
 
+typedef enum {
+    ALR_VERTFMT_SD = 1,
+    ALR_VERTFMT_SDAL = ALR_VERTFMT_SD,
+    ALR_VERTFMT_VKLIGHT = ALR_VERTFMT_SD,
+
+    ALR_VERTFMT_SV = 8,
+    ALR_VERTFMT_SWBOS = 0x11, // Used for skeletal animation
+}alr_vertfmt;
+
 // Same as texture header, but the array is a different type
 typedef struct {
     u32 id; // 0x16
