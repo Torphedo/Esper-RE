@@ -348,8 +348,8 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
         .attributes = {
             ALR_STD_POS,
             ALR_STD_UV_DEF(12, INT16_MAX),
-            {}, // Lightmap texcoord
-            {}, // Normal
+            {.exists = false}, // Lightmap texcoord
+            {.exists = false}, // Normal
             {
                 .type = DATA_TYPE_U16,
                 .offset = 20,
