@@ -180,7 +180,14 @@ void editor::window_state::draw_chunk_animation(const file& alr, file::chunk& ch
         decode_single32(decoded.data, joint.name);
         std::string joint_name = std::string(decoded.data) + "_" + std::to_string(joint_idx);
 
-        dump_animation_maya(header, "file.anim", joint_name.c_str());
+        // Display the file picker
+        nfdu8filteritem_t filters[] = { { "Autodesk Maya Animation", "anim"} };
+        char* path = nullptr;
+        nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+        if (result == NFD_OKAY && path != nullptr) {
+            dump_animation_maya(header, path, joint_name.c_str());
+        }
+        free(path);
     }
 
     {

@@ -1,5 +1,6 @@
 #include "alr_imgui.hxx"
 #include <string>
+#include <nfd.h>
 
 #include <common/crc32.h>
 
@@ -178,12 +179,19 @@ namespace alr {
         ImGui::InputU8("Unknown 1", &joint.unk1);
         ImGui::InputU8("Unknown 2", &joint.unk2);
         if (ImGui::Button("Dump to file")) {
-            FILE* f = fopen("bones.dae", "wb");
-            if (f != nullptr) {
-                armature_vf.pos = 0;
-                dump_armature_dae(f, armature_vf);
-                fclose(f);
+            // Display the file picker
+            nfdu8filteritem_t filters[] = { { "COLLADA Skeleton", "dae"} };
+            char* path = nullptr;
+            nfdresult_t result = NFD_SaveDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr, nullptr);
+            if (result == NFD_OKAY && path != nullptr) {
+                FILE* f = fopen(path, "ab");
+                if (f) {
+                    armature_vf.pos = 0;
+                    dump_armature_dae(f, armature_vf);
+                    fclose(f);
+                }
             }
+            free(path);
         }
 
         if (ImGui::BeginTabBar("editors")) {
