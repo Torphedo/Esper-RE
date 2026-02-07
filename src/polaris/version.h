@@ -1,6 +1,6 @@
 #pragma once
 
-#define POLARIS_VERSION "1.6.1"
+#define POLARIS_VERSION "1.7.0"
 #define POLARIS_URL "https://github.com/Torphedo/Esper-RE"
 
 static const char* polaris_special_thanks[] = {
