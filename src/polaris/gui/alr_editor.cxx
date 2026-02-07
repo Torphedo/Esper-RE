@@ -953,7 +953,7 @@ void editor::update(render_context& ctx) noexcept {
             selected_object = CLAMP(0, selected_object, mesh.gl_vertbufs.size() - 1);
 
             vertex_buffer &vertbuf = mesh.gl_vertbufs[selected_object];
-            if (changed) {
+            if (changed && ctx.wireframe_selection) {
                 mesh.gl_vertbufs[old_selection].wireframe = false;
                 vertbuf.wireframe = true;
             }
