@@ -322,7 +322,10 @@ void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, flo
 void alr::mesh_instance::update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
     scope_timer timer("instanceUpdateSkinning", true);
     const chunk_armature* skel = mesh.chunks.skel_chunk;
-    skin_pose.resize(skel->joint_count);
+    skin_pose.clear();
+    for (const auto& m : mesh.bind_pose) {
+        skin_pose.emplace_back(m);
+    }
 
     // The skinning matrix transforms a vertex from the bind pose to the
     // animated pose. The animation pose transform goes from the origin to the
@@ -332,7 +335,8 @@ void alr::mesh_instance::update_skinning(const alr::file& alr, u32 anim_id, floa
     // relative to the bone (aka. skin space) before applying the animation pose.
     for (u32 i{}; i < skel->joint_count; i++) {
         const mat4s inv_bind = glms_mat4_inv(mesh.bind_pose[i]);
-        skin_pose[i] = glms_mat4_mul(anim_pose[i], inv_bind);
+        const mat4s skin = glms_mat4_mul(anim_pose[i], inv_bind);
+        skin_pose.push_back(skin);
     }
 }
 

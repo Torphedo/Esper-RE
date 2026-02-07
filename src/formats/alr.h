@@ -235,6 +235,7 @@ typedef enum {
     ATTRIBUTE_TEXCOORD,
     ATTRIBUTE_LIGHTMAP_TEXCOORD,
     ATTRIBUTE_NORMAL,
+    ATTRIBUTE_BLENDIDX,
     ATTRIBUTE_WEIGHT,
     ATTRIBUTE_ENUM_MAX,
 }attribute_idx;
@@ -244,6 +245,7 @@ static const char* attribute_names[] = {
     "Texture Coordinates",
     "Lighting Texture Coordinates",
     "Vertex Normal",
+    "Bone Index",
     "Weight",
     "[Invalid]",
 };
@@ -340,11 +342,25 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
         .size = 0x0C,
         ALR_POS_ONLY,
     },
-    {   .id = 0x11,
+    {   .id = ALR_VERTFMT_SWBOS,
         .size = 0x18,
         .attributes = {
             ALR_STD_POS,
             ALR_STD_UV_DEF(12, INT16_MAX),
+            {}, // Lightmap texcoord
+            {}, // Normal
+            {
+                .type = DATA_TYPE_U16,
+                .offset = 20,
+                .components = 2,
+                .exists = true,
+            }, // Bone indices
+            {
+                .type = DATA_TYPE_U16,
+                .offset = 16,
+                .components = 2,
+                .exists = true,
+            }, // Weights
             // 0x10 - 0x14 are 16-bit ints, probably unsigned.
 
             // In pc00a.alr:
