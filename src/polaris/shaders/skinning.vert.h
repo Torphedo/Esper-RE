@@ -1,5 +1,7 @@
 const char* skinning_vert = R"(
 #version 330 core
+// This shader is our equivalent of Phantom Dust's SWBOS_vs.cso
+
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec2 a_texcoord;
 layout (location = 2) in vec2 a_lightmap_uv;
@@ -7,6 +9,7 @@ layout (location = 3) in vec3 a_normal;
 layout (location = 4) in vec2 a_blendindices;
 layout (location = 5) in vec2 a_blendweights;
 
+// DirectX 8 fixed-function pipeline uses SetTransform with a set of 255 transforms
 uniform mat4 skin_xforms[256];
 uniform mat4 pvm;
 uniform uint uv_divisor;

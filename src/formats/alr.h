@@ -187,6 +187,7 @@ typedef enum {
 
     ALR_VERTFMT_SV = 8,
     ALR_VERTFMT_SWBOS = 0x11, // Used for skeletal animation
+    ALR_VERTFMT_LBTS = 0x1F, // Underground hub models w/ baked lighting.
 }alr_vertfmt;
 
 // Same as texture header, but the array is a different type

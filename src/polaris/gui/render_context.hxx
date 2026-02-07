@@ -59,6 +59,7 @@ struct render_context : gui_layer {
     bool backface_cull = true;
 
     bool render_texcoords = false;
+    bool render_skinning = false;
 
     // Set up a custom framebuffer. Returns whether it succeeded, you can also
     // check the [initialized] member.

@@ -161,7 +161,7 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
 
         const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
         const material_entry& material = materials[header->texture_idx];
-        if (material.vertbuf_format == ALR_VERTFMT_SWBOS) {
+        if (ctx.render_skinning && material.vertbuf_format == ALR_VERTFMT_SWBOS) {
             ctx.set_shader(ctx.skinned_shader);
         } else {
             ctx.set_shader(ctx.diffuse_shader);
@@ -188,7 +188,7 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
 
         u32 normal_idx = material.normal_idx;
         u32 lightmap_idx = 0;
-        if (material.vertbuf_format == 0x1F) {
+        if (material.vertbuf_format == ALR_VERTFMT_LBTS) {
             lightmap_idx = material.normal_idx;
             normal_idx = material.normal_backup_idx;
         }

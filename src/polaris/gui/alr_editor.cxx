@@ -933,6 +933,7 @@ void editor::update(render_context& ctx) noexcept {
         // ImGui::Checkbox("Enable raycast test", &raycast_test);
 
         ImGui::Checkbox("Render selection in wireframe", &ctx.wireframe_selection);
+        ImGui::Checkbox("Do vertex-skinned skeletal animation", &ctx.render_skinning);
 
         const float checkWidth = ImGui::CalcTextSize("Selected Object\t \tRender").x;
         const float sliderWidth = ImGui::GetContentRegionAvail().x - checkWidth;
