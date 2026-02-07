@@ -71,10 +71,6 @@ void editor::window_state::draw_chunk_material(file& alr, file::chunk& chunk) no
 void editor::window_state::draw_chunk_idxbuf(file& alr, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(ALR_ID_INDICES);
 
-    if (ImGui::Button("Shift From Here")) {
-        alr.shift_chunks(chunk.offset, 0x100);
-    }
-
     if (ImGui::Button("Export to OBJ")) {
         // Display the file picker
         nfdu8filteritem_t filters[] = { { "3D Model", "obj"} };
@@ -572,6 +568,13 @@ void editor::window_state::update(editor& ed) noexcept {
 
     const bool valid = alr_chunk_validate(ed.alr, chunk, msg, false);
     ImGui::PlsReportIf(msg.length() > 0, msg.c_str());
+
+    ImGui::SetNextItemWidth(ImGui::CharWidth(12));
+    ImGui::InputU32("Shift amount", &shift_amount);
+    ImGui::SameLine();
+    if (ImGui::Button("Shift Chunk")) {
+        ed.alr.shift_chunks(chunk.offset, shift_amount);
+    }
 
     if (ImGui::BeginTabBar("Chunk Tabs")) {
         if (ImGui::BeginTabItem("Specialized Chunk Editor")) {

@@ -72,6 +72,8 @@ public:
         // Generic hex editor used in every chunk's draw function
         MemoryEditor hex_chunk;
 
+        u32 shift_amount = 0;
+
         // Index of the chunk in the file / ALR chunk vector
         u32 chunk_idx;
 
