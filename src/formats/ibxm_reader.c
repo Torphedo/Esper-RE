@@ -46,13 +46,12 @@ ibxm_reader ibxm_reader_create(const void* module_data, u32 data_size, u32 sampl
     char message[128] = {0};
     out.module = module_load(&data, message);
     if (!out.module) {
-        return out;
+        goto module_create_error;
     }
 
     out.replay = new_replay(out.module, sample_rate, 0);
     if (!out.replay) {
-        // FIXME: Seems like we leak the module context here
-        return out;
+        goto replay_create_error;
     }
 
     out.length_samples = replay_calculate_duration(out.replay);
@@ -60,14 +59,21 @@ ibxm_reader ibxm_reader_create(const void* module_data, u32 data_size, u32 sampl
     out.mixbuf_size = calculate_mix_buf_len(sample_rate) * sizeof(s32);
     out.mixbuf = calloc(1, out.mixbuf_size);
     if (!out.mixbuf) {
-        // FIXME: We leak the module and replay contexts here
-        return out;
+        goto error;
     }
     out.initialized = true;
 
     replay_seek( out.replay, 0 );
 
     ibxm_reader_decode_internal(&out);
+    return out;
+
+error: // Destroy everything
+    dispose_replay(out.replay);
+replay_create_error: // Destroy module
+    dispose_module(out.module);
+module_create_error: // Just wipe output
+    memset(&out, 0, sizeof(out));
     return out;
 }
 
