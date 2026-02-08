@@ -24,29 +24,30 @@ uint32_t ibxm_reader_decode_internal(ibxm_reader* ctx) {
     switch (ctx->sample_size) {
     case sizeof(int16_t):
         // For some reason IBXM outputs 32-bit samples, but with mostly 16-bit
-        // magnitudes. We can just copy them as 16-bit samples to fix it.
+        // magnitudes. We can just copy them as 16-bit samples.
         for (uint32_t i = 0; i < samples_read; i++) {
-            // Casting to 16-bit will cause occasional out-of-bounds 32-bit
-            // values to flip sign, which causes unpleasant popping
+            // Casting to 16-bit will cause out-of-bounds 32-bit values to flip
+            // sign, which causes unpleasant popping. Just clip it.
+            // This seems sketchy, but it's what IBXM does in their official
+            // example "xm2wav.c".
             const int16_t sample = CLAMP(INT16_MIN, ctx->mixbuf[i], INT16_MAX);
             *converted = sample;
             converted++;
         }
         break;
     case sizeof(int32_t):
-        break;
+        break; // No conversion needed
     default:
         printf("%s(): Unknown target sample size (%d bytes)!\n", __func__, ctx->sample_size);
         break;
     }
-
 
     ctx->mixbuf_read_pos = 0;
     ctx->mixbuf_usable = samples_read * ctx->sample_size;
     return samples_read;
 }
 
-ibxm_reader ibxm_reader_create(const void* module_data, uint32_t data_size, uint32_t sample_rate, uint32_t sample_size) {
+ibxm_reader ibxm_reader_create(const void* module_data, uint32_t data_size, uint32_t sample_rate, uint8_t sample_size) {
     struct data data = {module_data, data_size};
     ibxm_reader out = {
         .sample_size = sample_size,

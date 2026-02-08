@@ -17,17 +17,19 @@ typedef struct {
     int32_t* mixbuf; // Sample buffer for IBXM to output into
     uint32_t mixbuf_size;
 
-    // Current position in reading data from the IBXM sample buffer
+    // Current position in reading data
     uint32_t mixbuf_read_pos;
-    // Amount of available data in the IBXM sample buffer
-    uint32_t mixbuf_usable;
 
-    // Sample size requested by the caller for output.
-    uint32_t sample_size;
+    // Amount of available data
+    uint32_t mixbuf_usable;
 
     // Sample rate requested by the caller (handled by IBXM)
     uint32_t sample_rate;
     uint32_t length_samples; // Length of the module
+
+    // Output sample size requested by caller. Samples will be converted to
+    // match this size
+    uint8_t sample_size;
     bool initialized;
 }ibxm_reader;
 
@@ -38,7 +40,7 @@ typedef struct {
 /// @param sample_size Size of output samples, in bytes. Valid values are
 ///                    4 (32-bit) and 2 (16-bit), both are integer formats.
 /// @return IBXM context
-ibxm_reader ibxm_reader_create(const void* module_data, uint32_t data_size, uint32_t sample_rate, uint32_t sample_size);
+ibxm_reader ibxm_reader_create(const void* module_data, uint32_t data_size, uint32_t sample_rate, uint8_t sample_size);
 
 /// @brief Read interleaved stereo samples from the module
 /// @param ctx Sample reader context
