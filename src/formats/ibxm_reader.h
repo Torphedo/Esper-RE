@@ -4,7 +4,8 @@ extern "C" {
 #endif
 
 #include <ibxm.h>
-#include <common/int.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 /// @file ibxm_reader.h
 /// This is a wrapper around the IBXM library, which provides decoding for
@@ -13,20 +14,20 @@ extern "C" {
 typedef struct {
     struct module* module;
     struct replay* replay;
-    s32* mixbuf; // Sample buffer for IBXM to output into
-    u32 mixbuf_size;
+    int32_t* mixbuf; // Sample buffer for IBXM to output into
+    uint32_t mixbuf_size;
 
     // Current position in reading data from the IBXM sample buffer
-    u32 mixbuf_read_pos;
+    uint32_t mixbuf_read_pos;
     // Amount of available data in the IBXM sample buffer
-    u32 mixbuf_usable;
+    uint32_t mixbuf_usable;
 
     // Sample size requested by the caller for output.
-    u32 sample_size;
+    uint32_t sample_size;
 
     // Sample rate requested by the caller (handled by IBXM)
-    u32 sample_rate;
-    u32 length_samples; // Length of the module
+    uint32_t sample_rate;
+    uint32_t length_samples; // Length of the module
     bool initialized;
 }ibxm_reader;
 
@@ -37,14 +38,14 @@ typedef struct {
 /// @param sample_size Size of output samples, in bytes. Valid values are
 ///                    4 (32-bit) and 2 (16-bit), both are integer formats.
 /// @return IBXM context
-ibxm_reader ibxm_reader_create(const void* module_data, u32 data_size, u32 sample_rate, u32 sample_size);
+ibxm_reader ibxm_reader_create(const void* module_data, uint32_t data_size, uint32_t sample_rate, uint32_t sample_size);
 
 /// @brief Read interleaved stereo samples from the module
 /// @param ctx Sample reader context
 /// @param frames_out Buffer to receive interleaved stereo samples
 /// @param frame_count The number of interleaved stereo frames to read (a frame is a pair of left and right samples)
 /// @return The number of frames that were actually read
-u32 ibxm_reader_read_frames(ibxm_reader* ctx, u16* frames_out, s64 frame_count);
+uint32_t ibxm_reader_read_frames(ibxm_reader* ctx, uint16_t* frames_out, int64_t frame_count);
 
 /// @brief Free all internal IBXM resources
 void ibxm_reader_destroy(ibxm_reader* ctx);
