@@ -5,7 +5,6 @@ extern "C" {
 
 #include <ibxm.h>
 #include <common/int.h>
-#include <common/vfile.h>
 
 /// @file ibxm_reader.h
 /// This is a wrapper around the IBXM library, which provides decoding for
@@ -14,13 +13,20 @@ extern "C" {
 typedef struct {
     struct module* module;
     struct replay* replay;
-    s32* mixbuf;
+    s32* mixbuf; // Sample buffer for IBXM to output into
     u32 mixbuf_size;
-    u32 sample_size;
-    vfile mixbuf_vf;
 
+    // Current position in reading data from the IBXM sample buffer
+    u32 mixbuf_read_pos;
+    // Amount of available data in the IBXM sample buffer
+    u32 mixbuf_usable;
+
+    // Sample size requested by the caller for output.
+    u32 sample_size;
+
+    // Sample rate requested by the caller (handled by IBXM)
     u32 sample_rate;
-    u32 length_samples;
+    u32 length_samples; // Length of the module
     bool initialized;
 }ibxm_reader;
 

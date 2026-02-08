@@ -9,7 +9,7 @@ u32 ibxm_reader_decode_internal(ibxm_reader* ctx) {
     }
 
     const u32 samples_read = replay_get_audio(ctx->replay, ctx->mixbuf, 0) * 2;
-    vfile vf = vfile_open(ctx->mixbuf, ctx->mixbuf_size);
+    s16* converted = (s16*)ctx->mixbuf;
 
     switch (ctx->sample_size) {
     case sizeof(s16):
@@ -19,11 +19,9 @@ u32 ibxm_reader_decode_internal(ibxm_reader* ctx) {
             // Casting to 16-bit will cause occasional out-of-bounds 32-bit
             // values to flip sign, which causes unpleasant popping
             const s16 sample = CLAMP(INT16_MIN, ctx->mixbuf[i], INT16_MAX);
-            VFILE_WRITE(s16, &vf, sample);
+            *converted = sample;
+            converted++;
         }
-
-        // Deinterleaving should have the same result, but requires an extra allocation.
-        // deinterleave_samples(ctx->mixbuf, ctx->mixbuf_size, 4);
         break;
     case sizeof(s32):
         break;
@@ -32,7 +30,9 @@ u32 ibxm_reader_decode_internal(ibxm_reader* ctx) {
         break;
     }
 
-    ctx->mixbuf_vf = vfile_open(ctx->mixbuf, samples_read * ctx->sample_size);
+
+    ctx->mixbuf_read_pos = 0;
+    ctx->mixbuf_usable = samples_read * ctx->sample_size;
     return samples_read;
 }
 
@@ -87,17 +87,23 @@ u32 ibxm_reader_read_frames(ibxm_reader* ctx, u16* frames_out, s64 frame_count) 
 
     u32 total_frames_read = 0;
     while (frame_count > 0) {
-        const s64 bytes_read = vfile_read_bytes(&ctx->mixbuf_vf, frames_out, frame_count * frame_size);
+        const s64 remaining = MAX(0, ctx->mixbuf_usable - ctx->mixbuf_read_pos);
+        const s64 bytes_read = MIN(remaining, frame_count * frame_size);
         const s64 samples_read = (bytes_read / sizeof(*frames_out));
         const s64 frames_read = (bytes_read / frame_size);
+
+        const void* srcbuf = (const void*)((uintptr_t)ctx->mixbuf + ctx->mixbuf_read_pos);
+        memcpy(frames_out, srcbuf, bytes_read);
+
+        // Update all our positions
+        ctx->mixbuf_read_pos += bytes_read;
         frame_count -= frames_read;
         frames_out += samples_read;
         total_frames_read += frames_read;
 
-        if (vfile_eof(ctx->mixbuf_vf)) {
+        if (ctx->mixbuf_read_pos >= ctx->mixbuf_usable) {
             memset(ctx->mixbuf, 0, ctx->mixbuf_size);
             const u32 samples_decoded = ibxm_reader_decode_internal(ctx);
-            // LOG_MSG(debug, "Decoded another %d samples.\n", samples_decoded);
             if (samples_decoded == 0) {
                 break;
             }
