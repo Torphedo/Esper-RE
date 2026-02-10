@@ -1,10 +1,12 @@
 #pragma once
+#include <optional>
 #include <common/int.h>
 #include <layer.hxx>
 #include <formats/alr_animations.h>
 
 #include "camera.hxx"
 #include "framebuffer.hxx"
+#include "selector_ray.hxx"
 
 struct render_context : gui_layer {
     // Whether the viewport has been set up and can be rendered to.
@@ -19,6 +21,8 @@ struct render_context : gui_layer {
 
     u32 anim_id = BAS01_WAIT0;
     float anim_frame = 0.0f;
+
+    std::optional<ray_t> click_ray;
 
     framebuffer fbo;
 

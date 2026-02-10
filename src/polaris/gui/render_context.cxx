@@ -10,6 +10,7 @@
 #include <util/scope_timer.hxx>
 #include <util/imgui_utils.hxx>
 #include "render_context.hxx"
+#include "selector_ray.hxx"
 
 // GLSL shaders
 #include <shaders/generic.vert.h>
@@ -85,6 +86,8 @@ void render_context::destroy() noexcept {
 
 void render_context::update(GLFWwindow* window) noexcept {
     const scope_timer draw_timer("viewportUpdate");
+    click_ray.reset();
+
     if (!active || !initialized) {
         return;
     }
@@ -160,7 +163,16 @@ void render_context::update(GLFWwindow* window) noexcept {
     if (cursor_lock) {
         ImGui::GetIO().WantCaptureMouse = false;
         ImGui::GetIO().WantCaptureKeyboard = false;
-        cam.update(delta_time);
+
+        if (ImGui::IsKeyDown(ImGuiKey_LeftAlt)) {
+            const vec4s fb_viewport = {
+                    // .x = fb_start.x, .y = fb_start.y,
+                    .z = image_size.x, .w = image_size.y,
+            };
+            click_ray = screen_to_ray(mouse_pos, cam, fb_viewport);
+        } else {
+            cam.update(delta_time);
+        }
     }
 
     ImGui::End();

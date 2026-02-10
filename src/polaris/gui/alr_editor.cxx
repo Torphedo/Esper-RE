@@ -939,9 +939,6 @@ void editor::update(render_context& ctx) noexcept {
         // TODO: Bring back normal map rendering
         // ImGui::Checkbox("Use normal maps", &temp_force_disable_normals);
 
-        // TODO: Try to do raycasting again
-        // ImGui::Checkbox("Enable raycast test", &raycast_test);
-
         ImGui::Checkbox("Render selection in wireframe", &ctx.wireframe_selection);
         ImGui::Checkbox("Do vertex-skinned skeletal animation", &ctx.render_skinning);
 
@@ -954,7 +951,7 @@ void editor::update(render_context& ctx) noexcept {
         alr::mesh& mesh = meshes[selected_mesh];
         ImGui::Checkbox("Render##1", &mesh.active);
 
-        if (mesh.gl_vertbufs.size() == 0) {
+        if (mesh.gl_vertbufs.empty()) {
             ImGui::Text("[no objects on this mesh]");
         } else {
             const u32 old_selection = selected_object;
