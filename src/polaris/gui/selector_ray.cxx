@@ -1,18 +1,22 @@
 #include "selector_ray.hxx"
 
-vec3s screen_to_world(vec2s mouse_pos, vec4s viewport, mat4s view_proj_xform) {
-    const vec3s window_pos = {mouse_pos.x, mouse_pos.y, 0.0f};
+vec3s screen_to_world(vec2s mouse_pos, vec4s viewport, mat4s view_proj_xform, float near_plane) {
+    const vec3s window_pos = {mouse_pos.x, mouse_pos.y, near_plane};
     return glms_unproject(window_pos, view_proj_xform, viewport);
 }
 
 ray_t screen_to_ray(vec2s mouse_pos, const camera& cam, vec4s viewport) {
-    mat4 proj_view = GLM_MAT4_IDENTITY_INIT;
-    cam.proj_view(proj_view);
-    const vec3s world_pos = screen_to_world(mouse_pos, viewport, *(mat4s*)proj_view);
+    mat4s proj_view = GLMS_MAT4_IDENTITY_INIT;
+    cam.proj_view((vec4*)proj_view.raw);
+
+    const vec3s near_screen = {mouse_pos.x, mouse_pos.y, cam.near_clip_plane};
+    const vec3s far_screen = {mouse_pos.x, mouse_pos.y, cam.far_clip_plane};
+    const vec3s near_world = glms_unproject(near_screen, proj_view, viewport);
+    const vec3s far_world = glms_unproject(far_screen, proj_view, viewport);
 
     ray_t out = {
-        .origin = cam.target,
-        .dir = glms_normalize(glms_vec3_sub(world_pos, cam.target)),
+        .origin = near_world,
+        .dir = glms_normalize(glms_vec3_sub(far_world, near_world)),
     };
 
     return out;
