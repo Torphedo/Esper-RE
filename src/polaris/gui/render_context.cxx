@@ -166,7 +166,7 @@ void render_context::update(GLFWwindow* window) noexcept {
 
         if (ImGui::IsKeyDown(ImGuiKey_LeftAlt)) {
             const vec4s fb_viewport = {
-                    // .x = fb_start.x, .y = fb_start.y,
+                    .x = fb_start.x, .y = fb_start.y,
                     .z = image_size.x, .w = image_size.y,
             };
             click_ray = screen_to_ray(mouse_pos, cam, fb_viewport);

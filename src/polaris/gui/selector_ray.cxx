@@ -10,8 +10,8 @@ ray_t screen_to_ray(vec2s mouse_pos, const camera& cam, vec4s viewport) {
     mat4s proj_view = GLMS_MAT4_IDENTITY_INIT;
     cam.proj_view((vec4*)proj_view.raw);
 
-    const vec3s near_screen = {mouse_pos.x, mouse_pos.y, cam.near_clip_plane};
-    const vec3s far_screen = {mouse_pos.x, mouse_pos.y, cam.far_clip_plane};
+    const vec3s near_screen = {mouse_pos.x, mouse_pos.y, 0.0f};
+    const vec3s far_screen = {mouse_pos.x, mouse_pos.y, 1.0f};
     const vec3s near_world = glms_unproject(near_screen, proj_view, viewport);
     const vec3s far_world = glms_unproject(far_screen, proj_view, viewport);
 
