@@ -1,4 +1,5 @@
 #include "selector_ray.hxx"
+#include <common/vfile.h>
 
 vec3s screen_to_world(vec2s mouse_pos, vec4s viewport, mat4s view_proj_xform, float near_plane) {
     const vec3s window_pos = {mouse_pos.x, mouse_pos.y, near_plane};
@@ -49,7 +50,7 @@ vec3s vec3_transform(vec3s input, mat4s xform) {
     return glms_vec3(v);
 }
 
-bool raycast(ray_t ray, const u8* vertbuf, u32 vertex_size, mat4s transform, const idxbuf_header* idxbuf) {
+bool raycast(ray_t ray, const void* vertbuf, u32 vertex_size, mat4s transform, const idxbuf_header* idxbuf) {
     const vec3s box_min = *(vec3s*)&idxbuf->aabb_min;
     const vec3s box_max = *(vec3s*)&idxbuf->aabb_max;
     if (!raycast_aabb(ray, box_min, box_max)) {
@@ -57,32 +58,28 @@ bool raycast(ray_t ray, const u8* vertbuf, u32 vertex_size, mat4s transform, con
         // return false;
     }
 
-    const u16* indices = (u16*)&idxbuf[1]; // Indices begin when header ends
     const bool strip = idxbuf->primitive_type == IDX_TYPE_STRIP;
+    vfile vf = vfile_open((void*)vertbuf, vertex_size * idxbuf->num_tris);
+
     // Copied from alr_dump.cxx!dump_idx_buf()
     for (s32 i = 2; i < idxbuf->num_indices; i++) {
-        const u16 idx1 = indices[i - 2];
-        const u16 idx2 = indices[i - 1];
-        const u16 idx3 = indices[i];
-        if (idx1 == idx2 || idx1 == idx3 || idx2 == idx3) {
+        const u16* indices = &idxbuf->indices[i - 2];
+        if (indices[0] == indices[1] || indices[0] == indices[2] || indices[1] == indices[2]) {
             // Triangle strips will repeat 1 index to create a triangle with an
             // area of 0, which is used to end a strip and start another.
             // We skip these since they're not part of the geometry.
             continue;
         }
 
-        const u8* vert1 = vertbuf + (idx1 * vertex_size);
-        const u8* vert2 = vertbuf + (idx2 * vertex_size);
-        const u8* vert3 = vertbuf + (idx3 * vertex_size);
+        vec3s points[3] = {};
+        for (u32 j = 0; j < 3; j++) {
+            vf.pos = indices[j] * vertex_size;
+            points[j] = VFILE_READ(vec3s, &vf);
+            points[j] = vec3_transform(points[j], transform);
+        }
 
-        vec3s point1 = *(vec3s*)vert1;
-        vec3s point2 = *(vec3s*)vert2;
-        vec3s point3 = *(vec3s*)vert3;
-        point1 = vec3_transform(point1, transform);
-        point2 = vec3_transform(point2, transform);
-        point3 = vec3_transform(point3, transform);
-
-        bool hit = glms_ray_triangle(ray.origin, ray.dir, point1, point2, point3, nullptr);
+        float distance = 0.0f;
+        bool hit = glms_ray_triangle(ray.origin, ray.dir, points[0], points[1], points[2], &distance);
         if (hit) {
             return true;
         }

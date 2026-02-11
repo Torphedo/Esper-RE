@@ -74,6 +74,8 @@ bool vertex_buffer::upload_vertex_buf(const u8* buf, u32 size) noexcept {
         return false;
     }
 
+    buffer = (const void*)buf;
+    buffer_size = size;
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, size, buf, GL_DYNAMIC_DRAW); 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -298,6 +300,25 @@ alr::mesh load_alr_mesh(const alr::file& alr, u32 idx) {
 }
 
 /* === Mesh instance implementation === */
+
+bool alr::mesh_instance::raycast(const void* alr_data, ray_t ray) const noexcept {
+    for (const index_buffer& idxbuf : mesh.idxbufs) {
+        const idxbuf_header* header = idxbuf.original_data(alr_data);
+        const vertex_buffer& v = mesh.gl_vertbufs[header->vertex_buf];
+        if (!v.active || !idxbuf.active) {
+            continue;
+        }
+
+        // (Possibly animated) transform
+        mat4s xform = transform(header->transform_idx);
+        bool hit = ::raycast(ray, v.buffer, v.vertex_size, xform, header);
+        if (hit) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
     if (pos && rot) {

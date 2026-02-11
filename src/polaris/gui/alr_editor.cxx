@@ -974,6 +974,19 @@ void editor::update(render_context& ctx) noexcept {
         }
         ImGui::End();
     }
+
+    // Do raycasting
+    if (ctx.click_ray.has_value()) {
+        bool hit = false;
+        for (const mesh_instance& mesh : instances) {
+            hit |= mesh.raycast(alr.data, *ctx.click_ray);
+        }
+
+        if (hit) {
+            const vec3s dir = ctx.click_ray->dir;
+            const vec3s pos = ctx.click_ray->origin;
+        }
+    }
 }
 
 void editor::render(render_context& ctx) noexcept {

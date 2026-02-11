@@ -24,8 +24,13 @@ struct index_buffer {
 
     bool active = true; // Whether to render this index buffer
 
+    const idxbuf_header* original_data(const void* alr_data) const noexcept {
+        return (idxbuf_header*)(uintptr_t(alr_data) + idx_chunk_offset);
+    }
+
     index_buffer() = default;
-    index_buffer(u32 idx_offset) noexcept : idx_chunk_offset(idx_offset) {
+    index_buffer(u32 offset) noexcept : idx_chunk_offset(offset) {
+
         return;
     }
 };
@@ -35,6 +40,8 @@ struct vertex_buffer {
     vertex_attribute attributes[ATTRIBUTE_ENUM_MAX] = {};
     // The offset of the *entry*, not of the 0x16 chunk.
     u16 vertex_size = 0;
+    u32 buffer_size = 0;
+    const void* buffer = nullptr;
     gl_obj vbo = 0;
     gl_obj vao = 0;
 
@@ -100,12 +107,13 @@ namespace alr {
         std::vector<mat4s> skin_pose; // Computed every frame for skinned meshes
         const alr::mesh& mesh;
 
+        bool raycast(const void* alr_data, ray_t ray) const noexcept;
         mat4s transform(u32 joint_idx) const noexcept;
         void update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
         void update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
         void render(alr::file& alr, render_context& ctx) const noexcept;
 
-        mesh_instance(const alr::mesh& mesh, vec3s* pos = nullptr, vec3s* rot = nullptr);
+        explicit mesh_instance(const alr::mesh& mesh, vec3s* pos = nullptr, vec3s* rot = nullptr);
     };
 }
 
