@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include <common/logging.h>
 #include <common/vfile.h>
 
 #include "wav.h"
@@ -39,42 +38,32 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
         return false;
     }
 
-    vfile vf = vfile_open((u8*)data, size);
+    const stx_audio_block* audio_blocks = (stx_audio_block*)(data + STX_FIRST_OFFSET);
 
-    const stx_first_block* header = VFILE_READ_PTR(stx_first_block, &vf);
+    const stx_first_block* header = (stx_first_block*)data;
     const u16 sample_rate = header->channels[0].sample_rate / 2;
-    wav_write_headers(sample_rate, 2, sizeof(u16), WAV_FMT_PCM, 0, f);
+    wav_write_headers(sample_rate, 2, sizeof(s16), WAV_FMT_PCM, 0, f);
 
     u32 audio_size = 0;
-    for (u32 i = 0; i < 2; i++) {
+    for (u32 channelIdx = 0; channelIdx < 2; channelIdx++) {
         audio_size = 0;
-        vf.pos = header->header.offset.start;
-
         for (u32 j = 0; j < header->header.block_count - 1; j++) {
-            const stx_block_header* block = VFILE_READ_PTR(stx_block_header, &vf);
-            u16 channel_size = block->channel_size;
-            channel_size = 1008;
-
-            const u16 block_size = channel_size * block->channel_count;
-            const u64 next_block = vf.pos + block_size;
+            const stx_audio_block* block = &audio_blocks[j];
+            const u16 channel_size = STX_BLOCK_SAMPLES;
+            const u16 block_size = channel_size * sizeof(s16) * block->header.channel_count;
             audio_size += block_size;
+            const u32 offset = STX_FIRST_OFFSET + (sizeof(*block) * j);
 
-            if (block->magic != STX_MAGIC) {
-                LOG_MSG(warning, "Invalid block magic %X @ 0x%X!\n", block->magic, vf.pos - sizeof(*block));
+            if (block->header.magic != STX_MAGIC) {
+                LOG_MSG(warning, "Invalid block magic %X @ 0x%X!\n", block->header.magic, offset);
             }
-            if (block->channel_size != 1008) {
-                LOG_MSG(warning, "Unexpected channel size %d @ 0x%X\n", block->channel_size, vf.pos - sizeof(*block));
-            }
-            if (block->channel_count != 2) {
-                LOG_MSG(warning, "Unexpected channel count %d @ 0x%X\n", block->channel_count, vf.pos - sizeof(*block));
+            if (block->header.channel_count != 2) {
+                LOG_MSG(warning, "Unexpected channel count %d @ 0x%X\n", block->header.channel_count, offset);
             }
 
             // Skip to the appropriate channel & save samples
-            vfile_seek(&vf, channel_size * i);
-            const u16* samples = (const u16*)vfile_cur(vf);
-            fwrite(samples, channel_size, 1, f);
-
-            vf.pos = next_block;
+            const s16* samples = &block->samples[channel_size * channelIdx];
+            fwrite(samples, channel_size * sizeof(*samples), 1, f);
         }
     }
 
