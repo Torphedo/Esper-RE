@@ -1,4 +1,4 @@
-#include "stx_tools.h"
+#include "miniaudio_stx.h"
 #include <miniaudio.h>
 
 #include <common/vfile.h>
@@ -14,8 +14,7 @@ void data_callback(void* ctx, void* audioOut, u32 frameCount) {
     ma_decoder_read_pcm_frames(decoder, audioOut, frameCount, NULL);
 }
 
-
-bool generate_stx_from_file(const char* inpath, const char* stx_path) {
+bool ma_generate_stx(const char* inpath, const char* stx_path) {
     void* stx_data = NULL;
     u32 stx_size = 0;
 

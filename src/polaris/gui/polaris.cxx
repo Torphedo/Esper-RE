@@ -6,7 +6,7 @@
 #include "util/nfde_wrapper.hxx"
 
 #include <common/int.h>
-#include <formats/stx_tools.h>
+#include <formats/miniaudio_stx.h>
 
 #include "alr/mkak.hxx"
 #include "util/scope_timer.hxx"
@@ -69,7 +69,7 @@ bool create_stx_menu() {
         char* outpath = nullptr;
         nfdresult_t result_out = NFD_SaveDialogU8(&outpath, outfilters, ARRAY_SIZE(outfilters), nullptr, nullptr);
         if (result_out == NFD_OKAY && outpath) {
-            result = generate_stx_from_file(path, outpath);
+            result = ma_generate_stx(path, outpath);
         }
         free(outpath);
     }
