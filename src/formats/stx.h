@@ -109,7 +109,7 @@ bool dump_stx(const char* out_file, const u8* data, u32 size);
 /// @return Block header data
 stx_block_header stx_block_create(u16 total_num_blocks, u16 idx);
 
-/// @brief Calculate the number of blocks in the STX file
+/// @brief Calculate the number of blocks in the STX file (not including the header)
 /// @param total_samples The total number of samples across all channels
 static u32 stx_num_blocks_from_samples(u32 total_samples) {
     const u32 num_blocks = ALIGN_UP(total_samples, STX_TOTAL_BLOCK_SAMPLES) / STX_TOTAL_BLOCK_SAMPLES;
@@ -122,6 +122,23 @@ static s64 stx_size_from_sample_count(u32 total_samples) {
     const u32 num_blocks = stx_num_blocks_from_samples(total_samples);
     return STX_FIRST_OFFSET + STX_BLOCK_SIZE * num_blocks;
 }
+
+/// @brief A callback that provides audio samples
+/// @param ctx An arbitrary pointer for you to store persistent data
+/// @param audioOut Buffer that you should copy audio samples into
+/// @param frameCount The number of frames (samples per channel) to read
+typedef void (*audio_source_cb)(void* ctx, void* audioOut, u32 frameCount);
+
+/// @brief Generate an STX from an audio source
+///
+/// @param read_samples A callback that provides audio samples to put in the STX.
+///                     The samples must be interleaved 16-bit PCM (2 channels).
+/// @param ctx A pointer that will be passed unmodified to your callback
+/// @param sample_count The number of samples per channel in your audio data
+/// @param stx_buf_out Pointer to receive the generated STX buffer
+/// @param stx_size_out Location to receive the size of the generated STX
+/// @return Whether the generation succeeded. If this is true, the output pointer is not NULL.
+bool generate_stx(audio_source_cb read_samples, void* ctx, u64 sample_count, void** stx_buf_out, u32* stx_size_out);
 
 typedef struct {
     bool initialized;

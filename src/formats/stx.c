@@ -1,5 +1,7 @@
 #include "stx.h"
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
 
 #include <common/logging.h>
@@ -84,7 +86,68 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
     return true;
 }
 
-void ma_stx_next_block(stx_reader* p) {
+bool generate_stx(audio_source_cb read_samples, void* ctx, u64 sample_count, void** stx_buf_out, u32* stx_size_out) {
+    const u16 sample_rate = STX_PC_SAMPLE_RATE;
+    bool result = false;
+
+    sample_count *= 2;
+
+    const s64 stx_size = stx_size_from_sample_count(sample_count);
+    void* stx_data = calloc(1, stx_size);
+    if (!stx_data) {
+        LOG_MSG(error, "Failed to allocate %d bytes to generate STX\n");
+        goto end;
+    }
+
+    vfile vf = vfile_open(stx_data, stx_size);
+
+    // Write header
+    const u32 num_blocks = stx_num_blocks_from_samples(sample_count);
+    VFILE_WRITE(stx_block_header, &vf, stx_block_create(num_blocks, 0));
+
+    // Write channel metadata
+    for (u32 i = 0; i < STX_MAX_CHANNELS; i++) {
+        stx_channel channel = {
+            .sample_rate = sample_rate,
+        };
+        if (i < 2) {
+            channel.volume = 0x7F;
+            channel.pan[i] = 0x7F;
+        }
+        VFILE_WRITE(stx_channel, &vf, channel);
+    }
+
+    // Write channel names
+    vf.pos = offsetof(stx_first_block, channel_names);
+    strcpy((char*)vfile_cur(vf), "left");
+    vf.pos += STX_CHANNEL_NAME_SIZE;
+    strcpy((char*)vfile_cur(vf), "right");
+
+    // Skip to audio data
+    vf.pos = STX_FIRST_OFFSET;
+
+    // Decode & de-interleave samples
+    for (u32 i = 1; i < num_blocks; i++) {
+        stx_block_header block = stx_block_create(num_blocks, i);
+        VFILE_WRITE(stx_block_header, &vf, block);
+        void* samples = vfile_cur(vf);
+
+        (read_samples)(ctx, samples, STX_BLOCK_SAMPLES);
+        deinterleave_samples(samples, STX_TOTAL_BLOCK_SAMPLES * sizeof(u16), sizeof(u16));
+
+        vfile_seek(&vf, STX_TOTAL_BLOCK_SAMPLES * sizeof(u16));
+    }
+
+    result = true;
+
+    end:
+    *stx_buf_out = stx_data;
+    *stx_size_out = stx_size;
+    return result;
+}
+
+
+void stx_reader_next_block(stx_reader* p) {
     p->audio_sample_idx = 0;
     p->audio_block_idx++;
 
@@ -121,7 +184,7 @@ void stx_read_samples(stx_reader* player, u32 frameCount, void* samples_out) {
         player->audio_sample_idx += frames_to_read * player->channels;
 
         if (player->audio_sample_idx >= ARRAY_SIZE(player->audio.samples)) {
-            ma_stx_next_block(player);
+            stx_reader_next_block(player);
         }
     }
 }
