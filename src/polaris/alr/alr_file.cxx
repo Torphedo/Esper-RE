@@ -35,8 +35,6 @@ bool file::load(const char* path) noexcept {
     alr_size = size;
     chunks = shatter_alr(data, alr_size);
 
-    tex_manager.destroy(); // Clear texture cache
-    tex_manager.texheader_offset = first_chunk_by_id(ALR_ID_TEXTURE).offset;
     loaded = true;
     return true;
 }

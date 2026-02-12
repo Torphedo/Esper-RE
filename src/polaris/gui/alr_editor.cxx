@@ -27,8 +27,9 @@ do {                                 \
 
 namespace alr {
 
-void editor::window_state::draw_chunk_material(file& alr, file::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_material(editor& ed, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(ALR_ID_MATERIAL);
+    file& alr = ed.alr;
 
     vfile vf = vfile_open(alr.data, alr.alr_size);
     vf.pos = chunk.offset;
@@ -56,7 +57,7 @@ void editor::window_state::draw_chunk_material(file& alr, file::chunk& chunk) no
     if (ImGui::BeginTabBar("editor tabs")) {
         if (ImGui::BeginTabItem("Editor")) {
             edit_material_entry(entry);
-            ImGui::Image(alr.tex_manager.get(alr, entry.texture_idx), ImVec2(500, 500));
+            ImGui::Image(ed.tex_manager.get(alr, entry.texture_idx), ImVec2(500, 500));
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Hex Editor")) {
@@ -246,8 +247,9 @@ void editor::window_state::draw_chunk_cam_anim(const file& alr, file::chunk& chu
     vfile_seek(&vf, key_size * header->rotation_key_count);
 }
 
-void editor::window_state::draw_chunk_atlas(file& alr, file::chunk& chunk) noexcept {
+void editor::window_state::draw_chunk_atlas(editor& ed, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(ALR_ID_TEXATLAS);
+    file& alr = ed.alr;
 
     vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
 
@@ -339,10 +341,10 @@ void editor::window_state::draw_chunk_atlas(file& alr, file::chunk& chunk) noexc
     ImGui::Text("Atlas uses texture index %d, see texture (0x15) chunk for offset & format", win_atlas.selected_atlas);
     if (alr::edit_atlas_entry(*atlas, *aName)) {
         // Texture settings have changed, trigger reload
-        alr.tex_manager.invalidate(win_atlas.selected_atlas);
+        ed.tex_manager.invalidate(win_atlas.selected_atlas);
     }
 
-    win_atlas.gl_tex_id = alr.tex_manager.get(alr, win_atlas.selected_atlas);
+    win_atlas.gl_tex_id = ed.tex_manager.get(alr, win_atlas.selected_atlas);
     win_atlas.tex = cur_tex;
 
     // Draw the whole atlas
@@ -372,7 +374,8 @@ void editor::window_state::draw_chunk_header(const file& alr, file::chunk& chunk
     alr::edit_chunk_layout(*layout);
 }
 
-void editor::window_state::import_dds_0x15(file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept {
+void editor::window_state::import_dds_0x15(editor& ed, const char* path, u32 num_entries, texture_entry* entries) noexcept {
+    file& alr = ed.alr;
     const file::chunk chunk = alr.chunks[chunk_idx];
     CHUNK_ID_ASSERT(0x15);
 
@@ -396,7 +399,7 @@ void editor::window_state::import_dds_0x15(file& alr, const char* path, u32 num_
 
     // Update the ALR state and force a reload
     alr_texture_set_dimensions(&cur, tex.height, tex.width);
-    alr.tex_manager.invalidate(win_texture.selected_texture);
+    ed.tex_manager.invalidate(win_texture.selected_texture);
 }
 
 void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) noexcept {
@@ -431,7 +434,7 @@ void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) no
     texture_entry& entry = entries[win_texture.selected_texture];
 
     if (alr::edit_texture_entry(entry)) {
-        alr.tex_manager.invalidate(win_texture.selected_texture);
+        ed.tex_manager.invalidate(win_texture.selected_texture);
     }
 
     if (ImGui::Button("Import DDS")) {
@@ -440,12 +443,12 @@ void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) no
         char* path = nullptr;
         nfdresult_t result = NFD_OpenDialogU8(&path, filters, ARRAY_SIZE(filters), nullptr);
         if (result == NFD_OKAY && path != nullptr) {
-            import_dds_0x15(alr, path, num_entries, entries);
+            import_dds_0x15(ed, path, num_entries, entries);
         }
         free(path);
     }
 
-    win_texture.gl_tex_id = alr.tex_manager.get(alr, win_texture.selected_texture);
+    win_texture.gl_tex_id = ed.tex_manager.get(alr, win_texture.selected_texture);
     ImGui::SameLine();
     if (ImGui::Button("Export DDS")) {
         ed.tex_edit.tex_export_active = true;
@@ -580,7 +583,7 @@ void editor::window_state::update(editor& ed) noexcept {
         if (ImGui::BeginTabItem("Specialized Chunk Editor")) {
             switch (chunk.id) {
                 case ALR_ID_MATERIAL:
-                    draw_chunk_material(ed.alr, chunk);
+                    draw_chunk_material(ed, chunk);
                     break;
                 case ALR_ID_INDICES:
                     draw_chunk_idxbuf(ed.alr, chunk);
@@ -595,7 +598,7 @@ void editor::window_state::update(editor& ed) noexcept {
                     draw_chunk_cam_anim(ed.alr, chunk);
                     break;
                 case ALR_ID_TEXATLAS:
-                    draw_chunk_atlas(ed.alr, chunk);
+                    draw_chunk_atlas(ed, chunk);
                     break;
                 case ALR_ID_HEADER:
                     draw_chunk_header(ed.alr, chunk);
@@ -642,7 +645,8 @@ editor::window_state::window_state(u32 chunk_idx, u32 chunk_id) : chunk_idx(chun
     }
 }
 
-void editor::tex_edit_state_t::draw(file& alr) noexcept {
+void editor::tex_edit_state_t::draw(editor& ed) noexcept {
+    file& alr = ed.alr;
     if (!tex_export_active) {
         return;
     }
@@ -687,7 +691,7 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
 
     if (hash != crc32fast((u8*)this, sizeof(*this))) {
         // Settings have changed
-        alr.tex_manager.invalidate(export_tex_idx);
+        ed.tex_manager.invalidate(export_tex_idx);
         gl_obj tex_id = 0;
         glGenTextures(1, &tex_id);
         if (tex_id != 0) {
@@ -695,7 +699,7 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
             export_cfg.data += (uintptr_t)alr.resource_buffer();
             update_gl_tex(export_cfg, tex_id);
             export_cfg.data -= (uintptr_t)alr.resource_buffer();
-            alr.tex_manager.gl_tex_map[export_tex_idx] = tex_id;
+            ed.tex_manager.gl_tex_map[export_tex_idx] = tex_id;
         }
     }
 
@@ -712,7 +716,7 @@ void editor::tex_edit_state_t::draw(file& alr) noexcept {
 
     if (ImGui::CollapsingHeader("Preview")) {
         const ImVec2 size(export_cfg.width, export_cfg.height);
-        ImGui::Image(alr.tex_manager.get(alr, export_tex_idx), size);
+        ImGui::Image(ed.tex_manager.get(alr, export_tex_idx), size);
     }
 
     if (ImGui::Button("Export")) {
@@ -911,7 +915,7 @@ void editor::update(render_context& ctx) noexcept {
         ImGui::End();
     }
 
-    tex_edit.draw(alr);
+    tex_edit.draw(*this);
 
 
     if (ctx.editor_enabled) {
@@ -994,13 +998,16 @@ void editor::render(render_context& ctx) noexcept {
     for (alr::mesh_instance& instance : instances) {
         instance.update_animation(alr, ctx.anim_id, ImGui::GetIO().DeltaTime);
         instance.update_skinning(alr, ctx.anim_id, ImGui::GetIO().DeltaTime);
-        instance.render(alr, ctx);
+        instance.render(tex_manager, alr, ctx);
     }
     ctx.unbind();
 }
 
 bool editor::load(const char* path) noexcept {
     bool result = alr.load(path);
+    tex_manager.destroy(); // Clear texture cache
+    tex_manager.texheader_offset = alr.first_chunk_by_id(ALR_ID_TEXTURE).offset;
+
     states.clear(); // UI state doesn't transfer between files
 
     if (graphics_initialized) {

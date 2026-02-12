@@ -5,7 +5,6 @@
 #include <common/vfile.h>
 
 #include <formats/alr.h>
-#include <gui/alr_assets.hxx>
 
 typedef struct {
     material_header* mat_chunk; // Materials
@@ -44,7 +43,6 @@ namespace alr {
         // large chunk of address space to avoid crashes in this case.
         s64 reserve_size = 1024 * 1024 * 32;
         std::vector<chunk> chunks;
-        texture_manager tex_manager;
 
         /// @brief Overwrite the loaded ALR with a new one
         bool load(const char* path) noexcept;

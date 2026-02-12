@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 
 #include <alr/alr_file.hxx>
+#include <alr/alr_dump.hxx>
 #include "alr_assets.hxx"
 
 
@@ -186,7 +187,7 @@ gl_obj texture_manager::get(alr::file& alr, u32 idx) noexcept {
     const auto* entries = (texture_entry*)vfile_cur(vf);
 
     // Convert to our custom texture struct, then upload to OpenGL
-    texture tex = convert_tex(alr.resource_buffer(), entries[idx]);
+    texture tex = alr::convert_tex(alr.resource_buffer(), entries[idx]);
 
     gl_obj gl_tex_id = 0;
     glGenTextures(1, &gl_tex_id);

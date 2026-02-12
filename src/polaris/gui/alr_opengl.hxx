@@ -5,7 +5,8 @@
 
 #include <common/vfile.h>
 #include "render_context.hxx"
-#include "../alr/alr_file.hxx"
+#include <alr/alr_file.hxx>
+#include "alr_assets.hxx"
 
 /// @brief Dear ImGui menu to edit an attribute
 ///
@@ -82,7 +83,7 @@ namespace alr {
         std::vector<mat4s> bind_pose;
         bool active = true; // Whether to render this mesh
 
-        void render(file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept;
+        void render(texture_manager& tex_manager, alr::file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept;
         void destroy() noexcept;
     };
 
@@ -101,7 +102,7 @@ namespace alr {
         mat4s transform(u32 joint_idx) const noexcept;
         void update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
         void update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
-        void render(alr::file& alr, render_context& ctx) const noexcept;
+        void render(texture_manager& tex_manager, alr::file& alr, render_context& ctx) const noexcept;
 
         explicit mesh_instance(const alr::mesh& mesh, vec3s* pos = nullptr, vec3s* rot = nullptr);
     };

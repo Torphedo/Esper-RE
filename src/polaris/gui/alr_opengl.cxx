@@ -1,4 +1,5 @@
 #include <glad/glad.h>
+#include "alr_opengl.hxx"
 
 #include <formats/alr.h>
 #include <util/imgui_utils.hxx>
@@ -146,7 +147,7 @@ void vertex_buffer::edit_menu() noexcept {
     }
 }
 
-void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept {
+void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_context& ctx, const alr::mesh_instance& instance) const noexcept {
     if (!this->active) {
         return;
     }
@@ -184,7 +185,7 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
         glUniformMatrix4fv(ctx.uniform_skin_xforms, instance.skin_pose.size(), GL_FALSE, (float*)instance.skin_pose.data());
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, material.texture_idx));
+        glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, material.texture_idx));
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -196,7 +197,7 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
         }
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, normal_idx));
+        glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, normal_idx));
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -205,7 +206,7 @@ void alr::mesh::render(file& alr, render_context& ctx, const alr::mesh_instance&
             // Make sure lightmap samples all zeroes
             glBindTexture(GL_TEXTURE_2D, 0);
         } else {
-            glBindTexture(GL_TEXTURE_2D, alr.tex_manager.get(alr, lightmap_idx));
+            glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, lightmap_idx));
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         }
@@ -361,8 +362,8 @@ void alr::mesh_instance::update_skinning(const alr::file& alr, u32 anim_id, floa
     }
 }
 
-void alr::mesh_instance::render(alr::file& alr, render_context& ctx) const noexcept {
-    mesh.render(alr, ctx, *this);
+void alr::mesh_instance::render(texture_manager& tex_manager, alr::file& alr, render_context& ctx) const noexcept {
+    mesh.render(tex_manager, alr, ctx, *this);
 }
 
 alr::mesh_instance::mesh_instance(const alr::mesh& mesh, vec3s* pos, vec3s* rot)

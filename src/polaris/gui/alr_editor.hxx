@@ -2,7 +2,11 @@
 #include <imgui.h>
 #include <imgui_hex_editor.h>
 
+#include <common/image.h>
 #include <alr/alr_file.hxx>
+#include <alr/alr_dump.hxx>
+#include <gui/alr_opengl.hxx>
+#include <gui/alr_assets.hxx>
 
 // State for material (ID 0x1) window
 struct window_state_material {
@@ -81,17 +85,17 @@ public:
         bool active = true;
 
         void update(editor& ed) noexcept;
-        void draw_chunk_material(file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_material(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_idxbuf(file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_skeleton(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_animation(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_cam_anim(const file& alr, file::chunk& chunk) noexcept;
-        void draw_chunk_atlas(file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_atlas(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_header(const file& alr, file::chunk& chunk) const noexcept;
         void draw_chunk_texture(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_vertbuf(editor& ed, file::chunk& chunk) noexcept;
 
-        void import_dds_0x15(file& alr, const char* path, u32 num_entries, texture_entry* entries) noexcept;
+        void import_dds_0x15(editor& ed, const char* path, u32 num_entries, texture_entry* entries) noexcept;
         void send_vertbuf_to_viewport(editor& ed) noexcept;
 
         window_state();
@@ -99,6 +103,7 @@ public:
     };
 
     alr::file alr;
+    texture_manager tex_manager;
 
     // Per-chunk UI state
     std::vector<window_state> states;
@@ -114,7 +119,7 @@ public:
         bool guess_atlas = true;
         bool override_buf = false;
 
-        void draw(file& alr) noexcept;
+        void draw(editor& ed) noexcept;
     };
 
     tex_edit_state_t tex_edit;
