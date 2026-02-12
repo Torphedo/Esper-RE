@@ -54,6 +54,28 @@ void wav_write_headers(u32 sample_rate, u8 channels, u16 sample_size, u16 format
 /// @param audio Buffer containing your audio samples
 void wav_write_audio(u32 sample_rate, u8 channels, u16 sample_size, u16 format, const void* audio, u32 audio_size, FILE* outfile);
 
+/// @brief De-interleave an interleaved audio buffer
+///
+/// Afterwards, the buffer will contain all the samples for the first channel,
+/// followed by all samples for the second channel. This function assumes only 2
+/// channels.
+/// @param samples Buffer containing interleaved samples
+/// @param buf_size Size of the buffer
+/// @param sample_size Size of each sample
+bool deinterleave_samples(void* samples, u64 buf_size, u8 sample_size);
+
+/// @brief Interleave samples from several audio channels
+///
+/// @param channels An array of pointers to each of your separate channels
+/// @param num_channels The number of channel pointers in the array
+/// @param output The buffer to output interleaved samples to
+/// @param num_samples The number of samples to be copied *from each channel*.
+///                    This means the total size copied will be
+///                    @ref num_channels * @ref num_samples * @ref sample_size.
+/// @param sample_size The size in bytes of each audio sample
+/// @return
+void interleave_samples(const void* const* channels, u8 num_channels, void* output, u64 num_samples, u8 sample_size);
+
 #ifdef __cplusplus
 }
 #endif

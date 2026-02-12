@@ -5,7 +5,7 @@
 #include <common/logging.h>
 #include <common/vfile.h>
 
-#include <formats/wav.h>
+#include "wav.h"
 
 stx_block_header stx_block_create(u16 total_num_blocks, u16 idx) {
     const bool is_first_block = (idx == 0);
@@ -82,4 +82,57 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
 
     fclose(f);
     return true;
+}
+
+void ma_stx_next_block(stx_reader* p) {
+    p->audio_sample_idx = 0;
+    p->audio_block_idx++;
+
+    // Loop back to the start when we hit the end of the loop or end of the file
+    if (p->audio_block_idx >= p->header.header.loop_end_block) {
+        p->audio_block_idx = p->header.header.loop_start_block;
+    }
+
+    if (p->audio_block_idx >= p->header.header.block_count) {
+        p->audio_block_idx = 0;
+    }
+    p->audio = p->blocks[p->audio_block_idx]; // Load next audio block
+
+    const void* deinterleaved_channels[2] = {
+        p->blocks[p->audio_block_idx].samples,
+        p->blocks[p->audio_block_idx].samples + STX_BLOCK_SAMPLES,
+    };
+
+    interleave_samples(deinterleaved_channels, ARRAY_SIZE(deinterleaved_channels), p->audio.samples, STX_BLOCK_SAMPLES, 2);
+}
+
+void stx_read_samples(stx_reader* player, u32 frameCount, void* samples_out) {
+    s64 frames_remaining = frameCount;
+    while (frames_remaining > 0) {
+        const s32 block_frames_left = (STX_TOTAL_BLOCK_SAMPLES - player->audio_sample_idx) / 2;
+        const s32 frames_to_read = MIN(frames_remaining, block_frames_left);
+        const s16* samples  = player->audio.samples + player->audio_sample_idx;
+        const s64 size_to_read = frames_to_read * player->channels * sizeof(*samples);
+
+        memcpy(samples_out, samples, size_to_read);
+
+        frames_remaining -= frames_to_read;
+        samples_out = (void*)((uintptr_t)samples_out + size_to_read);
+        player->audio_sample_idx += frames_to_read * player->channels;
+
+        if (player->audio_sample_idx >= ARRAY_SIZE(player->audio.samples)) {
+            ma_stx_next_block(player);
+        }
+    }
+}
+
+stx_reader stx_reader_init(void* data, u32 size) {
+    stx_reader out = {
+        .blocks = (stx_audio_block*)data,
+        .size = size,
+        .channels = 2,
+        .initialized = true,
+    };
+    out.header = *(stx_first_block*)out.blocks;
+    return out;
 }

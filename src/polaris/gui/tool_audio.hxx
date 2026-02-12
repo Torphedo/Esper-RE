@@ -1,7 +1,6 @@
 #pragma once
 #include <miniaudio.h>
 #include <util/fileclass.hxx>
-#include <ma_stx_player.h>
 
 #include <formats/stx.h>
 #include <formats/sth2.h>
@@ -11,7 +10,7 @@ struct audio_tool : fileclass {
     bool enabled = false; // Whether the window is showing
     u32 sample_rate = PD_SAMPLE_RATE_UWP;
     bool is_stx = false;
-    ma_stx_player stx_player;
+    stx_reader stx_player;
     ma_device device;
 
     void do_gui() noexcept;

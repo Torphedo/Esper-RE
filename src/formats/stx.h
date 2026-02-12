@@ -92,6 +92,8 @@ enum {
     STX_FIRST_OFFSET = STX_BLOCK_SIZE,
 };
 
+/* === END PHANTOM DUST STRUCTURES === */
+
 /// @brief Export an STX file to WAV
 /// @param out_file Path to save WAV file
 /// @param data STX data
@@ -120,6 +122,34 @@ static s64 stx_size_from_sample_count(u32 total_samples) {
     const u32 num_blocks = stx_num_blocks_from_samples(total_samples);
     return STX_FIRST_OFFSET + STX_BLOCK_SIZE * num_blocks;
 }
+
+typedef struct {
+    bool initialized;
+    const stx_audio_block *blocks;
+    u32 size;
+    u8 channels;
+
+    u32 audio_block_idx;  // The current STX block
+    u32 audio_sample_idx; // The current sample position within the block
+
+    // A copy of the first block, used to quickly check sample rate, etc.
+    stx_first_block header;
+
+    // A copy of a single block of audio, this is what we read samples from
+    stx_audio_block audio;
+}stx_reader;
+
+/// @brief Set up the STX reader with already-loaded data
+/// @param data The STX data
+/// @param size The size of the STX data
+/// @return STX reader context
+stx_reader stx_reader_init(void *data, u32 size);
+
+/// @brief Read 16-bit interleaved stereo samples from the STX
+/// @param player The STX reader context
+/// @param frameCount The number of frames (samples per channel to read)
+/// @param samples_out Buffer to read samples into
+void stx_read_samples(stx_reader* player, u32 frameCount, void* samples_out);
 
 #ifdef __cplusplus
 }

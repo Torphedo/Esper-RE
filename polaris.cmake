@@ -71,7 +71,6 @@ add_executable(polaris
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
-    src/polaris/ma_stx_player.c
     src/polaris/mapdata.cxx
 )
 

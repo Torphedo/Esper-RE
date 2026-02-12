@@ -34,9 +34,9 @@ void audio_tool::do_gui_bin() noexcept {
 }
 
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
-    ma_stx_player* player = (ma_stx_player*)pDevice->pUserData;
+    stx_reader* player = (stx_reader*)pDevice->pUserData;
 
-    ma_stx_read_samples(player, frameCount, pOutput);
+    stx_read_samples(player, frameCount, pOutput);
 }
 
 void audio_tool::setup_player() {
@@ -97,7 +97,7 @@ void audio_tool::do_gui() noexcept {
                 this->load(path);
                 is_stx = path_has_extension(path, ".stx");
                 if (is_stx) {
-                    stx_player = ma_stx_init(data, size);
+                    stx_player = stx_reader_init(data, size);
                     setup_player();
                 }
             }
