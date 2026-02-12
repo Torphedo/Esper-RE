@@ -23,4 +23,4 @@ bool alr_validate(std::string& msg, const alr::file& alr, bool headless) noexcep
 bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk,
                         std::string& msg, bool headless) noexcept;
 
-bool mapdata_validate(const mapdata_editor& map, std::string& msg) noexcept;
+bool mapdata_validate(const mapdata& map, std::string& msg) noexcept;

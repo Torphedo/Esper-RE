@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
         LOG_MSG(info, "Validating '%s'...\n", path);
         std::string message;
         bool result = alr_validate(message, pol->editor.alr, true);
-        result &= mapdata_validate(pol->mapEdit, message);
+        result &= mapdata_validate(pol->mapEdit.map, message);
         if (result) {
             LOG_MSG(info, "Validation passed!\n");
         } else {
