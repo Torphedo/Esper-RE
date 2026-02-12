@@ -6,7 +6,7 @@
 #include "util/nfde_wrapper.hxx"
 
 #include <common/int.h>
-#include <formats/miniaudio_stx.h>
+#include "polaris/miniaudio_stx.h"
 
 #include "alr/mkak.hxx"
 #include "util/scope_timer.hxx"

@@ -1,4 +1,5 @@
 #include "miniaudio_stx.h"
+#include <stdlib.h>
 #include <miniaudio.h>
 
 #include <common/vfile.h>

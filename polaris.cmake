@@ -39,27 +39,33 @@ endforeach()
 
 add_executable(polaris
     src/polaris/main.cxx
+    src/polaris/mapdata.cxx
     src/polaris/validation.cxx
-    src/polaris/validation.cxx
-    src/polaris/gui/selector_ray.cxx
 
-    src/polaris/alr/alr_dump.cxx
+    src/polaris/ibxm_reader.c     # Glue code for IBXM
+    src/polaris/miniaudio_ibxm.c  # Tracker music support for miniaudio
+    src/polaris/miniaudio_stx.c   # Glue to generate STX from miniaudio source
+
+    # Headless ALR classes
     src/polaris/alr/mkak.cxx
+    src/polaris/alr/alr_dump.cxx
     src/polaris/alr/alr_file.cxx
 
     src/polaris/gui/polaris.cxx
-    src/polaris/gui/alr_imgui.cxx
-    src/polaris/gui/alr_assets.cxx
+    src/polaris/gui/mapdata_editor.cxx
+    # General tool windows
     src/polaris/gui/tool_audio.cxx
     src/polaris/gui/tool_cso.cxx
     src/polaris/gui/tool_quest.cxx
 
+    src/polaris/gui/alr_imgui.cxx
+    src/polaris/gui/alr_assets.cxx
     src/polaris/gui/alr_editor.cxx
-    src/polaris/gui/mapdata_editor.cxx
     src/polaris/gui/alr_opengl.cxx
     src/polaris/gui/framebuffer.cxx
-    src/polaris/gui/render_context.cxx
     src/polaris/gui/camera.cxx
+    src/polaris/gui/render_context.cxx
+    src/polaris/gui/selector_ray.cxx
 
     src/polaris/util/fileclass.cxx
     src/polaris/util/scope_timer.cxx
@@ -71,8 +77,7 @@ add_executable(polaris
 
     # Adding the GLSL headers here auto-generates them during the build
     ${glsl_headers}
-    src/polaris/mapdata.cxx
 )
 
-target_link_libraries(polaris PRIVATE pd_common coregui imgui nfd)
+target_link_libraries(polaris PRIVATE pd_common coregui imgui nfd ibxm miniaudio)
 target_include_directories(polaris PRIVATE ${Esper-RE_SOURCE_DIR}/src/polaris)

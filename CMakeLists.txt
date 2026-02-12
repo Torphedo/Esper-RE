@@ -35,8 +35,7 @@ target_include_directories(ibxm PUBLIC lib/micromod/ibxm-ac)
 add_library(pd_common STATIC
     src/formats/pd_common.c
 )
-target_compile_definitions(pd_common PUBLIC PD_COMMON_HAVE_MINIAUDIO_IBXM)
-target_link_libraries(pd_common PUBLIC bobtail ibxm miniaudio)
+target_link_libraries(pd_common PUBLIC bobtail)
 
 # Build Polaris
 include(polaris.cmake)

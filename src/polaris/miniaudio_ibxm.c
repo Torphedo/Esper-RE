@@ -1,5 +1,6 @@
 #include "miniaudio_ibxm.h"
 
+#include <stdio.h>
 #include <string.h> /* For memset(). */
 #include <sys/stat.h>
 
@@ -43,7 +44,7 @@ static ma_result ma_ibxm_ds_get_data_format(ma_data_source* pDataSource, ma_form
         *pFormat = format;
     }
 
-    const u32 channels = 2;
+    const ma_uint32 channels = 2;
     if (pChannels) {
         *pChannels = channels;
     }
@@ -75,7 +76,7 @@ static ma_result ma_ibxm_ds_read(ma_data_source* pDataSource, void* pFramesOut, 
     ma_uint32 channels;
     ma_ibxm_ds_get_data_format(pIBXM, &format, &channels, NULL, NULL, 0);
 
-    u64 totalFramesRead = ibxm_reader_read_frames(&pIBXM->reader, pFramesOut, frameCount);
+    ma_uint64 totalFramesRead = ibxm_reader_read_frames(&pIBXM->reader, pFramesOut, frameCount);
     if (pFramesRead) {
         *pFramesRead = totalFramesRead;
     }
@@ -111,11 +112,11 @@ static ma_result ma_ibxm_ds_get_length(ma_data_source* pDataSource, ma_uint64* p
         return MA_INVALID_ARGS;
     }
 
-    const s64 length = replay_calculate_duration(pIBXM->reader.replay);
+    const ma_int64 length = replay_calculate_duration(pIBXM->reader.replay);
     if (length < 0) {
         return MA_ERROR;
     }
-    *pLength = (u64)length;
+    *pLength = (ma_uint64)length;
 
     return MA_SUCCESS;
 }
@@ -156,8 +157,8 @@ ma_result ma_ibxm_onInitMemory(void* pUserData, const void* pData, size_t dataSi
     }
 
     /* We can now initialize the decoder. */
-    const u32 sample_rate = 44100;
-    const u8 sample_size = ma_get_bytes_per_sample(pIBXM->format);
+    const ma_uint32 sample_rate = 44100;
+    const ma_uint8 sample_size = ma_get_bytes_per_sample(pIBXM->format);
     pIBXM->reader = ibxm_reader_create(pData, dataSize, sample_rate, sample_size);
 
     if (!pIBXM->reader.initialized) {
@@ -210,7 +211,7 @@ ma_result ma_decoding_ibxm_onInitFile(void* pUserData, const char* pFilePath, co
     }
 
     // Tracker files are generally very small, so just load the whole thing
-    const u64 size = st.st_size;
+    const ma_uint64 size = st.st_size;
     void* data = ma_malloc(size, pAllocationCallbacks);
     fread(data, size, 1, f);
     fclose(f);
