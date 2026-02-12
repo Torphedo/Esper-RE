@@ -232,6 +232,81 @@ void fprint_obj_idx(FILE* out, bool uv, bool normal, u16 idx) {
     fprintf(out, " ");
 }
 
+vec4s read_attr(vfile& vf, vertex_attribute attr) {
+    vec4s result = {};
+    if (!attr.exists) {
+        return result;
+    }
+
+    vf.pos = attr.offset;
+    for (u32 i = 0; i < attr.components; i++) {
+        float val = 0.0f;
+        switch (attr.type) {
+            case DATA_TYPE_FLOAT:
+                val = VFILE_READ(float, &vf);
+                break;
+            case DATA_TYPE_S8:
+                val = VFILE_READ(s8, &vf);
+                break;
+            case DATA_TYPE_U8:
+                val = VFILE_READ(u8, &vf);
+                break;
+            case DATA_TYPE_S16:
+                val = VFILE_READ(s16, &vf);
+                break;
+            case DATA_TYPE_U16:
+                val = VFILE_READ(u16, &vf);
+                break;
+            default:
+                LOG_MSG(warning, "Unimplemented data type '%s'! (%d bytes)\n", nameof_type(attr.type), sizeof_type(attr.type));
+                break;
+        }
+        if (attr.divisor > 0) {
+            val /= float(attr.divisor);
+        }
+
+        result.raw[i] = val;
+    }
+
+    return result;
+}
+
+std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id) {
+    vertex_format_t format = format_by_id(format_id);
+    std_vertex output = {};
+    // Get a virtual file for the buffer
+    vfile vf = vfile_open(vertbuf, format.size);
+
+    vertex_attribute pos_attr = format.attributes[ATTRIBUTE_POSITION];
+    if (pos_attr.exists) {
+        vec4s pos = read_attr(vf, pos_attr);
+        output.pos = vec3s{pos.x, pos.y, pos.z};
+    }
+
+    vertex_attribute uv_attr = format.attributes[ATTRIBUTE_TEXCOORD];
+    if (uv_attr.exists) {
+        vec4s uv = read_attr(vf, uv_attr);
+        output.texcoord = vec2s{uv.x, uv.y};
+    }
+
+    vertex_attribute normal_attr = format.attributes[ATTRIBUTE_NORMAL];
+    if (normal_attr.exists) {
+        vec4s normal_temp = read_attr(vf, normal_attr);
+        vec3s normal = vec3s{normal_temp.x, normal_temp.y, normal_temp.z};
+        normal = glms_normalize(normal);
+
+        output.normal = normal;
+    }
+
+    // Fix vertically flipped UVs to match what Blender expects
+    if (output.texcoord.has_value()) {
+        output.texcoord.value().y = reflect(output.texcoord.value().y, 0.5f);
+    }
+
+    return output;
+}
+
+
 void dump_materials_obj(FILE* f, const material_entry* materials, u32 num_mats, const decoded_text* texture_names, u32 num_names) {
     for (u32 i = 0; i < num_mats; i++) {
         const material_entry* mat = &materials[i];
@@ -371,6 +446,63 @@ void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u3
         // Cleanup
         fclose(out);
     }
+}
+
+texture convert_tex(u8* resbuf, texture_entry entry) {
+    // We default to uncompressed RGBA8 here
+    texture out = {
+        .data = resbuf + entry.data_ptr,
+        .compressed = false,
+        .unit_size = 1,
+        .channels = 4,
+    };
+
+    alr_texture_get_dimensions(entry, &out.height, &out.width);
+
+    if (entry.unknown == TEXTURE_CUBEMAP) {
+        out.cubemap = true;
+        out.cubemap_alignment = 0x100;
+        out.use_mipmaps = true;
+    }
+
+    switch (entry.pixel_format) {
+        case FORMAT_A8:
+        case FORMAT_R8:
+        case FORMAT_R8_2:
+            out.channels = 1;
+            break;
+        case FORMAT_RGBA8:
+        case FORMAT_RGBA8_2:
+            // case FORMAT_RGBA8_3:
+            out.channels = 4;
+            break;
+        case FORMAT_BGR_565:
+            out.compressed = true;
+            out.fmt = DDS_FORMAT_BGR_565;
+            break;
+        case FORMAT_BGRA_5551:
+            out.compressed = true;
+            out.fmt = DDS_FORMAT_BGRA_5551;
+            break;
+        case FORMAT_BGRA_4444:
+            out.compressed = true;
+            out.fmt = DDS_FORMAT_BGRA_4444;
+            break;
+        case FORMAT_DXT1:
+            out.compressed = true;
+            out.fmt = DXT1;
+            break;
+        case FORMAT_DXT3:
+            out.compressed = true;
+            out.fmt = DXT3;
+            break;
+        case FORMAT_DXT5:
+            out.compressed = true;
+            out.fmt = DXT5;
+            break;
+    }
+
+    return out;
 }
 
 bool dump_all_textures(const file& alr) {

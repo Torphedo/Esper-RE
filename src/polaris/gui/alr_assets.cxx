@@ -42,63 +42,6 @@ const char* texformat_str(alr_pixel_format format) {
     return out;
 }
 
-texture convert_tex(u8* resbuf, texture_entry entry) {
-    // We default to uncompressed RGBA8 here
-    texture out = {
-        .data = resbuf + entry.data_ptr,
-        .compressed = false,
-        .unit_size = 1,
-        .channels = 4,
-    };
-
-    alr_texture_get_dimensions(entry, &out.height, &out.width);
-
-    if (entry.unknown == TEXTURE_CUBEMAP) {
-        out.cubemap = true;
-        out.cubemap_alignment = 0x100;
-        out.use_mipmaps = true;
-    }
-
-    switch (entry.pixel_format) {
-        case FORMAT_A8:
-        case FORMAT_R8:
-        case FORMAT_R8_2:
-            out.channels = 1;
-            break;
-        case FORMAT_RGBA8:
-        case FORMAT_RGBA8_2:
-        // case FORMAT_RGBA8_3:
-            out.channels = 4;
-            break;
-        case FORMAT_BGR_565:
-            out.compressed = true;
-            out.fmt = DDS_FORMAT_BGR_565;
-            break;
-        case FORMAT_BGRA_5551:
-            out.compressed = true;
-            out.fmt = DDS_FORMAT_BGRA_5551;
-            break;
-        case FORMAT_BGRA_4444:
-            out.compressed = true;
-            out.fmt = DDS_FORMAT_BGRA_4444;
-            break;
-        case FORMAT_DXT1:
-            out.compressed = true;
-            out.fmt = DXT1;
-            break;
-        case FORMAT_DXT3:
-            out.compressed = true;
-            out.fmt = DXT3;
-            break;
-        case FORMAT_DXT5:
-            out.compressed = true;
-            out.fmt = DXT5;
-            break;
-    }
-
-    return out;
-}
-
 void update_gl_tex(texture img, gl_obj texture_id) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);

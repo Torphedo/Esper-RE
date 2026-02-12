@@ -2,6 +2,8 @@
 /// @author Torphedo
 /// @brief Functions to export ("dump") data from an ALR data structure to standard files.
 #include "alr_file.hxx"
+#include <optional>
+#include <common/image.h>
 #include <formats/ssb.h>
 
 namespace alr {
@@ -42,6 +44,31 @@ mat4s transform_from_joint(const joint_t& joint);
 /// @return Final local space transform of the joint
 mat4s joint_bind_xform(const chunk_armature* joint_header, s32 joint_idx);
 
+// Standardized vertex format that can express all known Phantom Dust vertex
+// formats. Will change often as new information is found.
+    struct std_vertex {
+        // 3D position of the vertex. Should always be present.
+        std::optional<vec3s> pos;
+
+        // 2D texture coordinates. Should often be present.
+        std::optional<vec2s> texcoord;
+
+        std::optional<vec3s> normal;
+    };
+
+/// Read data from a vertex based on the format in the vertex attribute
+/// @param vf Buffer view to use
+/// @param attr Vertex attribute specifying the format
+/// @return Up to 4 components read from the vertex
+vec4s read_attr(vfile& vf, vertex_attribute attr);
+
+/// @brief Convert a single vertex to the standard format.
+///
+/// @param vertbuf Buffer containing PD vertex data (must be at least [vert_size] bytes)
+/// @param vert_size The format ID found in the vertex buffer entry
+/// @return A vertex in standard format
+std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id);
+
 /// @brief Dump materials to a file in MTL format (used with OBJ)
 /// @param f Standard C file to output to
 /// @param materials ALR material array
@@ -65,6 +92,9 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 /// @param vertchunk_offset Offset of the 0x16 chunk in the ALR
 /// @param vert_entry_idx Index of the vertex buffer entry in the 0x16 chunk
 void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
+
+/// @brief Convert an ALR texture entry into our standard structure
+texture convert_tex(u8* resbuf, texture_entry entry);
 
 /// @brief Export all textures to DDS files in a "textures" folder in the current working directory.
 /// @param alr ALR to dump textures from

@@ -5,10 +5,7 @@
 
 #include <common/vfile.h>
 #include "render_context.hxx"
-
-namespace alr {
-    class file;
-};
+#include "../alr/alr_file.hxx"
 
 /// @brief Dear ImGui menu to edit an attribute
 ///
@@ -75,13 +72,6 @@ struct vertex_buffer {
     void edit_menu() noexcept;
 };
 
-typedef struct {
-    material_header* mat_chunk; // Materials
-    chunk_armature*  skel_chunk;
-    vertbuf_header*  vert_chunk;
-    idxbuf_header*   idx_chunk;
-}alr_model_desc;
-
 namespace alr {
     struct mesh_instance;
 
@@ -118,31 +108,6 @@ namespace alr {
 }
 
 alr::mesh load_alr_mesh(const alr::file& alr, u32 idx);
-
-// Standardized vertex format that can express all known Phantom Dust vertex
-// formats. Will change often as new information is found.
-struct std_vertex {
-    // 3D position of the vertex. Should always be present.
-    std::optional<vec3s> pos;
-
-    // 2D texture coordinates. Should often be present.
-    std::optional<vec2s> texcoord;
-
-    std::optional<vec3s> normal;
-};
-
-/// @brief Convert a single vertex to the standard format.
-///
-/// @param vertbuf Buffer containing PD vertex data (must be at least [vert_size] bytes)
-/// @param vert_size The format ID found in the vertex buffer entry
-/// @return A vertex in standard format
-std_vertex standardize_pd_vertex(void* vertbuf, u8 format_id);
-
-/// Read data from a vertex based on the format in the vertex attribute
-/// @param vf Buffer view to use
-/// @param attr Vertex attribute specifying the format
-/// @return Up to 4 components read from the vertex
-vec4s read_attr(vfile& vf, vertex_attribute attr);
 
 /// Fill in vertex attributes on a mesh based on vertex format
 /// @param out Mesh to receive vertex attribute info

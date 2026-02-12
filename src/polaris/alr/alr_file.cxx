@@ -1,6 +1,7 @@
 #include "alr_file.hxx"
 #include <common/file.h>
 #include <common/vmem.h>
+#include <formats/alr_animations.h>
 #include "alr_dump.hxx"
 
 namespace alr {
