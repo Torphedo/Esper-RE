@@ -76,7 +76,7 @@ typedef struct {
 typedef struct {
     stx_block_header header;
     stx_channel channels[STX_MAX_CHANNELS];
-    unsigned char channel_names[STX_MAX_CHANNELS][STX_CHANNEL_NAME_SIZE];
+    char channel_names[STX_MAX_CHANNELS][STX_CHANNEL_NAME_SIZE];
 }stx_first_block;
 static_assert(sizeof(stx_first_block) == 800);
 

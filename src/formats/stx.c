@@ -1,10 +1,7 @@
 #include "stx.h"
 #include <stdbool.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdio.h>
-
-#include <common/vfile.h>
 
 #include "wav.h"
 
@@ -55,10 +52,10 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
             const u32 offset = STX_FIRST_OFFSET + (sizeof(*block) * j);
 
             if (block->header.magic != STX_MAGIC) {
-                LOG_MSG(warning, "Invalid block magic %X @ 0x%X!\n", block->header.magic, offset);
+                printf("%s(): Invalid block magic %X @ 0x%X!\n", __func__, block->header.magic, offset);
             }
             if (block->header.channel_count != 2) {
-                LOG_MSG(warning, "Unexpected channel count %d @ 0x%X\n", block->header.channel_count, offset);
+                printf("%s(): Unexpected channel count %d @ 0x%X\n", __func__, block->header.channel_count, offset);
             }
 
             // Skip to the appropriate channel & save samples
@@ -76,63 +73,50 @@ bool dump_stx(const char* out_file, const u8* data, u32 size) {
 }
 
 bool generate_stx(audio_source_cb read_samples, void* ctx, u64 sample_count, void** stx_buf_out, u32* stx_size_out) {
-    const u16 sample_rate = STX_PC_SAMPLE_RATE;
-    bool result = false;
-
     sample_count *= 2;
 
     const s64 stx_size = stx_size_from_sample_count(sample_count);
-    void* stx_data = calloc(1, stx_size);
+    u8* stx_data = calloc(1, stx_size);
     if (!stx_data) {
-        LOG_MSG(error, "Failed to allocate %d bytes to generate STX\n");
-        goto end;
+        printf("%s(): Failed to allocate %d bytes to generate STX\n", __func__, stx_size);
+        return false;
     }
 
-    vfile vf = vfile_open(stx_data, stx_size);
+    stx_first_block* header = (stx_first_block*)stx_data;
 
     // Write header
     const u32 num_blocks = stx_num_blocks_from_samples(sample_count);
-    VFILE_WRITE(stx_block_header, &vf, stx_block_create(num_blocks, 0));
+    header->header = stx_block_create(num_blocks, 0);
 
     // Write channel metadata
+    const u16 sample_rate = STX_PC_SAMPLE_RATE;
     for (u32 i = 0; i < STX_MAX_CHANNELS; i++) {
-        stx_channel channel = {
-            .sample_rate = sample_rate,
-        };
+        stx_channel* channel = &header->channels[i];
+        channel->sample_rate = sample_rate;
         if (i < 2) {
-            channel.volume = 0x7F;
-            channel.pan[i] = 0x7F;
+            channel->volume = 0x7F;
+            channel->pan[i] = 0x7F;
         }
-        VFILE_WRITE(stx_channel, &vf, channel);
     }
 
     // Write channel names
-    vf.pos = offsetof(stx_first_block, channel_names);
-    strcpy((char*)vfile_cur(vf), "left");
-    vf.pos += STX_CHANNEL_NAME_SIZE;
-    strcpy((char*)vfile_cur(vf), "right");
-
-    // Skip to audio data
-    vf.pos = STX_FIRST_OFFSET;
+    strcpy(header->channel_names[0], "left");
+    strcpy(header->channel_names[1], "right");
 
     // Decode & de-interleave samples
+    stx_audio_block* audio_blocks = (stx_audio_block*)(stx_data);
     for (u32 i = 1; i < num_blocks; i++) {
-        stx_block_header block = stx_block_create(num_blocks, i);
-        VFILE_WRITE(stx_block_header, &vf, block);
-        void* samples = vfile_cur(vf);
+        stx_audio_block* block = &audio_blocks[i];
+        block->header = stx_block_create(num_blocks, i);
 
-        (read_samples)(ctx, samples, STX_BLOCK_SAMPLES);
-        deinterleave_samples(samples, STX_TOTAL_BLOCK_SAMPLES * sizeof(u16), sizeof(u16));
-
-        vfile_seek(&vf, STX_TOTAL_BLOCK_SAMPLES * sizeof(u16));
+        (read_samples)(ctx, block->samples, STX_BLOCK_SAMPLES);
+        deinterleave_samples(block->samples, STX_TOTAL_BLOCK_SAMPLES * sizeof(u16), sizeof(u16));
     }
-
-    result = true;
 
     end:
     *stx_buf_out = stx_data;
     *stx_size_out = stx_size;
-    return result;
+    return true;
 }
 
 
