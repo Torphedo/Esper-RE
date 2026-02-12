@@ -33,6 +33,23 @@ void audio_tool::do_gui_bin() noexcept {
     }
 }
 
+void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
+    ma_stx_player* player = (ma_stx_player*)pDevice->pUserData;
+
+    ma_stx_read_samples(player, frameCount, pOutput);
+}
+
+void audio_tool::setup_player() {
+    ma_device_config config = ma_device_config_init(ma_device_type_playback);
+    config.playback.format   = ma_format_s16;  // Set to ma_format_unknown to use the device's native format.
+    config.playback.channels = 2;              // Set to 0 to use the device's native channel count.
+    config.sampleRate        = (1 + stx_player.header.channels[0].sample_rate);
+    config.dataCallback      = data_callback; // This function will be called when miniaudio needs more data.
+    config.pUserData         = &stx_player;        // Can be accessed from the device object (device.pUserData).
+
+    ma_device_init(NULL, &config, &device);
+}
+
 void audio_tool::do_gui_stx() noexcept {
     if (ImGui::Button("Dump to WAV")) {
         char *path = nullptr;
@@ -44,7 +61,7 @@ void audio_tool::do_gui_stx() noexcept {
 
     if (ImGui::Button("Play")) {
         if (stx_player.initialized) {
-            ma_stx_play(&stx_player);
+            ma_device_start(&device);
         }
     }
 
@@ -66,7 +83,8 @@ void audio_tool::do_gui() noexcept {
         if (ImGui::Button("Unload audio file")) {
             this->unload();
             if (is_stx) {
-                ma_stx_teardown(&stx_player);
+                ma_device_uninit(&device);
+                memset(&stx_player, 0, sizeof(stx_player));
             }
         }
     } else {
@@ -80,7 +98,7 @@ void audio_tool::do_gui() noexcept {
                 is_stx = path_has_extension(path, ".stx");
                 if (is_stx) {
                     stx_player = ma_stx_init(data, size);
-                    ma_stx_setup(&stx_player);
+                    setup_player();
                 }
             }
             free(path);

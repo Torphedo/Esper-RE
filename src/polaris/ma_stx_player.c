@@ -1,16 +1,12 @@
 #include "ma_stx_player.h"
-#include <common/logging.h>
+#include <string.h>
 #include <formats/stx_tools.h>
-
-void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
-    ma_stx_player* player = (ma_stx_player*)pDevice->pUserData;
-
-    ma_stx_read_samples(player, frameCount, pOutput);
-}
 
 void ma_stx_next_block(ma_stx_player* p) {
     p->audio_sample_idx = 0;
     p->audio_block_idx++;
+
+    // Loop back to the start when we hit the end of the loop or end of the file
     if (p->audio_block_idx >= p->header.header.loop_end_block) {
         p->audio_block_idx = p->header.header.loop_start_block;
     }
@@ -18,7 +14,7 @@ void ma_stx_next_block(ma_stx_player* p) {
     if (p->audio_block_idx >= p->header.header.block_count) {
         p->audio_block_idx = 0;
     }
-    p->audio = p->blocks[p->audio_block_idx];
+    p->audio = p->blocks[p->audio_block_idx]; // Load next audio block
 
     const void* deinterleaved_channels[2] = {
         p->blocks[p->audio_block_idx].samples,
@@ -53,40 +49,8 @@ ma_stx_player ma_stx_init(void* data, u32 size) {
         .blocks = (stx_audio_block*)data,
         .size = size,
         .channels = 2,
+        .initialized = true,
     };
     out.header = *(stx_first_block*)out.blocks;
-    ma_stx_next_block(&out);
     return out;
-}
-bool ma_stx_setup(ma_stx_player* player) {
-    ma_device_config config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format   = ma_format_s16;    // Set to ma_format_unknown to use the device's native format.
-    config.playback.channels = player->channels; // Set to 0 to use the device's native channel count.
-    config.sampleRate        = (1 + player->header.channels[0].sample_rate);
-    config.dataCallback      = data_callback;   // This function will be called when miniaudio needs more data.
-    config.pUserData         = player;          // Can be accessed from the device object (device.pUserData).
-
-    if (ma_device_init(NULL, &config, &player->device) != MA_SUCCESS) {
-        return false;
-    }
-    player->initialized = true;
-    ma_stx_next_block(player);
-
-    return true;
-}
-
-void ma_stx_play(ma_stx_player* player) {
-    if (!player->initialized) {
-        LOG_MSG(warning, "Can't play STX because player isn't initialized!\n");
-        return;
-    }
-
-    ma_device_start(&player->device);
-}
-
-bool ma_stx_teardown(ma_stx_player* player) {
-    ma_device_uninit(&player->device);
-    memset(player, 0, sizeof(*player));
-
-    return true;
 }

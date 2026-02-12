@@ -1,4 +1,5 @@
 #pragma once
+#include <miniaudio.h>
 #include <util/fileclass.hxx>
 #include <ma_stx_player.h>
 
@@ -11,10 +12,12 @@ struct audio_tool : fileclass {
     u32 sample_rate = PD_SAMPLE_RATE_UWP;
     bool is_stx = false;
     ma_stx_player stx_player;
+    ma_device device;
 
     void do_gui() noexcept;
     void do_gui_bin() noexcept;
     void do_gui_stx() noexcept;
+    void setup_player();
 
     // Shortcut to parse the file and get the 'WAVE' section header
     const sth2_wave_header* get_wave_header() const noexcept;
