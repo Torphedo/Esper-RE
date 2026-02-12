@@ -1,6 +1,7 @@
 #include "miniaudio_ibxm.h"
 
 #include <string.h> /* For memset(). */
+#include <sys/stat.h>
 
 /* This is defined out of order because the read function needs it */
 static ma_result ma_ibxm_ds_get_data_format(ma_data_source* pDataSource, ma_format* pFormat, ma_uint32* pChannels, ma_uint32* pSampleRate, ma_channel* pChannelMap, size_t channelMapCap)
@@ -197,6 +198,30 @@ ma_result ma_decoding_ibxm_onInitMemory(void* pUserData, const void* pData, size
     return MA_SUCCESS;
 }
 
+ma_result ma_decoding_ibxm_onInitFile(void* pUserData, const char* pFilePath, const ma_decoding_backend_config* pConfig, const ma_allocation_callbacks* pAllocationCallbacks, ma_data_source** ppBackend) {
+    struct stat st = {0};
+    if (stat(pFilePath, &st) != 0) {
+        return MA_IO_ERROR;
+    }
+
+    FILE* f = fopen(pFilePath, "rb");
+    if (!f) {
+        return MA_IO_ERROR;
+    }
+
+    // Tracker files are generally very small, so just load the whole thing
+    const u64 size = st.st_size;
+    void* data = ma_malloc(size, pAllocationCallbacks);
+    fread(data, size, 1, f);
+    fclose(f);
+
+    ma_decoding_ibxm_onInitMemory(pUserData, data, size, pConfig, pAllocationCallbacks, ppBackend);
+
+    ma_free(data, pAllocationCallbacks);
+
+    return MA_SUCCESS;
+}
+
 static void ma_decoding_backend_uninit__ibxm(void* pUserData, ma_data_source* pBackend, const ma_allocation_callbacks* pAllocationCallbacks)
 {
     ma_ibxm_uninit(pBackend, pAllocationCallbacks);
@@ -212,7 +237,7 @@ for callback-based IO.
 static ma_decoding_backend_vtable ma_gDecodingBackendVTable_ibxm =
 {
     NULL, /* onInit() */
-    NULL, /* onInitFile() */
+    ma_decoding_ibxm_onInitFile, /* onInitFile() */
     NULL, /* onInitFileW() */
     ma_decoding_ibxm_onInitMemory,
     ma_decoding_backend_uninit__ibxm
