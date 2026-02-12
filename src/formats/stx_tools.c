@@ -54,6 +54,21 @@ bool deinterleave_samples(void* samples, u64 buf_size, u8 sample_size) {
     return true;
 }
 
+void interleave_samples(const void* const* channels, u8 num_channels, void* output, u64 num_samples, u8 sample_size) {
+    u8* out = output;
+
+    for (u64 i = 0; i < num_samples * sample_size; i += sample_size) {
+        for (u8 j = 0; j < num_channels; j++) {
+            const u8* channel = channels[j];
+            channel += i; // Skip to current sample
+
+            // Copy sample and advance
+            memcpy(out, channel, sample_size);
+            out += sample_size;
+        }
+    }
+}
+
 bool generate_stx(const u8* data, s64 size, void** stx_buf_out, u32* stx_size_out) {
     const u16 sample_rate = STX_PC_SAMPLE_RATE;
     bool result = false;

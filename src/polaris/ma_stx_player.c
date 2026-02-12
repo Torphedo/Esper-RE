@@ -5,23 +5,7 @@
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     ma_stx_player* player = (ma_stx_player*)pDevice->pUserData;
 
-    s64 frames_remaining = frameCount;
-    while (frames_remaining > 0) {
-        const s32 block_frames_left = (STX_TOTAL_BLOCK_SAMPLES - player->audio_sample_idx) / 2;
-        const s32 frames_to_read = MIN(frames_remaining, block_frames_left);
-        const s16* samples  = player->audio.samples + player->audio_sample_idx;
-        const s64 size_to_read = frames_to_read * 2 * sizeof(*samples);
-
-        ma_copy_pcm_frames(pOutput, samples, frames_to_read, ma_format_s16, 2);
-
-        frames_remaining -= frames_to_read;
-        pOutput = (void*)((uintptr_t)pOutput + size_to_read);
-        player->audio_sample_idx += frames_to_read * 2;
-
-        if (player->audio_sample_idx >= ARRAY_SIZE(player->audio.samples)) {
-            ma_stx_next_block(player);
-        }
-    }
+    ma_stx_read_samples(player, frameCount, pOutput);
 }
 
 void ma_stx_next_block(ma_stx_player* p) {
@@ -41,13 +25,34 @@ void ma_stx_next_block(ma_stx_player* p) {
         p->blocks[p->audio_block_idx].samples + STX_BLOCK_SAMPLES,
     };
 
-    ma_interleave_pcm_frames(ma_format_s16, 2, STX_BLOCK_SAMPLES, deinterleaved_channels, p->audio.samples);
+    interleave_samples(deinterleaved_channels, ARRAY_SIZE(deinterleaved_channels), p->audio.samples, STX_BLOCK_SAMPLES, 2);
+}
+
+void ma_stx_read_samples(ma_stx_player* player, u32 frameCount, void* samples_out) {
+    s64 frames_remaining = frameCount;
+    while (frames_remaining > 0) {
+        const s32 block_frames_left = (STX_TOTAL_BLOCK_SAMPLES - player->audio_sample_idx) / 2;
+        const s32 frames_to_read = MIN(frames_remaining, block_frames_left);
+        const s16* samples  = player->audio.samples + player->audio_sample_idx;
+        const s64 size_to_read = frames_to_read * player->channels * sizeof(*samples);
+
+        memcpy(samples_out, samples, size_to_read);
+
+        frames_remaining -= frames_to_read;
+        samples_out = (void*)((uintptr_t)samples_out + size_to_read);
+        player->audio_sample_idx += frames_to_read * player->channels;
+
+        if (player->audio_sample_idx >= ARRAY_SIZE(player->audio.samples)) {
+            ma_stx_next_block(player);
+        }
+    }
 }
 
 ma_stx_player ma_stx_init(void* data, u32 size) {
     ma_stx_player out = {
         .blocks = (stx_audio_block*)data,
         .size = size,
+        .channels = 2,
     };
     out.header = *(stx_first_block*)out.blocks;
     ma_stx_next_block(&out);
@@ -55,11 +60,11 @@ ma_stx_player ma_stx_init(void* data, u32 size) {
 }
 bool ma_stx_setup(ma_stx_player* player) {
     ma_device_config config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format   = ma_format_s16;   // Set to ma_format_unknown to use the device's native format.
-    config.playback.channels = 2;               // Set to 0 to use the device's native channel count.
+    config.playback.format   = ma_format_s16;    // Set to ma_format_unknown to use the device's native format.
+    config.playback.channels = player->channels; // Set to 0 to use the device's native channel count.
     config.sampleRate        = (1 + player->header.channels[0].sample_rate);
     config.dataCallback      = data_callback;   // This function will be called when miniaudio needs more data.
-    config.pUserData         = player;   // Can be accessed from the device object (device.pUserData).
+    config.pUserData         = player;          // Can be accessed from the device object (device.pUserData).
 
     if (ma_device_init(NULL, &config, &player->device) != MA_SUCCESS) {
         return false;

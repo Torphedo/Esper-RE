@@ -11,6 +11,7 @@ typedef struct {
     bool initialized;
     const stx_audio_block *blocks;
     u32 size;
+    u8 channels;
 
     u32 audio_block_idx;
     u32 audio_sample_idx;
@@ -22,6 +23,7 @@ typedef struct {
 } ma_stx_player;
 
 void ma_stx_next_block(ma_stx_player *player);
+void ma_stx_read_samples(ma_stx_player* player, u32 frameCount, void* samples_out);
 ma_stx_player ma_stx_init(void *data, u32 size);
 bool ma_stx_setup(ma_stx_player *player);
 void ma_stx_play(ma_stx_player *player);
