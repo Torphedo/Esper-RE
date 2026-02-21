@@ -1,11 +1,53 @@
 #include "miniaudio_it2play.h"
 #include <it_d_rm.h>
+#include <it_music.h>
 
 #include <stdio.h>
 #include <string.h> /* For memset(). */
 #include <sys/stat.h>
 
-/* This is defined out of order because the read function needs it */
+static ma_result ma_it2_ds_read(ma_data_source* pDataSource, void* pFramesOut, ma_uint64 frameCount, ma_uint64* pFramesRead)
+{
+    ma_it2* pIT2 = (ma_it2*)pDataSource;
+
+    if (pFramesRead) {
+        *pFramesRead = 0;
+    }
+
+    if (!pIT2 || frameCount == 0) {
+        return MA_INVALID_ARGS;
+    }
+
+    /* Read samples from the global audio generator ("driver").
+     * This automatically updates the song state as needed.
+     */
+    DriverMix(frameCount, pFramesOut);
+    ma_uint64 totalFramesRead = frameCount;
+    if (pFramesRead) {
+        *pFramesRead = totalFramesRead;
+    }
+
+    ma_result result = MA_SUCCESS;
+    if (!pIT2->song_at_start && Song.CurrentOrder == 0) {
+        result = MA_AT_END; /* End when we detect a loop */
+    }
+
+    if (Song.CurrentOrder != 0) {
+        pIT2->song_at_start = false;
+    }
+    return result;
+}
+
+static ma_result ma_it2_ds_seek(ma_data_source* pDataSource, ma_uint64 frameIndex)
+{
+    ma_it2* pIT2 = (ma_it2*)pDataSource;
+    if (!pIT2) {
+        return MA_INVALID_ARGS;
+    }
+
+    return MA_UNAVAILABLE;
+}
+
 static ma_result ma_it2_ds_get_data_format(ma_data_source* pDataSource, ma_format* pFormat, ma_uint32* pChannels, ma_uint32* pSampleRate, ma_channel* pChannelMap, size_t channelMapCap)
 {
     ma_it2* pIT2 = (ma_it2*)pDataSource;
@@ -28,14 +70,13 @@ static ma_result ma_it2_ds_get_data_format(ma_data_source* pDataSource, ma_forma
         return MA_INVALID_OPERATION;
     }
 
-    const ma_format format = pIT2->format;
     if (pFormat) {
-        *pFormat = format;
+        *pFormat = pIT2->format;
     }
 
     const ma_uint32 channels = 2;
     if (pChannels) {
-        *pChannels = channels;
+        *pChannels = 2;
     }
 
     if (pSampleRate) {
@@ -49,50 +90,7 @@ static ma_result ma_it2_ds_get_data_format(ma_data_source* pDataSource, ma_forma
     return MA_SUCCESS;
 }
 
-static ma_result ma_it2_ds_read(ma_data_source* pDataSource, void* pFramesOut, ma_uint64 frameCount, ma_uint64* pFramesRead)
-{
-    ma_it2* pIT2 = (ma_it2*)pDataSource;
-
-    if (pFramesRead) {
-        *pFramesRead = 0;
-    }
-
-    if (!pIT2 || frameCount == 0) {
-        return MA_INVALID_ARGS;
-    }
-
-    ma_format format;
-    ma_uint32 channels;
-    ma_it2_ds_get_data_format(pIT2, &format, &channels, NULL, NULL, 0);
-    DriverMix(frameCount, pFramesOut);
-    ma_uint64 totalFramesRead = frameCount;
-    if (pFramesRead) {
-        *pFramesRead = totalFramesRead;
-    }
-
-    ma_result result = MA_SUCCESS;  /* Must be initialized to MA_SUCCESS. */
-    if (!pIT2->song_at_start && Song.CurrentOrder == 0) {
-        result = MA_AT_END;
-    }
-
-    if (Song.CurrentOrder != 0) {
-        pIT2->song_at_start = false;
-    }
-
-
-    return result;
-}
-
-static ma_result ma_it2_ds_seek(ma_data_source* pDataSource, ma_uint64 frameIndex)
-{
-    ma_it2* pIT2 = (ma_it2*)pDataSource;
-    if (!pIT2) {
-        return MA_INVALID_ARGS;
-    }
-
-    return MA_UNAVAILABLE;
-}
-
+// From it2play.c
 static int16_t getOrderEnd(int16_t currOrder)
 {
     int16_t orderEnd = Song.Header.OrdNum - 1;
@@ -136,12 +134,12 @@ static ma_result ma_it2_ds_get_length(ma_data_source* pDataSource, ma_uint64* pL
     // From https://fileformats.fandom.com/wiki/Impulse_tracker#Patterns
     const ma_uint32 maxRowsPerPattern = 200;
 
+    // This calculation is wrong but I can't figure out a better one. - torph
     const ma_int64 length = dSamplesPerTick * Song.CurrentSpeed * numOrders * maxRowsPerPattern;
     if (length < 0) {
         return MA_ERROR;
     }
     *pLength = (ma_uint64)length;
-
     return MA_SUCCESS;
 }
 
@@ -164,11 +162,12 @@ ma_result ma_it2_onInitMemory(void* pUserData, const void* pData, size_t dataSiz
         return MA_INVALID_ARGS;
     }
 
+    pIT2->sample_rate = 44100;
     pIT2->format = ma_format_s16;
     pIT2->preferredFormat = pConfig->preferredFormat;
 
     if (pConfig != NULL && (pConfig->preferredFormat != pIT2->format)) {
-        // return MA_FORMAT_NOT_SUPPORTED;
+        return MA_FORMAT_NOT_SUPPORTED;
     }
 
     ma_data_source_config dataSourceConfig = ma_data_source_config_init();
@@ -179,9 +178,18 @@ ma_result ma_it2_onInitMemory(void* pUserData, const void* pData, size_t dataSiz
         return result;
     }
 
-    /* We can now initialize the decoder. */
-    pIT2->sample_rate = 44100;
-    if (!Music_Init(pIT2->sample_rate, sizeof(pIT2->mixbuf),  DRIVER_HQ)) {
+    /* it2play is a direct C port of Impulse Tracker's player, which used lots
+     * of globals because it wouldn't make sense to play 2 songs at once. So,
+     * the API is not thread-safe and has no context.
+     *
+     * It uses "driver" to mean both "the interface that produces samples from
+     * pattern/note data" and "the interface that sends samples to the speakers".
+     * In our case we use a no-op speaker driver, so the "driver" we interact
+     * with is the one generating audio from the song.
+     */
+
+    /* We provide a mix buffer size of 0 since we use a no-op speaker driver. */
+    if (!Music_Init(pIT2->sample_rate, 0,  DRIVER_HQ)) {
         return MA_ERROR;
     }
 
@@ -238,7 +246,7 @@ ma_result ma_decoding_it2_onInitFile(void* pUserData, const char* pFilePath, con
         return MA_IO_ERROR;
     }
 
-    // Tracker files are generally very small, so just load the whole thing
+    /* Tracker files are generally very small, so just load the whole thing */
     const ma_uint64 size = st.st_size;
     void* data = ma_malloc(size, pAllocationCallbacks);
     fread(data, size, 1, f);
@@ -257,12 +265,7 @@ static void ma_decoding_backend_uninit__it2(void* pUserData, ma_data_source* pBa
     ma_free(pBackend, pAllocationCallbacks);
 }
 
-/*
-IBXM's API only supports input from memory (not callback-based IO), so we
-only support initialization from memory. Miniaudio says it will automatically
-support file initialization using a wrapper. It probably also provides a wrapper
-for callback-based IO.
- */
+/* We don't support callback-based IO (onInit()) because it2play doesn't */
 static ma_decoding_backend_vtable ma_gDecodingBackendVTable_it2 =
 {
     NULL, /* onInit() */
