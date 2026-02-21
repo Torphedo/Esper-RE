@@ -16,12 +16,9 @@
 [submodule "lib/coregui"]
 	path = lib/coregui
 	url = https://github.com/torphedo/coregui
-[submodule "lib/micromod"]
-	path = lib/micromod
-	url = https://github.com/torphedo/micromod
 [submodule "lib/miniaudio"]
 	path = lib/miniaudio
 	url = https://github.com/mackron/miniaudio
-[submodule "lib/it2play"]
-	path = lib/it2play
-	url = https://github.com/torphedo/it2play
+[submodule "lib/ma_trackerFormats"]
+	path = lib/ma_trackerFormats
+	url = https://github.com/Torphedo/miniaudio_trackerFormats

@@ -30,9 +30,15 @@ target_compile_definitions(miniaudio PUBLIC
     MA_NO_GENERATION MA_NO_ENCODING MA_NO_FLAC
 )
 
-add_subdirectory(lib/it2play)
-add_library(ibxm STATIC lib/micromod/ibxm-ac/ibxm.c)
-target_include_directories(ibxm PUBLIC lib/micromod/ibxm-ac)
+# Link this for Miniaudio with tracker module support
+add_subdirectory(lib/ma_trackerFormats)
+add_library(ma_trackerFormats STATIC
+    lib/ma_trackerFormats/ibxm_reader.c
+    lib/ma_trackerFormats/miniaudio_ibxm.c
+    lib/ma_trackerFormats/miniaudio_it2play.c
+)
+target_link_libraries(ma_trackerFormats PUBLIC miniaudio ibxm IT2)
+target_include_directories(miniaudio PUBLIC lib/ma_trackerFormats lib/ma_trackerFormats/lib/it2play)
 
 add_library(pd_common STATIC
     src/formats/pd_common.c
