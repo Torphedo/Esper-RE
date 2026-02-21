@@ -52,12 +52,13 @@ bool create_mkak_menu() {
 
 bool create_stx_menu() {
     const nfdu8filteritem_t infilters[] = {
-        { "Audio File", "wav,mp3,mod,xm,s3m"},
+        { "Audio File", "wav,mp3,mod,xm,s3m,it"},
         {"Raw Audio", "wav"},
         {"MPEG-3", "mp3"},
         {"ProTracker Module", "mod"},
         {"FastTracker II Module", "xm"},
         {"ScreamTracker 3 Module", "s3m"},
+        {"Impulse Tracker Module", "it"},
     };
     const nfdu8filteritem_t outfilters[] = { { "Phantom Dust Music", "stx"} };
     bool result = false;

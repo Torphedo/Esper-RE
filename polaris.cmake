@@ -44,6 +44,7 @@ add_executable(polaris
 
     src/polaris/ibxm_reader.c     # Glue code for IBXM
     src/polaris/miniaudio_ibxm.c  # Tracker music support for miniaudio
+    src/polaris/miniaudio_it2play.c
     src/polaris/miniaudio_stx.c   # Glue to generate STX from miniaudio source
 
     # Headless ALR classes
@@ -79,5 +80,5 @@ add_executable(polaris
     ${glsl_headers}
 )
 
-target_link_libraries(polaris PRIVATE pd_common coregui imgui nfd ibxm miniaudio)
+target_link_libraries(polaris PRIVATE pd_common coregui imgui nfd ibxm IT2 miniaudio)
 target_include_directories(polaris PRIVATE ${Esper-RE_SOURCE_DIR}/src/polaris)

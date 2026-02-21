@@ -15,6 +15,7 @@ include_directories(
     lib/imgui
     lib/coregui/lib/glfw/include
     lib/bobtail
+    lib/it2play
     ${Esper-RE_SOURCE_DIR}/src
 )
 
@@ -29,6 +30,7 @@ target_compile_definitions(miniaudio PUBLIC
     MA_NO_GENERATION MA_NO_ENCODING MA_NO_FLAC
 )
 
+add_subdirectory(lib/it2play)
 add_library(ibxm STATIC lib/micromod/ibxm-ac/ibxm.c)
 target_include_directories(ibxm PUBLIC lib/micromod/ibxm-ac)
 

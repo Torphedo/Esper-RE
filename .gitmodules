@@ -22,3 +22,6 @@
 [submodule "lib/miniaudio"]
 	path = lib/miniaudio
 	url = https://github.com/mackron/miniaudio
+[submodule "lib/it2play"]
+	path = lib/it2play
+	url = https://github.com/torphedo/it2play

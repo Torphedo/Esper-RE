@@ -216,11 +216,14 @@ ma_result ma_decoding_ibxm_onInitFile(void* pUserData, const char* pFilePath, co
     fread(data, size, 1, f);
     fclose(f);
 
-    ma_decoding_ibxm_onInitMemory(pUserData, data, size, pConfig, pAllocationCallbacks, ppBackend);
-
+    ma_result res = ma_decoding_ibxm_onInitMemory(pUserData, data, size, pConfig, pAllocationCallbacks, ppBackend);
     ma_free(data, pAllocationCallbacks);
 
-    return MA_SUCCESS;
+    if (res == MA_SUCCESS) {
+        return MA_SUCCESS;
+    } else {
+        return res;
+    }
 }
 
 static void ma_decoding_backend_uninit__ibxm(void* pUserData, ma_data_source* pBackend, const ma_allocation_callbacks* pAllocationCallbacks)

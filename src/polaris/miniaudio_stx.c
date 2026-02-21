@@ -7,9 +7,9 @@
 #include <formats/stx.h>
 
 #include "miniaudio_ibxm.h"
+#include "miniaudio_it2play.h"
 
 void data_callback(void* ctx, void* audioOut, u32 frameCount) {
-// void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     ma_decoder* decoder = (ma_decoder*)ctx;
 
     ma_decoder_read_pcm_frames(decoder, audioOut, frameCount, NULL);
@@ -19,10 +19,16 @@ bool ma_generate_stx(const char* inpath, const char* stx_path) {
     void* stx_data = NULL;
     u32 stx_size = 0;
 
+    ma_decoding_backend_vtable* customDecoders[] = {
+        ma_decoding_backend_ibxm,
+        ma_decoding_backend_it2,
+    };
+
+
     const u16 sample_rate = STX_PC_SAMPLE_RATE;
     ma_decoder_config cfg = ma_decoder_config_init(ma_format_s16, 2, sample_rate);
-    cfg.ppCustomBackendVTables = &ma_decoding_backend_ibxm;
-    cfg.customBackendCount = 1;
+    cfg.ppCustomBackendVTables = customDecoders;
+    cfg.customBackendCount = ARRAY_SIZE(customDecoders);
     cfg.pCustomBackendUserData = NULL;
 
     ma_decoder decoder = {};
