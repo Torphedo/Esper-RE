@@ -48,5 +48,5 @@ bool fileclass::save(const char* path) const noexcept {
 }
 
 fileclass::~fileclass() noexcept {
-    free(data);
+    unload();
 }

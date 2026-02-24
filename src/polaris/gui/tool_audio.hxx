@@ -18,6 +18,8 @@ struct audio_tool : fileclass {
     void do_gui_stx() noexcept;
     void setup_player();
 
+    bool load(const char* path) noexcept override;
+
     // Shortcut to parse the file and get the 'WAVE' section header
     const sth2_wave_header* get_wave_header() const noexcept;
 

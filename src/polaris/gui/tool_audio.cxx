@@ -3,6 +3,7 @@
 
 #include <nfd.h>
 
+#include <common/file.h>
 #include <common/vfile.h>
 #include <common/platform.h>
 #include <common/path.h>
@@ -95,11 +96,6 @@ void audio_tool::do_gui() noexcept {
             nfdresult_t result_in = NFD_OpenDialogU8(&path, sound_filter, ARRAY_SIZE(sound_filter), nullptr);
             if (result_in == NFD_OKAY && path) {
                 this->load(path);
-                is_stx = path_has_extension(path, ".stx");
-                if (is_stx) {
-                    stx_player = stx_reader_init(data, size);
-                    setup_player();
-                }
             }
             free(path);
         }
@@ -117,6 +113,17 @@ void audio_tool::do_gui() noexcept {
     }
 
     ImGui::End();
+}
+
+bool audio_tool::load(const char* path) noexcept {
+    const bool res = fileclass::load(path);
+    is_stx = file_has_magic(path, STX_MAGIC);
+    if (is_stx && data) {
+        stx_player = stx_reader_init(data, size);
+        setup_player();
+    }
+
+    return res;
 }
 
 const sth2_wave_header* audio_tool::get_wave_header() const noexcept {

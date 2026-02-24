@@ -5,7 +5,7 @@ struct fileclass {
     u8* data = nullptr;
     u32 size = 0;
 
-    bool load(const char* path) noexcept;
+    virtual bool load(const char* path) noexcept;
     virtual bool load_verify() const noexcept {
         return true;
     }
