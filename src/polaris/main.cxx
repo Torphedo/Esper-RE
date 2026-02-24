@@ -17,19 +17,23 @@
 #include "gui/polaris.hxx"
 #include "validation.hxx"
 #include "version.h"
+#include "miniaudio_stx.h"
 
 const char* dump_textures_flag = "dump-textures";
 const char* dump_mats_flag = "dump-materials";
 const char* extract_audio_flag = "extract-audio";
+const char* generate_stx_flag = "generate-stx";
 
 void print_usage() {
-    printf("Usage: polaris [flag] [ALR filename] [output path, if relevant]\n");
+    printf("Usage: polaris [flag] [input filename] [output path, if relevant]\n");
     printf("If you only give an ALR filename (and no flag), Polaris will run with that file already opened.\n\n");
     printf("The possible flags are:\n");
     printf("  --%s: Export all textures (in DDS format) from an ALR file to a 'textures' folder in the current directory\n", dump_textures_flag);
     printf("  --%s: Export all materials from an ALR file to the specified MTL file\n", dump_mats_flag);
-    printf("  --%s: Export all sound effects (in .wav format) from .bin files to the specified folder.\n", extract_audio_flag);
-    printf("        e.g. 'polaris --%s Title_Logo.bin BattleVo_Hero.bin audiodump' exports WAVs from both files to the audiodump folder.\n", extract_audio_flag);
+    printf("  --%s: Export all audio (in .wav format) from .bin or .stx files to the specified folder.\n", extract_audio_flag);
+    printf("        Unlike the other flags, the output folder comes first:\n");
+    printf("        'polaris --%s audiodump Title_Logo.bin 19_Iseki.stx' exports WAVs from both files to the audiodump folder.\n", extract_audio_flag);
+    printf("  --%s: Create an STX file from a WAV, MP3, MOD, XM, S3M, or IT file.\n", generate_stx_flag);
     printf("\n");
     printf("  --help: Show this message\n");
     printf("  --version: Version number / credits / source code URL\n");
@@ -39,7 +43,7 @@ int extract_audio(int argc, char** argv) {
     LOG_MSG(info, "Extracting audio...\n");
     if (argc < 4) {
         LOG_MSG(info, "The --%s option needs at least 4 arguments, like this:\n", extract_audio_flag);
-        printf("\t%s --%s ./output_folder Assets/Data/Sound/Title_Logo.bin Assets/Data/BGM/05_Highway.stx", argv[0], extract_audio_flag);
+        printf("\t%s --%s ./output_folder Title_Logo.bin 05_Highway.stx", argv[0], extract_audio_flag);
         return EXIT_FAILURE;
     }
 
@@ -105,15 +109,25 @@ int main(int argc, char** argv) {
         assert(*path != '-');
     }
 
+    if (args_getflag(argc, argv, extract_audio_flag, nullptr)) {
+        return extract_audio(argc, argv);
+    }
+
+    if (args_getflag(argc, argv, generate_stx_flag, nullptr)) {
+        LOG_MSG(info, "Generating '%s' from '%s'...\n", outpath, path);
+        if (ma_generate_stx(path, outpath)) {
+            return EXIT_SUCCESS;
+        } else {
+            return EXIT_FAILURE;
+        }
+    }
+
+
     // Setup GUI classes
     gui_app app;
     app.layers.emplace_back(std::make_unique<layer_imgui>());
     app.layers.emplace_back(std::make_unique<polaris>());
     polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
-
-    if (args_getflag(argc, argv, extract_audio_flag, nullptr)) {
-        return extract_audio(argc, argv);
-    }
 
     if (strlen(path) > 0) {
         // Try to load as an ALR or .dat file.
