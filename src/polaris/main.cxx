@@ -7,6 +7,7 @@
 #include <common/arguments.h>
 #include <common/path.h>
 #include <common/file.h>
+#include <common/platform.h>
 
 #include <gui_bootstrap.hxx>
 #include <layer_imgui.hxx>
@@ -32,6 +33,41 @@ void print_usage() {
     printf("\n");
     printf("  --help: Show this message\n");
     printf("  --version: Version number / credits / source code URL\n");
+}
+
+int extract_audio(int argc, char** argv) {
+    LOG_MSG(info, "Extracting audio...\n");
+    if (argc < 4) {
+        LOG_MSG(info, "The --%s option needs at least 4 arguments, like this:\n", extract_audio_flag);
+        printf("\t%s --%s ./output_folder Assets/Data/Sound/Title_Logo.bin Assets/Data/BGM/05_Highway.stx", argv[0], extract_audio_flag);
+        return EXIT_FAILURE;
+    }
+
+    const u32 out_dir_idx = 2;
+    const u32 files_idx = 3;
+    const char* out_dir = argv[out_dir_idx];
+    char* const * files = &argv[files_idx];
+    for (u32 i = 0; i < argc - files_idx; i++) {
+        audio_tool audioTool;
+        audioTool.load(files[i]);
+
+        std::string prefix = files[i];
+        if (path_has_slashes(prefix.c_str())) {
+            path_get_filename(files[i], prefix.data());
+        }
+
+        if (audioTool.is_stx) {
+            std::string outpath = std::string(out_dir) + PLATFORM_DIRSEP + prefix.c_str();
+            outpath.replace(outpath.find(".stx"), 4, ".wav");
+            dump_stx(outpath.c_str(), audioTool.data, audioTool.size);
+        }else {
+            prefix.replace(prefix.find(".bin"), 4, "");
+            audioTool.dump_clips_to_wav(out_dir, prefix.c_str());
+        }
+
+        LOG_MSG(info, "Extracted '%s' to '%s'\n", files[i], out_dir);
+    }
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char** argv) {
@@ -76,30 +112,7 @@ int main(int argc, char** argv) {
     polaris* pol = dynamic_cast<polaris*>(app.layers.back().get());
 
     if (args_getflag(argc, argv, extract_audio_flag, nullptr)) {
-        LOG_MSG(info, "Extracting audio...\n");
-        if (argc < 4) {
-            LOG_MSG(info, "The --%s option needs at least 4 arguments, like this:\n", extract_audio_flag);
-            printf("\t%s --%s ./output_folder Assets/Data/Sound/Title_Logo.bin", argv[0], extract_audio_flag);
-            return EXIT_FAILURE;
-        }
-
-        const u32 out_dir_idx = 2;
-        const u32 files_idx = 3;
-        const char* out_dir = argv[out_dir_idx];
-        char* const * files = &argv[files_idx];
-        for (u32 i = 0; i < argc - files_idx; i++) {
-            audio_tool audioTool;
-            audioTool.load(files[i]);
-
-            std::string prefix = files[i];
-            if (path_has_slashes(prefix.c_str())) {
-                path_get_filename(files[i], prefix.data());
-            }
-            prefix.replace(prefix.find(".bin"), 4, "");
-            audioTool.dump_clips_to_wav(out_dir, prefix.c_str());
-
-            LOG_MSG(info, "Extracted '%s' to '%s'\n", files[i], out_dir);
-        }
+        return extract_audio(argc, argv);
     }
 
     if (strlen(path) > 0) {
