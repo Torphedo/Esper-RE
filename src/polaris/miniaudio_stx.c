@@ -50,4 +50,6 @@ bool ma_generate_stx(const char* inpath, const char* stx_path) {
         fclose(out);
     }
     free(stx_data);
+
+    return true;
 }
