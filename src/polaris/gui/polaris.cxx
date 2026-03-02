@@ -216,6 +216,13 @@ void polaris::init(GLFWwindow* window) noexcept {
     NFD_Init();
     renderCtx.init(window);
     editor.load_all_meshes();
+
+    ImGuiStyle& s = ImGui::GetStyle();
+    s.CellPadding += ImVec2(0, 1.0f);
+    s.ItemSpacing += ImVec2(5.0f, 2.0f);
+    s.ItemInnerSpacing += ImVec2(5.0f, 0.0f);
+    s.GrabRounding = s.FrameRounding = 6.0f;
+    s.WindowRounding = s.FrameRounding;
 }
 
 void polaris::update(GLFWwindow* window) noexcept {

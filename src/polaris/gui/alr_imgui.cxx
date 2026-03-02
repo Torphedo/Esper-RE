@@ -63,7 +63,7 @@ namespace alr {
             FORMAT_DXT1, FORMAT_DXT3, FORMAT_DXT5,
         };
 
-        ImGui::PushItemWidth(ImGui::CharWidth() * 20);
+        ImGui::PushItemWidth(ImGui::CharWidth() * 35);
 
         ImGui::InputPDString("Name", &entry.text1, &entry.text2);
         ImGui::InputU32("Resource Buffer Offset", &entry.data_ptr);
