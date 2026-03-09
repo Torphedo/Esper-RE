@@ -16,7 +16,7 @@ typedef struct {
 
     u8 pad[16];
     u32 unk3;
-    u32 unk4;
+    u32 real_offset;
     u32 wave_offset;
 
     u32 unk5[5];
@@ -46,7 +46,25 @@ static_assert(sizeof(trat_header) == 0x30, "Wrong STH2 'TRAT' header size!");
 
 typedef struct {
     u32 magic;
-    u8 unk5[0xFC];
+    u32 unk1;
+    u32 padding[2];
+    u32 unk2;
+    u32 unk3;
+    u32 unk4;
+    u32 unk5;
+    u32 unk6; // Usually 0
+    u32 unk7; // Usually 1
+    u32 sample_rate;
+    u32 unk8; // Usually 1
+    u32 unk9; // Usually 0x10
+
+    s32 unkA;
+    s32 unkB;
+
+    u32 clip_size; // Size in bytes
+    u32 unkD[45];
+    u32 unkE;
+    u32 padding2[2];
 }evnt_header;
 static_assert(sizeof(evnt_header) == 0x100, "Wrong STH2 'EVNT' header size!");
 

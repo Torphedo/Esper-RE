@@ -20,10 +20,8 @@ typedef struct {
     u8 unk2;
     u16 unk3;
     u32 pad;
-    // Object position
-    vec3f pos;
-    // Euler rotation in radians
-    vec3f rotation;
+    vec3f pos; // Object position
+    vec3f rotation; // Euler rotation in radians
 }ps01_entry;
 static_assert(sizeof(ps01_entry) == 0x24, "Wrong PS01 entry size!");
 
@@ -109,10 +107,11 @@ typedef struct {
     s32 EF00_offset1;
 
     s32 OE02_offset;
+
     s32 OA00_offset;
     s32 OA01_offset;
-
     s32 OA02_offset;
+
     s32 unk7[2];
     s32 OB00_offset;
     s32 unk8;
