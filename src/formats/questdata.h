@@ -8,7 +8,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <assert.h>
-#include <common/int.h>
+#include "data_types.h"
 #include "shut_up_msvc.h"
 
 enum {

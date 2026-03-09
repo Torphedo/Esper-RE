@@ -1,17 +1,21 @@
 #pragma once
-// Structures for DirectX bytecode (DXBC) files produced by the HLSL compiler
-// fxc.exe. These often have the file extension ".cso" or ".o".
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Structures for DirectX bytecode (DXBC) files produced by Microsoft's HLSL
+// compiler "fxc.exe". These often have the file extension ".cso" or ".o".
 //
 // http://timjones.io/blog/archive/2015/09/02/parsing-direct3d-shader-bytecode
 // https://llvm.org/docs/DirectX/DXContainer.html
-#include <common/int.h>
+#include "data_types.h"
 
 // https://learn.microsoft.com/en-us/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_shader_cbuffer_flags
 typedef enum {
     D3D_CBF_USERPACKED = 1,
     D3D10_CBF_USERPACKED,
     D3D_CBF_FORCE_DWORD = 0x7fffffff
-}D3D_SHADER_CBUFFER_FLAGS;
+} D3D_SHADER_CBUFFER_FLAGS;
 
 // https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ff476097(v=vs.85)
 typedef enum {
@@ -19,7 +23,7 @@ typedef enum {
     D3D11_CT_TBUFFER,
     D3D11_CT_INTERFACE_POINTERS,
     D3D11_CT_RESOURCE_BIND_INFO,
-}D3D11_CBUFFER_TYPE;
+} D3D11_CBUFFER_TYPE;
 
 typedef enum {
     D3D_SVC_SCALAR = 0,
@@ -39,7 +43,7 @@ typedef enum {
     D3D11_SVC_INTERFACE_CLASS,
     D3D11_SVC_INTERFACE_POINTER,
     D3D_SVC_FORCE_DWORD = 0x7fffffff
-}D3D_SHADER_VARIABLE_CLASS;
+} D3D_SHADER_VARIABLE_CLASS;
 
 typedef enum {
     D3D_SVT_VOID = 0,
@@ -61,7 +65,7 @@ typedef enum {
     D3D_SVT_DOUBLE = 39,
     /* snip... */
     D3D_SVT_FORCE_DWORD = 0x7fffffff
-}D3D_SHADER_VARIABLE_TYPE;
+} D3D_SHADER_VARIABLE_TYPE;
 
 typedef struct {
     u8 Magic[4]; // "DXBC"
@@ -71,7 +75,7 @@ typedef struct {
     u32 FileSize;
     u32 PartCount;
     u32 PartOffsets[];
-}CSOHeader;
+} CSOHeader;
 
 // A single input (i.e, position or texcoord)
 typedef struct {
@@ -83,14 +87,14 @@ typedef struct {
     u8 Mask;
     u8 ReadWriteMask;
     u16 unused;
-}ISGNElement;
+} ISGNElement;
 
 // ISGN == "Input Signature"
 typedef struct {
     u32 ElementCount;
     u32 Unknown;
     ISGNElement elements[];
-}ISGNPart;
+} ISGNPart;
 
 // RDEF == "Resource Definition"
 typedef struct {
@@ -103,7 +107,7 @@ typedef struct {
     u16 ProgramType;
     u32 Flags; // 256 == NoPreshader
     u32 CreatorNameOffset;
-}RDEFPart;
+} RDEFPart;
 
 typedef struct {
     u32 NameOffset;
@@ -112,7 +116,7 @@ typedef struct {
     u32 BufferSize;
     u32 Flags; // D3D_SHADER_CBUFFER_FLAGS
     u32 BufferType; // D3D11_CBUFFER_TYPE
-}RDEFConstBuffer;
+} RDEFConstBuffer;
 
 typedef struct {
     u32 NameOffset; // Offset from start of part
@@ -121,7 +125,7 @@ typedef struct {
     u32 Flags; // D3D10_SHADER_VARIABLE_FLAGS (2 == used in the shader)
     u32 TypeOffset; // Offset from start of part to variable type
     u32 DefaultValOffset; // 0 means no default value
-}RDEFVariable;
+} RDEFVariable;
 
 typedef struct {
     u16 Class; // D3D10_SHADER_VARIABLE_CLASS (3 == column-major matrix)
@@ -137,7 +141,7 @@ typedef struct {
     // For structs
     u16 StructMemberCount;
     u16 FirstMemberOffset; // From start of part
-}RDEFVariableType;
+} RDEFVariableType;
 
 typedef struct {
     u32 NameOffset; // Offset from start of part
@@ -148,9 +152,13 @@ typedef struct {
     u32 BindPoint;
     u32 BindCount;
     u32 InputFlags;
-}RDEFResDesc;
+} RDEFResDesc;
 
 typedef struct {
     char Name[4];
     u32 Size;
-}CSOPart;
+} CSOPart;
+
+#ifdef __cplusplus
+}
+#endif

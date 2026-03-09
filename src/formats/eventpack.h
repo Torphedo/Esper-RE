@@ -1,10 +1,10 @@
 #pragma once
-#include <common/int.h>
-#include "shut_up_msvc.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "data_types.h"
+#include "shut_up_msvc.h"
 
 typedef struct {
     u32 header_size; // This is variable depending on file count

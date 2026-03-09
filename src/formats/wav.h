@@ -1,11 +1,10 @@
 #pragma once
-#include <stdio.h>
-
-#include <common/int.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdio.h>
+#include "data_types.h"
 
 enum {
     WAV_HEADER_SIZE = 0x2C,

@@ -1,13 +1,12 @@
 #pragma once
-#include "shut_up_msvc.h"
-#include <stdbool.h>
-#include <assert.h>
-#include <common/int.h>
-#include "data_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "shut_up_msvc.h"
+#include <stdbool.h>
+#include <assert.h>
+#include "data_types.h"
 
 typedef struct {
     float x;

@@ -6,7 +6,7 @@ extern "C" {
 #include "shut_up_msvc.h"
 #include <assert.h>
 #include <stdbool.h>
-#include <common/int.h>
+#include "data_types.h"
 
 typedef struct {
     u32 magic;

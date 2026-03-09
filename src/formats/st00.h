@@ -1,6 +1,10 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <assert.h>
-#include <common/int.h>
+#include "data_types.h"
 #include "alr.h" // For vector struct
 
 // Object ID 0 is the mesh at this index in the ALR file
@@ -125,3 +129,7 @@ typedef struct {
     s32 unkA[31];
 }st00_t;
 static_assert(sizeof(st00_t) == 0x13C, "Map header size is wrong!");
+
+#ifdef __cplusplus
+}
+#endif

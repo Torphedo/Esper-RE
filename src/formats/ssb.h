@@ -3,7 +3,7 @@
 extern "C" {
 #endif
 
-#include <common/int.h>
+#include "data_types.h"
 
 // These structures could be out of date. If you use this file as reference for
 // your own code, double-check them against the latest information at:

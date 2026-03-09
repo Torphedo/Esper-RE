@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include <common/int.h>
+#include "data_types.h"
 #include "sth2.h"
 
 enum {
@@ -112,7 +112,10 @@ stx_block_header stx_block_create(u16 total_num_blocks, u16 idx);
 /// @brief Calculate the number of blocks in the STX file (not including the header)
 /// @param total_samples The total number of samples across all channels
 static u32 stx_num_blocks_from_samples(u32 total_samples) {
-    const u32 num_blocks = ALIGN_UP(total_samples, STX_TOTAL_BLOCK_SAMPLES) / STX_TOTAL_BLOCK_SAMPLES;
+    u32 num_blocks = total_samples / STX_TOTAL_BLOCK_SAMPLES;
+    if (total_samples % STX_TOTAL_BLOCK_SAMPLES != 0) {
+        num_blocks++; // Round up to nearest multiple of the block size
+    }
     return num_blocks;
 }
 

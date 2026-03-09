@@ -1,5 +1,9 @@
 #pragma once
-#include <common/int.h>
+#include "data_types.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef struct {
     u32 header;
@@ -13,3 +17,6 @@ typedef struct {
     u32 multiplayer_win_rate;
 }deck;
 
+#ifdef __cplusplus
+}
+#endif
