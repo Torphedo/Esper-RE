@@ -62,7 +62,8 @@ typedef struct {
     s32 unkB;
 
     u32 clip_size; // Size in bytes
-    u32 unkD[45];
+    u32 unkD[44];
+    u32 clip_idx;
     u32 unkE;
     u32 padding2[2];
 }evnt_header;
