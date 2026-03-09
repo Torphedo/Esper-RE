@@ -53,6 +53,32 @@ operation in *headless* mode (no GUI):
     the file will work in the game, just that nothing looks wrong based on our
     current knowledge of ALRs.
 
+## Phantom Dust C Library [`src/formats`]
+All the code in `src/formats` is a standalone C11 library. You can include
+`pd_common.h` to get all these headers at once, and compile just `pd_common.c`
+to get all the supporting C files at once. The library has structures for the
+following formats:
+- `.alr` (`alr.h`, `alr_animations.h`)
+- Deck files (no file extension, `deck.h`)
+- `.cso` (`dxbc_cso.h`)
+- `.eft`, `e.i` (`eft.h`)
+- `.ak`, `.mk` (`eventpack.h`)
+- `.qdt` (`questdata.h`)
+- `.ssb` (`ssb.h`)
+- `.dat` (`st00.h`)
+- `.bin` audio (`sth2.h`)
+- `.stx` audio (`stx.h`)
+- `.wav` audio (`wav.h`)
+
+It also provides some utility functions:
+- Wrappers for handling texture resolution info in ALR files
+- Export all audio from a `.bin` or `.stx` file to WAV
+- Pre-calculate STX size and block count, and correctly fill out an STX block structure
+- Read audio samples from a `.stx` file on-demand
+- Generate a new STX file from an arbitrary callback-driven audio source
+- Dump any audio to WAV
+- Interleave or de-interleave audio in any format
+
 ## Deck Reader [`src/deck_reader`]
 This is a very simple TUI editor for deck/arsenal files. In the style of a simple batch
 script menu, you select a menu option by number and type in a new value. The menu updates

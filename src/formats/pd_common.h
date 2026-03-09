@@ -12,9 +12,3 @@
 #include "stx.h"
 #include "sth2.h"
 #include "wav.h"
-
-#if defined(PD_COMMON_HAVE_MINIAUDIO) && defined(PD_COMMON_HAVE_IBXM)
-#include "ibxm_reader.h"
-#include "miniaudio_ibxm.h"
-#include "stx_tools.h"
-#endif
