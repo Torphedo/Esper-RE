@@ -1,4 +1,5 @@
 #include "tool_audio.hxx"
+#include "util/utils.hxx"
 #include <string>
 
 #include <nfd.h>
@@ -14,9 +15,8 @@
 static const nfdu8filteritem_t sound_filter[] = { { "Phantom Dust Sound", "bin,stx"} };
 static const nfdu8filteritem_t wave_filter[] = { { "Waveform Audio File (WAV)", "wav"} };
 
-void audio_tool::do_gui_bin() noexcept {
+void audio_tool::do_gui_sth2_simple() noexcept {
     ImGui::InputU32("Sample Rate (Hz)", &sample_rate);
-
     if (ImGui::Button("Dump all audio to WAV")) {
         char* path = nullptr;
         nfdresult_t result_out = NFD_SaveDialogU8(&path, wave_filter, ARRAY_SIZE(wave_filter), nullptr, nullptr);
@@ -32,6 +32,96 @@ void audio_tool::do_gui_bin() noexcept {
             dump_clips_to_wav(path, "clip");
         }
     }
+}
+
+bool EditEVNT(evnt_header* evnt, MemoryEditor& hexedit) {
+    if (!evnt) {
+        return false;
+    }
+
+    if (ImGui::BeginTabBar("EVNT Editor")) {
+        if (ImGui::BeginTabItem("EVNT")) {
+            const float duration = (evnt->clip_size / float(evnt->sample_rate)) / 2;
+            ImGui::Text("Sample rate: %d Hz", evnt->sample_rate);
+            ImGui::Text("Clip ID: %d", evnt->clip_idx);
+            ImGui::Text("Clip size: %d", evnt->clip_size);
+            ImGui::Text("Clip duration: %f seconds", duration);
+
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("EVNT Hex Editor")) {
+            hexedit.DrawContents(evnt, sizeof(*evnt));
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+
+    return true;
+}
+
+void audio_tool::do_gui_sth2_advanced() noexcept {
+    auto* real = get_real_header();
+    const u32 real_offset = get_sth2_header()->real_offset;
+
+    ImGui::BeginChildFitContent("REAT selector");
+    {
+        for (u32 i = 0; i < real->num_offsets; i++) {
+            const s32 offset = real->offsets[i];
+            if (offset < 0) {
+                continue;
+            }
+
+            std::string label;
+            str_format_append(label, "REAT #%d @ 0x%X", i + 1, real_offset + offset);
+            if (ImGui::Selectable(label.c_str())) {
+                sth2_selected_reat = i;
+            }
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    int flags = ImGuiChildFlags_AutoResizeX;
+    ImGui::BeginChild("EVNT editor", ImVec2(), flags);
+    {
+        auto* reat = get_reat_header(sth2_selected_reat, real);
+        ImGui::InputU32("Selected TRAT Header", &sth2_selected_trat);
+        ImGui::InputU32("Selected EVNT", &sth2_selected_evnt);
+
+        ImGui::Text("Current REAT Header: %d/%d", sth2_selected_reat + 1, real->num_offsets);
+
+        if (reat) {
+            sth2_selected_trat = MIN(sth2_selected_trat, s32(reat->num_entries) - 1);
+            ImGui::Text("Current TRAT Header: %d/%d", sth2_selected_trat + 1, reat->num_entries);
+
+            auto* trat = get_trat_header(sth2_selected_trat, *reat);
+            if (trat) {
+                ImGui::Text("Current EVNT: %d/%d", sth2_selected_evnt + 1, trat->num_entries);
+                sth2_selected_evnt = MIN(sth2_selected_evnt, s32(trat->num_entries) - 1);
+                EditEVNT(&trat->events[sth2_selected_evnt], evnt_hex);
+            } else {
+                sth2_selected_evnt = 0;
+            }
+        } else {
+            sth2_selected_trat = 0;
+        }
+    }
+    ImGui::EndChild();
+}
+
+void audio_tool::do_gui_sth2() noexcept {
+    if (ImGui::BeginTabBar("sth2_editor")) {
+        if (ImGui::BeginTabItem("Simple Editor")) {
+            do_gui_sth2_simple();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Advanced Editor")) {
+            do_gui_sth2_advanced();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+
 }
 
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
@@ -109,7 +199,7 @@ void audio_tool::do_gui() noexcept {
     if (is_stx) {
         do_gui_stx();
     } else {
-        do_gui_bin();
+        do_gui_sth2();
     }
 
     ImGui::End();
@@ -126,6 +216,10 @@ bool audio_tool::load(const char* path) noexcept {
     return res;
 }
 
+const sth2_header* audio_tool::get_sth2_header() const noexcept {
+    return (const sth2_header*)data;
+}
+
 const sth2_wave_header* audio_tool::get_wave_header() const noexcept {
     vfile vf = vfile_open(data, size);
     const sth2_header header = VFILE_READ(sth2_header, &vf);
@@ -134,6 +228,47 @@ const sth2_wave_header* audio_tool::get_wave_header() const noexcept {
     const sth2_wave_header* pd_wave_header = VFILE_READ_PTR(sth2_wave_header, &vf);
 
     return pd_wave_header;
+}
+
+sth2_real_header* audio_tool::get_real_header() noexcept {
+    vfile vf = vfile_open(data, size);
+    const sth2_header* header = VFILE_READ_PTR(sth2_header, &vf);
+
+    vf.pos = header->real_offset;
+    auto* out = VFILE_READ_PTR(sth2_real_header, &vf);
+    return out;
+}
+
+reat_header* audio_tool::get_reat_header(u32 idx, sth2_real_header* header) noexcept {
+    if (!header) {
+        header = get_real_header();
+    }
+
+    if (idx >= header->num_offsets) {
+        return nullptr;
+    }
+
+    const s32 offset = header->offsets[idx];
+    if (offset < 0) {
+        return nullptr;
+    }
+
+    auto* out = (reat_header*)((u8*)header + offset);
+    return out;
+}
+
+trat_header* audio_tool::get_trat_header(u32 idx, reat_header& header) noexcept {
+    if (idx >= header.num_entries) {
+        return nullptr;
+    }
+
+    const s32 offset = header.offsets[idx];
+    if (offset < 0) {
+        return nullptr;
+    }
+
+    auto* out = (trat_header*)((u8*)&header + offset);
+    return out;
 }
 
 u32 audio_size_from_header(const sth2_wave_header& header) {

@@ -35,17 +35,6 @@ static_assert(sizeof(sth2_real_header) == 0x10, "Wrong STH2 'REAL' header size!"
 
 typedef struct {
     u32 magic;
-    u32 size;
-    u32 num_entries;
-    u32 unk1;
-    u32 unk2;
-    u32 unk3;
-    u8 pad[0x18];
-}trat_header;
-static_assert(sizeof(trat_header) == 0x30, "Wrong STH2 'TRAT' header size!");
-
-typedef struct {
-    u32 magic;
     u32 unk1;
     u32 padding[2];
     u32 unk2;
@@ -68,6 +57,18 @@ typedef struct {
     u32 padding2[2];
 }evnt_header;
 static_assert(sizeof(evnt_header) == 0x100, "Wrong STH2 'EVNT' header size!");
+
+typedef struct {
+    u32 magic;
+    u32 size;
+    u32 num_entries;
+    u32 unk1;
+    u32 unk2;
+    u32 unk3;
+    u8 pad[0x18];
+    evnt_header events[];
+}trat_header;
+static_assert(sizeof(trat_header) == 0x30, "Wrong STH2 'TRAT' header size!");
 
 typedef struct {
     u32 magic;

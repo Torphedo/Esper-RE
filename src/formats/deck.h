@@ -1,8 +1,8 @@
 #pragma once
-#include "data_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "data_types.h"
 
 
 typedef struct {
