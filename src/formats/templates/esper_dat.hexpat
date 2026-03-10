@@ -13,7 +13,7 @@ struct vec3f {
 // to -1 or 0 in all other files.
 struct st00_t {
     u32 magic [[color("FF0000")]];
-    s32 chunk_size [[color("00FF00")]];
+    s32 ps00_offset [[color("00FF00")]];
     // Only used in st09 area files. Only set to 1, 2, 3, or 9.
     s32 unk1 [[color("FF0000")]];
     // Points to the byte after the 'PS01' magic (if it exists).
@@ -65,7 +65,15 @@ struct st00_t {
     s32 unk9[2] [[color("FF0000")]];
     s32 CP00_offset4 [[color("CF00CF")]];
     s32 CP00_offset5 [[color("CF00CF")]];
-    s32 unkA[31] [[color("FF0000")]];
+    
+    s32 unkA[4];
+    s32 ssb_offset;
+    s32 unkB[8];
+    s32 dynlight_alr_offset;
+    s32 footer_offset;
+    s32 ssb_end_offset;
+    s32 unkC[14];
+    u32 filesize;
 };
 
 struct ps01_entry {
@@ -80,26 +88,17 @@ struct ps01_entry {
 
 struct oc00_vertbuf {
     u8 unk1;
-    s8 count;
+    s8 type;
     u8 unk2;
     s8 unk3;
     u32 size;
     padding[4];
     
     u8 buf[size];
-    if (count > 0) {
-        // vec3f verts[count];
-    }
 };
 
 struct oc00_t {
     u32 magic [[color("FF0000")]];
-    u8 unk1[4] [[color("FF0000")]];
-    u32 size [[color("00FF00")]];
-    padding[4];
-    float unk_pos[10] [[color("0000FF")]];
-    u16 num_entries;
-    u16 unk2[3] [[color("FF0000")]];
 };
 
 struct oc00_entry {
@@ -107,20 +106,58 @@ struct oc00_entry {
     vec3f pos [[color("0000FF")]];
 };
 
-st00_t header @0x0;
+struct ef00_entry {
+    u8 unk1[4];
+    float unk2[22];
+};
 
+struct ef00_header {
+    u32 magic;
+    u16 num_entries;
+    u16 size;
+    ef00_entry entries[num_entries];
+};
 
-ps01_entry ps00_entries[header.ps00_count] @ header.chunk_size;
+struct cp00_entry {
+    vec3f player_pos;
+    float unk;
+    float unk2;
+    vec3f capsules[3];
+    float unk3; // Often NaN (FF FF FF FF)
+    u32 unk4;
+    u32 unk5;
+    u32 unk6;
+    u32 unk7;
+    float unk8;
+};
+
+struct cp00_t {
+    u32 magic;
+    u16 num_entries;
+    u16 array_size;
+    cp00_entry entries[num_entries];
+};
+
+st00_t header @ 0x0;
+
+ps01_entry ps00_entries[header.ps00_count] @ header.ps00_offset;
 ps01_entry ps01_entries[header.ps01_count] @ header.ps01_offset;
-
-String names[header.nm00_count] @ header.nm00_offset [[color("5050FF")]];
+String names[header.nm00_count] @ header.nm00_offset;
 
 oc00_t oc00 @ header.OC00_offset - 4;
-oc00_entry oc00_entries[oc00.num_entries] @ $;
-// oc00_vertbuf vertbufs[93] @ $;
+oc00_vertbuf vertbuf00[while ($ < header.OC01_offset - 4)] @ $;
 
 oc00_t oc01 @ header.OC01_offset - 4;
-oc00_entry oc01_entries[oc01.num_entries] @ $;
+oc00_vertbuf vertbuf01[while ($ < header.OC02_offset - 4)] @ $;
 
 oc00_t oc02 @ header.OC02_offset - 4;
-oc00_entry oc02_entries[oc02.num_entries] @ $;
+// oc00_entry oc02_entries[oc02.num_entries] @ $;
+
+ef00_header ef00a @ header.EF00_offset1;
+ef00_header ef00b @ header.EF00_offset2;
+
+cp00_t cp00a @ header.CP00_offset1;
+cp00_t cp00b @ header.CP00_offset2;
+cp00_t cp00c @ header.CP00_offset3;
+cp00_t cp00d @ header.CP00_offset4;
+cp00_t cp00e @ header.CP00_offset5;

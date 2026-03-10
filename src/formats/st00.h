@@ -137,7 +137,16 @@ typedef struct {
     s32 unk9[2];
     s32 CP00_offset4;
     s32 CP00_offset5;
-    s32 unkA[31];
+
+
+    s32 unkA[4];
+    s32 ssb_offset;
+    s32 unkB[8];
+    s32 dynlight_alr_offset;
+    s32 footer_offset;
+    s32 ssb_end_offset;
+    s32 unkC[14];
+    u32 filesize;
 }st00_t;
 static_assert(sizeof(st00_t) == 0x13C, "Map header size is wrong!");
 
