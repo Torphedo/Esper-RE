@@ -237,6 +237,8 @@ static_assert(sizeof(chunk_0x13) == 0x80);
 // =============================================================================
 // Not much is known about these, they're found in ALRs from /Effect.
 typedef struct {
+    u32 id;
+    u32 size;
     u8 pad1[8];
     u32 text1; // Shader name
     u32 text2;
@@ -244,7 +246,7 @@ typedef struct {
     u16 shader_idx; // Exact details still unclear, seemingly used to find the right SSB effect / shader
     u8 pad2[16];
 }chunk_0x14;
-static_assert(sizeof(chunk_0x14) == 0x24);
+static_assert(sizeof(chunk_0x14) == 0x2C);
 
 // ======= BEGIN CUSTOM STRUCTURES =======
 // These aren't part of any ALR file, they just let us describe vertex formats

@@ -266,6 +266,7 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
         }
         case 0x12:
         case 0x13:
+        case 0x14:
             // Don't know anything about this chunk type
             break;
         case ALR_ID_TEXTURE: {

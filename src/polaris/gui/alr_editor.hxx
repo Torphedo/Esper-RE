@@ -94,6 +94,7 @@ public:
         void draw_chunk_header(const file& alr, file::chunk& chunk) const noexcept;
         void draw_chunk_texture(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_vertbuf(editor& ed, file::chunk& chunk) noexcept;
+        void draw_chunk_0x14(editor& ed, file::chunk& chunk) noexcept;
 
         void import_dds_0x15(editor& ed, const char* path, u32 num_entries, texture_entry* entries) noexcept;
         void send_vertbuf_to_viewport(editor& ed) noexcept;

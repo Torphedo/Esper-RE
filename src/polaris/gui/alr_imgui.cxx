@@ -292,4 +292,12 @@ namespace alr {
         }
     }
 
+    bool edit_chunk_0x14(chunk_0x14& chunk) {
+        ImGui::ScopedWidth width(16);
+        bool res = false;
+        res |= ImGui::InputPDString("Shader", &chunk.text1, &chunk.text2);
+        res |= ImGui::InputU16("Material ID", &chunk.material_idx);
+        res |= ImGui::InputU16("Shader ID", &chunk.shader_idx);
+        return res;
+    }
 } // namespace al

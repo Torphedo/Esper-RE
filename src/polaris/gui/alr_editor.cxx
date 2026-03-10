@@ -558,6 +558,13 @@ void editor::window_state::draw_chunk_vertbuf(editor& ed, file::chunk& chunk) no
     ImGui::EndChild();
 }
 
+void editor::window_state::draw_chunk_0x14(editor& ed, file::chunk& chunk) noexcept {
+    CHUNK_ID_ASSERT(0x14);
+    vfile vf = ed.alr.vf_from_chunk(chunk);
+    chunk_0x14* header = (chunk_0x14*)vfile_cur(vf);
+    edit_chunk_0x14(*header);
+}
+
 void editor::window_state::update(editor& ed) noexcept {
     if (!ed.alr.data || ed.alr.alr_size == 0) {
         // There's no data to work on, we can't display any useful data.
@@ -608,6 +615,9 @@ void editor::window_state::update(editor& ed) noexcept {
                     break;
                 case ALR_ID_MODEL:
                     draw_chunk_vertbuf(ed, chunk);
+                    break;
+                case 0x14:
+                    draw_chunk_0x14(ed, chunk);
                     break;
                 default:
                     // Unimplemented window

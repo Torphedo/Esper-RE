@@ -41,4 +41,6 @@ namespace alr {
     /// nullptr). This won't be displayed, only used to give the input boxes a
     /// unique ID in ImGui.
     void edit_keyframes(u16 key_size, u16 key_count, void* keyframes, const char* label_extra);
+
+    bool edit_chunk_0x14(chunk_0x14& chunk);
 } // namespace al
