@@ -203,6 +203,22 @@ typedef struct {
 }vertbuf_header;
 static_assert(sizeof(vertbuf_header) == 0xC, "Wrong vertex buffer header size!");
 
+// 0x12 chunk
+// =============================================================================
+typedef struct {
+    u32 id; // 0x12
+    u32 size;
+    vec3f unk1[2];
+    // The index of the index buffer since the start of this model.
+    // 0x2 and 0x12 chunks both count towards the index. If it doesn't find an
+    // 0x2 chunk at this index before hitting a 0 chunk, the pointer is left
+    // NULL (and presumably the game will crash)
+    u16 indexBufferIdx;
+    u16 unk2;
+    u32 indexBufferPtr[2]; // The game uses these as pointers, but if we make
+    u32 chunk_0x13Ptr[2];  // the field 64-bit, the compiler will add padding.
+}alr_chunk_0x12;
+static_assert(sizeof(alr_chunk_0x12) == 0x34);
 
 // 0x13 chunk
 // =============================================================================
@@ -222,10 +238,10 @@ static_assert(sizeof(chunk_0x13) == 0x80);
 // Not much is known about these, they're found in ALRs from /Effect.
 typedef struct {
     u8 pad1[8];
-    u32 text1;
+    u32 text1; // Shader name
     u32 text2;
-    u16 unk1;
-    u16 unk2;
+    u16 material_idx;
+    u16 shader_idx; // Exact details still unclear, seemingly used to find the right SSB effect / shader
     u8 pad2[16];
 }chunk_0x14;
 static_assert(sizeof(chunk_0x14) == 0x24);
@@ -545,7 +561,7 @@ typedef struct {
     u32 id;
     u32 size;
     u16 joint_count;
-    u16 unknown; // Usually 1
+    u16 has_joints; // Whether this is a skeleton or just a bunch of transforms
     u32 pad;
     joint_t joints[];
 }chunk_armature;
