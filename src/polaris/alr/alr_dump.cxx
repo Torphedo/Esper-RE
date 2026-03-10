@@ -459,7 +459,7 @@ texture convert_tex(u8* resbuf, texture_entry entry) {
 
     alr_texture_get_dimensions(entry, &out.height, &out.width);
 
-    if (entry.unknown == TEXTURE_CUBEMAP) {
+    if (entry.is_cubemap) {
         out.cubemap = true;
         out.cubemap_alignment = 0x100;
         out.use_mipmaps = true;

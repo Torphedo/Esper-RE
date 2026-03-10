@@ -97,7 +97,6 @@ namespace alr {
 
         if (ImGui::CollapsingHeader("Unknown Fields")) {
             ImGui::InputU32("Flags", &entry.flags);
-            ImGui::InputU8("Unknown 1", &entry.unknown);
         }
         ImGui::PopItemWidth();
 

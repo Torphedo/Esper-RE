@@ -110,27 +110,32 @@ typedef enum {
 }alr_texture_style;
 
 typedef struct {
-    u32 flags;    // Unknown, always 01 00 04 00 so far
+    u32 flags;    // Always 01 00 04 00. According to XDK, this means a texture with a refcount of 1.
     u32 data_ptr; // Offset to data in resource section (relative to chunk_layout.texbuf_offset)
     u32 unused;   // The game combines this with [data_ptr] to store a pointer
-    u8 unknown;   // Usually 0x29
+    u8 unused2: 2; // In the XDK, this is DMA channel information
+    bool is_cubemap: 1;
+    bool unused3: 1; // XDK calls this "BORDERSOURCE_COLOR" (it's always set in PD)
+    u8 dimensions: 4; // # of dimensions this texture has. Always 2 in PD, even for cubemaps
 
     // Values match the alr_pixel_format enum. We can't use it directly, because
     // MSVC will make it "int" (4 bytes) by default even in a bitfield.
     u8 pixel_format: 5;
-    u8 unk_pixel_format: 3; // The top bit is sometimes set, unclear meaning.
-    u8 unknown2: 4;
+    // The top bit is sometimes set, unclear meaning. In the XDK this is just an 8-bit field.
+    u8 unk_pixel_format: 3;
+    u8 mipmap_count: 4;
 
     // For power-of-2 textures.
     // 1 << n = height/width
     u8 width_pwr: 4;
-    u8 height_pwr;
+    u8 height_pwr: 4;
+    u8 depth_pwr: 4; // Always 0 in PD
 
     // For non-power-of-2 textures.
     // These store the actual height/width values, in some rectangular textures.
     u32 width_direct: 12;
     u32 height_direct: 12;
-    u32: 0; // Pad out the rest of the 32 bits
+    u8 depth_direct: 8; // Always 0 in PD
     u32 text1;
     u32 text2;
 }texture_entry;
