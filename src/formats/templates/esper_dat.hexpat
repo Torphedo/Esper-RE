@@ -7,6 +7,14 @@ struct vec3f {
     float x, y, z;
 };
 
+fn safeSize(s32 x) {
+    return (x < 0) ? 0 : x;
+};
+
+fn isPositive(s32 x) {
+    return (x < 0) ? 0 : 1;
+};
+
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
 // in that file. In st00, they're set to 0 instead.
 // Some offsets point to things that only exist in st09 area files, and are set
@@ -101,11 +109,6 @@ struct oc00_t {
     u32 magic [[color("FF0000")]];
 };
 
-struct oc00_entry {
-    u16 unk[4] [[color("FF0000")]];
-    vec3f pos [[color("0000FF")]];
-};
-
 struct ef00_entry {
     u8 unk1[4];
     float unk2[22];
@@ -139,10 +142,10 @@ struct cp00_t {
 };
 
 st00_t header @ 0x0;
+ps01_entry ps00_entries[safeSize(header.ps00_count)] @ header.ps00_offset;
+ps01_entry ps01_entries[safeSize(header.ps01_count)] @ header.ps01_offset;
 
-ps01_entry ps00_entries[header.ps00_count] @ header.ps00_offset;
-ps01_entry ps01_entries[header.ps01_count] @ header.ps01_offset;
-String names[header.nm00_count] @ header.nm00_offset;
+String names[safeSize(header.nm00_count)] @ header.nm00_offset;
 
 oc00_t oc00 @ header.OC00_offset - 4;
 oc00_vertbuf vertbuf00[while ($ < header.OC01_offset - 4)] @ $;
@@ -151,13 +154,14 @@ oc00_t oc01 @ header.OC01_offset - 4;
 oc00_vertbuf vertbuf01[while ($ < header.OC02_offset - 4)] @ $;
 
 oc00_t oc02 @ header.OC02_offset - 4;
-// oc00_entry oc02_entries[oc02.num_entries] @ $;
 
-ef00_header ef00a @ header.EF00_offset1;
+// ef00_header ef00a @ header.EF00_offset1;
 ef00_header ef00b @ header.EF00_offset2;
 
-cp00_t cp00a @ header.CP00_offset1;
-cp00_t cp00b @ header.CP00_offset2;
-cp00_t cp00c @ header.CP00_offset3;
-cp00_t cp00d @ header.CP00_offset4;
-cp00_t cp00e @ header.CP00_offset5;
+// We wrap the struct in an array of size 0 or 1. If the offset exists,
+// it's an array of size 1. Otherwise, it's an array of size 0 and isn't placed.
+cp00_t cp00a[isPositive(header.CP00_offset1)] @ header.CP00_offset1;
+cp00_t cp00b[isPositive(header.CP00_offset2)] @ header.CP00_offset2;
+cp00_t cp00c[isPositive(header.CP00_offset3)] @ header.CP00_offset3;
+cp00_t cp00d[isPositive(header.CP00_offset4)] @ header.CP00_offset4;
+cp00_t cp00e[isPositive(header.CP00_offset5)] @ header.CP00_offset5;

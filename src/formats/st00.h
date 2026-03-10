@@ -13,6 +13,7 @@ static const u32 st00_magic = MAGIC('S', 'T', '0', '0');
 static const u32 nm00_magic = MAGIC('N', 'M', '0', '0');
 static const u32 ps01_magic = MAGIC('P', 'S', '0', '1');
 static const u32 cp00_magic = MAGIC('C', 'P', '0', '0');
+static const u32 oc00_magic = MAGIC('O', 'C', '0', '0');
 
 typedef struct {
     s32 object_id;
