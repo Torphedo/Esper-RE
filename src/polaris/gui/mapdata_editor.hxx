@@ -25,6 +25,8 @@ public:
     void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept;
     void edit_ps01_entries(st00_t* header, ps01_entry* entries) noexcept;
     void edit_cp00_entries(s32 offset) noexcept;
+    void edit_oc00_entries(s32 offset, s32 end_offset) noexcept;
+    void dump_oc00(s32 offset, s32 end_offset) noexcept;
 
     void draw_custom_editor();
 

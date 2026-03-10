@@ -4,7 +4,7 @@ struct String {
 };
 
 struct vec3f {
-	float x, y, z;
+    float x, y, z;
 };
 
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
@@ -44,21 +44,21 @@ struct st00_t {
     s32 OC00_offset [[color("00AF00")]];
     s32 OC01_offset [[color("00AF00")]];
     s32 OC02_offset [[color("00AF00")]];
-	s32 OE00_offset [[color("0000FF")]];
-	s32 EF00_offset1;
-	
-	s32 OE02_offset [[color("0000FF")]];
-	s32 OA00_offset;
-	s32 OA01_offset;
-	
-	s32 OA02_offset;
-	s32 unk7[2];
-	
-	s32 OB00_offset;
+    s32 OE00_offset [[color("0000FF")]];
+    s32 EF00_offset1;
+    
+    s32 OE02_offset [[color("0000FF")]];
+    s32 OA00_offset;
+    s32 OA01_offset;
+    
+    s32 OA02_offset;
+    s32 unk7[2];
+    
+    s32 OB00_offset;
     s32 unk8 [[color("FF0000")]];
-	s32 EF00_offset2;
-	s32 SP00_offset;
-	s32 MD00_offset;
+    s32 EF00_offset2;
+    s32 SP00_offset;
+    s32 MD00_offset;
     s32 CP00_offset1 [[color("CF00CF")]];
     s32 CP00_offset2 [[color("CF00CF")]];
     s32 CP00_offset3 [[color("CF00CF")]];
@@ -78,13 +78,28 @@ struct ps01_entry {
     vec3f rotation [[color("00FF00")]];
 };
 
+struct oc00_vertbuf {
+    u8 unk1;
+    s8 count;
+    u8 unk2;
+    s8 unk3;
+    u32 size;
+    padding[4];
+    
+    u8 buf[size];
+    if (count > 0) {
+        // vec3f verts[count];
+    }
+};
+
 struct oc00_t {
     u32 magic [[color("FF0000")]];
     u8 unk1[4] [[color("FF0000")]];
     u32 size [[color("00FF00")]];
     padding[4];
     float unk_pos[10] [[color("0000FF")]];
-    u16 unk2[4] [[color("FF0000")]];
+    u16 num_entries;
+    u16 unk2[3] [[color("FF0000")]];
 };
 
 struct oc00_entry {
@@ -101,10 +116,11 @@ ps01_entry ps01_entries[header.ps01_count] @ header.ps01_offset;
 String names[header.nm00_count] @ header.nm00_offset [[color("5050FF")]];
 
 oc00_t oc00 @ header.OC00_offset - 4;
-oc00_entry oc00_entries[oc00.unk2[0]] @ $;
+oc00_entry oc00_entries[oc00.num_entries] @ $;
+// oc00_vertbuf vertbufs[93] @ $;
 
 oc00_t oc01 @ header.OC01_offset - 4;
-oc00_entry oc01_entries[oc01.unk2[0]] @ $;
+oc00_entry oc01_entries[oc01.num_entries] @ $;
 
 oc00_t oc02 @ header.OC02_offset - 4;
-oc00_entry oc02_entries[oc02.unk2[0]] @ $;
+oc00_entry oc02_entries[oc02.num_entries] @ $;

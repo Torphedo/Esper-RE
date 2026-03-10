@@ -49,21 +49,33 @@ typedef struct {
 static_assert(sizeof(cp00_t) == 0x8, "Wrong CP00 header size!");
 
 typedef struct {
-    u16 unk[4];
-    vec3f pos;
-}oc00_entry;
-static_assert(sizeof(oc00_entry) == 0x14, "Wrong OC00 entry size!");
-
-typedef struct {
-    u32 magic; // 'OC00'
-    u8 unk1[4];
+    u8 unk1;
+    s8 id;
+    u8 unk2[2];
     u32 size;
     u32 pad;
+}oc00_header;
+
+typedef struct {
+    u16 indices[3];
+    u16 unk;
+    vec3f pos;
+}oc00_idxbuf_entry;
+static_assert(sizeof(oc00_idxbuf_entry) == 0x14, "Wrong OC00 index buffer entry size!");
+
+typedef struct {
+    oc00_header header; // id == 3
     float unk_pos[10];
     u16 num_entries;
     u16 unk2[3];
-}oc00_t;
-static_assert(sizeof(oc00_t) == 0x40);
+    oc00_idxbuf_entry entries[];
+}oc00_idxbuf;
+static_assert(sizeof(oc00_idxbuf) == 0x3C, "Wrong OC00 index buffer size!");
+
+typedef struct {
+    oc00_header header; // id == 8
+    vec3f points[];
+}oc00_vertbuf;
 
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
 // in that file. In st00, they're set to 0 instead.

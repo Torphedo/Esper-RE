@@ -119,6 +119,55 @@ void mapdata_editor::edit_cp00_entries(s32 offset) noexcept {
     ImGui::PopItemWidth();
 }
 
+void mapdata_editor::edit_oc00_entries(s32 offset, s32 end_offset) noexcept {
+    if (ImGui::Button("Dump to oc00.obj")) {
+        dump_oc00(offset, end_offset);
+    }
+}
+
+void mapdata_editor::dump_oc00(s32 offset, s32 end_offset) noexcept {
+    assert(end_offset > offset);
+
+    FILE* f = fopen("oc00.obj", "wb");
+    if (!f) {
+        return;
+    }
+
+    while (end_offset > offset) {
+        auto* generic_header = (oc00_header*)(map.data + offset);
+        switch (generic_header->id) {
+        case 3: { // Index buffer
+            fprintf(f, "g objCol_%x\n", offset);
+            auto* header = (oc00_idxbuf*)generic_header;
+            for (u32 i = 0; i < header->num_entries; i++) {
+                const u16* indices = header->entries[i].indices;
+                fprintf(f, "f %hd %hd %hd\n", indices[0], indices[1], indices[2]);
+            }
+            break;
+        }
+        case 8: { // Vertex buffer
+            auto* header = (oc00_vertbuf*)generic_header;
+            const u32 num_entries = generic_header->size / sizeof(*header->points);
+            for (u32 i = 0; i < num_entries; i++) {
+                const vec3f& p = header->points[i];
+                fprintf(f, "v %f %f %f\n", p.x, p.y, p.z);
+            }
+            break;
+        }
+        default:
+            break;
+            // return;
+        }
+
+        offset += sizeof(*generic_header);
+        if (offset < end_offset) {
+            offset += generic_header->size;
+        }
+    }
+
+    fclose(f);
+}
+
 void mapdata_editor::draw_custom_editor() {
     if (!ImGui::BeginTabBar("")) {
         return;
@@ -180,6 +229,20 @@ void mapdata_editor::draw_custom_editor() {
     if (ImGui::BeginTabItem("CP00 (5)")) {
         if (map.offset_is_reasonable(header->CP00_offset5)) {
             edit_cp00_entries(header->CP00_offset5);
+        }
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("OC00")) {
+        if (map.offset_is_reasonable(header->OC00_offset)) {
+            edit_oc00_entries(header->OC00_offset, header->OC01_offset);
+        }
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem("OC01")) {
+        if (map.offset_is_reasonable(header->OC01_offset)) {
+            edit_oc00_entries(header->OC01_offset, header->OC02_offset);
         }
         ImGui::EndTabItem();
     }
