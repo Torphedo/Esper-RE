@@ -377,9 +377,6 @@ bool mapdata_validate(const mapdata& map, std::string& msg) noexcept {
     if (header.unk1 != 1 && header.unk1 != 2 && header.unk1 != 3 && header.unk1 != 9 && header.unk1 != -1) {
         str_format_append(msg, "Header unk1 has unknown value %d!", header.unk1);
     }
-    if (header.unk2 != -1 && header.unk2 != 0x140) {
-        str_format_append(msg, "Header unk2 has unknown value %d!", header.unk2);
-    }
 
     if (header.chunk_size > 0) {
         const auto* ps00 = (ps01_entry*)(map.data + header.chunk_size);

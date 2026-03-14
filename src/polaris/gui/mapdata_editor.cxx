@@ -10,7 +10,7 @@ mapdata_editor::mapdata_editor(const char* filepath, polaris& pol) : pol(pol) {
 }
 
 // Move assignment operator
-mapdata_editor& mapdata_editor::operator=(mapdata_editor&& other) {
+mapdata_editor& mapdata_editor::operator=(mapdata_editor&& other) noexcept {
     if (this != &other) {
         map.unload();
         memcpy(this, &other, sizeof(other)); // Copy state from temporary

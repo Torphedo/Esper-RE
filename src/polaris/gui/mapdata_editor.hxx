@@ -19,7 +19,7 @@ public:
         return;
     }
     mapdata_editor(const char* filepath, polaris& pol);
-    mapdata_editor& operator=(mapdata_editor&& other);
+    mapdata_editor& operator=(mapdata_editor&& other) noexcept;
     ~mapdata_editor();
 
     void edit_ps01_entry(u32 idx, ps01_entry* entry, u32 max_id) noexcept;

@@ -89,9 +89,7 @@ typedef struct {
     s32 unk1;
     // Points to the byte after the 'PS01' magic (if it exists).
     s32 ps01_offset;
-    // Only used in st24, where it's set to 0x140. This is a common header size
-    // in some other files, but st24 has a header size of -1 for some reason.
-    s32 unk2;
+    s32 ps02_offset; // Only used in st24
     // In area files only, points to an ALR-like structure starting with u32(0x20).
     s32 unk_area;
     // In area files only, points to an 0x9 ALR chunk (followed by an 0x0 chunk).
@@ -100,13 +98,10 @@ typedef struct {
     s32 unk_area3;
     // Only used in st00, where the 2nd value points to the end of the file
     s32 unk3[4];
-    s32 ps00_count; // Each entry is 0x24 bytes (the count may be -1)
-    // Only used in st00
-    s32 unk4;
+    s32 ps00_count;
+    s32 unk4; // Only used in st00
     s32 ps01_count;
-    // Usually points to the end of the file (== file size), or -1.
-    // Has some other unrelated value in st00 and st24.
-    s32 unk5;
+    s32 ps02_count;
     s32 unk6[7];
     s32 nm00_offset;
     s32 nm00_count;
@@ -150,6 +145,22 @@ typedef struct {
     u32 filesize;
 }st00_t;
 static_assert(sizeof(st00_t) == 0x13C, "Map header size is wrong!");
+
+typedef struct {
+    u32 magic; // AR01, AR02, etc.
+    s32 unk1; // Looks like an offset
+    s32 unk2; // Looks like a count
+    s32 MD00_offset;
+
+    s32 unk3; // Always -1, so far
+    s32 ssb_offset;
+    s32 dynlight_alr_offset;
+    s32 unk4; // Always -1, so far
+
+    s32 unkC[7]; // Always -1, so far
+    u32 filesize;
+}area_header;
+static_assert(sizeof(area_header) == 0x40, "Area Map header size is wrong!");
 
 #ifdef __cplusplus
 }
