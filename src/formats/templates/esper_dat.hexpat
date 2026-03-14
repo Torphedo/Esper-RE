@@ -15,20 +15,87 @@ fn isPositive(s32 x) {
     return (x < 0) ? 0 : 1;
 };
 
+struct area_header {
+    s32 unk1; // Looks like an offset
+    s32 unk2; // Looks like a count
+    s32 MD00_offset;
+
+    s32 unk3; // Always -1, so far
+    s32 ssb_offset;
+    s32 dynlight_alr_offset;
+    s32 unk4; // Always -1, so far
+
+    s32 unkC[7]; // Always -1, so far
+    u32 filesize;
+};
+
+
+struct ps01_entry {
+    u32 object_id [[color("FF0000")]];
+    u32 unk2 [[color("FF0000")]];
+    u32 pad [[color("000000")]];
+    // Object position
+    vec3f pos [[color("0000FF")]];
+    // Euler rotation in radians
+    vec3f rotation [[color("00FF00")]];
+};
+
+struct oc00_vertbuf {
+    u8 unk1;
+    s8 type;
+    u8 unk2;
+    s8 unk3;
+    u32 size;
+    padding[4];
+    
+    u8 buf[size];
+};
+
+struct ef00_entry {
+    u8 unk1[4];
+    float unk2[22];
+};
+
+struct ef00_header {
+    u32 magic;
+    u16 num_entries;
+    u16 size;
+    ef00_entry entries[num_entries];
+};
+
+struct cp00_entry {
+    vec3f player_pos;
+    float unk;
+    float unk2;
+    vec3f capsules[3];
+    float unk3; // Often NaN (FF FF FF FF)
+    u32 unk4;
+    u32 unk5;
+    u32 unk6;
+    u32 unk7;
+    float unk8;
+};
+
+struct cp00_t {
+    u32 magic;
+    u16 num_entries;
+    u16 array_size;
+    cp00_entry entries[num_entries];
+};
+
+
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
 // in that file. In st00, they're set to 0 instead.
 // Some offsets point to things that only exist in st09 area files, and are set
 // to -1 or 0 in all other files.
 struct st00_t {
-    u32 magic [[color("FF0000")]];
     s32 ps00_offset [[color("00FF00")]];
     // Only used in st09 area files. Only set to 1, 2, 3, or 9.
     s32 unk1 [[color("FF0000")]];
     // Points to the byte after the 'PS01' magic (if it exists).
     s32 ps01_offset [[color("FFFF00")]];
-    // Only used in st24, where it's set to 0x140. This is a common header size
-    // in some other files, but st24 has a header size of -1 for some reason.
-    s32 unk2 [[color("FF0000")]];
+    // Only used in st24
+    s32 ps02_offset [[color("00FF00")]];
     // In area files only, points to an ALR-like structure starting with u32(0x20).
     s32 unk_area [[color("FF0000")]];
     // In area files only, points to an 0x9 ALR chunk (followed by an 0x0 chunk).
@@ -41,9 +108,8 @@ struct st00_t {
     // Only used in st00
     s32 unk4 [[color("FF0000")]];
     s32 ps01_count [[color("FFFF00")]];
-    // Usually points to the end of the file (== file size), or -1.
-    // Has some other unrelated value in st00 and st24.
-    s32 unk5 [[color("FF0000")]];
+    // Often also matches the file size for some reason.
+    s32 ps02_count [[color("00FF00")]];
     s32 unk6[7] [[color("FF0000")]];
     s32 nm00_offset [[color("00FFFF")]];
     s32 nm00_count [[color("00FFFF")]];
@@ -84,84 +150,35 @@ struct st00_t {
     u32 filesize;
 };
 
-struct ps01_entry {
-    u32 object_id [[color("FF0000")]];
-    u32 unk2 [[color("FF0000")]];
-    u32 pad [[color("000000")]];
-    // Object position
-    vec3f pos [[color("0000FF")]];
-    // Euler rotation in radians
-    vec3f rotation [[color("00FF00")]];
+struct MainHeader {
+    u8 magic[4];
+    if (magic[0] == 'A') {
+        area_header header;
+    }
+    else if (magic[0] == 'S') {
+        st00_t header;
+        ps01_entry ps00_entries[safeSize(header.ps00_count)] @ header.ps00_offset;
+        ps01_entry ps01_entries[safeSize(header.ps01_count)] @ header.ps01_offset;
+
+        String names[safeSize(header.nm00_count)] @ header.nm00_offset;
+
+        oc00_vertbuf vertbuf00[while ($ < header.OC01_offset - 4)] @ header.OC00_offset;
+
+        oc00_vertbuf vertbuf01[while ($ < header.OC02_offset - 4)] @ header.OC01_offset;
+
+        // ef00_header ef00a @ header.EF00_offset1;
+        ef00_header ef00b @ header.EF00_offset2;
+
+        // We wrap the struct in an array of size 0 or 1. If the offset exists,
+        // it's an array of size 1. Otherwise, it's an array of size 0 and isn't placed.
+        cp00_t cp00a[isPositive(header.CP00_offset1)] @ header.CP00_offset1;
+        cp00_t cp00b[isPositive(header.CP00_offset2)] @ header.CP00_offset2;
+        cp00_t cp00c[isPositive(header.CP00_offset3)] @ header.CP00_offset3;
+        cp00_t cp00d[isPositive(header.CP00_offset4)] @ header.CP00_offset4;
+        cp00_t cp00e[isPositive(header.CP00_offset5)] @ header.CP00_offset5;
+    }
 };
 
-struct oc00_vertbuf {
-    u8 unk1;
-    s8 type;
-    u8 unk2;
-    s8 unk3;
-    u32 size;
-    padding[4];
-    
-    u8 buf[size];
-};
 
-struct oc00_t {
-    u32 magic [[color("FF0000")]];
-};
 
-struct ef00_entry {
-    u8 unk1[4];
-    float unk2[22];
-};
-
-struct ef00_header {
-    u32 magic;
-    u16 num_entries;
-    u16 size;
-    ef00_entry entries[num_entries];
-};
-
-struct cp00_entry {
-    vec3f player_pos;
-    float unk;
-    float unk2;
-    vec3f capsules[3];
-    float unk3; // Often NaN (FF FF FF FF)
-    u32 unk4;
-    u32 unk5;
-    u32 unk6;
-    u32 unk7;
-    float unk8;
-};
-
-struct cp00_t {
-    u32 magic;
-    u16 num_entries;
-    u16 array_size;
-    cp00_entry entries[num_entries];
-};
-
-st00_t header @ 0x0;
-ps01_entry ps00_entries[safeSize(header.ps00_count)] @ header.ps00_offset;
-ps01_entry ps01_entries[safeSize(header.ps01_count)] @ header.ps01_offset;
-
-String names[safeSize(header.nm00_count)] @ header.nm00_offset;
-
-oc00_t oc00 @ header.OC00_offset - 4;
-oc00_vertbuf vertbuf00[while ($ < header.OC01_offset - 4)] @ $;
-
-oc00_t oc01 @ header.OC01_offset - 4;
-oc00_vertbuf vertbuf01[while ($ < header.OC02_offset - 4)] @ $;
-
-oc00_t oc02 @ header.OC02_offset - 4;
-
-// ef00_header ef00a @ header.EF00_offset1;
-ef00_header ef00b @ header.EF00_offset2;
-
-// We wrap the struct in an array of size 0 or 1. If the offset exists,
-// it's an array of size 1. Otherwise, it's an array of size 0 and isn't placed.
-cp00_t cp00a[isPositive(header.CP00_offset1)] @ header.CP00_offset1;
-cp00_t cp00b[isPositive(header.CP00_offset2)] @ header.CP00_offset2;
-cp00_t cp00c[isPositive(header.CP00_offset3)] @ header.CP00_offset3;
-cp00_t cp00d[isPositive(header.CP00_offset4)] @ header.CP00_offset4;
-cp00_t cp00e[isPositive(header.CP00_offset5)] @ header.CP00_offset5;
+MainHeader header @ 0x0;
