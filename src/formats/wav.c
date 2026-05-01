@@ -8,14 +8,17 @@ void wav_write_headers(u32 sample_rate, u8 channels, u16 sample_size, u16 format
         .wave_tag = WAVE_MAGIC,
     };
 
+    // A frame in stereo would be a pair of samples
+    const u32 frame_size = sample_size * channels;
+
     const wav_fmt_header format_header = {
         .fmt_magic = WAV_FMT_MAGIC,
         .chunk_size = 0x10,
         .sample_format = format,
         .channels = channels,
         .samples_per_second = sample_rate,
-        .bytes_per_second = sample_rate * sample_size * channels,
-        .block_align = sample_size * channels,
+        .bytes_per_second = sample_rate * frame_size,
+        .block_align = frame_size,
         .bits_per_sample = sample_size * 8,
         .sample_chunk_id = WAV_DATA_MAGIC,
         .sample_chunk_size = audio_size,
