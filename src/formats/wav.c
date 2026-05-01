@@ -14,8 +14,8 @@ void wav_write_headers(u32 sample_rate, u8 channels, u16 sample_size, u16 format
         .sample_format = format,
         .channels = channels,
         .samples_per_second = sample_rate,
-        .bytes_per_second = sample_rate * sample_size,
-        .block_align = sample_size,
+        .bytes_per_second = sample_rate * sample_size * channels,
+        .block_align = sample_size * channels,
         .bits_per_sample = sample_size * 8,
         .sample_chunk_id = WAV_DATA_MAGIC,
         .sample_chunk_size = audio_size,
@@ -88,4 +88,3 @@ void interleave_samples(const void* const* channels, u8 num_channels, void* outp
         }
     }
 }
-
