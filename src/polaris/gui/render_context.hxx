@@ -65,8 +65,8 @@ struct render_context : gui_layer {
     bool render_texcoords = false;
     bool render_skinning = false;
 
-    // Set up a custom framebuffer. Returns whether it succeeded, you can also
-    // check the [initialized] member.
+    // Set up a custom framebuffer.
+    // Check the [initialized] member to see if it succeeded.
     void init(GLFWwindow* window) noexcept override;
 
     void update(GLFWwindow* window) noexcept override;

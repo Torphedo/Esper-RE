@@ -784,38 +784,19 @@ void editor::clear_meshes() noexcept {
 }
 
 const char* chunk_name_by_id(u32 id) {
-    const char* known_name = "";
     switch (id) {
-    case ALR_ID_MATERIAL:
-        known_name = "[Material]";
-        break;
-    case ALR_ID_INDICES:
-        known_name = "[Index Buffer]";
-        break;
-    case ALR_ID_SKELETON:
-        known_name = "[Armature]";
-        break;
-    case ALR_ID_ANIMATION:
-        known_name = "[Animation]";
-        break;
-    case ALR_ID_CAM_ANIM:
-        known_name = "[Camera Path]";
-        break;
-    case ALR_ID_TEXATLAS:
-        known_name = "[Texture Atlas]";
-        break;
-    case ALR_ID_HEADER:
-        known_name = "[Header]";
-        break;
-    case ALR_ID_TEXTURE:
-        known_name = "[Texture]";
-        break;
-    case ALR_ID_MODEL:
-        known_name = "[Model]";
-        break;
+    case ALR_ID_MATERIAL:  return "[Material]";
+    case ALR_ID_INDICES:   return "[Index Buffer]";
+    case ALR_ID_SKELETON:  return "[Armature]";
+    case ALR_ID_ANIMATION: return "[Animation]";
+    case ALR_ID_CAM_ANIM:  return "[Camera Path]";
+    case ALR_ID_TEXATLAS:  return "[Texture Atlas]";
+    case ALR_ID_HEADER:    return "[Header]";
+    case ALR_ID_TEXTURE:   return "[Texture]";
+    case ALR_ID_MODEL:     return "[Model]";
     }
 
-    return known_name;
+    return "";
 }
 
 void editor::update(render_context& ctx) noexcept {

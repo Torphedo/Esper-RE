@@ -90,7 +90,6 @@ namespace alr {
         s32 animation_by_idx(u32 idx, u32 joint_idx) const noexcept;
 
         /// Calculate a joint's animation transform at a specific frame of an animation
-        /// @param alr ALR to parse
         /// @param anim_id Internal animation ID (within the ALR)
         /// @param joint_idx Index of joint being animated
         /// @param cur_frame Current animation frame
