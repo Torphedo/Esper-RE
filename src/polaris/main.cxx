@@ -74,6 +74,27 @@ int extract_audio(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
+// Save a default ImGui config file
+void write_default_imgui() {
+    const char defaultConfig[] = R"(
+[Window][Viewport]
+Pos=0,32
+Size=1280,688
+DockId=0x08BD597D,1
+[Window][ALR Chunks]
+Pos=0,32
+Size=1280,688
+DockId=0x08BD597D,0
+[Docking][Data]
+DockSpace ID=0x08BD597D Window=0x1BBC0F80 Pos=0,32 Size=1280,688 CentralNode=1 Selected=0xC450F867
+    )";
+    FILE* f = fopen("imgui.ini", "wb");
+    if (f) {
+        fwrite(defaultConfig, sizeof(defaultConfig), 1, f);
+        fclose(f);
+    }
+}
+
 int main(int argc, char** argv) {
     // Enable ANSI escape codes (for printing in color) on Windows
     enable_win_ansi();
@@ -124,6 +145,11 @@ int main(int argc, char** argv) {
 
 
     // Setup GUI classes
+    if (!file_exists("imgui.ini")) {
+        printf("Writing default config\n");
+        write_default_imgui();
+    }
+
     gui_app app;
     app.layers.emplace_back(std::make_unique<layer_imgui>());
     app.layers.emplace_back(std::make_unique<polaris>());
