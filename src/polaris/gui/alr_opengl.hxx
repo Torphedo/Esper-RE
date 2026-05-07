@@ -94,7 +94,11 @@ namespace alr {
         vec3s* rot = nullptr;
 
         float anim_frame = 0.0f;
-        std::vector<mat4s> anim_pose; // Computed every frame
+        // The transform of each joint in the skeleton (used for rigid skinning,
+        // and to avoid recalculating across rendered frames)
+        std::vector<mat4s> anim_pose;
+        // The transform of each joint in the skeleton (uploaded to the
+        // skinning shader)
         std::vector<mat4s> skin_pose; // Computed every frame for skinned meshes
         const alr::mesh& mesh;
 

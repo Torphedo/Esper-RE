@@ -5,6 +5,18 @@ project(Esper-RE
 # We need compile_commands.json for the include paths in some editors
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
+# Put all binaries we'll need to distribute in 1 folder
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Force shared libraries to load from a relative path instead of hardcoding
+# their path on my computer (why is this the default?)
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+set(CMAKE_INSTALL_RPATH "$ORIGIN")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+
+
 set(CMAKE_C_STANDARD 11)
 
 # Polaris needs a ton of extra dependencies
