@@ -60,22 +60,20 @@ target_link_libraries(pd_common PUBLIC bobtail)
 # Build Polaris
 include(polaris.cmake)
 
-add_executable(deck_reader
-    src/deck_reader/main.c
-)
+# We only need to explictly link with the math library (just "m") on Linux.
+set(MATH_LIB "m")
+if(MSVC)
+    set(MATH_LIB "")
+endif()
 
-add_executable(ssb
-    src/ssb/main.c
-)
-
-add_executable(ddsx
-    src/ddsx/main.cxx
-)
+add_executable(deck_reader src/deck_reader/main.c)
+add_executable(ssb src/ssb/main.c)
+add_executable(ddsx src/ddsx/main.cxx)
 
 # Link everything to the common library
 target_link_libraries(deck_reader PRIVATE bobtail)
-target_link_libraries(ssb PRIVATE pd_common m)
-target_link_libraries(ddsx PRIVATE bobtail m)
+target_link_libraries(ssb PRIVATE pd_common ${MATH_LIB})
+target_link_libraries(ddsx PRIVATE bobtail ${MATH_LIB})
 # Polaris handles its own linking
 
 # Copy test files to [build]/src/bin/ so they can be accessed while debugging

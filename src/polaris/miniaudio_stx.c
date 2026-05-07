@@ -31,7 +31,7 @@ bool ma_generate_stx(const char* inpath, const char* stx_path) {
     cfg.customBackendCount = ARRAY_SIZE(customDecoders);
     cfg.pCustomBackendUserData = NULL;
 
-    ma_decoder decoder = {};
+    ma_decoder decoder = {0};
     ma_result ma_res = ma_decoder_init_file(inpath, &cfg, &decoder);
     if (ma_res != MA_SUCCESS) {
         LOG_MSG(error, "Failed to setup audio decoder!\n");

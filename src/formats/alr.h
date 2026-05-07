@@ -123,6 +123,7 @@ typedef struct {
     u8 pixel_format: 5;
     // The top bit is sometimes set, unclear meaning. In the XDK this is just an 8-bit field.
     u8 unk_pixel_format: 3;
+
     u8 mipmap_count: 4;
 
     // For power-of-2 textures.
@@ -133,9 +134,10 @@ typedef struct {
 
     // For non-power-of-2 textures.
     // These store the actual height/width values, in some rectangular textures.
-    u32 width_direct: 12;
-    u32 height_direct: 12;
-    u8 depth_direct: 8; // Always 0 in PD
+    u16 width_direct: 12;
+    u16 height_direct: 12;
+    u32: 0; // Pad out the rest of the 32 bits. The next 8 bits are depth, but
+            // that's unused in PD and MSVC breaks if we add it to the bitfield.
     u32 text1;
     u32 text2;
 }texture_entry;
