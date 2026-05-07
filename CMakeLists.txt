@@ -69,7 +69,7 @@ add_executable(ssb
 )
 
 add_executable(ddsx
-    src/ddsx/main.c
+    src/ddsx/main.cxx
 )
 
 # Link everything to the common library

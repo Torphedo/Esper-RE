@@ -9,6 +9,7 @@
 #include <common/arguments.h>
 
 #include <polaris/version.h>
+#include <string>
 
 typedef enum {
     INVALID, DDS, DDX,
@@ -32,11 +33,11 @@ bool ddx_to_dds(const char* inpath, const char* outpath) {
     }
 
     const texture tex = {
-        .height = 2048,
+        .data = buf,
         .width = 1024,
+        .height = 2048,
         .compressed = true,
         .fmt = DXT1,
-        .data = buf,
     };
     img_write(tex, outpath);
 
@@ -90,15 +91,34 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
     }
 
-    if (argc != 3) {
+    if (argc > 3) {
         print_usage(argv[0]);
         return EXIT_FAILURE;
     }
 
     const char* inpath = argv[1];
-    const char* outpath = argv[2];
+
+    std::string outpath;
+    if (argc < 3) {
+        // If there's only 1 input, make the output be the same path with the
+        // opposite file type.
+        outpath = inpath;
+        s32 idx = outpath.find(".dds");
+        if (idx > 0) {
+            outpath.replace(idx, 4, ".ddx");
+        } else {
+            idx = outpath.find(".ddx");
+            if (idx > 0) {
+                outpath.replace(idx, 4, ".dds");
+            }
+        }
+    } else {
+        // There are multiple outputs, proceed normally
+        outpath = argv[2];
+    }
+
     const filetype intype = get_type(inpath);
-    const filetype outtype = get_type(outpath);
+    const filetype outtype = get_type(outpath.c_str());
 
     if (intype == INVALID || outtype == INVALID) {
         printf("The input or output type is unknown (must be .dds or .ddx)\n");
@@ -113,16 +133,16 @@ int main(int argc, char** argv) {
     bool res = false;
     if (intype == DDS) {
         assert(outtype == DDX);
-        res = dds_to_ddx(inpath, outpath);
+        res = dds_to_ddx(inpath, outpath.c_str());
     } else {
         assert(intype == DDX && outtype == DDS);
-        res = ddx_to_dds(inpath, outpath);
+        res = ddx_to_dds(inpath, outpath.c_str());
     }
 
     if (res) {
-        printf("Converted '%s' to '%s'\n", inpath, outpath);
+        printf("Converted '%s' to '%s'\n", inpath, outpath.c_str());
     } else {
-        printf("Failed to convert '%s' to '%s'\n", inpath, outpath);
+        printf("Failed to convert '%s' to '%s'\n", inpath, outpath.c_str());
     }
 
     return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
