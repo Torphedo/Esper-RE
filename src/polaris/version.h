@@ -10,7 +10,7 @@ static const char* polaris_special_thanks[] = {
      "- .dat map object IDs\n\t\t- Discovered PC audio sample format\n\t\t"
      "- Discovered most non-trivial quest fields\n",
 
-    "Vu \n\t\t- All SSB research \n\t\t- ALR texture & bone names \n\t\t"
+    "Vu \n\t\t- All SSB research \n\t\t- ALR texture, bone, & shader names \n\t\t"
     "- Ghidra project\n",
 
     "NerdyMiner \n\t\t- Early ALR research, texture & model research\n",
