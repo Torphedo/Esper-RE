@@ -379,13 +379,17 @@ void editor::window_state::import_dds_0x15(editor& ed, const char* path, u32 num
     const file::chunk chunk = alr.chunks[chunk_idx];
     CHUNK_ID_ASSERT(0x15);
 
+    if (num_entries == 0) {
+        LOG_MSG(error, "There are no textures to dump!\n");
+    }
+
     texture_entry cur = entries[win_texture.selected_texture];
     const texture_entry next = entries[win_texture.selected_texture + 1];
     s64 tex_size = 0;
-    if (win_texture.selected_texture >= num_entries) {
+    if (win_texture.selected_texture >= (num_entries - 1)) {
         // This is the last entry, so the best guess is that it takes up the
         // rest of the file
-        tex_size = alr.alr_size - cur.data_ptr;
+        tex_size = (alr.alr_size) - alr.resbuf_offset - (s64)cur.data_ptr;
     } else {
         // The most likely texture size is the distance betwen this texture and
         // the next
