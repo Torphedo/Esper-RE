@@ -22,3 +22,6 @@
 [submodule "lib/ma_trackerFormats"]
 	path = lib/ma_trackerFormats
 	url = https://github.com/Torphedo/miniaudio_trackerFormats
+[submodule "lib/cgltf"]
+	path = lib/cgltf
+	url = https://github.com/jkuhlmann/cgltf
