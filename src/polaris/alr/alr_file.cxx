@@ -210,7 +210,7 @@ bool file::save(const char* path) const noexcept {
         // Adjust resource buffer offsets
         for (chunk c : chunks) {
             vfile vf = vf_from_chunk(c);
-            if (c.id == 0x11) {
+            if (c.id == ALR_ID_HEADER) {
                 auto* header = (chunk_layout*) vfile_cur(vf);
                 if (data_offset == 0) {
                     header->texbuf_offset += shift_amount;

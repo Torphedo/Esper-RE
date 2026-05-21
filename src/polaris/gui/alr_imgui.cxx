@@ -40,12 +40,12 @@ namespace alr {
         ImGui::InputU16("Diffuse Texture ID", &entry.texture_idx);
 
         const char* normal_label = "Normal Map Texture ID";
-        if (entry.vertbuf_format == 0x1F) {
+        if (entry.vertbuf_format == ALR_VERTFMT_LBTS) {
             normal_label = "Baked Lightmap Texture ID";
         }
         ImGui::InputU16(normal_label, &entry.normal_idx);
 
-        if (entry.vertbuf_format == 0x1F) {
+        if (entry.vertbuf_format == ALR_VERTFMT_LBTS) {
             ImGui::InputU16("Normal Map Texture ID", &entry.normal_backup_idx);
         }
 

@@ -311,7 +311,7 @@ void dump_materials_obj(FILE* f, const material_entry* materials, u32 num_mats, 
     for (u32 i = 0; i < num_mats; i++) {
         const material_entry* mat = &materials[i];
         // This swaps around in 1 specific vertex format that uses a baked light map
-        const u32 normal_idx = (mat->vertbuf_format == 0x1F) ? mat->normal_backup_idx : mat->normal_idx;
+        const u32 normal_idx = (mat->vertbuf_format == ALR_VERTFMT_LBTS) ? mat->normal_backup_idx : mat->normal_idx;
         if (mat->texture_idx >= num_names) {
             LOG_MSG(warning, "Got out-of-bounds texture ID %d, skipping material %d.\n", mat->texture_idx, i);
             continue;
