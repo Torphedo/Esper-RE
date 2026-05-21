@@ -30,6 +30,7 @@ struct texture_manager {
     bool get_material(alr::file& alr, u32 material_header_offset, u32 idx, material_entry* entry_out) const noexcept;
 
     void invalidate(u32 idx) noexcept;
+    void invalidate_all() noexcept;
     void destroy() noexcept;
 
     ~texture_manager() noexcept {

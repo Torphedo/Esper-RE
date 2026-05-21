@@ -168,6 +168,10 @@ void texture_manager::invalidate(u32 idx) noexcept {
     gl_tex_map.erase(idx);
 }
 
+void texture_manager::invalidate_all() noexcept {
+    destroy();
+}
+
 gl_obj texture_manager::get(alr::file& alr, u32 idx) noexcept {
     if (gl_tex_map.contains(idx)) {
         return gl_tex_map.at(idx);

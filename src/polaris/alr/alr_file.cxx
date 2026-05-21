@@ -143,7 +143,7 @@ bool file::save(const char* path) const noexcept {
         const chunk last_chunk = chunks.back();
         const u32 end_of_chunks = last_chunk.offset + last_chunk.size;
         if (end_of_chunks + shift_amount >= resbuf_offset) {
-            if (!shift_vertbuf(0, shift_amount)) {
+            if (!shift_resource(0, shift_amount)) {
                 return false;
             }
         }
@@ -192,7 +192,20 @@ bool file::save(const char* path) const noexcept {
         return true;
     }
 
-    bool file::shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept {
+    bool file::expand_resbuf(s32 amount) {
+        alr_size += amount;
+        if (alr_size > reserve_size) {
+            LOG_MSG(error, "Unimplemented case: not enough reserved space to expand resource buffer.\n");
+            return false;
+        }
+
+        vfile vf = vf_from_chunk(first_chunk_by_id(ALR_ID_HEADER));
+        auto* header = (chunk_layout*) vfile_cur(vf);
+        header->texbuf_size += amount;
+        return true;
+    }
+
+    bool file::shift_resource(u32 data_offset, s32 shift_amount) noexcept {
         s64 remaining_size = alr_size - (resbuf_offset + data_offset);
         alr_size += shift_amount;
         if (alr_size > reserve_size) {

@@ -69,11 +69,16 @@ namespace alr {
         /// This function will fail if the resource buffer gets in the way.
         bool shift_chunks(u32 begin_offset, s32 shift_amount) noexcept;
 
-        /// @brief Shift a vertex buffer forwards by some amount
+        /// @brief Shift a vertex buffer or texture forwards by some amount
         ///
-        /// @param data_offset Offset of the vertex buffer within the larger resource buffer
+        /// @param data_offset Offset of the resource within the larger resource buffer
         /// @param shift_amount The amount to shift forward by
-        bool shift_vertbuf(u32 data_offset, s32 shift_amount) noexcept;
+        bool shift_resource(u32 data_offset, s32 shift_amount) noexcept;
+
+        /// @brief Expand the resource buffer by some amount
+        ///
+        /// If the value is negative, the resource buffer shrinks.
+        bool expand_resbuf(s32 amount);
 
         /// Find the index of the first offset in the header that points to a model
         /// @param Optional output argument to receive the number of models present

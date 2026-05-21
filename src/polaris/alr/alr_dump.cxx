@@ -919,7 +919,7 @@ bool obj_import(const char* txt, alr::file& alr, u32 vertbuf_chunk_offset, u32 e
     if (vert_count > entry->vertex_count) {
         // Make space for the extra data
         const u32 diff = vert_count - entry->vertex_count;
-        if (!alr.shift_vertbuf(entry->data_ptr, diff * entry->vertex_size)) {
+        if (!alr.shift_resource(entry->data_ptr, diff * entry->vertex_size)) {
             return false;
         }
     }

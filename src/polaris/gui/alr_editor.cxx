@@ -380,30 +380,43 @@ void editor::window_state::import_dds_0x15(editor& ed, const char* path, u32 num
     CHUNK_ID_ASSERT(0x15);
 
     if (num_entries == 0) {
-        LOG_MSG(error, "There are no textures to dump!\n");
+        LOG_MSG(error, "There are no textures to replace!\n");
     }
 
-    texture_entry cur = entries[win_texture.selected_texture];
-    const texture_entry next = entries[win_texture.selected_texture + 1];
+    texture_entry& cur = entries[win_texture.selected_texture];
+    const texture_entry& next = entries[win_texture.selected_texture + 1];
     s64 tex_size = 0;
+    bool is_last = false;
     if (win_texture.selected_texture >= (num_entries - 1)) {
         // This is the last entry, so the best guess is that it takes up the
         // rest of the file
         tex_size = (alr.alr_size) - alr.resbuf_offset - (s64)cur.data_ptr;
+        is_last = true;
     } else {
         // The most likely texture size is the distance betwen this texture and
         // the next
         tex_size = next.data_ptr - cur.data_ptr;
     }
 
+    const u32 needed_size = image_required_size_file(path);
+    if (needed_size != tex_size) {
+        const s32 diff = (s32)needed_size - (s32)tex_size;
+        if (is_last) {
+            // Expand the file to make room
+            alr.expand_resbuf(diff);
+        } else {
+            // Move the next texture forward to make room, or shrink it to come after this texture
+            alr.shift_resource(next.data_ptr, diff);
+        }
+    }
 
     // Load the texture data
     u8* data = alr.resource_buffer() + cur.data_ptr;
-    texture tex = image_buf_load(path, data, tex_size);
+    texture tex = image_buf_load(path, data, needed_size);
 
     // Update the ALR state and force a reload
     alr_texture_set_dimensions(&cur, tex.height, tex.width);
-    ed.tex_manager.invalidate(win_texture.selected_texture);
+    ed.tex_manager.invalidate_all();
 }
 
 void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) noexcept {
@@ -547,7 +560,7 @@ void editor::window_state::draw_chunk_vertbuf(editor& ed, file::chunk& chunk) no
     if (ImGui::CollapsingHeader("Shift Buffer")) {
         ImGui::InputS32("Shift Amount", &window_vertbuf.shift_amount);
         if (ImGui::Button("Go!")) {
-            alr.shift_vertbuf(entry->data_ptr, window_vertbuf.shift_amount);
+            alr.shift_resource(entry->data_ptr, window_vertbuf.shift_amount);
         }
     }
 
