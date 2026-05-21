@@ -17,7 +17,7 @@ Support status for `.alr` files:
 
 | Feature           | Viewing                    | Export                  | Import                                     |
 | ----------------- | -------------------------- |------------------------ |------------------------------------------- |
-| Textures          | ✅                         | ✅(`.dds`)              | ✅ (`.dds`, at same resolution & format)   |
+| Textures          | ✅                         | ✅(`.dds`)              | ✅  `.dds`, must be the same foramt        |
 | Meshes            | ✅                         | ✅(`.obj`)              | ❌                                         |
 | Animations        | ✅ (graph)                 | ❌ (WIP `.anim` export) | ❌                                         |
 | Skeleton          | ❌                         | ✅ (`.dae`)             | ❌                                         |
@@ -27,7 +27,7 @@ Polaris also supports several other Phantom Dust files:
 - Music (`.stx`) files can be generated from `.wav`, `.mp3`, `.mod`, `.xm`, `.s3m`, or `.it` files. They can also be exported to `.wav` or played back directly in Polaris with looping.
 - Sound effect (`.bin`) files can be exported to `.wav`
 - Quest (`questdata.qdt`) files can be edited (though they're not fully understood yet)
-- `.mk` and `.ak` files are bundles of NPC models and animations stored in `.alr` and related files. Polaris can extract and create these bundles.
+- `.mk` and `.ak` files are bundles of NPC models and animations, which Polaris can extract and create.
 
 Here's the underground bar map rendered in Polaris:    
 <img src="https://github.com/user-attachments/assets/62e2b8c2-1e83-4666-9bda-007ecec425e8"  style="width:90%;"/>
@@ -47,7 +47,9 @@ operation in *headless* mode (no GUI):
   - Export materials from an ALR file in MTL format (for use with OBJ files)
   - The exported OBJ files have material assignment data, but you have to manually write `mtllib [your .mtl file]` at the start.
 - `--extract-audio`
-  - Export all sound effects from multiple .bin files to a folder, in WAV format
+  - Export all sound effects from multiple `.bin` and/or `.stx` files to a folder, in WAV format
+- `--generate-stx`
+  - Convert an audio file to `.stx`, used for background music
 - `--validate`
   - Run assertions and consistency checks across the whole file. Doesn't guarantee
     the file will work in the game, just that nothing looks wrong based on our
