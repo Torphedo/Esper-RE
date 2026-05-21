@@ -15,12 +15,12 @@ only that data).
 
 Support status for `.alr` files:
 
-| Feature           | Viewing                    | Export                  | Import                                     |
-| ----------------- | -------------------------- |------------------------ |------------------------------------------- |
-| Textures          | ✅                         | ✅(`.dds`)              | ✅  `.dds`, must be the same foramt        |
-| Meshes            | ✅                         | ✅(`.obj`)              | ❌                                         |
-| Animations        | ✅ (graph)                 | ❌ (WIP `.anim` export) | ❌                                         |
-| Skeleton          | ❌                         | ✅ (`.dae`)             | ❌                                         |
+| Feature           | Viewing                    | Export                  | Import                                        |
+| ----------------- | -------------------------- |------------------------ |-----------------------------------------------|
+| Textures          | ✅                         | ✅(`.dds`)              | ✅  `.dds`, must be the same format            |
+| Meshes            | ✅                         | ✅(`.obj`)              | ✅ (must be same # of vertices, position only) |
+| Animations        | ✅ (rigid skinning only)   | ❌ (WIP `.anim` export) | ❌                                             |
+| Skeleton          | ❌                         | ✅ (`.dae`)             | ❌                                             |
 
 Polaris also supports several other Phantom Dust files:
 - Stage layout (`.dat`) files can be loaded alongside their corresponding ALR, to spawn in, render, and edit dynamic objects like chairs and railings (Surface stages only, no underground stages).
