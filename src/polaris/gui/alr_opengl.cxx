@@ -333,6 +333,9 @@ mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
 void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
     scope_timer timer("instanceUpdateAnimation", true);
     const chunk_armature* skel = mesh.chunks.skel_chunk;
+    if (!skel) {
+        return;
+    }
     anim_pose.resize(skel->joint_count);
 
     anim_frame += delta_time / FRAMETIME_24FPS;
@@ -344,6 +347,9 @@ void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, flo
 void alr::mesh_instance::update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
     scope_timer timer("instanceUpdateSkinning", true);
     const chunk_armature* skel = mesh.chunks.skel_chunk;
+    if (!skel) {
+        return;
+    }
     skin_pose.clear();
     for (const auto& m : mesh.bind_pose) {
         skin_pose.emplace_back(m);

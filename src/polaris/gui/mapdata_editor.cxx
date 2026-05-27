@@ -27,6 +27,10 @@ mapdata_editor::~mapdata_editor() {
 
 void map_obj_to_viewport(alr::editor& ed, const ps01_entry* entry) noexcept {
     const u32 idx = FIRST_OBJ_IDX + entry->object_id;
+    if (idx >= ed.meshes.size()) {
+        LOG_MSG(warning, "Ignoring out-of-bounds mesh index %d\n", idx);
+        return;
+    }
     ed.instances.emplace_back(ed.meshes[idx], (vec3s*)&entry->pos, (vec3s*)&entry->rotation);
 }
 
@@ -175,76 +179,81 @@ void mapdata_editor::draw_custom_editor() {
     st00_t* header = map.get_header();
     auto* ps00_entries = (ps01_entry*)(map.data + header->chunk_size);
     auto* ps01_entries = (ps01_entry*)(map.data + header->ps01_offset);
-    if (ImGui::BeginTabItem("PS0/")) {
-        edit_ps01_entries(header, ps00_entries);
-        ImGui::EndTabItem();
-    }
 
-    if (ImGui::BeginTabItem("PS01")) {
-        edit_ps01_entries(header, ps01_entries);
-        ImGui::EndTabItem();
-    }
-
-    if (ImGui::BeginTabItem("NM00")) {
-        if (map.offset_is_reasonable(header->nm00_offset)) {
-            char* txt = (char*)(map.data + header->nm00_offset);
-            for (s32 i = 0; i < header->nm00_count; i++) {
-                const s32 len = strlen(txt) + 1;
-                std::string label = "Object " + std::to_string(i);
-                ImGui::InputText(label.c_str(), txt, len);
-                txt += len;
-            }
+    if (map.offset_is_reasonable(header->chunk_size)) {
+        if (ImGui::BeginTabItem("PS0/")) {
+            edit_ps01_entries(header, ps00_entries);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("CP00 (1)")) {
-        if (map.offset_is_reasonable(header->CP00_offset1)) {
+    if (map.offset_is_reasonable(header->ps01_offset)) {
+        if (ImGui::BeginTabItem("PS01")) {
+                edit_ps01_entries(header, ps01_entries);
+            ImGui::EndTabItem();
+        }
+    }
+
+    if (map.offset_is_reasonable(header->nm00_offset)) {
+        if (ImGui::BeginTabItem("NM00")) {
+                char* txt = (char*)(map.data + header->nm00_offset);
+                for (s32 i = 0; i < header->nm00_count; i++) {
+                    const s32 len = strlen(txt) + 1;
+                    std::string label = "Object " + std::to_string(i);
+                    ImGui::InputText(label.c_str(), txt, len);
+                    txt += len;
+                }
+            ImGui::EndTabItem();
+        }
+    }
+
+    if (map.offset_is_reasonable(header->CP00_offset1)) {
+        if (ImGui::BeginTabItem("CP00 (1)")) {
             edit_cp00_entries(header->CP00_offset1);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("CP00 (2)")) {
-        if (map.offset_is_reasonable(header->CP00_offset2)) {
-            edit_cp00_entries(header->CP00_offset2);
+    if (map.offset_is_reasonable(header->CP00_offset2)) {
+        if (ImGui::BeginTabItem("CP00 (2)")) {
+                edit_cp00_entries(header->CP00_offset2);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("CP00 (3)")) {
-        if (map.offset_is_reasonable(header->CP00_offset3)) {
+    if (map.offset_is_reasonable(header->CP00_offset3)) {
+        if (ImGui::BeginTabItem("CP00 (3)")) {
             edit_cp00_entries(header->CP00_offset3);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("CP00 (4)")) {
-        if (map.offset_is_reasonable(header->CP00_offset4)) {
+    if (map.offset_is_reasonable(header->CP00_offset4)) {
+        if (ImGui::BeginTabItem("CP00 (4)")) {
             edit_cp00_entries(header->CP00_offset4);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("CP00 (5)")) {
-        if (map.offset_is_reasonable(header->CP00_offset5)) {
+    if (map.offset_is_reasonable(header->CP00_offset5)) {
+        if (ImGui::BeginTabItem("CP00 (5)")) {
             edit_cp00_entries(header->CP00_offset5);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("OC00")) {
-        if (map.offset_is_reasonable(header->OC00_offset)) {
+    if (map.offset_is_reasonable(header->OC00_offset)) {
+        if (ImGui::BeginTabItem("OC00")) {
             edit_oc00_entries(header->OC00_offset, header->OC01_offset);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem("OC01")) {
-        if (map.offset_is_reasonable(header->OC01_offset)) {
+    if (map.offset_is_reasonable(header->OC01_offset)) {
+        if (ImGui::BeginTabItem("OC01")) {
             edit_oc00_entries(header->OC01_offset, header->OC02_offset);
+            ImGui::EndTabItem();
         }
-        ImGui::EndTabItem();
     }
 
     ImGui::EndTabBar();
