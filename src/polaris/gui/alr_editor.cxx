@@ -783,7 +783,7 @@ void editor::load_all_meshes() noexcept {
 
     // Stage ALRs have a base, background, and skybox model.
     // Player ALRs have at most a base and detail (e.g. scarf) model.
-    for (u32 i = 0; i < MIN(meshes.size(), 3); i++) {
+    for (u32 i = 0; i < MIN(meshes.size(), 6); i++) {
         alr_model_desc model = alr.model_at_idx(i);
         if (meshes[i].chunks.vert_chunk == nullptr) {
             continue;

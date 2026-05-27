@@ -401,7 +401,10 @@ static const vertex_format_t alr_vert_formats[ALR_MAX_FORMAT] = {
     },
     {   .id = 0x16,
         .size = 0x1C,
-        ALR_POS_ONLY,
+        .attributes = {
+            ALR_STD_POS,
+            ALR_STD_UV_DEF(12, 4096),
+        },
     },
     {   .id = 0x17,
         .size = 0x20,
