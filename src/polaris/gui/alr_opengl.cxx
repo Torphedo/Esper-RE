@@ -164,8 +164,23 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
 
         const vertbuf_entry& vertbuf = vertbufs[header->vertex_buf];
         const material_entry& material = materials[header->texture_idx];
+
+        // Materials with these shaders have opaque textures that should be
+        // added to the fragment color instead of overwriting it
+        const char* additive_shaders[] = {
+            "vkblink", "vklight", "vkwater3edge", "sc", "scal",
+            "sbtscloud3",
+        };
+        bool useAdditive = false;
+        for (u32 i = 0; i < ARRAY_SIZE(additive_shaders); i++) {
+            const char* shader = additive_shaders[i];
+            useAdditive |= encoded_compare(shader, material.text1, material.text2);
+        }
+
         if (ctx.render_skinning && material.vertbuf_format == ALR_VERTFMT_SWBOS) {
             ctx.set_shader(ctx.skinned_shader);
+        } else if (useAdditive) {
+            ctx.set_shader(ctx.vkblink_shader);
         } else {
             ctx.set_shader(ctx.diffuse_shader);
         }

@@ -20,7 +20,7 @@ void main() {
     vec4 lightmap_color = vec4(texture(lightmap_texture, lightmap_uv).rgb, 1.0);
     lightmap_color = vec4(lightmap_color.rgb * lightmap_color.a, 0.0);
 
-    fragment_rgba = color + lightmap_color * 0.75f;
+    fragment_rgba = color + lightmap_color * 0.5;
 }
 
 )";

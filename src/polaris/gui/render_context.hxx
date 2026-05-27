@@ -30,6 +30,7 @@ struct render_context : gui_layer {
     gl_obj active_shader = 0;
 
     gl_obj diffuse_shader = 0;
+    gl_obj vkblink_shader = 0;
     gl_obj uv_shader = 0;
     gl_obj skinned_shader = 0;
 

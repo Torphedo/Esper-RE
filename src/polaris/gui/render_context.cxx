@@ -11,6 +11,7 @@
 #include <util/imgui_utils.hxx>
 #include "render_context.hxx"
 #include "selector_ray.hxx"
+#include "shaders/vkblink.frag.h"
 
 // GLSL shaders
 #include <shaders/generic.vert.h>
@@ -37,6 +38,13 @@ void render_context::init(GLFWwindow* window) noexcept {
         LOG_MSG(error, "Failed to compile diffuse shader!\n");
         return;
     }
+
+    vkblink_shader = program_compile_src(generic_vert, vkblink_frag);
+    if (!shader_link_check(vkblink_shader)) {
+        LOG_MSG(error, "Failed to compile diffuse shader!\n");
+        return;
+    }
+
     uv_shader = program_compile_src(generic_vert, show_uv_frag);
     if (!shader_link_check(uv_shader)) {
         LOG_MSG(error, "Failed to compile UV shader!\n");

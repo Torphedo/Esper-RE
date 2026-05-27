@@ -88,3 +88,8 @@ u32 encode_single32(char* input) {
 
     return encoded_val; // All done encoding!
 }
+
+bool encoded_compare(const char* str, u32 text1, u32 text2) {
+    decoded_text decoded = decode_double(text1, text2);
+    return strncmp(str, decoded.data, ENCODED_CHAR_COUNT * 2) == 0;
+}

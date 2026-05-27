@@ -3,6 +3,7 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include "data_types.h"
 
 // These structures could be out of date. If you use this file as reference for
@@ -75,6 +76,9 @@ decoded_text decode_double(u32 text1, u32 text2);
 ///
 /// @return encoded value representing the input string
 u32 encode_single32(char* text);
+
+/// @brief Compare a C string with an encoded string
+bool encoded_compare(const char* str, u32 text1, u32 text2);
 
 #ifdef __cplusplus
 }
