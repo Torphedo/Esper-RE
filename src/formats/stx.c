@@ -29,49 +29,6 @@ stx_block_header stx_block_create(u16 total_num_blocks, u16 idx) {
     return out;
 }
 
-bool dump_stx(const char* out_file, const u8* data, u32 size) {
-    FILE* f = fopen(out_file, "wb");
-    if (!f) {
-        return false;
-    }
-
-    const stx_audio_block* audio_blocks = (stx_audio_block*)(data + STX_FIRST_OFFSET);
-
-    const stx_first_block* header = (stx_first_block*)data;
-    const u16 sample_rate = header->channels[0].sample_rate / 2;
-    wav_write_headers(sample_rate, 2, sizeof(s16), WAV_FMT_PCM, 0, f);
-
-    u32 audio_size = 0;
-    for (u32 channelIdx = 0; channelIdx < 2; channelIdx++) {
-        audio_size = 0;
-        for (u32 j = 0; j < header->header.block_count - 1; j++) {
-            const stx_audio_block* block = &audio_blocks[j];
-            const u16 channel_size = STX_BLOCK_SAMPLES;
-            const u16 block_size = channel_size * sizeof(s16) * block->header.channel_count;
-            audio_size += block_size;
-            const u32 offset = STX_FIRST_OFFSET + (sizeof(*block) * j);
-
-            if (block->header.magic != STX_MAGIC) {
-                printf("%s(): Invalid block magic %X @ 0x%X!\n", __func__, block->header.magic, offset);
-            }
-            if (block->header.channel_count != 2) {
-                printf("%s(): Unexpected channel count %d @ 0x%X\n", __func__, block->header.channel_count, offset);
-            }
-
-            // Skip to the appropriate channel & save samples
-            const s16* samples = &block->samples[channel_size * channelIdx];
-            fwrite(samples, channel_size * sizeof(*samples), 1, f);
-        }
-    }
-
-    // Update WAV sizes
-    fseek(f, 0, SEEK_SET);
-    wav_write_headers(sample_rate, 2, sizeof(u16), WAV_FMT_PCM, audio_size, f);
-
-    fclose(f);
-    return true;
-}
-
 bool generate_stx(audio_source_cb read_samples, void* ctx, u64 sample_count, void** stx_buf_out, u32* stx_size_out) {
     sample_count *= 2;
 
@@ -162,7 +119,7 @@ void stx_read_samples(stx_reader* player, u32 frameCount, void* samples_out) {
     }
 }
 
-stx_reader stx_reader_init(void* data, u32 size) {
+stx_reader stx_reader_init(const void* data, u32 size) {
     stx_reader out = {
         .blocks = (stx_audio_block*)data,
         .size = size,
@@ -172,3 +129,35 @@ stx_reader stx_reader_init(void* data, u32 size) {
     out.header = *(stx_first_block*)out.blocks;
     return out;
 }
+
+bool dump_stx(const char* out_file, const u8* data, u32 size) {
+    FILE* f = fopen(out_file, "wb");
+    if (!f) {
+        printf("%s(): Failed to open output file '%s'\n", __func__, out_file);
+        return false;
+    }
+
+    const stx_first_block* header = (const stx_first_block*)data;
+    const u16 sample_rate = header->channels[0].sample_rate;
+    wav_write_headers(sample_rate, 2, sizeof(s16), WAV_FMT_PCM, 0, f);
+
+    stx_reader reader = stx_reader_init(data, size);
+    assert(reader.initialized); // The init function just fills out a struct
+    u32 audio_size = STX_TOTAL_BLOCK_SAMPLES * sizeof(s16) * header->header.block_count;
+
+    for (u32 i = 0; i < header->header.block_count - 1; i++) {
+        // We are using a private API & reaching into internal state to avoid
+        // extra copying, which is fine since the implementation is in this
+        // source file.
+        stx_reader_next_block(&reader);
+        fwrite(reader.audio.samples, sizeof(s16), STX_TOTAL_BLOCK_SAMPLES, f);
+    }
+
+    // Update WAV sizes
+    fseek(f, 0, SEEK_SET);
+    wav_write_headers(sample_rate, 2, sizeof(u16), WAV_FMT_PCM, audio_size, f);
+
+    fclose(f);
+    return true;
+}
+

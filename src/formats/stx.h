@@ -163,7 +163,7 @@ typedef struct {
 /// @param data The STX data
 /// @param size The size of the STX data
 /// @return STX reader context
-stx_reader stx_reader_init(void *data, u32 size);
+stx_reader stx_reader_init(const void *data, u32 size);
 
 /// @brief Read 16-bit interleaved stereo samples from the STX
 /// @param player The STX reader context
