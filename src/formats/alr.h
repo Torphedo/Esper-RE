@@ -513,6 +513,21 @@ typedef struct {
 }atlas_tex_entry;
 static_assert(sizeof(atlas_tex_entry) == 0x3C, "Wrong texture metadata size!");
 
+// 0x9 chunk (believed to be for dynamic lights)
+typedef struct {
+    u32 id;
+    u32 size;
+    u32 num_entries;
+}chunk_0x9_header;
+
+typedef struct {
+    u32 unk1;
+    u16 unk2;
+    u16 unk3;
+    float unk4[8];
+}chunk_0x9_entry;
+static_assert(sizeof(chunk_0x9_entry) == 40, "Wrong 0x9 entry size!");
+
 // Animation (0x5) chunk
 // =============================================================================
 // This stores keyframes for a single animation.
