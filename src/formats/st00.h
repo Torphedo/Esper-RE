@@ -90,12 +90,9 @@ typedef struct {
     // Points to the byte after the 'PS01' magic (if it exists).
     s32 ps01_offset;
     s32 ps02_offset; // Only used in st24
-    // In area files only, points to an ALR-like structure starting with u32(0x20).
-    s32 unk_area;
-    // In area files only, points to an 0x9 ALR chunk (followed by an 0x0 chunk).
-    s32 unk_area2;
-    // Only used in st09_02.dat, where it points to an 0x20 chunk.
-    s32 unk_area3;
+    s32 area_ssb_offset; // Area files only
+    s32 area_dynlight_offset; // Area files only
+    s32 area_ssb_offset2; // Only used in st09_02.dat
     // Only used in st00, where the 2nd value points to the end of the file
     s32 unk3[4];
     s32 ps00_count;
@@ -153,9 +150,9 @@ typedef struct {
     s32 MD00_offset;
 
     s32 unk3; // Always -1, so far
-    s32 ssb_offset;
+    s32 ssb_offset; // Points to an SSB with a single exported function named "maplight"
     s32 dynlight_alr_offset;
-    s32 unk4; // Always -1, so far
+    s32 ssb_offset2; // Only used in st09_02.dat
 
     s32 unkC[7]; // Always -1, so far
     u32 filesize;

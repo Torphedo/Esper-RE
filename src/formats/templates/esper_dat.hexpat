@@ -1,3 +1,7 @@
+#include <std/io.pat>
+#include <std/string.pat>
+#include <std/sys.pat>
+
 struct String {
     char txt[while($[$] != 0)]; // Null terminated string
     char nullterm [[color("000000")]]; // The null terminator
@@ -15,6 +19,62 @@ fn isPositive(s32 x) {
     return (x < 0) ? 0 : 1;
 };
 
+// ALR animation structs copied from ALR template
+struct animation_key<auto size> {
+    match (size) {
+        (3 | 5 | 7):  {u8 frame [[color("7F7F7F")]];}
+        (8): {u32 frame [[color("7F7F7F")]];}
+        (12 | 16):  {float frame [[color("7F7F7F")]];}
+    } 
+    
+    match (size) {
+        (3):  {u16 x;}
+        (5):  {u16 x, y;}
+        (7):  {u16 x, y, z;}
+        (8):  {u32 x [[color("007F00")]];}
+        (12): {float x, y;}
+        (16): {float x, y, z;}
+    }
+};
+
+// ID 0x5
+struct chunk_animation {
+    float length;
+    u16 joint_idx;
+    u16 rotation_key_size [[color("7F0000")]];
+    u32 translation_key_count [[color("007F00")]];
+    u32 rotation_key_count [[color("00007F")]];
+    u32 scale_key_count [[color("000000")]];
+    u8 unk1 [[color("000000")]];
+    u8 unk2 [[color("000000")]];
+    u16 translation_key_size [[color("007F00")]];
+
+    animation_key<translation_key_size> translation_keys[translation_key_count];
+    animation_key<rotation_key_size> rotation_keys[rotation_key_count];
+    // animation_key<translation_key_size> scale_keys[scale_key_count];
+};
+
+struct chunk_header {
+    u32 id [[color("000000")]];
+    u32 size [[color("000000")]];
+};
+
+struct chunk_generic {
+    chunk_header header;
+    match (header.id) {
+        (0x5): chunk_animation animations;
+        (0x00 | 0xD): padding[0];
+        // Do nothing
+        (_): padding[header.size] [[color("FF0000")]];
+    }
+
+    if (header.size == 0) {
+        break;
+    }
+
+    $ = addressof(header) + header.size;
+};
+
 struct area_header {
     s32 unk1; // Looks like an offset
     s32 unk2; // Looks like a count
@@ -23,7 +83,7 @@ struct area_header {
     s32 unk3; // Always -1, so far
     s32 ssb_offset;
     s32 dynlight_alr_offset;
-    s32 unk4; // Always -1, so far
+    s32 ssb_offset2;
 
     s32 unkC[7]; // Always -1, so far
     u32 filesize;
@@ -154,6 +214,15 @@ struct MainHeader {
     u8 magic[4];
     if (magic[0] == 'A') {
         area_header header;
+        chunk_generic chunks[while ($ < header.MD00_offset)] @ $;
+        if (header.ssb_offset > 0) {
+            u32 ssbSize = header.dynlight_alr_offset - header.ssb_offset;
+            u8 ssbBuf[ssbSize] @ header.ssb_offset;
+        }
+        if (header.ssb_offset2 > 0) {
+            u32 ssbSize2 = header.filesize - header.ssb_offset2;
+            u8 ssbBuf2[ssbSize2] @ header.ssb_offset2;
+        }
     }
     else if (magic[0] == 'S') {
         st00_t header;
