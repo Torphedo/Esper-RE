@@ -40,20 +40,37 @@ void print_usage() {
 }
 
 int extract_audio(int argc, char** argv) {
+    if (false) {
+    failure_usage:
+        LOG_MSG(info, "The --%s option needs at least 4 arguments, like this:\n", extract_audio_flag);
+        printf("\t%s --%s ./output_folder Title_Logo.bin 05_Highway.stx\n", argv[0], extract_audio_flag);
+        return EXIT_FAILURE;
+    }
+
     LOG_MSG(info, "Extracting audio...\n");
     if (argc < 4) {
-        LOG_MSG(info, "The --%s option needs at least 4 arguments, like this:\n", extract_audio_flag);
-        printf("\t%s --%s ./output_folder Title_Logo.bin 05_Highway.stx", argv[0], extract_audio_flag);
-        return EXIT_FAILURE;
+        goto failure_usage;
     }
 
     const u32 out_dir_idx = 2;
     const u32 files_idx = 3;
     const char* out_dir = argv[out_dir_idx];
     char* const * files = &argv[files_idx];
+    if (!file_exists(out_dir)) {
+        LOG_MSG(error, "Output folder '%s' doesn't exist\n", out_dir);
+        goto failure_usage;
+    }
+    if (!path_is_dir(out_dir)) {
+        LOG_MSG(error, "Output folder '%s' isn't a folder\n", out_dir);
+        goto failure_usage;
+    }
+
     for (u32 i = 0; i < argc - files_idx; i++) {
         audio_tool audioTool;
-        audioTool.load(files[i]);
+        if (!audioTool.load(files[i])) {
+            LOG_MSG(error, "Failed to load audio file '%s' (probably an unsupported format, must be .stx or .bin)\n", files[i]);
+            continue;
+        }
 
         std::string prefix = files[i];
         if (path_has_slashes(prefix.c_str())) {
@@ -62,7 +79,9 @@ int extract_audio(int argc, char** argv) {
 
         if (audioTool.is_stx) {
             std::string outpath = std::string(out_dir) + PLATFORM_DIRSEP + prefix.c_str();
-            outpath.replace(outpath.find(".stx"), 4, ".wav");
+            const s32 idx = outpath.find(".stx");
+            assert(idx >= 0 && "STX files must have a .stx extension");
+            outpath.replace(idx, 4, ".wav");
             dump_stx(outpath.c_str(), audioTool.data, audioTool.size);
         }else {
             prefix.replace(prefix.find(".bin"), 4, "");

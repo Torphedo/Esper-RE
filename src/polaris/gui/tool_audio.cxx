@@ -208,9 +208,14 @@ void audio_tool::do_gui() noexcept {
 bool audio_tool::load(const char* path) noexcept {
     const bool res = fileclass::load(path);
     is_stx = file_has_magic(path, STX_MAGIC);
+    const bool is_sth2 = file_has_magic(path, STH2_MAGIC);
     if (is_stx && data) {
         stx_player = stx_reader_init(data, size);
         setup_player();
+    }
+
+    if (!is_stx && !is_sth2) {
+        return false;
     }
 
     return res;

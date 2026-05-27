@@ -8,6 +8,10 @@ extern "C" {
 #include <stdbool.h>
 #include "data_types.h"
 
+enum {
+    STH2_MAGIC = MAGIC('S', 'T', 'H', '2'),
+};
+
 typedef struct {
     u32 magic;
     u32 size;
