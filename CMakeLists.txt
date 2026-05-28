@@ -57,6 +57,14 @@ add_library(pd_common STATIC
 )
 target_link_libraries(pd_common PUBLIC bobtail)
 
+add_executable(betaRip
+    src/polaris/alr/alr_file.cxx
+    src/polaris/alr/alr_dump.cxx
+    src/betaRip/main.cxx
+)
+target_link_libraries(betaRip PUBLIC pd_common bobtail)
+target_include_directories(betaRip PUBLIC src/polaris)
+
 # Build Polaris
 include(polaris.cmake)
 
