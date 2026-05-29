@@ -19,13 +19,19 @@ void ripIndexbufALM(const idxbuf_header* idxHeader, const material_header* matHe
         LOG_MSG(debug, "Found alternate indexing mode (%d) on vertbuf %d\n", idxHeader->primitive_type, idxHeader->vertex_buf);
     }
     const u32 step = (idxHeader->primitive_type == IDX_TYPE_STRIP) ? 1 : 3;
-    for (u32 i = 0; i < idxHeader->num_indices - 2; i += step) {
-        const u16 idx0 = idxHeader->indices[i + 0] + 1 + idxOffset;
-        const u16 idx1 = idxHeader->indices[i + 1] + 1 + idxOffset;
-        const u16 idx2 = idxHeader->indices[i + 2] + 1 + idxOffset;
 
-        // fprintf(out, "f %hu %hu %hu\n", idx0, idx1, idx2);
-        fprintf(out, "f %hu/%hu %hu/%hu %hu/%hu\n", idx0, idx0, idx1, idx1, idx2, idx2);
+    u32 indexCount = idxHeader->num_indices;
+    for (u32 i = 0; i < indexCount - 2; i += step) {
+        const u32 idx0 = (u32)idxHeader->indices[i + 0] + 1 + idxOffset;
+        const u32 idx1 = (u32)idxHeader->indices[i + 1] + 1 + idxOffset;
+        const u32 idx2 = (u32)idxHeader->indices[i + 2] + 1 + idxOffset;
+        if (idx0 == idx1 || idx0 == idx2 || idx1 == idx2) {
+            printf("Skipping degenerate indexed triangle: %d %d %d\n", idx0, idx1, idx2);
+            continue;
+        }
+
+        // fprintf(out, "f %u %u %u\n", idx0, idx1, idx2);
+        fprintf(out, "f %u/%u %u/%u %u/%u\n", idx0, idx0, idx1, idx1, idx2, idx2);
     }
 }
 
@@ -39,6 +45,7 @@ void ripVertexbufALM(const alm_vertbuf* vertHeader, FILE* obj) {
         const u16 maxV = maxU;
         fprintf(obj, "v %f %f %f\n", pos->x, pos->y, pos->z);
         fprintf(obj, "vt %f %f\n", (float)uv[0] / maxU, (float)uv[1] / maxV);
+
         vfile_seek(&vf, vertHeader->vert_size);
     }
 }
@@ -118,6 +125,8 @@ bool ripALM(const char* path) {
         ripVertexbufALM(v, obj);
         for (const idxbuf_header* idxbuf : idxbufs) {
             if (idxbuf->vertex_buf == i) {
+                const ptrdiff_t offset = (ptrdiff_t)idxbuf - (ptrdiff_t)alr.data;
+                fprintf(obj, "g idxbuf_0x%lX\n", offset);
                 ripIndexbufALM(idxbuf, matHeader, curIdx, obj);
             }
         }
