@@ -63,6 +63,36 @@ namespace alr {
         [[nodiscard]] chunk prev_chunk_by_id(u32 id, u32 high, u32 low = 0) const noexcept;
         [[nodiscard]] chunk first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept;
 
+        /// Add a chunk in the middle of the ALR.
+        ///
+        /// This function doesn't do any initialization or validation, it only
+        /// makes room for the new chunk. The ALR size is adjusted, but the
+        /// chunk list is not regenerated (you must do this yourself later)
+        /// @param offset The approximate offset of the new chunk. If it points
+        /// to the middle of another chunk, the new chunk will be placed at the
+        /// end of it instead.
+        /// @param size The size of the new chunk
+        /// @return The offset the chunk was actually placed at
+        u32 direct_insert_chunk(u32 offset, u32 size) noexcept;
+
+        /// @brief Adjust the size of a chunk by some amount
+        ///
+        /// This function reparses the ALR, so you should avoid calling it many
+        /// times in a row if you can avoid it.
+        /// @param offset The offset of the chunk to be resized
+        /// @param size_diff The amount to change the size by
+        bool resize_chunk(u32 offset, s32 size_diff) noexcept;
+
+        /// @brief Set the size of a chunk
+        ///
+        /// This function calculates the difference in size and then uses
+        /// @ref resize_chunk().
+        /// That function reparses the ALR, so you should avoid calling this
+        /// many times in a row if you can avoid it.
+        /// @param offset The offset of the chunk to be resized
+        /// @param size The new size
+        bool set_chunk_size(u32 offset, s32 size) noexcept;
+
         /// @brief Shift all chunks at/after the starting offset forward.
         ///
         /// This also fixes some offsets in the header to account for the change.

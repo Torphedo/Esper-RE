@@ -139,6 +139,68 @@ bool file::save(const char* path) const noexcept {
         return chunk(0, 0, 0); // Nothin...
     }
 
+    u32 file::direct_insert_chunk(u32 offset, u32 size) noexcept {
+        chunk empty(0, 0, 0);
+        std::optional<chunk> overlap;
+        std::optional<chunk> next = empty;
+
+        for (const auto & c : chunks) {
+            const u32 end_offset = c.offset + c.size;
+            if (end_offset < offset) {
+                continue; // The end of this chunk is still before our target
+            } else if (c.offset < offset) {
+                // This chunk starts before our target and ends after it
+                overlap = c;
+            } else {
+                // The end and the start are after the target
+                next = c;
+                break;
+            }
+        }
+
+        if (overlap.has_value()) {
+            // Start the new chunk after the end of the conflicting one.
+            offset = overlap->offset + overlap->size;
+        }
+
+        // If we're not at the end of the file now, the target offset should be
+        // the start of a new chunk
+        if (next.has_value()) {
+            // Make room for the new chunk
+            assert(offset == next->offset);
+            shift_chunks(offset, size);
+        }
+
+        alr_size += size;
+        return offset;
+    }
+
+    bool file::resize_chunk(u32 offset, s32 size_diff) noexcept {
+        vfile vf = vfile_open(data + offset, sizeof(chunk_generic));
+        chunk_generic* gen = VFILE_READ_PTR(chunk_generic, &vf);
+        vf.size = gen->size;
+
+        // Move the next chunk forward to make room
+        const u32 next_offset = offset + gen->size;
+        // This also fixes the size of this chunk
+        const bool res = shift_chunks(next_offset, size_diff);
+        if (!res) {
+            return false;
+        }
+
+        // Update size & reparse the ALR
+        chunks = shatter_alr(data, alr_size);
+        return true;
+    }
+
+    bool file::set_chunk_size(u32 offset, s32 size) noexcept {
+        assert(size >= 0 && "Size must be positive!");
+        vfile vf = vfile_open(data + offset, sizeof(chunk_generic));
+        chunk_generic* gen = VFILE_READ_PTR(chunk_generic, &vf);
+        const s32 diff = (s32)size - gen->size;
+        return resize_chunk(offset, diff);
+    }
+
     bool file::shift_chunks(u32 begin_offset, s32 shift_amount) noexcept {
         const chunk last_chunk = chunks.back();
         const u32 end_of_chunks = last_chunk.offset + last_chunk.size;
@@ -149,8 +211,9 @@ bool file::save(const char* path) const noexcept {
         }
 
         if (last_chunk.offset < begin_offset) {
-            LOG_MSG(error, "Your starting offset %u is past the last chunk (offset %u)\n", begin_offset, last_chunk.offset);
-            return false;
+            // This should be fine, there's just nothing that needs shifting
+            LOG_MSG(warning, "Your starting offset %u is past the last chunk (offset %u)\n", begin_offset, last_chunk.offset);
+            return true;
         }
         const u32 region_size = end_of_chunks - begin_offset;
 
@@ -166,6 +229,7 @@ bool file::save(const char* path) const noexcept {
         }
 
         {
+            // Adjust the previous chunk to avoid creating an invalid chunk
             vfile temp = vf_from_chunk(last_before_shift);
             auto* header = (chunk_generic*)vfile_cur(temp);
             if (shift_amount > 0) {
