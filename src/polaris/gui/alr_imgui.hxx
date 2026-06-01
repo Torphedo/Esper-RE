@@ -4,6 +4,7 @@
 
 #include <common/vfile.h>
 #include <formats/alr.h>
+#include "alr/alr_file.hxx"
 
 /// @brief Stateless ImGui editor menus for ALR structures
 
@@ -14,7 +15,7 @@ namespace alr {
         TEX_POWER_LIMIT = 12,
     };
 
-    bool edit_chunk_layout(chunk_layout& layout);
+    bool edit_chunk_layout(chunk_layout& layout, alr::file& alr);
 
     bool edit_material_entry(material_entry& entry);
 

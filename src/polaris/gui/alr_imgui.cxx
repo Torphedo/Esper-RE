@@ -10,13 +10,19 @@
 #include <util/utils.hxx>
 
 namespace alr {
-    bool edit_chunk_layout(chunk_layout& layout) {
-        const u32 hash = crc32fast((u8*)&layout, sizeof(layout));
+    bool edit_chunk_layout(chunk_layout& layout, file& alr) {
+        const u32 size = sizeof(layout) + layout.offset_array_size * sizeof(*layout.offsets);
+        const u32 hash = crc32fast((u8*)&layout, size);
         const int hex_flags = ImGuiInputTextFlags_CharsHexadecimal;
 
         ImGui::InputU32("Resource Buffer Offset", &layout.texbuf_offset, hex_flags);
         ImGui::InputU32("Resource Buffer Size", &layout.texbuf_size, hex_flags);
-        ImGui::InputU32("Chunk Offset Count", &layout.offset_array_size);
+
+        if (ImGui::InputU32("Chunk Offset Count", &layout.offset_array_size)) {
+            const ptrdiff_t offset = (uintptr_t)&layout - (uintptr_t)alr.data;
+            const s32 new_size = sizeof(layout) + layout.offset_array_size * sizeof(*layout.offsets);
+            alr.set_chunk_size(offset, new_size);
+        }
 
         if (ImGui::CollapsingHeader("Offsets")) {
             for (u32 i = 0; i < layout.offset_array_size; i++) {
