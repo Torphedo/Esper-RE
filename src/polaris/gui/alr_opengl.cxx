@@ -154,6 +154,8 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
 
     const vertbuf_entry* vertbufs = chunks.vert_chunk->entries;
     const material_entry* materials = chunks.mat_chunk->entries;
+    mat4s cam_xform = {};
+    ctx.cam.proj_view((vec4*)cam_xform.raw);
 
     for (const index_buffer& idxbuf : idxbufs) {
         const idxbuf_header* header = (idxbuf_header*) (alr.data + idxbuf.idx_chunk_offset);
@@ -179,30 +181,27 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
 
         if (ctx.render_skinning && material.vertbuf_format == ALR_VERTFMT_SWBOS) {
             ctx.set_shader(ctx.skinned_shader);
+            glUniformMatrix4fv(ctx.uniform_skin_xforms, instance.skin_pose.size(), GL_FALSE, (float*)instance.skin_pose.data());
         } else if (useAdditive) {
             ctx.set_shader(ctx.vkblink_shader);
         } else {
             ctx.set_shader(ctx.diffuse_shader);
         }
 
-        ctx.fbo.set_wireframe(gl_vertbuf.wireframe || ctx.wireframe);
-        glBindVertexArray(gl_vertbuf.vao);
-        mat4s xform = instance.transform(header->transform_idx);
-        mat4s cam_xform = {};
-        ctx.cam.proj_view((vec4*)cam_xform.raw);
-
-        mat4s pvm = glms_mul(cam_xform, xform);
-
-        glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
+        const bool needWireframe = gl_vertbuf.wireframe || ctx.wireframe;
+        if (needWireframe) {
+            ctx.fbo.set_wireframe(true);
+        }
+        const mat4s xform = instance.transform(header->transform_idx);
+        const mat4s pvm = glms_mul(cam_xform, xform);
         const u32 divisor = gl_vertbuf.uv_divisor;
-        glUniform1ui(ctx.uniform_uv_divisor, divisor);
 
-        glUniformMatrix4fv(ctx.uniform_skin_xforms, instance.skin_pose.size(), GL_FALSE, (float*)instance.skin_pose.data());
+        glBindVertexArray(gl_vertbuf.vao);
+        glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
+        glUniform1ui(ctx.uniform_uv_divisor, divisor);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, material.texture_idx));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         u32 normal_idx = material.normal_idx;
         u32 lightmap_idx = 0;
@@ -213,22 +212,24 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, normal_idx));
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        glActiveTexture(GL_TEXTURE2);
-        if (lightmap_idx == 0) {
-            // Make sure lightmap samples all zeroes
-            glBindTexture(GL_TEXTURE_2D, 0);
-        } else {
+        if (lightmap_idx) {
+            glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, lightmap_idx));
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         }
 
         const u16 draw_mode = (header->primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbuf.obj);
         glDrawElements(draw_mode, header->num_indices, GL_UNSIGNED_SHORT, 0);
+
+        if (needWireframe) {
+            ctx.fbo.set_wireframe(false);
+        }
+
+        if (lightmap_idx) {
+            // Make sure lightmap samples all zeroes
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
