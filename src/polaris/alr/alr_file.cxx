@@ -82,11 +82,11 @@ bool file::save(const char* path) const noexcept {
                 // Our layout structure includes the id & size, so we have to seek
                 // back for that...
                 vf.pos -= sizeof(chunk_generic);
-                chunk_layout layout = VFILE_READ(chunk_layout, &vf);
-                resbuf_offset = layout.texbuf_offset;
+                const chunk_layout* layout = (chunk_layout*)vfile_cur(vf);
+                resbuf_offset = layout->texbuf_offset;
 
                 // Reset the position to what it used to be
-                vf.pos -= sizeof(layout);
+                vf.pos += sizeof(chunk_generic);
             }
 
             // Advance to the next chunk & add to output
