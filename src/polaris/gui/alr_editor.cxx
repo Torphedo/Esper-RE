@@ -1002,6 +1002,9 @@ void editor::update(render_context& ctx) noexcept {
 }
 
 void editor::render(render_context& ctx) noexcept {
+    if (!ctx.visible) {
+        return;
+    }
     ctx.bind();
     for (alr::mesh_instance& instance : instances) {
         instance.update_animation(alr, ctx.anim_id, ImGui::GetIO().DeltaTime);
