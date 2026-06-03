@@ -60,6 +60,11 @@ typedef struct {
     char null_terminator;
 }decoded_text;
 
+typedef struct {
+    u32 text1;
+    u32 text2;
+}encoded_text;
+
 
 /// @brief Decode 6 characters from a 32-bit integer.
 /// @param output buffer to store decoded characters in
@@ -75,7 +80,7 @@ decoded_text decode_double(u32 text1, u32 text2);
 /// @param text string to encode (returns 0 if NULL)
 ///
 /// @return encoded value representing the input string
-u32 encode_single32(char* text);
+u32 encode_single32(const char* text);
 
 /// @brief Compare a C string with an encoded string
 bool encoded_compare(const char* str, u32 text1, u32 text2);

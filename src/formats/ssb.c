@@ -54,7 +54,7 @@ decoded_text decode_double(u32 text1, u32 text2) {
     return name;
 }
 
-u32 encode_single32(char* input) {
+u32 encode_single32(const char* input) {
     if (input == NULL) {
         return 0;
     }

@@ -151,6 +151,7 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
     if (!this->active) {
         return;
     }
+    scope_timer overallTimer("renderActiveMeshes", true);
 
     const vertbuf_entry* vertbufs = chunks.vert_chunk->entries;
     const material_entry* materials = chunks.mat_chunk->entries;
@@ -173,10 +174,37 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
             "vkblink", "vklight", "vkwater3edge", "sc", "scal",
             "sbtscloud3",
         };
+
+        // Encode all the shader names once on first run, to avoid re-encoding
+        // every frame. This lets shader name comparisons just compare integers.
+        static encoded_text encoded_additive_shaders[ARRAY_SIZE(additive_shaders)] = {};
+        static bool doneEncoding = false;
+        if (!doneEncoding) {
+            for (u32 i = 0; i < ARRAY_SIZE(additive_shaders); i++) {
+                const char* shader = additive_shaders[i];
+                encoded_text& t = encoded_additive_shaders[i];
+                t.text1 = encode_single32(shader);
+                t.text2 = encode_single32(shader + ENCODED_CHAR_COUNT);
+            }
+            doneEncoding = true;
+        }
+
+
         bool useAdditive = false;
-        for (u32 i = 0; i < ARRAY_SIZE(additive_shaders); i++) {
-            const char* shader = additive_shaders[i];
-            useAdditive |= encoded_compare(shader, material.text1, material.text2);
+        {
+            scope_timer compareTimer("renderCompareShaderNames", true);
+            for (u32 i = 0; i < ARRAY_SIZE(additive_shaders); i++) {
+                const encoded_text& t = encoded_additive_shaders[i];
+                if (t.text1 != material.text1) {
+                    continue;
+                }
+                if (t.text2 != material.text2) {
+                    continue;
+                }
+
+                useAdditive = true;
+                break;
+            }
         }
 
         if (ctx.render_skinning && material.vertbuf_format == ALR_VERTFMT_SWBOS) {
@@ -192,23 +220,25 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
         if (needWireframe) {
             ctx.fbo.set_wireframe(true);
         }
+
+        const u16 draw_mode = (header->primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
         const mat4s xform = instance.transform(header->transform_idx);
         const mat4s pvm = glms_mul(cam_xform, xform);
         const u32 divisor = gl_vertbuf.uv_divisor;
-
-        glBindVertexArray(gl_vertbuf.vao);
-        glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
-        glUniform1ui(ctx.uniform_uv_divisor, divisor);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, material.texture_idx));
-
         u32 normal_idx = material.normal_idx;
         u32 lightmap_idx = 0;
         if (material.vertbuf_format == ALR_VERTFMT_LBTS) {
             lightmap_idx = material.normal_idx;
             normal_idx = material.normal_backup_idx;
         }
+
+        scope_timer glTimer("renderDoOpenGLCommands", true);
+        glBindVertexArray(gl_vertbuf.vao);
+        glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
+        glUniform1ui(ctx.uniform_uv_divisor, divisor);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, material.texture_idx));
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, normal_idx));
@@ -218,7 +248,6 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
             glBindTexture(GL_TEXTURE_2D, tex_manager.get(alr, lightmap_idx));
         }
 
-        const u16 draw_mode = (header->primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbuf.obj);
         glDrawElements(draw_mode, header->num_indices, GL_UNSIGNED_SHORT, 0);
 
