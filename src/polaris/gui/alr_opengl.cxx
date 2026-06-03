@@ -338,6 +338,7 @@ bool alr::mesh_instance::raycast(const void* alr_data, ray_t ray) const noexcept
 }
 
 mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
+    scope_timer compareTimer("renderCalcMeshTransform", true);
     if (pos && rot) {
         mat4s rot_xform = glms_euler_zyx(*rot);
         mat4s pos_xform = glms_translate(GLMS_MAT4_IDENTITY_INIT, *pos);
@@ -347,7 +348,7 @@ mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {
 }
 
 void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
-    scope_timer timer("instanceUpdateAnimation", true);
+    scope_timer timer("renderCalcAnimation", true);
     const chunk_armature* skel = mesh.chunks.skel_chunk;
     if (!skel) {
         return;
@@ -361,7 +362,7 @@ void alr::mesh_instance::update_animation(const alr::file& alr, u32 anim_id, flo
 }
 
 void alr::mesh_instance::update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept {
-    scope_timer timer("instanceUpdateSkinning", true);
+    scope_timer timer("renderCalcSkinning", true);
     const chunk_armature* skel = mesh.chunks.skel_chunk;
     if (!skel) {
         return;

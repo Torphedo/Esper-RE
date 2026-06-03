@@ -96,6 +96,7 @@ bool about_menu() {
 }
 
 void polaris::do_menu_bar() noexcept {
+    const scope_timer draw_timer("menuBarUpdate");
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     const float height = ImGui::GetFrameHeight();
     const ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar;
@@ -226,13 +227,25 @@ void polaris::init(GLFWwindow* window) noexcept {
 }
 
 void polaris::update(GLFWwindow* window) noexcept {
-    const scope_timer draw_timer("mainUpdate");
+    {
+        const scope_timer draw_timer("mainUpdate");
 
-    renderCtx.update(window);
-    this->do_menu_bar();
+        renderCtx.update(window);
+        this->do_menu_bar();
 
-    if (this->show_demo) {
-        ImGui::ShowDemoWindow(&this->show_demo);
+        if (this->show_demo) {
+            ImGui::ShowDemoWindow(&this->show_demo);
+        }
+
+        if (show_about) {
+            show_about = about_menu();
+        }
+
+        editor.update(renderCtx);
+        this->mapEdit.do_gui();
+        this->audioTool.do_gui();
+        this->questTool.do_gui();
+        this->csoTool.do_gui();
     }
 
     if (this->show_timers) {
@@ -244,15 +257,6 @@ void polaris::update(GLFWwindow* window) noexcept {
         ImGui::End();
     }
 
-    if (show_about) {
-        show_about = about_menu();
-    }
-
-    editor.update(renderCtx);
-    this->mapEdit.do_gui();
-    this->audioTool.do_gui();
-    this->questTool.do_gui();
-    this->csoTool.do_gui();
 }
 
 void polaris::render(GLFWwindow* window) noexcept {

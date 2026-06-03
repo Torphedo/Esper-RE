@@ -14,6 +14,7 @@
 #include <util/imgui_utils.hxx>
 
 #include "alr_imgui.hxx"
+#include "util/scope_timer.hxx"
 
 // Normally I'd make this a method, but by using a macro we can have LOG_MSG()
 // automatically log the name of the method that shouldn't have been called.
@@ -818,7 +819,11 @@ const char* chunk_name_by_id(u32 id) {
 
 void editor::update(render_context& ctx) noexcept {
     graphics_initialized = true;
-    ImGui::Begin("ALR Chunks");
+    if (!ImGui::Begin("ALR Chunks")) {
+        ImGui::End();
+        return;
+    }
+    const scope_timer draw_timer("editorUpdate");
 
     const char* filter_label = "ID Filter";
     ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll;
@@ -842,6 +847,7 @@ void editor::update(render_context& ctx) noexcept {
     }
 
     if (ImGui::BeginTable("alr chunks", 4, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Reorderable)) {
+        const scope_timer timer("alrChunkTableUpdate");
         // Make header row that never scrolls away
         ImGui::TableSetupScrollFreeze(0, 1);
 
@@ -906,6 +912,7 @@ void editor::update(render_context& ctx) noexcept {
 
     // Draw window for all chunks being displayed right now
     for (window_state& state : states) {
+        const scope_timer timer("alrChunkEditorsUpdate", true);
         file::chunk& chunk = alr.chunks[state.chunk_idx];
         if (!state.active) {
             continue;

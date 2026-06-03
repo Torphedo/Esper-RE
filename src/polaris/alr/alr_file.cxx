@@ -3,6 +3,7 @@
 #include <common/vmem.h>
 #include <formats/alr_animations.h>
 #include "alr_dump.hxx"
+#include "util/scope_timer.hxx"
 
 namespace alr {
 
@@ -56,6 +57,7 @@ bool file::save(const char* path) const noexcept {
 }
 
     std::vector<file::chunk> file::shatter_alr(const u8* buf, s64 size) noexcept {
+        scope_timer timer("shatter_alr()");
         // Technically we cast away const here, but we don't write any data so it's
         // fine.
         vfile vf = vfile_open((void*)buf, size);
@@ -99,6 +101,7 @@ bool file::save(const char* path) const noexcept {
     }
 
     file::chunk file::first_chunk_by_id(u32 id) const noexcept {
+        scope_timer timer("first_chunk_by_id()", true);
         return first_chunk_in_range(id, 0, alr_size);
     }
 
@@ -121,6 +124,7 @@ bool file::save(const char* path) const noexcept {
     }
 
     file::chunk file::first_chunk_in_range(u32 id, u32 low, u32 high) const noexcept {
+        scope_timer timer("first_chunk_in_range()", true);
         // TODO: Add an overload to find a chunk within an offset range. Since the list is sorted we can do a sort of binary search by starting @ the middle
         assert(low < high && "Low bound must be < high bound!");
 
