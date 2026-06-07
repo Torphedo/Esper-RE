@@ -1,4 +1,5 @@
 #include "utils.hxx"
+#include "scope_timer.hxx"
 #include <stdarg.h>
 
 void str_format_append(std::string& output, const char* format_str, ...) {
@@ -12,4 +13,16 @@ void str_format_append(std::string& output, const char* format_str, ...) {
 
     output.append(buf);
     output.append("\n");
+}
+
+bool box_in_frustum(mat4s xform, vec3s min, vec3s max) {
+    scope_timer overallTimer("calcFrustumCulling", true);
+    vec4s planes[6] = {};
+    glms_frustum_planes(xform, planes);
+    vec3s objBox[2] = {min, max};
+    if (glms_aabb_frustum(objBox, planes)) {
+        return true;
+    }
+    return false;
+
 }

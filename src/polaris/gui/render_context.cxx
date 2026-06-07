@@ -148,7 +148,7 @@ void render_context::update(GLFWwindow* window) noexcept {
     image_size *= scale;
     glms_vec2_scale(mouse_pos, scale);
 
-    ImGui::Image(fbo.color_tex, image_size);
+    ImGui::Image(fbo.color_tex, image_size, ImVec2(0, 1), ImVec2(1, 0));
     if (ImGui::IsMouseClicked(0)) {
         if (ImGui::IsItemHovered()) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);

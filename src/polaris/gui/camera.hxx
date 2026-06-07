@@ -2,7 +2,7 @@
 #include <cglm/struct.h>
 
 // Up axis for our camera
-static vec3s camera_up = {0.0f, -1.0f, 0.0f};
+static vec3s camera_up = {0.0f, 1.0f, 0.0f};
 
 typedef enum {
     CAMERA_ORBIT, // 3rd-person dual-stick style
@@ -24,7 +24,7 @@ struct camera {
     float near_clip_plane = 1.25f;
     float far_clip_plane = 15000.0f;
 
-    bool invert_mouse_x = false;
+    bool invert_mouse_x = true;
     bool invert_mouse_y = true;
     camera_mode mode = CAMERA_POV;
 

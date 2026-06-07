@@ -6,6 +6,7 @@
 #include <alr/alr_file.hxx>
 #include <alr/alr_dump.hxx>
 #include <util/scope_timer.hxx>
+#include <util/utils.hxx>
 
 /* === Static index buffer implementation === */
 
@@ -160,6 +161,12 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
 
     for (const index_buffer& idxbuf : idxbufs) {
         const idxbuf_header* header = (idxbuf_header*) (alr.data + idxbuf.idx_chunk_offset);
+        const mat4s xform = instance.transform(header->transform_idx);
+        const mat4s pvm = glms_mul(cam_xform, xform);
+        if (!box_in_frustum(pvm, header->aabb_min, header->aabb_max)) {
+            continue;
+        }
+
         const vertex_buffer& gl_vertbuf = gl_vertbufs[header->vertex_buf];
         if (!idxbuf.active || !gl_vertbuf.active) {
             continue;
@@ -207,6 +214,16 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
             }
         }
 
+        const u16 draw_mode = (header->primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
+        const u32 divisor = gl_vertbuf.uv_divisor;
+        u32 normal_idx = material.normal_idx;
+        u32 lightmap_idx = 0;
+        if (material.vertbuf_format == ALR_VERTFMT_LBTS) {
+            lightmap_idx = material.normal_idx;
+            normal_idx = material.normal_backup_idx;
+        }
+
+        scope_timer glTimer("renderDoOpenGLCommands", true);
         if (ctx.render_skinning && material.vertbuf_format == ALR_VERTFMT_SWBOS) {
             ctx.set_shader(ctx.skinned_shader);
             glUniformMatrix4fv(ctx.uniform_skin_xforms, instance.skin_pose.size(), GL_FALSE, (float*)instance.skin_pose.data());
@@ -221,18 +238,6 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
             ctx.fbo.set_wireframe(true);
         }
 
-        const u16 draw_mode = (header->primitive_type == IDX_TYPE_STRIP) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
-        const mat4s xform = instance.transform(header->transform_idx);
-        const mat4s pvm = glms_mul(cam_xform, xform);
-        const u32 divisor = gl_vertbuf.uv_divisor;
-        u32 normal_idx = material.normal_idx;
-        u32 lightmap_idx = 0;
-        if (material.vertbuf_format == ALR_VERTFMT_LBTS) {
-            lightmap_idx = material.normal_idx;
-            normal_idx = material.normal_backup_idx;
-        }
-
-        scope_timer glTimer("renderDoOpenGLCommands", true);
         glBindVertexArray(gl_vertbuf.vao);
         glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
         glUniform1ui(ctx.uniform_uv_divisor, divisor);
