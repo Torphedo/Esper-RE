@@ -4,9 +4,11 @@
 #include "mapdata_editor.hxx"
 #include "alr_editor.hxx"
 #include "render_context.hxx"
+
 #include "tool_audio.hxx"
 #include "tool_cso.hxx"
 #include "tool_quest.hxx"
+#include "tool_overwrite.hxx"
 
 // State for the overall editor
 struct polaris : gui_layer {
@@ -19,6 +21,7 @@ struct polaris : gui_layer {
     audio_tool audioTool;
     quest_tool questTool;
     cso_tool csoTool;
+    overwrite_tool overwriteTool;
     render_context renderCtx;
 
     bool headless = true; // Whether we're running without graphics.

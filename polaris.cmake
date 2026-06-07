@@ -57,6 +57,7 @@ add_executable(polaris
     src/polaris/gui/tool_audio.cxx
     src/polaris/gui/tool_cso.cxx
     src/polaris/gui/tool_quest.cxx
+    src/polaris/gui/tool_overwrite.cxx
 
     src/polaris/gui/alr_imgui.cxx
     src/polaris/gui/alr_assets.cxx
