@@ -819,10 +819,7 @@ const char* chunk_name_by_id(u32 id) {
 
 void editor::update(render_context& ctx) noexcept {
     graphics_initialized = true;
-    if (!ImGui::Begin("ALR Chunks")) {
-        ImGui::End();
-        return;
-    }
+    ImGui::Begin("ALR Chunks");
     const scope_timer draw_timer("editorUpdate");
 
     const char* filter_label = "ID Filter";
