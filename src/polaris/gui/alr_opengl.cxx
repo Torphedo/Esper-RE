@@ -352,7 +352,8 @@ alr::mesh load_alr_mesh(const alr::file& alr, u32 idx) {
 
 /* === Mesh instance implementation === */
 
-bool alr::mesh_instance::raycast(const void* alr_data, ray_t ray) const noexcept {
+float alr::mesh_instance::raycast(const void* alr_data, ray_t ray, u32& vertbufIdxOut) const noexcept {
+    float bestDistance = INFINITY;
     for (const index_buffer& idxbuf : mesh.idxbufs) {
         const idxbuf_header* header = idxbuf.original_data(alr_data);
         const vertex_buffer& v = mesh.gl_vertbufs[header->vertex_buf];
@@ -362,13 +363,14 @@ bool alr::mesh_instance::raycast(const void* alr_data, ray_t ray) const noexcept
 
         // (Possibly animated) transform
         mat4s xform = transform(header->transform_idx);
-        bool hit = ::raycast(ray, v.buffer, v.vertex_size, xform, header);
-        if (hit) {
-            return true;
+        float dist = ::raycast(ray, v.buffer, v.vertex_size, xform, header);
+        if (dist < bestDistance) {
+            bestDistance = dist;
+            vertbufIdxOut = header->vertex_buf;
         }
     }
 
-    return false;
+    return bestDistance;
 }
 
 mat4s alr::mesh_instance::transform(u32 joint_idx) const noexcept {

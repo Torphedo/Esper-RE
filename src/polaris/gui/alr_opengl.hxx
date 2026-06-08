@@ -102,7 +102,7 @@ namespace alr {
         std::vector<mat4s> skin_pose; // Computed every frame for skinned meshes
         const alr::mesh& mesh;
 
-        bool raycast(const void* alr_data, ray_t ray) const noexcept;
+        float raycast(const void* alr_data, ray_t ray, u32& vertbufIdxOut) const noexcept;
         mat4s transform(u32 joint_idx) const noexcept;
         void update_animation(const alr::file& alr, u32 anim_id, float delta_time) noexcept;
         void update_skinning(const alr::file& alr, u32 anim_id, float delta_time) noexcept;

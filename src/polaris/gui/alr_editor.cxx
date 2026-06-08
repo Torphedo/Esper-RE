@@ -994,13 +994,28 @@ void editor::update(render_context& ctx) noexcept {
     // Do raycasting
     if (ctx.click_ray.has_value()) {
         bool hit = false;
-        for (const mesh_instance& mesh : instances) {
-            hit |= mesh.raycast(alr.data, *ctx.click_ray);
+        float bestDistance = INFINITY;
+        u32 hitIdx = 0;
+        u32 hitVertbuf = 0;
+        for (const mesh_instance& instance : instances) {
+            const mesh& m = instance.mesh;
+
+            const u32 meshIdx = (&m - meshes.data());
+            u32 vertbufIdx = 0;
+            const float dist = instance.raycast(alr.data, *ctx.click_ray, vertbufIdx);
+            if (dist < bestDistance) {
+                hit = true;
+                bestDistance = dist;
+                hitIdx = meshIdx;
+                hitVertbuf = vertbufIdx;
+            }
         }
 
         if (hit) {
             const vec3s dir = ctx.click_ray->dir;
             const vec3s pos = ctx.click_ray->origin;
+            selected_mesh = hitIdx;
+            selected_object = hitVertbuf;
         }
     }
 }

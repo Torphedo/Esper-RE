@@ -133,20 +133,23 @@ void render_context::update(GLFWwindow* window) noexcept {
     ImGui::Text(" = %s", animation_names[anim_id]);
 
     ImVec2 fb_start = ImGui::GetCursorScreenPos();
+    ivec2s screenSize = {};
     vec2s mouse_pos = {};
+
+    ImVec2 image_size = ImVec2(fbo.width, fbo.height);
+    const float fboToPresentedScale = ImGui::ImageScaleForWindow(fbo.width, fbo.height);
+    image_size *= fboToPresentedScale;
+
     {
         double x, y;
         glfwGetCursorPos(window, &x, &y);
         mouse_pos = {float(x), float(y)};
 
-        const vec2s fb_pos = {fb_start.x, fb_start.y};
-        mouse_pos = glms_vec2_sub(mouse_pos, fb_pos);
+        glfwGetFramebufferSize(window, &screenSize.x, &screenSize.y);
+        const vec2s sizeDiff = {(float)screenSize.x - image_size.x, (float)screenSize.y - image_size.y };
+        mouse_pos.y = screenSize.y - mouse_pos.y - 1;
+        mouse_pos.y += sizeDiff.y;
     };
-
-    ImVec2 image_size = ImVec2(fbo.width, fbo.height);
-    const float scale = ImGui::ImageScaleForWindow(fbo.width, fbo.height);
-    image_size *= scale;
-    glms_vec2_scale(mouse_pos, scale);
 
     ImGui::Image(fbo.color_tex, image_size, ImVec2(0, 1), ImVec2(1, 0));
     if (ImGui::IsMouseClicked(0)) {
@@ -177,7 +180,9 @@ void render_context::update(GLFWwindow* window) noexcept {
                     .x = fb_start.x, .y = fb_start.y,
                     .z = image_size.x, .w = image_size.y,
             };
+            fbo.bind();
             click_ray = screen_to_ray(mouse_pos, cam, fb_viewport);
+            fbo.unbind();
         } else {
             cam.update(delta_time);
         }

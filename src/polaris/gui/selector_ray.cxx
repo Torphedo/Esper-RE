@@ -51,12 +51,12 @@ vec3s vec3_transform(vec3s input, mat4s xform) {
     return glms_vec3(v);
 }
 
-bool raycast(ray_t ray, const void* vertbuf, u32 vertex_size, mat4s transform, const idxbuf_header* idxbuf) {
+float raycast(ray_t ray, const void* vertbuf, u32 vertex_size, mat4s transform, const idxbuf_header* idxbuf) {
     const vec3s box_min = *(vec3s*)&idxbuf->aabb_min;
     const vec3s box_max = *(vec3s*)&idxbuf->aabb_max;
     if (!raycast_aabb(ray, box_min, box_max)) {
         // TODO: Make AABB test work properly
-        // return false;
+        // return INFINITY;
     }
 
     const bool strip = idxbuf->primitive_type == IDX_TYPE_STRIP;
@@ -82,7 +82,7 @@ bool raycast(ray_t ray, const void* vertbuf, u32 vertex_size, mat4s transform, c
         float distance = 0.0f;
         bool hit = glms_ray_triangle(ray.origin, ray.dir, points[0], points[1], points[2], &distance);
         if (hit) {
-            return true;
+            return distance;
         }
 
         if (!strip) {
@@ -90,5 +90,5 @@ bool raycast(ray_t ray, const void* vertbuf, u32 vertex_size, mat4s transform, c
         }
     }
 
-    return false;
+    return INFINITY;
 }
