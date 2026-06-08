@@ -179,7 +179,7 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
         // added to the fragment color instead of overwriting it
         const char* additive_shaders[] = {
             "vkblink", "vklight", "vkwater3edge", "sc", "scal",
-            "sbtscloud3",
+            "sbtscloud3", "svc",
         };
 
         // Encode all the shader names once on first run, to avoid re-encoding
@@ -191,7 +191,9 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
                 const char* shader = additive_shaders[i];
                 encoded_text& t = encoded_additive_shaders[i];
                 t.text1 = encode_single32(shader);
-                t.text2 = encode_single32(shader + ENCODED_CHAR_COUNT);
+                if (strlen(shader) > ENCODED_CHAR_COUNT) {
+                    t.text2 = encode_single32(shader + ENCODED_CHAR_COUNT);
+                }
             }
             doneEncoding = true;
         }
