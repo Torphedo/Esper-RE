@@ -29,6 +29,9 @@ void anim_key_info(u32 key_size, data_type& frame_type, data_type& component_typ
 
     const u32 component_size = sizeof_type(component_type);
     const u32 frame_size = sizeof_type(frame_type);
+    if (component_size == 0) {
+        num_components = 0;
+    }
 
     // We know component and frame value size, so we can find out the # of components
     num_components = (key_size - frame_size) / component_size;
