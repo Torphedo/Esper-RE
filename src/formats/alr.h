@@ -127,8 +127,8 @@ typedef struct {
 
     // For non-power-of-2 textures.
     // These store the actual height/width values, in some rectangular textures.
-    u16 width_direct: 12;
-    u16 height_direct: 12;
+    u32 width_direct: 12;
+    u32 height_direct: 12;
     u32: 0; // Pad out the rest of the 32 bits. The next 8 bits are depth, but
             // that's unused in PD and MSVC breaks if we add it to the bitfield.
     u32 text1;
