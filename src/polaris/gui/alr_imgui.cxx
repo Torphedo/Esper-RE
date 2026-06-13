@@ -101,8 +101,15 @@ namespace alr {
             alr_texture_set_dimensions(&entry, height, width);
         }
 
-        if (ImGui::CollapsingHeader("Unknown Fields")) {
-            ImGui::InputU32("Flags", &entry.flags);
+        // These are bitfields so we can't edit them directly
+        u8 mip_count = entry.mipmap_count;
+        bool cubemap = entry.is_cubemap;
+        if (ImGui::InputU8("Mipmap Count", &mip_count)) {
+            entry.mipmap_count = mip_count;
+        }
+
+        if (ImGui::Checkbox("Cubemap", &cubemap)) {
+            entry.is_cubemap = cubemap;
         }
         ImGui::PopItemWidth();
 
