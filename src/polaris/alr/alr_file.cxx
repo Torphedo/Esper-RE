@@ -274,6 +274,52 @@ bool file::save(const char* path) const noexcept {
         return true;
     }
 
+    bool file::resize_resource(u32 data_offset, s32 size_diff) noexcept {
+        if (size_diff == 0) {
+            return true;
+        }
+
+        vfile vf = vf_from_chunk(first_chunk_by_id(ALR_ID_TEXTURE));
+        if (vf.size < 8) {
+            return false;
+        }
+        const chunk_generic* genHeader = VFILE_READ_PTR(chunk_generic, &vf);
+        const u32 numTextures = VFILE_READ(u32, &vf);
+        texture_entry* textures = (texture_entry*) vfile_cur(vf);
+
+        vf = vf_from_chunk(first_chunk_by_id(ALR_ID_MODEL));
+        if (vf.size < 8) {
+            return false;
+        }
+        vertbuf_header* modelHeader = (vertbuf_header*) vfile_cur(vf);
+        vertbuf_entry* models = modelHeader->entries;
+
+        // Find the offset of the resource immediately after the target
+        u32 nextResource = 0;
+        for (u32 i = 0; i < numTextures; i++) {
+            if (textures[i].data_ptr > data_offset) {
+                nextResource = textures[i].data_ptr;
+                break;
+            }
+        }
+        if (nextResource == 0) {
+            for (u32 i = 0; i < modelHeader->num_entries; i++) {
+                if (models[i].data_ptr > data_offset) {
+                    nextResource = models[i].data_ptr;
+                    break;
+                }
+            }
+        }
+
+        if (nextResource == 0) {
+            // This is the last resource, so just resize the whole buffer
+            return expand_resbuf(size_diff);
+        } else {
+            // Change the size of this resource by shifting everything after it
+            return shift_resource(nextResource, size_diff);
+        }
+    }
+
     bool file::shift_resource(u32 data_offset, s32 shift_amount) noexcept {
         s64 remaining_size = alr_size - (resbuf_offset + data_offset);
         alr_size += shift_amount;

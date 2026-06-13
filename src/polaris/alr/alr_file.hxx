@@ -99,6 +99,11 @@ namespace alr {
         /// This function will fail if the resource buffer gets in the way.
         bool shift_chunks(u32 begin_offset, s32 shift_amount) noexcept;
 
+        /// @brief Change the size of a vertex buffer or texture
+        /// @param data_offset The offset of the resource
+        /// @param size_diff The change in size (in bytes)
+        bool resize_resource(u32 data_offset, s32 size_diff) noexcept;
+
         /// @brief Shift a vertex buffer or texture forwards by some amount
         ///
         /// @param data_offset Offset of the resource within the larger resource buffer

@@ -452,7 +452,12 @@ void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) no
     ImGui::BeginGroup();
     texture_entry& entry = entries[win_texture.selected_texture];
 
+    const s64 texSize = alr_texture_calc_size(entry);
     if (alr::edit_texture_entry(entry)) {
+        const s64 newTexSize = alr_texture_calc_size(entry);
+        const s64 texSizeDiff = newTexSize - texSize;
+        alr.resize_resource(entry.data_ptr, texSizeDiff);
+
         ed.tex_manager.invalidate(win_texture.selected_texture);
     }
 
