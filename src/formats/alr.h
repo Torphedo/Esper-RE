@@ -47,6 +47,9 @@ enum {
     ALR_ID_HEADER = 0x11,
     ALR_ID_TEXTURE = 0x15,
     ALR_ID_MODEL = 0x16,
+
+    ALR_DEFAULT_TEXTURE_FLAGS = 0x00040001,
+    ALR_CUBEMAP_ALIGNMENT = 0x100,
 };
 
 // Header (0x11) chunk
@@ -160,6 +163,23 @@ void alr_texture_get_dimensions(texture_entry entry, u16* height_out, u16* width
 /// @param height The new height (in pixels)
 /// @param width The new width (in pixels)
 void alr_texture_set_dimensions(texture_entry* entry, u16 height, u16 width);
+
+/// @brief Create a new blank texture entry
+///
+/// The texture will be named "newtex", and have a resource buffer offset of 0.
+/// The mip count is set to 1 (no mipmaps).
+/// @param height The height of the texture
+/// @param width The width of the texture
+/// @param format The texture format
+texture_entry alr_make_blank_texture(u16 height, u16 width, alr_pixel_format format);
+
+/// @brief Calculate the size in bytes of a texture
+///
+/// This function accounts for mipmaps and cubemaps. All textures are assumed to
+/// have full mipmaps unless they have a mip count of 1 (no mipmaps).
+/// @param entry The texture description
+/// @return The size of the texture
+u32 alr_texture_calc_size(texture_entry entry);
 
 // Model (0x16) chunk
 // =============================================================================

@@ -110,6 +110,14 @@ namespace alr {
         /// If the value is negative, the resource buffer shrinks.
         bool expand_resbuf(s32 amount);
 
+        /// @brief Add a new texture to the file
+        ///
+        /// This function expands the resource buffer and initializes the new
+        /// texture to a small all-black image.
+        /// @param texChunkOffset The offset of the texture (0x15) chunk.
+        /// It will be found automatically if you give a negative offset.
+        bool add_new_texture(s32 texChunkOffset = -1) noexcept;
+
         /// Find the index of the first offset in the header that points to a model
         /// @param Optional output argument to receive the number of models present
         /// @return Index, or -1 if none are found
@@ -145,6 +153,10 @@ namespace alr {
 
         u8* resource_buffer() const noexcept {
             return this->data + this->resbuf_offset;
+        }
+
+        u32 resource_buffer_size() const noexcept {
+            return alr_size - resbuf_offset;
         }
 
         vfile vf_from_chunk(chunk c) noexcept {

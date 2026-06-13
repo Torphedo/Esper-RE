@@ -22,6 +22,9 @@ typedef int64_t s64;
 /// Can only be used on arrays with compile-time known sizes
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(*(arr)))
 
+/// Round a number up to any boundary
+#define ALIGN_UP(x, bound) ((x) + ((bound) - ((x) % (bound))))
+
 // sys/param.h defines these on some platforms
 #ifndef MAX
 /// Return the larger of 2 values

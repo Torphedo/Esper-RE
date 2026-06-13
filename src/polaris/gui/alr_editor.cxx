@@ -435,15 +435,16 @@ void editor::window_state::draw_chunk_texture(editor& ed, file::chunk& chunk) no
     ImGui::BeginChild("Textures", ImVec2(0, 0), ImGuiChildFlags_AutoResizeX);
     for (u32 i = 0; i < num_entries; i++) {
         char buf[0x30] = {0};
-        decoded_text name = {0};
-        decode_single32(name.data, entries[i].text1);
-        decode_single32(&name.data[ENCODED_CHAR_COUNT], entries[i].text2);
-
+        const decoded_text name = decode_double(entries[i].text1, entries[i].text2);
         snprintf(buf, sizeof(buf) - 1, "#%d \"%s\" @ resbuf+0x%X", i, name.data, entries[i].data_ptr);
 
         if (ImGui::Selectable(buf, win_texture.selected_texture == i)) {
             win_texture.selected_texture = i;
         }
+    }
+    if (ImGui::Button("+")) {
+        alr.add_new_texture(chunk.offset);
+        ed.reload_meshes();
     }
     ImGui::EndChild();
     ImGui::SameLine();

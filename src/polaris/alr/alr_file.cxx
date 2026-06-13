@@ -328,6 +328,41 @@ bool file::save(const char* path) const noexcept {
         return true;
     }
 
+    bool file::add_new_texture(s32 texChunkOffset) noexcept {
+        if (texChunkOffset < 0) {
+            const chunk c = first_chunk_by_id(ALR_ID_TEXTURE);
+            if (c.size < 8) {
+                return false; // Couldn't find the chunk or it's too small to be valid
+            }
+            texChunkOffset = c.offset;
+        }
+        vfile vf = vfile_open(data + texChunkOffset, sizeof(chunk_generic));
+        const chunk_generic* genHeader = VFILE_READ_PTR(chunk_generic, &vf);
+        vf.size = genHeader->size;
+
+        u32* numEntries = VFILE_READ_PTR(u32, &vf);
+        texture_entry* entries = (texture_entry*)vfile_cur(vf);
+
+        const u32 texOffset = resource_buffer_size();
+        texture_entry newEntry = alr_make_blank_texture(64, 64, FORMAT_RGBA8);
+        newEntry.data_ptr = texOffset;
+        const u32 texSize = alr_texture_calc_size(newEntry);
+
+        // Make space for the texture
+        if (!expand_resbuf(texSize)) {
+            return false;
+        }
+
+        // Add the texture to the metadata chunk
+        if (!resize_chunk(texChunkOffset, sizeof(newEntry))) {
+            return false;
+        }
+        entries[*numEntries] = newEntry;
+        *numEntries += 1;
+
+        return true;
+    }
+
     s32 file::first_model_idx(u32* num_models_out) const noexcept {
         vfile vf = vfile_open(data, alr_size);
         const auto* header = (chunk_layout*)vfile_cur(vf);
