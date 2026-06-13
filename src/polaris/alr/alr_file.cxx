@@ -247,12 +247,13 @@ bool file::save(const char* path) const noexcept {
         // Wipe the now unused space
         memset(source, 0, shift_amount);
 
+        // Adjust chunk offsets in the header as needed
         chunk header = chunks[0];
         assert(header.id == 0x11);
         vfile vf = vf_from_chunk(header);
         auto* layout = (chunk_layout*)vfile_cur(vf);
         for (u32 i = 0; i < layout->offset_array_size; i++) {
-            if (layout->offsets[i] > begin_offset) {
+            if (layout->offsets[i] >= begin_offset) {
                 layout->offsets[i] += shift_amount;
             }
         }
