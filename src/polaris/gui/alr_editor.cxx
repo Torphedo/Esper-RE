@@ -367,12 +367,12 @@ void editor::window_state::draw_chunk_atlas(editor& ed, file::chunk& chunk) noex
     ImGui::EndChild();
 }
 
-void editor::window_state::draw_chunk_header(file& alr, file::chunk& chunk) const noexcept {
+void editor::window_state::draw_chunk_header(editor& ed, file::chunk& chunk) const noexcept {
     CHUNK_ID_ASSERT(ALR_ID_HEADER);
-    vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
+    vfile vf = vfile_open(ed.alr.data + chunk.offset, chunk.size);
     auto* layout = (chunk_layout*)vfile_cur(vf);
 
-    alr::edit_chunk_layout(*layout, alr);
+    alr::edit_chunk_layout(*layout, ed);
 }
 
 void editor::window_state::import_dds_0x15(editor& ed, const char* path, u32 num_entries, texture_entry* entries) noexcept {
@@ -626,7 +626,7 @@ void editor::window_state::update(editor& ed) noexcept {
                     draw_chunk_atlas(ed, chunk);
                     break;
                 case ALR_ID_HEADER:
-                    draw_chunk_header(ed.alr, chunk);
+                    draw_chunk_header(ed, chunk);
                     break;
                 case ALR_ID_TEXTURE:
                     draw_chunk_texture(ed, chunk);

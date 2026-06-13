@@ -6,11 +6,13 @@
 
 #include <alr/alr_dump.hxx>
 #include "alr_assets.hxx"
+#include "alr_editor.hxx"
 #include <util/imgui_utils.hxx>
 #include <util/utils.hxx>
 
 namespace alr {
-    bool edit_chunk_layout(chunk_layout& layout, file& alr) {
+    bool edit_chunk_layout(chunk_layout& layout, editor& ed) {
+        file& alr = ed.alr;
         const u32 size = sizeof(layout) + layout.offset_array_size * sizeof(*layout.offsets);
         const u32 hash = crc32fast((u8*)&layout, size);
         const int hex_flags = ImGuiInputTextFlags_CharsHexadecimal;
@@ -22,6 +24,7 @@ namespace alr {
             const ptrdiff_t offset = (uintptr_t)&layout - (uintptr_t)alr.data;
             const s32 new_size = sizeof(layout) + layout.offset_array_size * sizeof(*layout.offsets);
             alr.set_chunk_size(offset, new_size);
+            ed.reload_meshes();
         }
 
         if (ImGui::CollapsingHeader("Offsets")) {

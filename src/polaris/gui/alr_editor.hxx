@@ -91,7 +91,7 @@ public:
         void draw_chunk_animation(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_cam_anim(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_atlas(editor& ed, file::chunk& chunk) noexcept;
-        void draw_chunk_header(file& alr, file::chunk& chunk) const noexcept;
+        void draw_chunk_header(editor& ed, file::chunk& chunk) const noexcept;
         void draw_chunk_texture(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_vertbuf(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_0x14(editor& ed, file::chunk& chunk) noexcept;
@@ -147,6 +147,11 @@ public:
     void load_all_meshes() noexcept;
 
     void clear_meshes() noexcept;
+
+    void reload_meshes() noexcept {
+        clear_meshes();
+        load_all_meshes();
+    }
 
     ~editor() {
         clear_meshes();
