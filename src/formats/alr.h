@@ -525,7 +525,7 @@ static_assert(sizeof(atlas_name) == 0x20, "Wrong texture atlas name size!");
 typedef struct {
     u16 width;
     u16 height;
-    u32 flags; // Unknown
+    u32 approx_size; // Texture size + 128 (0x80) bytes
     u32 tex_count;
     u32 unknown; // Often 4 or 8, sometimes counts up from 13?
     u32 pad;
@@ -537,12 +537,10 @@ static_assert(sizeof(atlas_entry) == 0x14, "Wrong texture atlas metadata size!")
 typedef struct {
     u32 index; // The atlas index this texture belongs to
     char filename[32];
-    u32 padding[2]; // Can't be a u64 because of struct padding
-    // Texture coordinate of the bottom right corner of this texture within the
-    // atlas. The size in texture coordinates is calculated by dividing the
-    // texture size by the size of the whole atlas. Then, that's subtracted from
-    // the bottom right corner to find the top left corner.
-    float atlas_texcoords[2];
+    // Texture coordinate of the upper left corner of this texture within the atlas
+    float uv0[2];
+    // Texture coordinate of the bottom right corner of this texture within the atlas.
+    float uv1[2];
     u32 width;
     u32 height;
 }atlas_tex_entry;

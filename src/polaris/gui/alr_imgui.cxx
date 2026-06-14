@@ -129,7 +129,7 @@ namespace alr {
         ImGui::InputU32("Texture Count", &entry.tex_count);
 
         if (ImGui::CollapsingHeader("Unknown Fields")) {
-            ImGui::InputU32("Flags", &entry.flags);
+            ImGui::InputU32("Texture size", &entry.approx_size);
             ImGui::InputU32("Unknown 1", &entry.unknown);
             ImGui::InputU32("Padding", &entry.pad);
 
@@ -151,14 +151,10 @@ namespace alr {
 
         ImGui::PushItemWidth(ImGui::CharWidth() * 16);
         ImGui::InputU32("Parent Atlas", &entry.index);
-        ImGui::InputFloat2("Texture Coordinates", entry.atlas_texcoords);
+        ImGui::InputFloat2("Texture Coordinates (upper left)", entry.uv0);
+        ImGui::InputFloat2("Texture Coordinates (bottom right)", entry.uv1);
         ImGui::InputU32("Texture Width", &entry.width);
         ImGui::InputU32("Texture Height", &entry.height);
-
-        if (ImGui::CollapsingHeader("Unused Fields")) {
-            ImGui::InputU32("Padding 1", &entry.padding[0]);
-            ImGui::InputU32("Padding 2", &entry.padding[1]);
-        }
 
         ImGui::PopItemWidth();
         return (hash != crc32fast((u8*)&entry, sizeof(entry)));

@@ -352,8 +352,8 @@ void editor::window_state::draw_chunk_atlas(editor& ed, file::chunk& chunk) noex
     ImVec2 image_pos = ImGui::draw_image(win_atlas.gl_tex_id, atlas->width, atlas->height, &win_atlas.use_actual_size_atlas, &win_atlas.scale_atlas, "atlas");
 
     // Calculate UVs of the selected texture in the atlas
-    const ImVec2 uv1 = ImVec2(tex->atlas_texcoords[0], tex->atlas_texcoords[1]);
-    const ImVec2 uv0 = ImVec2(uv1.x - ((float)tex->width / atlas->width), uv1.y - ((float)tex->height / atlas->height));
+    const ImVec2 uv1 = ImVec2(tex->uv1[0], tex->uv1[1]);
+    const ImVec2 uv0 = ImVec2(tex->uv0[0], tex->uv0[1]);
 
     // Draw a bounding box over a single texture in the atlas
     const ImVec2 atlas_drawn_size = ImVec2(atlas->width, atlas->height) * win_atlas.scale_atlas;
