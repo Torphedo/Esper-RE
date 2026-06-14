@@ -60,6 +60,7 @@ target_link_libraries(pd_common PUBLIC bobtail)
 add_executable(betaRip
     src/polaris/alr/alr_file.cxx
     src/polaris/alr/alr_dump.cxx
+    src/polaris/util/scope_timer.cxx
     src/betaRip/main.cxx
 )
 target_link_libraries(betaRip PUBLIC pd_common bobtail)

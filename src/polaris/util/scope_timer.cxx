@@ -7,7 +7,7 @@ std::unordered_map<const char*, double> global_timers;
 scope_timer::scope_timer(double& elapsed_output, bool add)
     : elapsed_output(elapsed_output), add(add)
 {
-    start_time = glfwGetTime();
+    start_time = std::chrono::steady_clock::now();
 }
 
 scope_timer::scope_timer(std::unordered_map<const char*, double>& map, const char* name, bool add)
@@ -18,20 +18,22 @@ scope_timer::scope_timer(std::unordered_map<const char*, double>& map, const cha
 // - torph
     : elapsed_output((map.insert({name, 0}), map.at(name))), add(add)
 {
-    start_time = glfwGetTime();
+    start_time = std::chrono::steady_clock::now();
 }
 
 scope_timer::scope_timer(const char* name, bool add)
     : elapsed_output((global_timers.insert({name, 0}),
       global_timers.at(name))), add(add)
 {
-    start_time = glfwGetTime();
+    start_time = std::chrono::steady_clock::now();
 }
 
 scope_timer::~scope_timer() {
+    const auto end = std::chrono::steady_clock::now();
+    const auto duration = std::chrono::duration<double, std::milli>(end - start_time);
     if (add) {
-        elapsed_output += glfwGetTime() - start_time;
+        elapsed_output += duration.count();
     } else {
-        elapsed_output = glfwGetTime() - start_time;
+        elapsed_output = duration.count();
     }
 }

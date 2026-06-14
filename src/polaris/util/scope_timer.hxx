@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <chrono>
 
 typedef std::unordered_map<const char*, double> timer_map_t;
 extern timer_map_t global_timers;
@@ -8,7 +9,7 @@ extern timer_map_t global_timers;
 // and ends when destroyed.
 class scope_timer {
     double& elapsed_output;
-    double start_time;
+    std::chrono::time_point<std::chrono::steady_clock> start_time;
     bool add;
 
 public:
