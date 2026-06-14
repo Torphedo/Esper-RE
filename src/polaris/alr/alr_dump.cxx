@@ -372,83 +372,88 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
     }
 }
 
-void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx) {
+void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx, const char* mtllib) {
     // Dump to OBJ
     FILE *out = fopen(path, "wb");
-    if (out != nullptr) {
-        // Open resource buffer
-        vfile vf = vfile_open(alr.data, alr.alr_size);
-        vfile_seek(&vf, vertchunk_offset);
-        const auto genheader = VFILE_READ(chunk_generic, &vf);
-        const u32 vert_entries = VFILE_READ(u32, &vf);
-        const vertbuf_entry* entries = (vertbuf_entry*)vfile_cur(vf);
-        const vertbuf_entry entry = entries[vert_entry_idx];
-
-        // Jump to the appropriate data
-        vf.pos = alr.resbuf_offset;
-        vfile_seek(&vf, entry.data_ptr);
-        bool has_uvs = false;
-        for (u32 i = 0; i < entry.vertex_count; i++) {
-            const s64 next_pos = vf.pos + entry.vertex_size;
-            // Read the vertex (this abstracts away the many different formats)
-            const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.format);
-
-            // Save whatever vertex data we got
-            if (vert.pos.has_value()) {
-                const vec3s pos = vert.pos.value();
-                fprintf(out, "v %f %f %f\n", pos.x, pos.y, pos.z);
-            }
-
-            if (vert.texcoord.has_value()) {
-                has_uvs = true;
-                const vec2s uv = vert.texcoord.value();
-                fprintf(out, "vt %f %f\n", uv.x, uv.y);
-            }
-
-            if (vert.normal.has_value()) {
-                const vec3s normal = vert.normal.value();
-                fprintf(out, "vn %f %f %f\n", normal.x, normal.y, normal.z);
-            }
-
-            // Skip to the next vertex
-            vf.pos = next_pos;
-        }
-
-        // Vertices are dumped, now for indices
-        for (alr::file::chunk idx_chunk : alr.chunks) {
-            if (idx_chunk.id == 0x16 && idx_chunk.offset > vertchunk_offset) {
-                // We've hit a mesh metadata chunk past our own, so any
-                // further index buffers will be garbage data to us. Quit.
-                break;
-            }
-
-            if (idx_chunk.id != 0x2) {
-                // We only want index buffer chunks
-                continue;
-            }
-
-            if (idx_chunk.offset < vertchunk_offset) {
-                // This index buffer is from a previous mesh, so it's
-                // garbage data to us. Skip.
-                continue;
-            }
-
-            // Skip to idx_chunk and skip header
-            vf.pos = idx_chunk.offset;
-            const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
-
-            // We only want index buffers meant for this vertex buffer
-            if (header.vertex_buf != vert_entry_idx) {
-                continue;
-            }
-
-            fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
-            alr::dump_idx_buf(alr.data, idx_chunk.offset, out, has_uvs);
-        }
-
-        // Cleanup
-        fclose(out);
+    if (!out) {
+        return;
     }
+    if (mtllib) {
+        fprintf(out, "mtllib %s\n\n", mtllib);
+    }
+
+    // Open resource buffer
+    vfile vf = vfile_open(alr.data, alr.alr_size);
+    vfile_seek(&vf, vertchunk_offset);
+    const auto genheader = VFILE_READ(chunk_generic, &vf);
+    const u32 vert_entries = VFILE_READ(u32, &vf);
+    const vertbuf_entry* entries = (vertbuf_entry*)vfile_cur(vf);
+    const vertbuf_entry entry = entries[vert_entry_idx];
+
+    // Jump to the appropriate data
+    vf.pos = alr.resbuf_offset;
+    vfile_seek(&vf, entry.data_ptr);
+    bool has_uvs = false;
+    for (u32 i = 0; i < entry.vertex_count; i++) {
+        const s64 next_pos = vf.pos + entry.vertex_size;
+        // Read the vertex (this abstracts away the many different formats)
+        const std_vertex vert = standardize_pd_vertex(vfile_cur(vf), entry.format);
+
+        // Save whatever vertex data we got
+        if (vert.pos.has_value()) {
+            const vec3s pos = vert.pos.value();
+            fprintf(out, "v %f %f %f\n", pos.x, pos.y, pos.z);
+        }
+
+        if (vert.texcoord.has_value()) {
+            has_uvs = true;
+            const vec2s uv = vert.texcoord.value();
+            fprintf(out, "vt %f %f\n", uv.x, uv.y);
+        }
+
+        if (vert.normal.has_value()) {
+            const vec3s normal = vert.normal.value();
+            fprintf(out, "vn %f %f %f\n", normal.x, normal.y, normal.z);
+        }
+
+        // Skip to the next vertex
+        vf.pos = next_pos;
+    }
+
+    // Vertices are dumped, now for indices
+    for (alr::file::chunk idx_chunk : alr.chunks) {
+        if (idx_chunk.id == 0x16 && idx_chunk.offset > vertchunk_offset) {
+            // We've hit a mesh metadata chunk past our own, so any
+            // further index buffers will be garbage data to us. Quit.
+            break;
+        }
+
+        if (idx_chunk.id != 0x2) {
+            // We only want index buffer chunks
+            continue;
+        }
+
+        if (idx_chunk.offset < vertchunk_offset) {
+            // This index buffer is from a previous mesh, so it's
+            // garbage data to us. Skip.
+            continue;
+        }
+
+        // Skip to idx_chunk and skip header
+        vf.pos = idx_chunk.offset;
+        const idxbuf_header header = VFILE_READ(idxbuf_header, &vf);
+
+        // We only want index buffers meant for this vertex buffer
+        if (header.vertex_buf != vert_entry_idx) {
+            continue;
+        }
+
+        fprintf(out, "\ng idxbuf_0x%lx\n", idx_chunk.offset);
+        alr::dump_idx_buf(alr.data, idx_chunk.offset, out, has_uvs);
+    }
+
+    // Cleanup
+    fclose(out);
 }
 
 texture convert_tex(u8* resbuf, texture_entry entry) {
@@ -579,17 +584,31 @@ bool dump_all_textures(const file& alr) {
     return true;
 }
 
+bool dump_materials_from_chunks(const material_header* mat_header, u32 num_entries, const texture_entry* tex_entries, const char* output_path) {
+    FILE* f = fopen(output_path, "wb");
+    if (!f) {
+        LOG_MSG(error, "Failed to open output file '%s'\n", output_path);
+        return false;
+    }
+
+    std::vector<decoded_text> texture_names;
+    for (u32 i = 0; i < num_entries; i++) {
+        // Decode the texture filename
+        const texture_entry& tex = tex_entries[i];
+        texture_names.emplace_back(decode_double(tex.text1, tex.text2));
+    }
+
+    const auto* materials = mat_header->entries;
+    dump_materials_obj(f, materials, mat_header->num_entries, texture_names.data(), texture_names.size());
+    fclose(f);
+    return true;
+}
+
 bool dump_all_materials(const file& alr, const char* output_path) {
     file::chunk texture_chunk = alr.first_chunk_by_id(ALR_ID_TEXTURE);
     file::chunk material_chunk = alr.first_chunk_by_id(ALR_ID_MATERIAL);
     if (texture_chunk.size == 0 && material_chunk.size == 0) {
         LOG_MSG(warning, "I couldn't find any materials to dump.\n");
-        return false;
-    }
-
-    FILE* f = fopen(output_path, "wb");
-    if (!f) {
-        LOG_MSG(error, "Failed to open output file '%s'\n", output_path);
         return false;
     }
 
@@ -601,19 +620,46 @@ bool dump_all_materials(const file& alr, const char* output_path) {
     const u32 num_entries = VFILE_READ(u32, &vf);
     const auto* tex_entries = (texture_entry*)vfile_cur(vf);
 
-    std::vector<decoded_text> texture_names;
-    for (u32 i = 0; i < num_entries; i++) {
-        // Decode the texture filename
-        const texture_entry& tex = tex_entries[i];
-        texture_names.emplace_back(decode_double(tex.text1, tex.text2));
+    vf.pos = material_chunk.offset;
+    const auto* mat_header = VFILE_READ_PTR(material_header, &vf);
+
+    return dump_materials_from_chunks(mat_header, num_entries, tex_entries, output_path);
+}
+
+bool dump_all_models(file& alr, const char* basename) {
+    u32 materialIdx = 0;
+    char materialPath[128] = {};
+    u32 numTextures = 0;
+    const texture_entry* textures = nullptr;
+    for (const file::chunk& c : alr.chunks) {
+        vfile vf = alr.vf_from_chunk(c);
+        if (c.id == ALR_ID_TEXTURE) {
+            vfile_seek(&vf, sizeof(chunk_generic));
+            numTextures = VFILE_READ(u32, &vf);
+            textures = (const texture_entry*)vfile_cur(vf);
+            continue;
+        }
+        if (c.id == ALR_ID_MATERIAL) {
+            materialIdx++;
+            snprintf(materialPath, sizeof(materialPath), "%s_%d.mtl", basename, materialIdx);
+            const auto* matHeader = (const material_header*)vfile_cur(vf);
+
+            dump_materials_from_chunks(matHeader, numTextures, textures, materialPath);
+        }
+
+        if (c.id != ALR_ID_MODEL) {
+            continue;
+        }
+        const vertbuf_header* header = (vertbuf_header*)vfile_cur(vf);
+
+        for (u32 i = 0; i < header->num_entries; i++) {
+            char pathbuf[128] = {};
+            snprintf(pathbuf, sizeof(pathbuf), "%s_%lX_%d.obj", basename, c.offset, i);
+
+            dump_vertex_buf(alr, pathbuf, c.offset, i, materialPath);
+        }
     }
 
-    vf.pos = material_chunk.offset;
-    const auto mat_header = VFILE_READ(material_header, &vf);
-    const auto* materials = (const material_entry*)vfile_cur(vf);
-
-    dump_materials_obj(f, materials, mat_header.num_entries, texture_names.data(), texture_names.size());
-    fclose(f);
     return true;
 }
 

@@ -91,7 +91,8 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs);
 /// @param path Path to save the OBJ file
 /// @param vertchunk_offset Offset of the 0x16 chunk in the ALR
 /// @param vert_entry_idx Index of the vertex buffer entry in the 0x16 chunk
-void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx);
+/// @param mtllib Path of the MTL file to use
+void dump_vertex_buf(const file& alr, const char* path, u32 vertchunk_offset, u32 vert_entry_idx, const char* mtllib = NULL);
 
 /// @brief Convert an ALR texture entry into our standard structure
 texture convert_tex(u8* resbuf, texture_entry entry);
@@ -104,6 +105,11 @@ bool dump_all_textures(const file& alr);
 /// @param alr ALR to dump materials from
 /// @param output_path Path where the .mtl file will be saved
 bool dump_all_materials(const file& alr, const char* output_path);
+
+/// @brief Dump all meshes and materials from the ALR
+/// @param alr The file to dump from
+/// @param basename The name of the ALR without the file extension
+bool dump_all_models(file& alr, const char* basename);
 
 /// Export an animation chunk to an Autodesk Maya (.anim) animation file
 ///

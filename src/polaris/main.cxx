@@ -20,6 +20,7 @@
 
 const char* dump_textures_flag = "dump-textures";
 const char* dump_mats_flag = "dump-materials";
+const char* dump_models_flag = "dump-models";
 const char* extract_audio_flag = "extract-audio";
 const char* generate_stx_flag = "generate-stx";
 
@@ -198,6 +199,21 @@ int main(int argc, char** argv) {
     if (args_getflag(argc, argv, dump_mats_flag, nullptr)) {
         LOG_MSG(info, "Dumping materials for %s\n", path);
         const bool res = alr::dump_all_materials(pol->editor.alr, outpath);
+        return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    if (args_getflag(argc, argv, dump_models_flag, nullptr)) {
+        LOG_MSG(info, "Dumping models for %s\n", path);
+        std::string basename = path;
+        path_get_filename(path, basename.data());
+        // Fixes some hard-to-find bugs caused by the C function shortening the string
+        basename.resize(strlen(basename.data()));
+
+        const size_t dotIdx = basename.find('.');
+        if (dotIdx >= 0) {
+            basename[dotIdx] = 0;
+        }
+
+        const bool res = alr::dump_all_models(pol->editor.alr, basename.c_str());
         return (res) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     if (args_getflag(argc, argv, "validate", nullptr)) {

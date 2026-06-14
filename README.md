@@ -17,7 +17,7 @@ Support status for `.alr` files:
 
 | Feature           | Viewing                    | Export                  | Import                                        |
 | ----------------- | -------------------------- |------------------------ |-----------------------------------------------|
-| Textures          | ✅                         | ✅(`.dds`)              | ✅  `.dds`, must be the same format            |
+| Textures          | ✅                         | ✅(`.dds`)              | ✅  `.dds`                                     |
 | Meshes            | ✅                         | ✅(`.obj`)              | ✅ (must be same # of vertices, position only) |
 | Animations        | ✅ (rigid skinning only)   | ❌ (WIP `.anim` export) | ❌                                             |
 | Skeleton          | ❌                         | ✅ (`.dae`)             | ❌                                             |
