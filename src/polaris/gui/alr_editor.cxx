@@ -955,6 +955,8 @@ void editor::update(render_context& ctx) noexcept {
             ctx.set_shader(ctx.render_texcoords ? ctx.uv_shader : ctx.diffuse_shader);
         }
 
+        ImGui::Checkbox("Show object bounding boxes", &ctx.show_bounding_boxes);
+
         // TODO: Bring back normal visualization
         // ImGui::Checkbox("Visualize normals", &render_normals);
 

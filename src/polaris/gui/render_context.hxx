@@ -17,6 +17,7 @@ struct render_context : gui_layer {
     // Whether the viewport editor window should render.
     bool editor_enabled = false;
     bool wireframe_selection = false;
+    bool show_bounding_boxes = false;
     u16 selected_mesh = 0;
 
     u32 anim_id = BAS01_WAIT0;
@@ -33,6 +34,9 @@ struct render_context : gui_layer {
     gl_obj vkblink_shader = 0;
     gl_obj uv_shader = 0;
     gl_obj skinned_shader = 0;
+    gl_obj cube_shader = 0;
+
+    gl_obj blank_vao = 0;
 
     // Uniform locations (to send data to the shader each frame)
 

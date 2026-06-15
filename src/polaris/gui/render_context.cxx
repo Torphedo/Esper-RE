@@ -12,6 +12,8 @@
 #include "render_context.hxx"
 #include "selector_ray.hxx"
 #include "shaders/vkblink.frag.h"
+#include "shaders/box.vert.hxx"
+#include "shaders/solid.frag.h"
 
 // GLSL shaders
 #include <shaders/generic.vert.h>
@@ -56,6 +58,14 @@ void render_context::init(GLFWwindow* window) noexcept {
         LOG_MSG(error, "Failed to compile skinned shader!\n");
         return;
     }
+
+    cube_shader = program_compile_src(box_vert, solid_frag);
+    if (!shader_link_check(cube_shader)) {
+        LOG_MSG(error, "Failed to compile cube shader!\n");
+        return;
+    }
+    glGenVertexArrays(1, &blank_vao);
+
 
     set_shader(diffuse_shader);
 

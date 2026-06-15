@@ -268,6 +268,28 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
         }
     }
 
+    if (ctx.show_bounding_boxes) {
+        ctx.set_shader(ctx.cube_shader);
+        glBindVertexArray(ctx.blank_vao);
+        ctx.fbo.set_wireframe(true);
+        for (const index_buffer& idxbuf : idxbufs) {
+            const idxbuf_header *header = (idxbuf_header *) (alr.data + idxbuf.idx_chunk_offset);
+            const mat4s xform = instance.transform(header->transform_idx);
+
+            const vec3s center = glms_vec3_make(header->center);
+            const vec3s max = glms_vec3_make(header->aabb_max);
+            const vec3s min = glms_vec3_make(header->aabb_min);
+            const mat4s scale = glms_scale_make(glms_vec3_abs(glms_vec3_sub(max, center)));
+            const mat4s box_xform = glms_mul(glms_translate_make(center), scale);
+
+            const mat4s pvm = glms_mul(cam_xform, glms_mul(xform, box_xform));
+
+            glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        ctx.fbo.set_wireframe(false);
+    }
+
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
