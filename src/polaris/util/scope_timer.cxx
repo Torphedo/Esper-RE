@@ -30,7 +30,7 @@ scope_timer::scope_timer(const char* name, bool add)
 
 scope_timer::~scope_timer() {
     const auto end = std::chrono::steady_clock::now();
-    const auto duration = std::chrono::duration<double, std::milli>(end - start_time);
+    const auto duration = std::chrono::duration<double, std::ratio<1, 1>>(end - start_time);
     if (add) {
         elapsed_output += duration.count();
     } else {
