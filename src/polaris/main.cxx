@@ -204,9 +204,12 @@ int main(int argc, char** argv) {
     if (args_getflag(argc, argv, dump_models_flag, nullptr)) {
         LOG_MSG(info, "Dumping models for %s\n", path);
         std::string basename = path;
-        path_get_filename(path, basename.data());
-        // Fixes some hard-to-find bugs caused by the C function shortening the string
-        basename.resize(strlen(basename.data()));
+
+        if (strchr(path, PLATFORM_DIRSEP) != NULL) {
+            path_get_filename(path, basename.data());
+            // Fixes some hard-to-find bugs caused by the C function shortening the string
+            basename.resize(strlen(basename.data()));
+        }
 
         const size_t dotIdx = basename.find('.');
         if (dotIdx >= 0) {
