@@ -285,7 +285,7 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
             const mat4s pvm = glms_mul(cam_xform, glms_mul(xform, box_xform));
 
             glUniformMatrix4fv(ctx.uniform_pvm, 1, GL_FALSE, (float*)pvm.raw);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDrawArrays(GL_LINES, 0, 24);
         }
         ctx.fbo.set_wireframe(false);
     }
