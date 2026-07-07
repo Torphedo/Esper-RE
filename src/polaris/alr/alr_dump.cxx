@@ -358,6 +358,14 @@ void dump_idx_buf(const u8* alr_data, u32 offset, FILE* out, bool has_uvs) {
             continue;
         }
 
+        // In triangle strips, the winding order alternates back and forth.
+        // This will break backface culling in other applications using our
+        // export since every other face will have a backwards normal.
+        if (header.primitive_type == IDX_TYPE_STRIP && i % 2 != 0) {
+            // Swap indices to make all triangles have the same winding order
+            std::swap(idx1, idx2);
+        }
+
         fprintf(out, "f ");
         fprint_obj_idx(out, has_uvs, false, idx1);
         fprint_obj_idx(out, has_uvs, false, idx2);
