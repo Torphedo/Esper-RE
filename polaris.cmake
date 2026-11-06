@@ -58,6 +58,7 @@ add_executable(polaris
     src/polaris/gui/tool_cso.cxx
     src/polaris/gui/tool_quest.cxx
     src/polaris/gui/tool_overwrite.cxx
+    src/polaris/gui/tool_xset.cxx
 
     src/polaris/gui/alr_imgui.cxx
     src/polaris/gui/alr_assets.cxx
@@ -80,5 +81,5 @@ add_executable(polaris
     ${glsl_headers}
 )
 
-target_link_libraries(polaris PRIVATE pd_common coregui imgui nfd ma_trackerFormats)
+target_link_libraries(polaris PRIVATE pd_common bobtail coregui imgui nfd ma_trackerFormats)
 target_include_directories(polaris PRIVATE ${Esper-RE_SOURCE_DIR}/src/polaris)

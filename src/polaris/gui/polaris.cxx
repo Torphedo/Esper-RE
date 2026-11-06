@@ -143,6 +143,7 @@ void polaris::do_menu_bar() noexcept {
                 ImGui::MenuItem("Create .mk / .ak", nullptr, &create_mkak);
                 ImGui::MenuItem("Shader (.cso) Viewer", nullptr, &csoTool.enabled);
                 ImGui::MenuItem("Mass Overwrite Tool", nullptr, &overwriteTool.enabled);
+                ImGui::MenuItem("Character/Stage Set Tool", nullptr, &xsetTool.enabled);
                 ImGui::EndMenu();
             }
 
@@ -248,6 +249,7 @@ void polaris::update(GLFWwindow* window) noexcept {
         this->questTool.do_gui();
         this->csoTool.do_gui();
         this->overwriteTool.do_gui(editor.alr.data);
+        this->xsetTool.do_gui();
     }
 
     if (this->show_timers) {

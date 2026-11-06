@@ -9,6 +9,7 @@
 #include "tool_cso.hxx"
 #include "tool_quest.hxx"
 #include "tool_overwrite.hxx"
+#include "tool_xset.hxx"
 
 // State for the overall editor
 struct polaris : gui_layer {
@@ -22,6 +23,7 @@ struct polaris : gui_layer {
     quest_tool questTool;
     cso_tool csoTool;
     overwrite_tool overwriteTool;
+    xset_tool xsetTool;
     render_context renderCtx;
 
     bool headless = true; // Whether we're running without graphics.

@@ -55,7 +55,6 @@ target_include_directories(miniaudio PUBLIC lib/ma_trackerFormats lib/ma_tracker
 add_library(pd_common STATIC
     src/formats/pd_common.c
 )
-target_link_libraries(pd_common PUBLIC bobtail)
 
 add_executable(betaRip
     src/polaris/alr/alr_file.cxx
@@ -81,7 +80,7 @@ add_executable(ddsx src/ddsx/main.cxx)
 
 # Link everything to the common library
 target_link_libraries(deck_reader PRIVATE bobtail)
-target_link_libraries(ssb PRIVATE pd_common ${MATH_LIB})
+target_link_libraries(ssb PRIVATE pd_common bobtail ${MATH_LIB})
 target_link_libraries(ddsx PRIVATE bobtail ${MATH_LIB})
 # Polaris handles its own linking
 
