@@ -99,6 +99,8 @@ void xset_tool::do_gui() noexcept {
                 path_get_filename(path, fnameBuf);
                 if (strncmp(fnameBuf, "chara", 5) == 0) {
                     is_charaset = true;
+                } else {
+                    is_charaset = false;
                 }
             }
             free(path);
