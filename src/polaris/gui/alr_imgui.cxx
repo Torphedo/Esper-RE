@@ -304,6 +304,29 @@ namespace alr {
         }
     }
 
+    bool edit_camera_path_start(camera_path_start& chunk) {
+        ImGui::ScopedWidth width(32);
+        bool res = false;
+        res |= ImGui::InputFloat3("Position", (float*)&chunk.position);
+
+        const char* label = chunk.is_target ? "Look-At Target Position" : "Angle (radians)";
+        ImGui::InputFloat3(label, (float*)&chunk.target);
+
+        float fovDegrees = glm_deg(chunk.fov_radians);
+        if (ImGui::InputFloat("FOV [degrees]", &fovDegrees)) {
+            chunk.fov_radians = glm_rad(fovDegrees);
+            res = true;
+        }
+
+        bool isTarget = chunk.is_target;
+        if (ImGui::Checkbox("Set look-at target", &isTarget)) {
+            chunk.is_target = isTarget;
+            res = true;
+        }
+
+        return res;
+    }
+
     bool edit_chunk_0x14(chunk_0x14& chunk) {
         ImGui::ScopedWidth width(16);
         bool res = false;

@@ -248,6 +248,15 @@ void editor::window_state::draw_chunk_cam_anim(const file& alr, file::chunk& chu
     vfile_seek(&vf, key_size * header->rotation_key_count);
 }
 
+void editor::window_state::draw_chunk_cam_state(const file& alr, file::chunk& chunk) noexcept {
+    CHUNK_ID_ASSERT(ALR_ID_CAM_STATE);
+    // This is the same as normal animation frames, but seems to ignore the
+    // existing keyframe size fields.
+    vfile vf = vfile_open(alr.data + chunk.offset, chunk.size);
+    camera_path_start* header = (camera_path_start*)vfile_cur(vf);
+    alr::edit_camera_path_start(*header);
+}
+
 void editor::window_state::draw_chunk_atlas(editor& ed, file::chunk& chunk) noexcept {
     CHUNK_ID_ASSERT(ALR_ID_TEXATLAS);
     file& alr = ed.alr;
@@ -628,6 +637,9 @@ void editor::window_state::update(editor& ed) noexcept {
                 case ALR_ID_CAM_ANIM:
                     draw_chunk_cam_anim(ed.alr, chunk);
                     break;
+                case ALR_ID_CAM_STATE:
+                    draw_chunk_cam_state(ed.alr, chunk);
+                    break;
                 case ALR_ID_TEXATLAS:
                     draw_chunk_atlas(ed, chunk);
                     break;
@@ -809,15 +821,16 @@ void editor::clear_meshes() noexcept {
 
 const char* chunk_name_by_id(u32 id) {
     switch (id) {
-    case ALR_ID_MATERIAL:  return "[Material]";
-    case ALR_ID_INDICES:   return "[Index Buffer]";
-    case ALR_ID_SKELETON:  return "[Armature]";
-    case ALR_ID_ANIMATION: return "[Animation]";
-    case ALR_ID_CAM_ANIM:  return "[Camera Path]";
-    case ALR_ID_TEXATLAS:  return "[Texture Atlas]";
-    case ALR_ID_HEADER:    return "[Header]";
-    case ALR_ID_TEXTURE:   return "[Texture]";
-    case ALR_ID_MODEL:     return "[Model]";
+    case ALR_ID_MATERIAL:   return "[Material]";
+    case ALR_ID_INDICES:    return "[Index Buffer]";
+    case ALR_ID_SKELETON:   return "[Armature]";
+    case ALR_ID_ANIMATION:  return "[Animation]";
+    case ALR_ID_CAM_ANIM:   return "[Camera Path]";
+    case ALR_ID_CAM_STATE:  return "[Camera Path Initial State]";
+    case ALR_ID_TEXATLAS:   return "[Texture Atlas]";
+    case ALR_ID_HEADER:     return "[Header]";
+    case ALR_ID_TEXTURE:    return "[Texture]";
+    case ALR_ID_MODEL:      return "[Model]";
     }
 
     return "";

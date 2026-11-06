@@ -42,6 +42,7 @@ enum {
     ALR_ID_SKELETON = 0x3,
     ALR_ID_ANIMATION = 0x5,
     ALR_ID_CAM_ANIM = 0x7,
+    ALR_ID_CAM_STATE = 0xA,
     ALR_ID_END_INDICES = 0xD,
     ALR_ID_TEXATLAS = 0x10,
     ALR_ID_HEADER = 0x11,
@@ -545,6 +546,21 @@ typedef struct {
     u32 height;
 }atlas_tex_entry;
 static_assert(sizeof(atlas_tex_entry) == 0x3C, "Wrong texture metadata size!");
+
+// 0xA chunk (intial camera state for camera paths)
+typedef struct {
+    u32 id;
+    u32 size;
+    vec3f position;
+    union {
+        vec3f target; // This is used if [is_target] is 1
+        vec3f angle; // Euler XYZ
+    };
+    float fov_radians;
+    u32 unused1;
+    u32 unused2;
+    u32 is_target;
+}camera_path_start;
 
 // 0x9 chunk (believed to be for dynamic lights)
 typedef struct {

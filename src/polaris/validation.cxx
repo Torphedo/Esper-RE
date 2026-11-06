@@ -219,6 +219,13 @@ bool alr_chunk_validate(const alr::file& alr, const alr::file::chunk& chunk, std
         }
         case 0x7:
             break;
+        case ALR_ID_CAM_STATE: {
+            const auto camState = VFILE_READ(camera_path_start, &chunkvf);
+            AL_ASSERT(chunk.size == sizeof(camState), "0xA chunk had %d bytes of data (expected %d)!", chunk.size, sizeof(camState));
+            AL_ASSERT(camState.unused1 == 0, "0xA chunk had non-zero unused1 field!");
+            AL_ASSERT(camState.unused2 == 0, "0xA chunk had non-zero unused2 field!");
+            break;
+        }
         case 0xD:
             AL_ASSERT(chunk.size == 12, "0xD chunk had %d bytes of data (expected 12)!", chunk.size);
             break;

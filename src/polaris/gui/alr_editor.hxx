@@ -90,6 +90,7 @@ public:
         void draw_chunk_skeleton(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_animation(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_cam_anim(const file& alr, file::chunk& chunk) noexcept;
+        void draw_chunk_cam_state(const file& alr, file::chunk& chunk) noexcept;
         void draw_chunk_atlas(editor& ed, file::chunk& chunk) noexcept;
         void draw_chunk_header(editor& ed, file::chunk& chunk) const noexcept;
         void draw_chunk_texture(editor& ed, file::chunk& chunk) noexcept;
