@@ -1,4 +1,5 @@
 #include "mapdata_editor.hxx"
+#include <vector>
 
 #include "polaris.hxx"
 #include <util/imgui_utils.hxx>
@@ -137,16 +138,14 @@ void mapdata_editor::dump_oc00(s32 offset, s32 end_offset) noexcept {
         return;
     }
 
+    std::vector<oc00_idxbuf*> idxbuffers;
+    u32 idxOffset = 1;
     while (end_offset > offset) {
         auto* generic_header = (oc00_header*)(map.data + offset);
         switch (generic_header->id) {
         case 3: { // Index buffer
-            fprintf(f, "g objCol_%x\n", offset);
             auto* header = (oc00_idxbuf*)generic_header;
-            for (u32 i = 0; i < header->num_entries; i++) {
-                const u16* indices = header->entries[i].indices;
-                fprintf(f, "f %hd %hd %hd\n", indices[0], indices[1], indices[2]);
-            }
+            idxbuffers.push_back(header);
             break;
         }
         case 8: { // Vertex buffer
@@ -156,6 +155,17 @@ void mapdata_editor::dump_oc00(s32 offset, s32 end_offset) noexcept {
                 const vec3f& p = header->points[i];
                 fprintf(f, "v %f %f %f\n", p.x, p.y, p.z);
             }
+
+            for (oc00_idxbuf* idxHdr : idxbuffers) {
+                const ptrdiff_t hdrOffset = (ptrdiff_t)idxHdr - (ptrdiff_t)map.data;
+                fprintf(f, "g %p\n", hdrOffset);
+                for (u32 i = 0; i < idxHdr->num_entries; i++) {
+                    const u16* indices = idxHdr->entries[i].indices;
+                    fprintf(f, "f %hd %hd %hd\n", indices[0] + idxOffset, indices[1] + idxOffset, indices[2] + idxOffset);
+                }
+            }
+
+            idxOffset += num_entries;
             break;
         }
         default:
