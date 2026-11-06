@@ -9,44 +9,76 @@ static const nfdu8filteritem_t quest_filter[] = { { "Phantom Dust Quest File", "
 
 #define INPUT_UNK_FIELD(obj, idx, type) ImGui::Input##type("Unknown " #idx, &obj.unk##idx);
 
-void edit_quest_entry(quest_entry& entry) {
+void edit_quest_entry(quest_entry& quest) {
     const int word_wrap = ImGuiInputTextFlags_WordWrap;
 
-    ImGui::InputText("Name", entry.name, sizeof(entry.name));
-    ImGui::InputTextMultiline("Description", entry.desc, sizeof(entry.desc), ImVec2(), word_wrap);
-    ImGui::InputText("Objective", entry.objective, sizeof(entry.objective));
-    ImGui::InputText("Unknown Text", entry.unk_text, sizeof(entry.unk_text));
+    ImGui::InputText("Name", quest.name, sizeof(quest.name));
+    ImGui::InputTextMultiline("Description", quest.desc, sizeof(quest.desc), ImVec2(), word_wrap);
+    ImGui::InputText("Objective", quest.main_objective, sizeof(quest.main_objective));
+    for (int i = 0; i < ARRAY_SIZE(quest.shown_objectives); i++) {
+        if (quest.shown_objectives[i]) {
+            std::string label;
+            str_format_append(label, "Bonus objective %d", i + 1);
+            ImGui::InputText(label.c_str(), quest.bonus_objectives[i], sizeof(quest.bonus_objectives[i]));
+        }
+    }
+
+    ImGui::InputText("Unknown Text", quest.unk_text, sizeof(quest.unk_text));
 
     ImGui::ScopedWidth scopeWidth(16);
-    ImGui::InputS16("Quest ID", &entry.id);
-    ImGui::InputU16("# Players", &entry.num_players);
-    ImGui::InputU16("# Enemies", &entry.num_enemies);
-    ImGui::InputU16("# Player Slots", &entry.player_slots);
-    ImGui::InputU16("Mission Photo", &entry.mission_photo);
-    ImGui::InputS16("Stage #", &entry.stage);
+    ImGui::InputS16("Quest ID", &quest.id);
+    ImGui::InputU16("# Players", &quest.num_players);
+    ImGui::InputU16("# Enemies", &quest.num_enemies);
+    ImGui::InputU16("# Player Slots", &quest.player_slots);
+    ImGui::InputU16("Mission Photo", &quest.mission_photo);
+    ImGui::InputS16("Stage #", &quest.stage);
+
+    if (ImGui::BeginTabBar("deckTabs")) {
+        for (int i = 0; i < ARRAY_SIZE(quest.entries); i++) {
+            player_entry& e = quest.entries[i];
+            if (strlen(e.name) == 0) {
+                break;
+            }
+
+            std::string label;
+            str_format_append(label, "%s ##%d", e.name, i);
+            if (ImGui::BeginTabItem(label.c_str())) {
+                ImGui::InputU16("Character ID", &e.character);
+                ImGui::InputU16("Costume ID", &e.costume);
+                ImGui::InputText("Deck Name", e.name, sizeof(e.name));
+                ImGui::InputText("AI Name", e.aiprog, sizeof(e.aiprog));
+                ImGui::InputU16("Team", &e.team);
+                ImGui::InputU16("Start Point Index", &e.start_idx);
+                ImGui::InputU16("AI Param Index", &e.ai_param_idx);
+                ImGui::InputU16("Health", &e.health);
+                ImGui::InputU16("Unknown 5", &e.unk5);
+                ImGui::EndTabItem();
+            }
+        }
+        ImGui::EndTabBar();
+    }
 
     if (ImGui::CollapsingHeader("Unknown Fields")) {
-        INPUT_UNK_FIELD(entry, 1, U16);
-        INPUT_UNK_FIELD(entry, 2, U16);
-        INPUT_UNK_FIELD(entry, 3, U16);
-        INPUT_UNK_FIELD(entry, 4, U16);
-        INPUT_UNK_FIELD(entry, 5, U16);
-        INPUT_UNK_FIELD(entry, 6, U16);
-        INPUT_UNK_FIELD(entry, 7, U16);
-        INPUT_UNK_FIELD(entry, 8, U16);
-        INPUT_UNK_FIELD(entry, 9, U16);
+        INPUT_UNK_FIELD(quest, 1, U16);
+        INPUT_UNK_FIELD(quest, 3, U16);
+        INPUT_UNK_FIELD(quest, 4, U16);
+        INPUT_UNK_FIELD(quest, 5, U16);
+        INPUT_UNK_FIELD(quest, 6, U16);
+        INPUT_UNK_FIELD(quest, 7, U16);
+        INPUT_UNK_FIELD(quest, 8, U16);
+        INPUT_UNK_FIELD(quest, 9, U16);
     }
 
     if (ImGui::CollapsingHeader("Partners")) {
         const char* names[8] = {"Meister", "Chunky", "Cuff Button", "pH", "Edgar", "Know", "Tsubutaki", "Sammah"};
 
         for (u32 i = 0; i < ARRAY_SIZE(names); i++) {
-            bool val = entry.header.flags_byte & (u8(1) << i);
+            bool val = quest.header.flags_byte & (u8(1) << i);
             if (ImGui::Checkbox(names[i], &val)) {
                 const u8 mask = ~(u8(1 << i));
                 const u8 byte = u8(val) << i;
-                entry.header.flags_byte &= mask; // Clear the bit
-                entry.header.flags_byte |= byte;  // Set the bit if needed
+                quest.header.flags_byte &= mask; // Clear the bit
+                quest.header.flags_byte |= byte;  // Set the bit if needed
             }
         }
     }

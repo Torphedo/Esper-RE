@@ -41,35 +41,32 @@ typedef struct {
 static_assert(sizeof(deck_entry_header) == 0x1A);
 
 typedef struct {
-    u16 deck_flag;
-    union {
-        partner_flags flags;
-        u8 flags_byte;
-    };
-    u8 pad; // Probably bitfield for the monsters
-    u16 unk;
-    u16 time; // In minutes
+    u16 character;
+    u16 costume;
 
-    char name[0x12];
-    u8 pad1[4];
-    char aiprog[0x12];
-    u8 pad2[10];
-}deck_entry;
-static_assert(sizeof(deck_entry) == 0x3A);
+    char name[0x16];
+    char aiprog[0x16];
+    u16 team; // 0 = player's side
+    u16 start_idx;
+    u16 ai_param_idx;
+    u16 health;
+    u16 unk5;
+}player_entry;
+static_assert(sizeof(player_entry) == 0x3A);
 
 typedef struct {
-    u16 unk1;
+    u16 unk1; // 0 - 7, set to 0 in placeholder quests
     s16 id;
-    char name[0x32];
+    char name[50];
     char desc[0x200]; // The game uses a 512 byte buffer
     u16 pad;
-    u16 unk2;
+    u16 difficulty_rank; // e.g. C, B, A, or S in ASCII
     u16 unk3;
     u16 unk4;
     u16 mission_photo;
     u16 unk5;
     u16 unk6;
-    char unk_text[0x32];
+    char unk_text[50];
 
     u16 num_players;
     u16 num_enemies;
@@ -78,13 +75,17 @@ typedef struct {
     u16 unk8;
     u16 unk9;
 
-    char objective[0xCE];
+    char main_objective[50];
+    u16 shown_objectives[3];
+    char bonus_objectives[50][3];
 
     deck_entry_header header;
-    deck_entry deck[7];
+    u16 pad2;
+    u16 pad3;
+    player_entry entries[7];
     u16 unkA[2];
     s16 stage;
-    u8 unkB[0x1A];
+    u8 unkB[0x16];
 }quest_entry;
 static_assert(sizeof(quest_entry) == 0x520);
 
