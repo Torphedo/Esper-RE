@@ -15,6 +15,21 @@ enum {
     PD_MAX_QUESTS = 256, // Number of quest entries in a QDT
 };
 
+typedef enum {
+    PD_REWARD_NONE = -1,
+    PD_REWARD_RANDOM_SKILL = 0,
+    PD_REWARD_SPECIFIC_SKILL = 1, // Reward value is skill ID
+    PD_REWARD_ARSENAL1 = 2, // Reward value is number of schools
+    PD_REWARD_CREDITS = 3,
+    PD_REWARD_ARSENAL2 = 4,
+    PD_REWARD_SKILL_RARITY = 5,
+}pd_reward_type;
+
+typedef struct {
+    s16 type;
+    s16 value;
+}pd_reward;
+
 typedef struct {
     bool meister: 1;
     bool chunky: 1;
@@ -83,9 +98,11 @@ typedef struct {
     u16 pad2;
     u16 pad3;
     player_entry entries[7];
-    u16 unkA[2];
-    s16 stage;
-    u8 unkB[0x16];
+    u16 stage;
+    u16 stage_variant;
+    u16 unkA;
+    pd_reward rewards[3];
+    u8 unkB[10];
 }quest_entry;
 static_assert(sizeof(quest_entry) == 0x520);
 

@@ -9,6 +9,34 @@ static const nfdu8filteritem_t quest_filter[] = { { "Phantom Dust Quest File", "
 
 #define INPUT_UNK_FIELD(obj, idx, type) ImGui::Input##type("Unknown " #idx, &obj.unk##idx);
 
+const char* get_reward_name(s16 t) {
+    switch (t) {
+        case PD_REWARD_NONE: return "NONE";
+        case PD_REWARD_RANDOM_SKILL: return "RANDOM SKILL";
+        case PD_REWARD_SPECIFIC_SKILL: return "SPECIFIC SKILL";
+        case PD_REWARD_ARSENAL1:
+        case PD_REWARD_ARSENAL2:
+            return "ARSENAL CASE";
+        case PD_REWARD_CREDITS: return "CREDITS";
+        case PD_REWARD_SKILL_RARITY: return "SKILL BY RARITY";
+    }
+    return "[INVALID TYPE]";
+}
+
+const pd_reward_type reward_types[] = {
+    PD_REWARD_NONE,
+    PD_REWARD_RANDOM_SKILL,
+    PD_REWARD_SPECIFIC_SKILL,
+    PD_REWARD_ARSENAL1,
+    PD_REWARD_ARSENAL2,
+    PD_REWARD_CREDITS,
+    PD_REWARD_SKILL_RARITY,
+};
+
+bool reward_has_value(s16 t) {
+    return t == PD_REWARD_ARSENAL1 || t == PD_REWARD_ARSENAL2 || t == PD_REWARD_SPECIFIC_SKILL;
+}
+
 void edit_quest_entry(quest_entry& quest) {
     const int word_wrap = ImGuiInputTextFlags_WordWrap;
 
@@ -25,13 +53,14 @@ void edit_quest_entry(quest_entry& quest) {
 
     ImGui::InputText("Unknown Text", quest.unk_text, sizeof(quest.unk_text));
 
-    ImGui::ScopedWidth scopeWidth(16);
+    ImGui::ScopedWidth scopeWidth(20);
     ImGui::InputS16("Quest ID", &quest.id);
     ImGui::InputU16("# Players", &quest.num_players);
     ImGui::InputU16("# Enemies", &quest.num_enemies);
     ImGui::InputU16("# Player Slots", &quest.player_slots);
     ImGui::InputU16("Mission Photo", &quest.mission_photo);
-    ImGui::InputS16("Stage #", &quest.stage);
+    ImGui::InputU16("Stage #", &quest.stage);
+    ImGui::InputU16("Stage Variant", &quest.stage_variant);
 
     if (ImGui::BeginTabBar("deckTabs")) {
         for (int i = 0; i < ARRAY_SIZE(quest.entries); i++) {
@@ -56,6 +85,29 @@ void edit_quest_entry(quest_entry& quest) {
             }
         }
         ImGui::EndTabBar();
+    }
+
+    if (ImGui::CollapsingHeader("Rewards")) {
+        for (int i = 0; i < ARRAY_SIZE(quest.rewards); i++) {
+            pd_reward &reward = quest.rewards[i];
+
+            std::string label;
+            str_format_append(label, "Reward %d", i);
+            if (ImGui::BeginCombo(label.c_str(), get_reward_name(reward.type))) {
+                for (const auto t: reward_types) {
+                    if (ImGui::Selectable(get_reward_name(t))) {
+                        reward.type = t;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            if (reward_has_value(reward.type)) {
+                label = "";
+                str_format_append(label, "Reward value %d", i);
+                ImGui::InputS16(label.c_str(), &reward.value);
+            }
+        }
     }
 
     if (ImGui::CollapsingHeader("Unknown Fields")) {
