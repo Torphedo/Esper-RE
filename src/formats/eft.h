@@ -6,6 +6,8 @@ extern "C" {
 #include <stdint.h>
 // Structs for 412-byte ".eft" files in Assets/Data/Effect/
 
+// Reportedly, only the 2nd field is actually read by game code.
+// TODO: Independently verify this
 typedef struct {
     uint32_t unk1;
     uint32_t unk2;
@@ -30,29 +32,27 @@ static_assert(sizeof(eft_file) == 412);
 
 // Structs for the unique file /Assets/Data/Effect/e.i
 typedef struct {
-    uint16_t unk1;
-    uint8_t unk2[2];
-    uint32_t unk3[3];
-}eft_iheader;
-static_assert(sizeof(eft_iheader) == 0x10);
+    uint16_t pack_count;
+    uint16_t entry_count;
+}eft_index_header;
+static_assert(sizeof(eft_index_header) == 4);
 
 typedef struct {
-    uint32_t idx; // Counts up by 1 per entry
-    uint16_t unk1;
-    uint16_t unk2; // Counts up by 1 or 2 per entry
-    uint16_t unk3;
-    uint16_t unk4;
-}eft_ientry;
-static_assert(sizeof(eft_ientry) == 0xC);
+    uint16_t effect_id;
+    uint16_t pack_id;
+    uint32_t offset;
+    uint32_t size;
+}eft_index_entry;
+static_assert(sizeof(eft_index_entry) == 0xC);
 
 enum {
     EFT_EI_SIZE = 0x1744,
-    EFT_EI_NUM_ENTRIES = 495,
+    EFT_EI_NUM_ENTRIES = 496,
 };
 
 typedef struct {
-    eft_iheader header;
-    eft_ientry entries[EFT_EI_NUM_ENTRIES];
+    eft_index_header header;
+    eft_index_entry entries[EFT_EI_NUM_ENTRIES];
 }eft_ifile;
 static_assert(sizeof(eft_ifile) == EFT_EI_SIZE);
 
