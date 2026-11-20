@@ -101,7 +101,7 @@ struct ps01_entry {
 };
 
 struct oc00_vertbuf {
-    u8 unk1;
+    u8 surface_type;
     s8 type;
     u8 unk2;
     s8 unk3;
@@ -143,6 +143,14 @@ struct cp00_t {
     cp00_entry entries[num_entries];
 };
 
+struct ob00_entry {
+    s32 unk[3];
+    s32 oa_offsets[3];
+    s32 oc_offsets[3];
+    s32 oe_offsets[3];
+    s32 unk2[2];
+};
+
 
 // Offsets in this header are set to -1 if the thing they point to doesn't exist
 // in that file. In st00, they're set to 0 instead.
@@ -178,18 +186,19 @@ struct st00_t {
     s32 OC00_offset [[color("00AF00")]];
     s32 OC01_offset [[color("00AF00")]];
     s32 OC02_offset [[color("00AF00")]];
-    s32 OE00_offset [[color("0000FF")]];
-    s32 EF00_offset1;
     
+    s32 OE00_offset [[color("0000FF")]];
+    s32 OE01_offset [[color("0000FF")]];
     s32 OE02_offset [[color("0000FF")]];
+    
     s32 OA00_offset;
     s32 OA01_offset;
-    
     s32 OA02_offset;
+    
     s32 unk7[2];
     
     s32 OB00_offset;
-    s32 unk8 [[color("FF0000")]];
+    s32 stageOC_offset;
     s32 EF00_offset2;
     s32 SP00_offset;
     s32 MD00_offset;
@@ -245,6 +254,11 @@ struct MainHeader {
         cp00_t cp00c[isPositive(header.CP00_offset3)] @ header.CP00_offset3;
         cp00_t cp00d[isPositive(header.CP00_offset4)] @ header.CP00_offset4;
         cp00_t cp00e[isPositive(header.CP00_offset5)] @ header.CP00_offset5;
+        
+        ob00_entry ob_entries[safeSize(header.nm00_count)] @ header.OB00_offset;
+        
+        oc00_vertbuf stage_vertbuf[while ($ < header.EF00_offset2 - 4)] @ header.stageOC_offset;
+
     }
 };
 

@@ -66,7 +66,7 @@ static_assert(sizeof(oc00_idxbuf_entry) == 0x14, "Wrong OC00 index buffer entry 
 
 typedef struct {
     oc00_header header; // id == 3
-    float unk_pos[10];
+    pd3d_bounds bounds;
     u16 num_entries;
     u16 unk2[3];
     oc00_idxbuf_entry entries[];
