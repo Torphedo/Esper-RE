@@ -102,17 +102,16 @@ void editor::window_state::draw_chunk_idxbuf(file& alr, file::chunk& chunk) noex
     ImGui::InputU32("# of triangles", &header->num_tris);
     ImGui::InputU32("# of indices", &header->num_indices);
     ImGui::InputU32("Smallest index", &header->first_idx);
-    ImGui::InputFloat3("Center point", header->center);
-    ImGui::InputFloat3("AABB Min", header->aabb_min);
-    ImGui::InputFloat3("AABB Max", header->aabb_max);
+    ImGui::InputFloat3("Center point", (float*)&header->bounds.center);
+    ImGui::InputFloat("Bounding sphere radius", &header->bounds.sphere_radius);
+    ImGui::InputFloat3("AABB Min", (float*)&header->bounds.aabb_min);
+    ImGui::InputFloat3("AABB Max", (float*)&header->bounds.aabb_max);
 
     for (u32 i = 0; i < 5; i++) {
         ImGui::Spacing();
     }
 
     if (ImGui::CollapsingHeader("Unknown Fields")) {
-        ImGui::InputFloat("Unknown float 1", &header->unk_float);
-
         ImGui::InputU32("Unknown integer 1", &header->unk1);
         ImGui::SetNextItemWidth(ImGui::CharWidth() * 12 * 6);
         ImGui::InputScalarN("Unknown integer 4", ImGuiDataType_U16, header->unk4, 6);

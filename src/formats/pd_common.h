@@ -1,14 +1,18 @@
 #pragma once
 /// @file pd_common.h
-/// This file contains all other headers in the library.
+/// This file contains structures used across several formats.
 
-#include "alr.h"
-#include "alr_animations.h"
-#include "data_types.h"
-#include "deck.h"
-#include "eventpack.h"
-#include "ssb.h"
-#include "st00.h"
-#include "stx.h"
-#include "sth2.h"
-#include "wav.h"
+typedef struct {
+    float x;
+    float y;
+    float z;
+}vec3f;
+
+// Bounding box + sphere
+typedef struct {
+    vec3f center;
+    float sphere_radius;
+    vec3f aabb_min;
+    vec3f aabb_max;
+}pd3d_bounds;
+static_assert(sizeof(pd3d_bounds) == 40, "Wrong 3D bounds size!");

@@ -50,9 +50,9 @@ typedef struct {
 static_assert(sizeof(cp00_t) == 0x8, "Wrong CP00 header size!");
 
 typedef struct {
-    u8 unk1;
+    u8 surface_type;
     s8 id;
-    u8 unk2[2];
+    u8 unk2[2]; // Always 3, and always 0xFF or rarely 0
     u32 size;
     u32 pad;
 }oc00_header;

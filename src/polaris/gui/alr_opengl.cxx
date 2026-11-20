@@ -163,7 +163,7 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
         const idxbuf_header* header = (idxbuf_header*) (alr.data + idxbuf.idx_chunk_offset);
         const mat4s xform = instance.transform(header->transform_idx);
         const mat4s pvm = glms_mul(cam_xform, xform);
-        if (!box_in_frustum(pvm, header->aabb_min, header->aabb_max)) {
+        if (!box_in_frustum(pvm, header->bounds.aabb_min, header->bounds.aabb_max)) {
             continue;
         }
 
@@ -276,9 +276,9 @@ void alr::mesh::render(texture_manager& tex_manager, alr::file& alr, render_cont
             const idxbuf_header *header = (idxbuf_header *) (alr.data + idxbuf.idx_chunk_offset);
             const mat4s xform = instance.transform(header->transform_idx);
 
-            const vec3s center = glms_vec3_make(header->center);
-            const vec3s max = glms_vec3_make(header->aabb_max);
-            const vec3s min = glms_vec3_make(header->aabb_min);
+            const vec3s center = glms_vec3_make((float*)&header->bounds.center);
+            const vec3s max = glms_vec3_make((float*)&header->bounds.aabb_max);
+            const vec3s min = glms_vec3_make((float*)&header->bounds.aabb_min);
             const mat4s scale = glms_scale_make(glms_vec3_abs(glms_vec3_sub(max, center)));
             const mat4s box_xform = glms_mul(glms_translate_make(center), scale);
 

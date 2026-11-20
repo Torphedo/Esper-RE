@@ -52,8 +52,8 @@ vec3s vec3_transform(vec3s input, mat4s xform) {
 }
 
 float raycast(ray_t ray, const void* vertbuf, u32 vertex_size, mat4s transform, const idxbuf_header* idxbuf) {
-    const vec3s box_min = *(vec3s*)&idxbuf->aabb_min;
-    const vec3s box_max = *(vec3s*)&idxbuf->aabb_max;
+    const vec3s box_min = *(vec3s*)&idxbuf->bounds.aabb_min;
+    const vec3s box_max = *(vec3s*)&idxbuf->bounds.aabb_max;
     if (!raycast_aabb(ray, box_min, box_max)) {
         // TODO: Make AABB test work properly
         // return INFINITY;

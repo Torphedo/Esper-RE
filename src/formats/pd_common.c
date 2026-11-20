@@ -1,4 +1,4 @@
-// This file contains all other files in the library
+// This file contains all other files in the library. Compile this to get everything.
 
 #include "ssb.c"
 #include "stx.c"

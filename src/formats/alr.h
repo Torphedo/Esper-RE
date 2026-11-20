@@ -7,12 +7,7 @@ extern "C" {
 #include <stdbool.h>
 #include <assert.h>
 #include "data_types.h"
-
-typedef struct {
-    float x;
-    float y;
-    float z;
-}vec3f;
+#include "pd_common.h"
 
 // ALRs are structured with groups of chunks, separated by empty 0x0 chunks.
 
@@ -647,12 +642,7 @@ typedef struct {
     u32 id;
     u32 size;
     // Centerpoint of the object represented by the index buffer
-    float center[3];
-    float unk_float;
-    // AABB min of the object represented by the index buffer
-    float aabb_min[3];
-    // AABB max of the object represented by the index buffer
-    float aabb_max[3];
+    pd3d_bounds bounds;
     u32 unk5;
     u8 unk6;
     u8 unk7;
